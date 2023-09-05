@@ -1,27 +1,21 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.routers import system
+
 app = FastAPI()
 
-allowed_origins = [
-    "http://localhost:8000",
-    "https://localhost:8000",
-    "http://localhost",
-    "https://localhost",
-]
+app.include_router(system.router)
 
 app.add_middleware(
-    CORSMiddleware(
-        allow_origins=allowed_origins,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    ),
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:8000",
+        "https://localhost:8000",
+        "http://localhost",
+        "https://localhost",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
-
-@app.get("/health")
-async def health():
-    return {
-        "status": "available",
-        "version": "0.0.1",
-    }
