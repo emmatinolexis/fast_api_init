@@ -1,0 +1,9 @@
+FROM python:3.9
+WORKDIR /mvtracking
+
+COPY ./requirements.txt /mvtracking/requirements.txt
+RUN pip install --no-cache-dir --upgrade -r /mvtracking/requirements.txt
+
+COPY ./app /mvtracking/app
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
