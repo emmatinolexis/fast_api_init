@@ -9,6 +9,6 @@ router = APIRouter(
 @router.get("/info")
 async def get_info():
     return {
-        "msg": "dummy dada",
+        "msg": "dummy data",
         "action": "Tariq & Rudolph to remove me later",
     }
