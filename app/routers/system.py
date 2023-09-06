@@ -9,6 +9,7 @@ router = APIRouter(
 @router.get("/health")
 async def health_check():
     return {
-        "status": "available",
+        "name": "MV Tracking Hub",
         "version": "0.0.1",
+        "status": "available",
     }

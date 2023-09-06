@@ -19,3 +19,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# @app.on_event("startup")
+# def on_startup():
+#     pass
+#     # TODO initialize database here
