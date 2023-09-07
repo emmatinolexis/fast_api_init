@@ -8,9 +8,12 @@ router = APIRouter(
 )
 
 @router.get("/packages")
-async def get_packages():
-    return {"packages":{
-        "basic": dummy_options,
-        "individual": dummy_options,
-        "enterprise": dummy_options
-    }}
+async def get_product_packages():
+    return {
+        "packages": {
+            "basic": dummy_options,
+            "individual": dummy_options,
+            "enterprise": dummy_options
+        }
+    }
+    
