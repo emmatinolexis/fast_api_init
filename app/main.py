@@ -3,14 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers import system
 from app.routers import users
-from app.routers import dummy
 
 from app.database.core import init_db
 
 app = FastAPI()
 
 app.include_router(system.router)
-app.include_router(dummy.router)
 app.include_router(users.router)
 
 app.add_middleware(
