@@ -1,21 +1,15 @@
 from typing import Optional
 
-from pydantic import (BaseModel, EmailStr, field_validator)
-import re
+from pydantic import BaseModel
+from pydantic import EmailStr
+from pydantic_extra_types.phone_numbers import PhoneNumber
+
 
 class User(BaseModel):
     id: Optional[int]
-    phone_number: str
+    phone_number: PhoneNumber
     email_address: EmailStr
     password: str
 
-    @field_validator("phone_number")
-    @classmethod
-    def validate_international_phone_number(cls, phone_number:str):
-            pattern = r'^\+\d{1,15}$'   
-            if re.match(pattern, phone_number) == None:
-                raise ValueError("Phone Number Should Be In International Format")
-            return phone_number
-    
     class Config:
         orm_model = True

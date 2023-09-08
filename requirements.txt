@@ -19,6 +19,7 @@ mypy-extensions==1.0.0
 orjson==3.9.5
 packaging==23.1
 pathspec==0.11.2
+phonenumbers==8.13.20
 platformdirs==3.10.0
 pydantic==2.3.0
 pydantic-extra-types==2.1.0
