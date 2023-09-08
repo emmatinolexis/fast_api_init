@@ -14,7 +14,7 @@ class User(BaseModel):
     def validate_international_phone_number(cls, phone_number:str):
             pattern = r'^\+\d{1,15}$'   
             if re.match(pattern, phone_number) == None:
-                raise ValueError("Phone Number should be in international format")
+                raise ValueError("Phone Number Should Be In International Format")
             return phone_number
     
     class Config:
