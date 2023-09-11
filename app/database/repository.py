@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-
+from passlib.context import CryptContext
 from . import models, schemas
 
 def get_all_items(db: Session, model):
@@ -47,6 +47,11 @@ def create_user(db: Session, user: schemas.User):
         "password": user.password,
     }
     return create_item(db, models.User, user_data)
+    
+    
+def hash_user_password(password: str):
+    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")  
+    return pwd_context.hash(password)
 
 
 def get_all_assets(db: Session):
