@@ -4,6 +4,7 @@ from app.routers.hashing import (
     hash_user_password,  
 )
 
+
 from . import models, schemas
 
 def get_all_users(db: Session):
@@ -19,8 +20,6 @@ def get_user_by_phone_number(db: Session, phone_number: str):
         db.query(models.User).filter(models.User.phone_number == phone_number).first()
     )
     
-
-
 def create_user(db: Session, user: schemas.User):
     db_user = models.User(
         phone_number=user.phone_number,
