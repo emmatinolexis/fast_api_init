@@ -19,7 +19,7 @@ router = APIRouter(
 # @router.post("/", response_model=List[schemas.AssetType])
 # async def get_users_handler(db: Session = Depends(get_db)):
 #     return get_all_users(db=db)
-
+ 
 
 @router.post("/", response_model=schemas.AssetType)
 async def create_asset_type_handler(asset_type: schemas.AssetType, db: Session = Depends(get_db)):
