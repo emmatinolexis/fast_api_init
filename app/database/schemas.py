@@ -23,4 +23,13 @@ class AssetType(BaseModel):
 
     class Config:
         orm_model = True
+
+class Asset(BaseModel):
+    id: Optional[int]
+    asset_name: str
+    asset_type_id: str
+    status: str
+    customer_id: str
+    class Config:
+        orm_model = True
         
