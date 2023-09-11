@@ -33,7 +33,7 @@ def create_user(db: Session, user: schemas.User):
 
 def create_asset_type(db: Session, user_type: schemas.AssetType):
     db_asset = models.AssetType(
-        asset_type_name=user_type.asset_type_name,
+        asset_type_name= user_type.asset_type_name,
         status=user_type.status,
     )
 
