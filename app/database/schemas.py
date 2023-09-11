@@ -23,7 +23,7 @@ class User(BaseModel):
         
         
 class LoginUser(BaseModel):
-    # phone_number: Optional[str]
+    phone_number: Optional[str]
     email_address: str
     password: str
     
