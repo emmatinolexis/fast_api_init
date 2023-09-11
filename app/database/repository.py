@@ -29,3 +29,16 @@ def create_user(db: Session, user: schemas.User):
     db.refresh(db_user)
 
     return db_user
+
+
+def create_asset_type(db: Session, user_type: schemas.AssetType):
+    db_asset = models.AssetType(
+        asset_type_name=user_type.asset_type_name,
+        status=user_type.status,
+    )
+
+    db.add(db_asset)
+    db.commit()
+    db.refresh(db_asset)
+
+    return db_asset

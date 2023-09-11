@@ -14,3 +14,13 @@ class User(BaseModel):
 
     class Config:
         orm_model = True
+        
+
+class AssetType(BaseModel):
+    id: Optional[int]
+    asset_type_name: str
+    status: str
+
+    class Config:
+        orm_model = True
+        

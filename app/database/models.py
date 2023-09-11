@@ -30,3 +30,12 @@ class Profile(BaseModel):
 
     user_id = Column(Integer, ForeignKey("users.id"))
     user = relationship("User", back_populates="profile")
+    
+
+class AssetType(BaseModel):
+    __tablename__ = "asset_types"
+    asset_type_name = Column(String(length=50), nullable=False, default="", index=True)
+    status = Column(String(length=15), nullable=False, default="", index=True)
+    
+    
+
