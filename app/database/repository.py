@@ -30,7 +30,6 @@ def delete_item(db: Session, model, item_id: int):
         db.commit()
     return db_item
 
-
 def get_all_users(db: Session):
     return get_all_items(db, models.User)
 
@@ -48,11 +47,9 @@ def create_user(db: Session, user: schemas.User):
     }
     return create_item(db, models.User, user_data)
     
-    
 def hash_user_password(password: str):
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")  
     return pwd_context.hash(password)
-
 
 def get_all_assets(db: Session):
     return get_all_items(db, models.Asset)
@@ -61,7 +58,7 @@ def create_asset(db: Session, asset: schemas.Asset):
     asset_data = {
         "asset_name": asset.asset_name,
         "asset_type_id": asset.asset_type_id,
-        "status": asset.status,
+        "asset_status": asset.asset_status,
         "customer_id": asset.customer_id
     }
     return create_item(db, models.Asset, asset_data)
@@ -70,7 +67,7 @@ def update_asset(db: Session, asset_id: int, updated_asset: schemas.Asset):
     updated_asset_data = {
         "asset_name": updated_asset.asset_name,
         "asset_type_id": updated_asset.asset_type_id,
-        "status": updated_asset.status,
+        "asset_status": updated_asset.asset_status,
         "customer_id": updated_asset.customer_id
     }
     return update_item(db, models.Asset, asset_id, updated_asset_data)
@@ -78,23 +75,6 @@ def update_asset(db: Session, asset_id: int, updated_asset: schemas.Asset):
 def delete_asset(db: Session, asset_id: int):
     return delete_item(db, models.Asset, asset_id)
 
-
 def get_asset_type(db: Session):
     return get_all_items(db, models.AssetType)
 
-def create_asset_type(db: Session, asset_type: schemas.AssetType):
-    asset_type_data = {
-        "asset_type_name": asset_type.asset_type_name,
-        "status": asset_type.status,
-    }
-    return create_item(db, models.AssetType, asset_type_data)
-
-def update_asset_type(db: Session, asset_type_id: int, updated_asset_type: schemas.AssetType):
-    updated_asset_type_data = {
-        "asset_type_name": updated_asset_type.asset_type_name,
-        "status": updated_asset_type.status,
-    }
-    return update_item(db, models.AssetType, asset_type_id, updated_asset_type_data)
-
-def delete_asset_type(db: Session, asset_type_id: int):
-    return delete_item(db, models.AssetType, asset_type_id)
