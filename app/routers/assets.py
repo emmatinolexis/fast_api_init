@@ -13,7 +13,7 @@ from .shared import get_db
 
 router = APIRouter(
     prefix="/assets",
-    tags=["asset"],
+    tags=["assets"],
 )
 
 @router.get("/", response_model=List[schemas.Asset])
