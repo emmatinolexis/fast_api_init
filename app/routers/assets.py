@@ -4,10 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import schemas
-from app.database.repository import create_asset
-from app.database.repository import get_all_assets
-from app.database.repository import update_asset
-from app.database.repository import delete_asset
+from app.database.assets import create_asset
+from app.database.assets import get_all_assets
+from app.database.assets import update_asset
+from app.database.assets import delete_asset
 
 from .shared import get_db
 

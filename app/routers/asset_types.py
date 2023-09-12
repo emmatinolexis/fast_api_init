@@ -5,7 +5,7 @@ from fastapi import Depends
 from sqlalchemy.orm import Session
 
 from app.database import schemas
-from app.database.repository import get_asset_type
+from app.database.assets import get_asset_type
 
 
 from .shared import get_db

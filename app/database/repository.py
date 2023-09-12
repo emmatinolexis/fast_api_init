@@ -2,33 +2,9 @@ from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from . import models, schemas
 
-def get_all_items(db: Session, model):
-    return db.query(model).all()
+from .helpers import get_all_items
+from .helpers import create_item
 
-def get_item_by_id(db: Session, model, item_id: int):
-    return db.query(model).filter(model.id == item_id).first()
-
-def create_item(db: Session, model, item_data):
-    db_item = model(**item_data)
-    db.add(db_item)
-    db.commit()
-    db.refresh(db_item)
-    return db_item
-
-def update_item(db: Session, model, item_id: int, updated_item_data):
-    db_item = get_item_by_id(db, model, item_id)
-    if db_item:
-        for key, value in updated_item_data.items():
-            setattr(db_item, key, value)
-        db.commit()
-    return db_item
-
-def delete_item(db: Session, model, item_id: int):
-    db_item = get_item_by_id(db, model, item_id)
-    if db_item:
-        db.delete(db_item)
-        db.commit()
-    return db_item
 
 def get_all_users(db: Session):
     return get_all_items(db, models.User)
@@ -51,30 +27,4 @@ def hash_user_password(password: str):
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")  
     return pwd_context.hash(password)
 
-def get_all_assets(db: Session):
-    return get_all_items(db, models.Asset)
-
-def create_asset(db: Session, asset: schemas.Asset):
-    asset_data = {
-        "asset_name": asset.asset_name,
-        "asset_type_id": asset.asset_type_id,
-        "asset_status": asset.asset_status,
-        "customer_id": asset.customer_id
-    }
-    return create_item(db, models.Asset, asset_data)
-
-def update_asset(db: Session, asset_id: int, updated_asset: schemas.Asset):
-    updated_asset_data = {
-        "asset_name": updated_asset.asset_name,
-        "asset_type_id": updated_asset.asset_type_id,
-        "asset_status": updated_asset.asset_status,
-        "customer_id": updated_asset.customer_id
-    }
-    return update_item(db, models.Asset, asset_id, updated_asset_data)
-
-def delete_asset(db: Session, asset_id: int):
-    return delete_item(db, models.Asset, asset_id)
-
-def get_asset_type(db: Session):
-    return get_all_items(db, models.AssetType)
 
