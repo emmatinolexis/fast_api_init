@@ -1,15 +1,15 @@
 from typing import Optional
 from typing import Annotated, Union
 
-from pydantic import (BaseModel, EmailStr, field_validator)
+from pydantic import (BaseModel, EmailStr,field_validator)
 import re
 
 class User(BaseModel):
     id: Optional[int]
-    phone_number: Optional[str]
-    email_address: Optional[EmailStr]
+    phone_number: Optional[str] = None
+    email_address: Optional[str] = None
     password: str
-
+    
     # @field_validator("phone_number")
     # @classmethod
     # def validate_international_phone_number(cls, phone_number:str):
@@ -23,9 +23,12 @@ class User(BaseModel):
         
         
 class LoginUser(BaseModel):
-    phone_number: Optional[str]
-    email_address: str
-    password: str
+    phone_number: Optional[str] = None
+    email_address: Optional[str] = None
+    password: str 
+    
+    class Config:
+        orm_model = True
     
 
 class TokenData(BaseModel):
