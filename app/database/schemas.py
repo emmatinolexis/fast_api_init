@@ -2,7 +2,6 @@ from typing import Optional
 from typing import Annotated, Union
 
 from pydantic import (BaseModel, EmailStr,field_validator)
-import re
 
 class User(BaseModel):
     id: Optional[int]
