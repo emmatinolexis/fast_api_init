@@ -38,7 +38,7 @@ class Asset(BaseModel):
     asset_name = Column(String(length=50),nullable=False,default="", index=True)
     asset_type_id = Column(String(length=10),nullable=False,default="", index=True)
     asset_status = Column(String(length=15),nullable=False,default="", index=True)
-    customer_id = Column(String(length=50),nullable=False,default="", index=True)
+    user_id = Column(String(length=50),nullable=False,default="", index=True)
 
     
     

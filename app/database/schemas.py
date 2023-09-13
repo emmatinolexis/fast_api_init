@@ -25,9 +25,9 @@ class AssetType(BaseModel):
 
 class Asset(BaseModel):
     asset_name: str
-    asset_type_id: str
+    asset_type_id: int
     asset_status: str
-    customer_id: str
+    user_id: str
     class Config:
         orm_model = True
         
