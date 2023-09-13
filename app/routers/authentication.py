@@ -46,7 +46,7 @@ async def login_handler(user:schemas.LoginUser, db: Session = Depends(get_db)) -
             data={"sub": user.email_address}, expires_delta=access_token_expires
             )
            return {"access_token": access_token, "token_type": "bearer", "user": db_user}
-    else:
+    if user.phone_number:
         db_user = db.query(models.User).filter(models.User.phone_number == user.phone_number).first()
         if not db_user:
             raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
