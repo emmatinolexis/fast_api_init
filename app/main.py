@@ -5,8 +5,6 @@ from app.routers import system
 from app.routers import users
 from app.routers import packages
 from app.routers import authentication
-
-
 from app.database.core import init_db
 
 app = FastAPI()

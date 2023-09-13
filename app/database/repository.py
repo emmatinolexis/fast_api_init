@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
-from app.routers.hashing import (
+from app.utils.hashing import (
     hash_user_password,  
 )
 
