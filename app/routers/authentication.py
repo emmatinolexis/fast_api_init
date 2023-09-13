@@ -7,8 +7,8 @@ from app.routers.hashing import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     SECRET_KEY,
     ALGORITHM
-    
 )
+
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from typing import Annotated, Union
@@ -33,31 +33,24 @@ def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+def generate_access_token(user:schemas.LoginPayload, db_user, db: Session = Depends(get_db)):
+    if not db_user:
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail= "Invalid Credentials")
+    if not verify_password(user.password,db_user.password):
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,detail= "Invalid Credentials")
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(data={"sub": user.email_address}, expires_delta=access_token_expires)
+    return access_token
+ 
+ 
 @router.post("/", response_model= None)
 async def login_handler(user:schemas.LoginPayload, db: Session = Depends(get_db)) -> any:
     if user.email_address:
            db_user = db.query(models.User).filter(models.User.email_address == user.email_address).first()
-           if not db_user:
-               raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail= "Invalid Credentials")
-           if not verify_password(user.password,db_user.password):
-               raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,detail= "Invalid Credentials")
-           access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-           access_token = create_access_token(
-            data={"sub": user.email_address}, expires_delta=access_token_expires
-            )
+           access_token = generate_access_token(user,db_user)
            return {"access_token": access_token, "token_type": "bearer", "user": db_user}
+    
     if user.phone_number:
         db_user = db.query(models.User).filter(models.User.phone_number == user.phone_number).first()
-        if not db_user:
-            raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
-                                detail= "Invalid Credentials")
-        if not verify_password(user.password,db_user.password):
-            raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
-                                detail= "Invalid Credentials")
-        
-        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-        access_token = create_access_token(
-            data={"sub": user.phone_number}, expires_delta=access_token_expires
-        )
-        
+        access_token = generate_access_token(user,db_user)
         return {"access_token": access_token, "token_type": "bearer", "user": db_user}
