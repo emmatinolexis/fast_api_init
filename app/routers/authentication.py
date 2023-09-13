@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from app.database import models, schemas
-from app import oauth
 
 from app.routers.hashing import (
     verify_password,
@@ -35,8 +34,7 @@ def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None
     return encoded_jwt
 
 @router.post("/", response_model= None)
-async def login_handler(user:schemas.LoginUser, db: Session = Depends(get_db), current_user: int = Depends(oauth.get_current_user)) -> any:
-    print(current_user)
+async def login_handler(user:schemas.LoginPayload, db: Session = Depends(get_db)) -> any:
     if user.email_address:
            db_user = db.query(models.User).filter(models.User.email_address == user.email_address).first()
            if not db_user:

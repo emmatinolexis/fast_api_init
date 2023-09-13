@@ -11,7 +11,7 @@ class User(BaseModel):
     password: str
         
         
-class LoginUser(BaseModel):
+class LoginPayload(BaseModel):
     phone_number: Optional[str] = None
     email_address: Optional[str] = None
     password: str 
