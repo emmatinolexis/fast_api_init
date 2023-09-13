@@ -17,15 +17,13 @@ class User(BaseModel):
         
 
 class AssetType(BaseModel):
-    id: Optional[int]
     asset_type_name: str
-    status: str
+    asset_type_status: str
 
     class Config:
         orm_model = True
 
 class Asset(BaseModel):
-    id: Optional[int]
     asset_name: str
     asset_type_id: str
     asset_status: str
