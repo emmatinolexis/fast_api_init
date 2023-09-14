@@ -6,6 +6,13 @@ from .helpers import get_all_items
 from .helpers import create_item
 
 
+from app.utils.hashing import (
+    hash_user_password,  
+)
+
+
+from . import models, schemas
+
 def get_all_users(db: Session):
     return get_all_items(db, models.User)
 
@@ -28,3 +35,15 @@ def hash_user_password(password: str):
     return pwd_context.hash(password)
 
 
+def create_user(db: Session, user: schemas.User):
+    db_user = models.User(
+        phone_number=user.phone_number,
+        email_address=user.email_address,
+        password=hash_user_password(user.password),
+    ) 
+
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+
+    return db_user
