@@ -2,16 +2,16 @@ from typing import Optional
 
 from pydantic import BaseModel
 from pydantic import EmailStr
-from pydantic import constr,Field
+#from pydantic import constr,Field
 from pydantic_extra_types.phone_numbers import PhoneNumber
 
 
 class User(BaseModel):
     id: Optional[int]
-    phone_number: PhoneNumber
-    email_address: EmailStr
-    password: str = Field(min_length=8,max_length=30)
-
+    phone_number: Optional[PhoneNumber] = None
+    email_address: Optional[EmailStr] = None
+    password: str #Add Data validation to constrain password length between
+                  #a length of 8 and 30. constr and Field not working as expected
     class Config:
         orm_model = True
         
