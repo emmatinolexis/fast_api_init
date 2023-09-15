@@ -41,3 +41,5 @@ def generate_access_token(user:schemas.LoginPayload, db_user, db: Session = Depe
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(data={"sub": user.email_address}, expires_delta=access_token_expires)
     return access_token
+
+
