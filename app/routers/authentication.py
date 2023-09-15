@@ -1,6 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from app.database import models, schemas
 
+from app.database import models
+from fastapi.security import OAuth2PasswordRequestForm
 from app.database import schemas
 from sqlalchemy.orm import Session
 import datetime
@@ -17,7 +19,7 @@ router = APIRouter(
 db_user = None
 sessions  = {}
 
-@router.post("/login", response_model= None)
+@router.post("/", response_model= None)
 async def login_handler(user:schemas.LoginPayload, db: Session = Depends(get_db)) -> any:
     if user.email_address:
         db_user = db.query(models.User).filter(models.User.email_address == user.email_address).first()
