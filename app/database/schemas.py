@@ -13,7 +13,7 @@ class User(BaseModel):
     id: Optional[int]
     phone_number: str
     email_address: EmailStr
-    password: constr(min_length=8,max_length=30)
+    password: str
 
     class Config:
         orm_model = True
