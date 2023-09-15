@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends
-from app.database import models, schemas
+from typing import Annotated
 
-from app.database import schemas
+from app.database import models
+from fastapi.security import OAuth2PasswordRequestForm
+
 from sqlalchemy.orm import Session
 
 from .shared import get_db
@@ -15,7 +17,8 @@ router = APIRouter(
 db_user = None
 
 @router.post("/", response_model= None)
-async def login_handler(user:schemas.LoginPayload, db: Session = Depends(get_db)) -> any:
+async def login_handler(user: Annotated[OAuth2PasswordRequestForm, Depends()] , db: Session = Depends(get_db)) -> any:
+    return user
     if user.email_address:
         db_user = db.query(models.User).filter(models.User.email_address == user.email_address).first()
         access_token = generate_access_token(user,db_user)
