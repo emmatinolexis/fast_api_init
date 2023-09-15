@@ -40,3 +40,4 @@ def verify_token(token: str, credentials_exception):
         token_data = schemas.TokenData(username=email_address)
     except JWTError:
         raise credentials_exception
+    
