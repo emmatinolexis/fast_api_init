@@ -11,6 +11,7 @@ from pydantic_extra_types.phone_numbers import PhoneNumber
 
 class User(BaseModel):
     id: Optional[int]
+    username: str
     phone_number: Optional[PhoneNumber] = None
     email_address: Optional[EmailStr] = None
     password: str #Add Data validation to constrain password length between
@@ -45,7 +46,7 @@ class LoginPayload(BaseModel):
     
 
 class TokenData(BaseModel):
-    email_addres: Union[EmailStr, None] = None
+    username: Union[str, None] = None
     
 
 class Token(BaseModel):

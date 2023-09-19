@@ -49,7 +49,7 @@ def generate_access_token(user:schemas.LoginPayload, db_user, db: Session = Depe
     if not verify_password(user.password,db_user.password):
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,detail= "Invalid Credentials")
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(data={"sub": user.email_address}, expires_delta=access_token_expires)
+    access_token = create_access_token(data={"sub": user.username}, expires_delta=access_token_expires)
     return access_token
 
 async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):

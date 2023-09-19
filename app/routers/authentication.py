@@ -19,6 +19,7 @@ router = APIRouter(
 db_user = None
 sessions  = {}
 
+
 @router.post("/", response_model= None)
 async def login_handler(user:schemas.LoginPayload, db: Session = Depends(get_db)) -> any:
     if user.email_address:
