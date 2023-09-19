@@ -15,6 +15,7 @@ def create_asset(db: Session, asset: schemas.Asset):
         "asset_type_id": asset.asset_type_id,
         "asset_status": asset.asset_status,
         "customer_id": asset.customer_id
+        "user_id": asset.user_id
     }
     return create_item(db, models.Asset, asset_data)
 
@@ -24,6 +25,7 @@ def update_asset(db: Session, asset_id: int, updated_asset: schemas.Asset):
         "asset_type_id": updated_asset.asset_type_id,
         "asset_status": updated_asset.asset_status,
         "customer_id": updated_asset.customer_id
+        "user_id": updated_asset.user_id
     }
     return update_item(db, models.Asset, asset_id, updated_asset_data)
 
