@@ -19,8 +19,8 @@ class User(BaseModel):
 
     username = Column(String(length=15),nullable=True,default="",index=True)
     phone_number = Column(String(length=15), nullable=True, default="", index=True)
-    email_address = Column(String(length=100), nullable=False, default="", index=True)
-    password = Column(String(length=512), nullable=False)
+    email_address = Column(String(length=20), nullable=False, default="", index=True)
+    password = Column(String(length=10), nullable=False)
 
     profile = relationship("Profile", uselist=False, back_populates="user")
 
@@ -39,6 +39,7 @@ class Asset(BaseModel):
     asset_name = Column(String(length=50),nullable=False,default="", index=True)
     asset_type_id = Column(String(length=10),nullable=False,default="", index=True)
     asset_status = Column(String(length=15),nullable=False,default="", index=True)
+    customer_id = Column(String(length=50),nullable=False,default="", index=True)
     user_id = Column(String(length=50),nullable=False,default="", index=True)
 
     

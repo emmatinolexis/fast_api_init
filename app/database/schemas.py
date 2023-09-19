@@ -6,11 +6,34 @@ from typing import Optional
 
 from pydantic import BaseModel
 from pydantic import EmailStr
-#from pydantic import constr,Field
 from pydantic_extra_types.phone_numbers import PhoneNumber
 
 class User(BaseModel):
     id: Optional[int]
+    phone_number: str
+    email_address: EmailStr
+    password: str
+
+    class Config:
+        orm_model = True
+        
+
+class AssetType(BaseModel):
+    id: Optional[int]
+    asset_type_name: str
+    status: str
+
+    class Config:
+        orm_model = True
+
+class Asset(BaseModel):
+    id: Optional[int]
+    asset_name: str
+    asset_type_id: str
+    asset_status: str
+    customer_id: str
+    class Config:
+        orm_model = True
     username: str
     phone_number: Optional[PhoneNumber] = None
     email_address: Optional[EmailStr] = None
