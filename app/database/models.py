@@ -18,6 +18,7 @@ class BaseModel(Base):
 class User(BaseModel):
     __tablename__ = "users"
 
+    username = Column(String(length=15),nullable=True,default="",index=True)
     phone_number = Column(String(length=15), nullable=True, default="", index=True)
     email_address = Column(String(length=100), nullable=False, default="", index=True)
     password = Column(String(length=512), nullable=False)
