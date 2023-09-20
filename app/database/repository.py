@@ -39,8 +39,12 @@ def create_user(db: Session, user: schemas.User):
         email_address=user.email_address,
         password=hash_user_password(user.password),
     ) 
-
+    user_dict = {
+        "username": user.username,
+        "phone_number": user.phone_number,
+        "email_address": user.email_address
+    }
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
-    return db_user
+    return user_dict
