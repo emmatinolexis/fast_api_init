@@ -7,7 +7,7 @@ from pydantic_extra_types.phone_numbers import PhoneNumber
 
 class User(BaseModel):
     username: str
-    phone_number: PhoneNumber
+    phone_number: str
     email_address: EmailStr
     password: str
 

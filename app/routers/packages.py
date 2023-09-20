@@ -7,8 +7,8 @@ from app.utils.auth import get_current_user
 dummy_options = ["Option" + str(i) for i in range(1, 11)]
 
 router = APIRouter(
-    prefix="/users",
-    tags=["users"],
+    prefix="/packages",
+    tags=["packages"],
 )
 
 @router.get("/packages")
