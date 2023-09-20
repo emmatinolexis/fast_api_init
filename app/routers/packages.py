@@ -11,7 +11,7 @@ router = APIRouter(
     tags=["packages"],
 )
 
-@router.get("/packages")
+@router.get("/")
 async def get_product_packages(get_current_user: schemas.User = Depends(get_current_user)):
     return {
         "packages": {
