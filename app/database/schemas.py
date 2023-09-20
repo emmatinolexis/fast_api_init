@@ -6,7 +6,6 @@ from pydantic import EmailStr
 from pydantic_extra_types.phone_numbers import PhoneNumber
 
 class User(BaseModel):
-    id: Optional[int]
     username: str
     phone_number: PhoneNumber
     email_address: EmailStr
@@ -16,15 +15,8 @@ class User(BaseModel):
         orm_model = True
         
 class AssetType(BaseModel):
-    id: Optional[int]
     asset_type_name: str
     status: str
-
-    class Config:
-        orm_model = True
-class AssetType(BaseModel):
-    asset_type_name: str
-    asset_type_status: str
 
     class Config:
         orm_model = True
