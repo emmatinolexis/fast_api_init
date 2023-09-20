@@ -8,7 +8,7 @@ from pydantic_extra_types.phone_numbers import PhoneNumber
 class User(BaseModel):
     id: Optional[int]
     username: str
-    phone_number: str
+    phone_number: PhoneNumber
     email_address: EmailStr
     password: str
 
