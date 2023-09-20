@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from app.database import schemas
 from fastapi.security import OAuth2PasswordBearer
-from fastapi import Depends,HTTPException, status
 from typing import Annotated
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
@@ -19,10 +18,8 @@ from app.utils.hashing import (
 from datetime import datetime, timedelta
 from jose import jwt
 from typing import Union
-
 from app.database import schemas
 from sqlalchemy.orm import Session
-
 from app.routers.shared import get_db
 
 router = APIRouter(
@@ -31,7 +28,6 @@ router = APIRouter(
 )
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
-
 
 def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None):
     to_encode = data.copy()

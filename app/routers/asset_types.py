@@ -7,12 +7,11 @@ from sqlalchemy.orm import Session
 from app.database import schemas
 from app.database.assets import get_asset_type
 
-
 from .shared import get_db
 
 router = APIRouter(
     prefix="/asset_types",
-    tags=["Assets"],
+    tags=["assets"],
 )
 
 @router.get("/", response_model=List[schemas.AssetType])

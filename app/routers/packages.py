@@ -1,9 +1,7 @@
 from fastapi import APIRouter
+from fastapi import Depends
 from app.database import schemas
-from fastapi import APIRouter, Depends
-from app.utils.auth import (
-    get_current_user
-)
+from app.utils.auth import get_current_user
 
  
 dummy_options = ["Option" + str(i) for i in range(1, 11)]

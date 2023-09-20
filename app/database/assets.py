@@ -12,9 +12,8 @@ def get_all_assets(db: Session):
 def create_asset(db: Session, asset: schemas.Asset):
     asset_data = {
         "asset_name": asset.asset_name,
-        "asset_type_id": asset.asset_type_id,
+        "asset_id": asset.asset_id,
         "asset_status": asset.asset_status,
-        "customer_id": asset.customer_id
         "user_id": asset.user_id
     }
     return create_item(db, models.Asset, asset_data)
@@ -22,12 +21,11 @@ def create_asset(db: Session, asset: schemas.Asset):
 def update_asset(db: Session, asset_id: int, updated_asset: schemas.Asset):
     updated_asset_data = {
         "asset_name": updated_asset.asset_name,
-        "asset_type_id": updated_asset.asset_type_id,
+        "asset_id": updated_asset.asset_id,
         "asset_status": updated_asset.asset_status,
-        "customer_id": updated_asset.customer_id
         "user_id": updated_asset.user_id
     }
-    return update_item(db, models.Asset, asset_id, updated_asset_data)
+    return update_item(db, asset_id, updated_asset_data)
 
 def delete_asset(db: Session, asset_id: int):
     return delete_item(db, models.Asset, asset_id)
