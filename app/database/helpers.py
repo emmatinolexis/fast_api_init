@@ -17,7 +17,6 @@ def create_item(db: Session, model, item_data):
 
 def update_item(db: Session, asset_id: int, updated_item_data):
     db_item = db.query(models.Asset).filter(cast(models.Asset.asset_id, String) == cast(asset_id, String)).first()
-    print(db_item)
     if db_item:
         for key, value in updated_item_data.items():
             setattr(db_item, key, value)
