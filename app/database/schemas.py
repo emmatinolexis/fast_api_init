@@ -10,7 +10,7 @@ class User(BaseModel):
     phone_number: str
     email_address: EmailStr
     password: str
-
+    
     class Config:
         orm_model = True
         
