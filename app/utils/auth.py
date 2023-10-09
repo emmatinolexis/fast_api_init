@@ -16,7 +16,7 @@ from app.utils.hashing import (
 )
 
 from datetime import datetime, timedelta
-from jose import jwt
+from jose import jwt, JWTError
 from typing import Union
 from app.database import schemas
 from sqlalchemy.orm import Session
@@ -39,15 +39,23 @@ def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-def generate_access_token(user:schemas.LoginPayload, db_user, db: Session = Depends(get_db)):
+def generate_access_token(user:schemas.UserLogin, db_user, db: Session = Depends(get_db)):
     if not db_user:
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail= "Invalid Credentials")
     if not verify_password(user.password,db_user.password):
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,detail= "Invalid Credentials")
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(data={"sub": user.username}, expires_delta=access_token_expires)
+    access_token = create_access_token(data={"sub": user.email_address}, expires_delta=access_token_expires)
     return access_token
 
+def verify_token(token: str):
+    try:
+        jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return True
+    except JWTError:
+        return False
+    
+    
 async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

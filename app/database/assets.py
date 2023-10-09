@@ -6,6 +6,8 @@ from .helpers import create_item
 from .helpers import update_item
 from .helpers import delete_item
 
+#CRUD functionalities for Assets
+
 def get_all_assets(db: Session):
     return get_all_items(db, models.Asset)
 

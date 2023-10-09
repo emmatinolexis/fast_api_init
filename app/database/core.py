@@ -29,6 +29,7 @@ except Exception as ex:
     log.info(f'Sorry failed to connect: {ex}')
 
 Base = declarative_base()
+metadata = Base.metadata
 
 def init_db():
     Base.metadata.create_all(engine)

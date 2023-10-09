@@ -8,10 +8,14 @@ from app.routers import asset_types
 from app.routers import assets
 
 from app.routers import authentication
-
 from app.database.core import init_db
 
-app = FastAPI()
+app = FastAPI(
+    title="MVI Tracking",
+    description=None,
+    summary="",
+    version="0.0.1",
+)
 
 app.include_router(system.router)
 app.include_router(users.router)
