@@ -16,9 +16,6 @@ class UserLogin(BaseModel):
     email_address: EmailStr
     password: str
     
-class EmailVerification(BaseModel):
-    email_address: str
-    
 class AssetType(BaseModel):
     asset_type_name: str
     status: str
@@ -34,18 +31,9 @@ class Asset(BaseModel):
     class Config:
         orm_model = True
 
-class PasswordChange(BaseModel):
-    old_password: str
-    new_password: str
-    
 class VerifyToken(BaseModel):
     Token: str
     
-class LoginPayload(BaseModel):
-    phone_number: Optional[str] = None
-    email_address: Optional[str] = None
-    password: str 
-
     class Config:
         orm_model = True
 
