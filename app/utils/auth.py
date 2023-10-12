@@ -48,13 +48,12 @@ def generate_access_token(user:schemas.UserLogin, db_user, db: Session = Depends
     access_token = create_access_token(data={"sub": user.email_address}, expires_delta=access_token_expires)
     return access_token
 
-def verify_token(token: str):
+def verify_token_frontend(token: str) -> bool:
     try:
         jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return True
     except JWTError:
         return False
-    
     
 async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
     credentials_exception = HTTPException(
