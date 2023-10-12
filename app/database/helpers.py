@@ -16,7 +16,10 @@ def create_item(db: Session, model, item_data):
     return db_item
 
 def update_item(db: Session, asset_id: int, updated_item_data):
-    db_item = db.query(models.Asset).filter(cast(models.Asset.asset_id, String) == cast(asset_id, String)).first()
+    # The asset_id is cast to a string to match with the asset_id in the models.
+    #  an error occurs if the casting is not done
+    db_item = db.query(models.Asset).filter(cast(models.Asset.asset_id, String) ==
+                                            cast(asset_id, String)).first()
     if db_item:
         for key, value in updated_item_data.items():
             setattr(db_item, key, value)

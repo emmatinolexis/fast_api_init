@@ -19,7 +19,6 @@ class UserLogin(BaseModel):
 class AssetType(BaseModel):
     asset_type_name: str
     status: str
-
     class Config:
         orm_model = True
 
