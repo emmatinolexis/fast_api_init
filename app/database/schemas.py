@@ -10,7 +10,7 @@ class User(BaseModel):
     phone_number: Optional[str]
     email_address: EmailStr
     password: str
-    verifiedAt: Optional[str]
+    verifiedAt: Optional[str] = "null"
     
 class UserLogin(BaseModel):
     email_address: EmailStr
