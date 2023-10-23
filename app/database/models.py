@@ -17,11 +17,15 @@ class BaseModel(Base):
 class User(BaseModel):
     __tablename__ = "users"
 
-    username = Column(String(length=30),nullable=True,default="",index=True)
+    # username = Column(String(length=30),nullable=True,default="",index=True)
+    first_name = Column(String(length=30),nullable=False,default="",index=True)
+    last_name = Column(String(length=30),nullable=False,default="",index=True)
     phone_number = Column(String(length=20), nullable=True, default="", index=True)
     email_address = Column(String(length=100), nullable=False, default="", index=True)
     password = Column(String(length=200), nullable=False)
-    verifiedAt = Column(String(length=100), nullable=False, default="", index=True)
+    verifiedAt = Column(String(length=100), nullable=True, default="", index=True)
+    location = Column(String(length=30),nullable=True,default="",index=True)
+    address = Column(String(length=50),nullable=True,default="",index=True)
     profile = relationship("Profile", uselist=False, back_populates="user")
 
 class Profile(BaseModel):

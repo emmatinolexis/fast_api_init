@@ -44,11 +44,17 @@ async def get_user_by_email(email: str, db: Session = Depends(get_db)):
 
 @router.post("/", response_model=None)
 async def create_user_handler(user: schemas.User, db: Session = Depends(get_db)):
-    if get_user_by_username(db=db, username=user.username):
-        raise HTTPException(status_code=400, detail="Username already exists")
+    if get_user_by_email(db=db, email=user.email_address):
+        raise HTTPException(status_code=400, detail="Email already exists")
+    return create_user(db, user)
+    
+
+
+    # if get_user_by_username(db=db, username=user.username):
+    #     raise HTTPException(status_code=400, detail="Username already exists")
     # if get_user_by_email(db=db, email=user.email_address):
     #     raise HTTPException(status_code=400, detail="Email address already exists")
-    return create_user(db, user)
+    # return create_user(db, user)
 
 @router.put("/{user}")
 async def update_username(get_current_user: schemas.User = Depends(get_current_user)):
