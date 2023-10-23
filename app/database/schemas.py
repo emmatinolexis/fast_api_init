@@ -10,11 +10,15 @@ class User(BaseModel):
     phone_number: Optional[str]
     email_address: EmailStr
     password: str
+    verification_token:str
     verifiedAt: Optional[str]
     
 class UserLogin(BaseModel):
     email_address: EmailStr
     password: str
+    
+class EmailVerfication(BaseModel):
+    email: str
     
 class AssetType(BaseModel):
     asset_type_name: str
