@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from app.database.helpers import get_all_items
 from app.utils.hashing import hash_user_password
+from app.utils.auth import extract_user_data
 
 from . import models, schemas
 from .helpers import get_all_items
@@ -34,16 +35,10 @@ def create_user(db: Session, user: schemas.User):
         email_address=user.email_address,
         password=hash_user_password(user.password),
         verifiedAt  = user.verifiedAt
-    ) 
-    user_dict = {
-        "first_name" : user.first_name,
-        "last_name" : user.last_name,
-        "location" : user.location,
-        "address" : user.address,
-        "phone_number": user.phone_number,
-        "email_address": user.email_address,
-        "verifiedAt": user.verifiedAt
-    }
+    )
+
+    user_dict = extract_user_data(db_user)
+
     db.add(db_user)
     db.commit()
     db.refresh(db_user)

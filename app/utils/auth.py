@@ -63,4 +63,12 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
     )
     return  verify_token(token, credentials_exception);
  
-    
+def extract_user_data(user):
+    return {
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "location": user.location,
+        "address": user.address,
+        "phone_number": user.phone_number,
+        "email_address": user.email_address
+    } 

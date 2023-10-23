@@ -11,21 +11,14 @@ from app.database.repository import (
 )
 from app.utils.auth import get_current_user
 from .shared import get_db
+from app.utils.auth import extract_user_data
+
 
 router = APIRouter(
     prefix="/users",
     tags=["users"],
 )
 
-def extract_user_data(user):
-    return {
-        "first_name": user.first_name,
-        "last_name": user.last_name,
-        "location": user.location,
-        "address": user.address,
-        "phone_number": user.phone_number,
-        "email_address": user.email_address
-    }
 
 @router.get("/", response_model=List[schemas.User])
 async def get_users_handler(db: Session = Depends(get_db)):
