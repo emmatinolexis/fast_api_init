@@ -19,7 +19,10 @@ router = APIRouter(
 
 def extract_user_data(user):
     return {
-        "username": user.username,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "location": user.location,
+        "address": user.address,
         "phone_number": user.phone_number,
         "email_address": user.email_address
     }
@@ -44,6 +47,7 @@ async def get_user_by_email(email: str, db: Session = Depends(get_db)):
 
 @router.post("/", response_model=None)
 async def create_user_handler(user: schemas.User, db: Session = Depends(get_db)):
+    # return user
     if get_user_by_email_address(db=db, email=user.email_address):
         raise HTTPException(status_code=400, detail="Email already exists")
     return create_user(db, user)
