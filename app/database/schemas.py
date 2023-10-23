@@ -6,7 +6,7 @@ from pydantic import EmailStr
 from pydantic_extra_types.phone_numbers import PhoneNumber
 
 class User(BaseModel):
-    username: Optional[str]
+    # username: Optional[str]
     first_name: str
     last_name: str
     location: Optional[str]
