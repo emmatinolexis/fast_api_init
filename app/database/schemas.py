@@ -7,10 +7,14 @@ from pydantic_extra_types.phone_numbers import PhoneNumber
 
 class User(BaseModel):
     username: Optional[str]
+    first_name: str
+    last_name: str
+    location: Optional[str]
+    address: Optional[str]
     phone_number: Optional[str]
     email_address: EmailStr
     password: str
-    verifiedAt: Optional[str]
+    verifiedAt: Optional[str] = "null"
     
 class UserLogin(BaseModel):
     email_address: EmailStr

@@ -25,13 +25,21 @@ def hash_user_password(password: str):
 
 def create_user(db: Session, user: schemas.User):
     db_user = models.User(
-        username = user.username,
+        # username = user.username,
+        first_name = user.first_name,
+        last_name = user.last_name,
+        location = user.location,
+        address = user.address,
         phone_number=user.phone_number,
         email_address=user.email_address,
         password=hash_user_password(user.password),
         verifiedAt  = user.verifiedAt
     ) 
-    user_dict = {
+    user = {
+        "first_name" : user.first_name,
+        "last_name" : user.last_name,
+        "location" : user.location,
+        "address" : user.address,
         "username": user.username,
         "phone_number": user.phone_number,
         "email_address": user.email_address,
@@ -40,4 +48,4 @@ def create_user(db: Session, user: schemas.User):
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
-    return user_dict
+    return user
