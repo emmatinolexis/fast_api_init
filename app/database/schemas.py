@@ -10,7 +10,6 @@ class User(BaseModel):
     phone_number: Optional[str]
     email_address: EmailStr
     password: str
-    verification_token:str
     verifiedAt: Optional[str]
     
 class UserLogin(BaseModel):

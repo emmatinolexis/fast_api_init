@@ -21,7 +21,6 @@ class User(BaseModel):
     phone_number = Column(String(length=20), nullable=True, default="", index=True)
     email_address = Column(String(length=100), nullable=False, default="", index=True)
     password = Column(String(length=200), nullable=False)
-    verification_token = Column(String(length=300), index=True, nullable=True) 
     verifiedAt = Column(String(length=100), nullable=False, default="", index=True)
     profile = relationship("Profile", uselist=False, back_populates="user")
 
