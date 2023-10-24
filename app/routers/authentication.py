@@ -12,7 +12,6 @@ from app.utils.auth import generate_access_token
 from app.utils.auth import verify_token_frontend
 from app.utils.email import read_email_template
 from app.utils.hashing import verify_token
-from app.utils.hashing import verify_password
 
 import smtplib
 from email.mime.text import MIMEText
@@ -48,7 +47,7 @@ async def verify_token_route(token_data: schemas.VerifyToken):
 
 @router.post("/verify-email")
 async def verify_user_email(email:schemas.EmailVerfication):
-    sender_email = "tariqsulley3c@gmail.com"
+    sender_email = "tariqsulley3c@gmail.co"
     receiver_email = "tariqsulley3c@gmail.com"
     message = MIMEMultipart("alternative")
     message["Subject"] = "MVI Tracking Email Verification"
@@ -75,17 +74,7 @@ async def login_handler(user: schemas.UserLogin, google_auth: Optional[bool] = F
     db_user = db.query(models.User).filter(models.User.email_address == user.email_address).first()
 
     if db_user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    # If not Google authentication, validate password
-    if not google_auth and not verify_password(user.password, db_user.password):
-        raise HTTPException(status_code=400, detail="Invalid credentials")
-
-    # If it's a Google authenticated user and doesn't have the flag set, update the flag
-    if google_auth and not db_user.google_auth:
-        db_user.google_auth = True
-        db.commit()  # Assuming `db` is your session instance.
-
-    access_token = generate_access_token(user, db_user)
-    return {"access_token": access_token, "token_type": "bearer", "user": extract_user_data(db_user)}
-
+        raise HTTPException(status_code=404,detail="User not found")
+    user_dict = extract_user_data(db_user)
+    access_token = generate_access_token(user,db_user)
+    return {"access_token": access_token, "user": user_dict, "permission":""}
