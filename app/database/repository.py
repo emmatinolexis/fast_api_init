@@ -5,7 +5,7 @@ from app.utils.hashing import hash_user_password
 
 from . import models, schemas
 from .helpers import get_all_items
-
+import uuid
 
 def get_all_users(db: Session):
     return get_all_items(db, models.User)
@@ -33,6 +33,8 @@ def create_user(db: Session, user: schemas.User):
         phone_number=user.phone_number,
         email_address=user.email_address,
         password=hash_user_password(user.password),
+        google_auth = user.google_auth,
+        verification_token=str(uuid.uuid4()),
         verifiedAt  = user.verifiedAt
     ) 
     user_dict = {

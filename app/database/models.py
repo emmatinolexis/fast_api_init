@@ -23,6 +23,8 @@ class User(BaseModel):
     phone_number = Column(String(length=20), nullable=True, default="", index=True)
     email_address = Column(String(length=100), nullable=False, default="", index=True)
     password = Column(String(length=200), nullable=False)
+    verification_token = Column(String(length=100), nullable=False, default="", index=True)
+    google_auth = Column(String(length=100), nullable=False, default="", index=True)
     verifiedAt = Column(String(length=100), nullable=True, default="", index=True)
     location = Column(String(length=30),nullable=True,default="",index=True)
     address = Column(String(length=50),nullable=True,default="",index=True)

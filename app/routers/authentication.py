@@ -7,10 +7,12 @@ from .shared import get_db
 
 from app.database import models
 from app.database import schemas
+from app.routers.users import extract_user_data
 from app.utils.auth import generate_access_token
 from app.utils.auth import verify_token_frontend
 from app.utils.email import read_email_template
 from app.utils.hashing import verify_token
+from app.utils.hashing import verify_password
 
 import smtplib
 from email.mime.text import MIMEText
@@ -52,7 +54,7 @@ async def verify_user_email(email:schemas.EmailVerfication):
     message["Subject"] = "MVI Tracking Email Verification"
     message["From"] = sender_email
     message["To"] = receiver_email
-    html_content = read_email_template() 
+    html_content = read_email_template().replace("{name}","Ganda")
 
     html_payload = MIMEText(html_content, "html")
     message.attach(html_payload)
@@ -66,16 +68,24 @@ async def verify_user_email(email:schemas.EmailVerfication):
 
 
 # async def login_handler(user: Annotated[OAuth2PasswordRequestForm, Depends()] , db: Session = Depends(get_db)):
+from typing import Optional
+
 @router.post("/login", response_model=None)
-async def login_handler(user: schemas.UserLogin, db: Session = Depends(get_db)):
+async def login_handler(user: schemas.UserLogin, google_auth: Optional[bool] = False, db: Session = Depends(get_db)):
     db_user = db.query(models.User).filter(models.User.email_address == user.email_address).first()
+
     if db_user is None:
-        raise HTTPException(status_code=404,detail="User not found")
-    user_dict = {
-    "username": db_user.username,
-    "phone_number": db_user.phone_number,
-    "email_address": db_user.email_address,
-    "verifiedAt":db_user.verifiedAt
-    }
-    access_token = generate_access_token(user,db_user)
-    return {"access_token": access_token, "token_type": "bearer", "user": user_dict}
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # If not Google authentication, validate password
+    if not google_auth and not verify_password(user.password, db_user.password):
+        raise HTTPException(status_code=400, detail="Invalid credentials")
+
+    # If it's a Google authenticated user and doesn't have the flag set, update the flag
+    if google_auth and not db_user.google_auth:
+        db_user.google_auth = True
+        db.commit()  # Assuming `db` is your session instance.
+
+    access_token = generate_access_token(user, db_user)
+    return {"access_token": access_token, "token_type": "bearer", "user": extract_user_data(db_user)}
+

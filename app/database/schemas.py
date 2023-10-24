@@ -6,7 +6,6 @@ from pydantic import EmailStr
 from pydantic_extra_types.phone_numbers import PhoneNumber
 
 class User(BaseModel):
-    # username: Optional[str]
     first_name: str
     last_name: str
     location: Optional[str]
@@ -14,6 +13,8 @@ class User(BaseModel):
     phone_number: Optional[str]
     email_address: EmailStr
     password: str
+    verification_token: Optional[str]
+    google_auth: str 
     verifiedAt: Optional[str] = "null"
     
 class UserLogin(BaseModel):

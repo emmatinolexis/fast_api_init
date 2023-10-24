@@ -63,6 +63,7 @@ def downgrade() -> None:
     sa.Column('phone_number', sa.VARCHAR(length=40), autoincrement=False, nullable=True),
     sa.Column('email_address', sa.VARCHAR(length=40), autoincrement=False, nullable=False),
     sa.Column('password', sa.VARCHAR(length=100), autoincrement=False, nullable=False),
+    sa.Column('verification_token', sa.VARCHAR(length=100), autoincrement=False, nullable=False),
     sa.Column('verifiedAt', sa.VARCHAR(length=100), autoincrement=False, nullable=False),
     sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
     sa.Column('created_at', postgresql.TIMESTAMP(timezone=True), server_default=sa.text('now()'), autoincrement=False, nullable=False),
