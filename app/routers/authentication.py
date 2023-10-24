@@ -12,6 +12,9 @@ from app.utils.auth import generate_access_token
 from app.utils.auth import verify_token_frontend
 from app.utils.email import read_email_template
 from app.utils.hashing import verify_token
+from app.utils.email import send_email
+from app.utils.auth import generate_verification_token
+
 
 import smtplib
 from email.mime.text import MIMEText
@@ -39,6 +42,7 @@ password = "ae4bfeca11542d"
 
 @router.post("/verify-token")
 async def verify_token_route(token_data: schemas.VerifyToken):
+    # send_email("Test Email","nuellexis@gmail.com", 'This is my message to you')
     if verify_token_frontend(token_data.Token):
         return {"message": "Token is valid"}
     else:
@@ -46,24 +50,29 @@ async def verify_token_route(token_data: schemas.VerifyToken):
 
 
 @router.post("/verify-email")
-async def verify_user_email(email:schemas.EmailVerfication):
-    sender_email = "tariqsulley3c@gmail.co"
-    receiver_email = "tariqsulley3c@gmail.com"
-    message = MIMEMultipart("alternative")
-    message["Subject"] = "MVI Tracking Email Verification"
-    message["From"] = sender_email
-    message["To"] = receiver_email
-    html_content = read_email_template().replace("{name}","Ganda")
+async def verify_user_email():
+    # generate verify_token
+    # update user details with generated token in verificatin_token
+    #send veriy email to user 
+    verify_token = generate_verification_token()
+    return verify_token
+    # sender_email = "tariqsulley3c@gmail.co"
+    # receiver_email = "tariqsulley3c@gmail.com"
+    # message = MIMEMultipart("alternative")
+    # message["Subject"] = "MVI Tracking Email Verification"
+    # message["From"] = sender_email
+    # message["To"] = receiver_email
+    # html_content = read_email_template().replace("{name}","Ganda")
 
-    html_payload = MIMEText(html_content, "html")
-    message.attach(html_payload)
+    # html_payload = MIMEText(html_content, "html")
+    # message.attach(html_payload)
 
-    with smtplib.SMTP("sandbox.smtp.mailtrap.io", 587) as server:
-        server.login(login, password)
-        server.sendmail(
-            sender_email, receiver_email, message.as_string()
-        )
-    return {"done":"success"}
+    # with smtplib.SMTP("sandbox.smtp.mailtrap.io", 587) as server:
+    #     server.login(login, password)
+    #     server.sendmail(
+    #         sender_email, receiver_email, message.as_string()
+    #     )
+    # return {"done":"success"}
 
 
 # async def login_handler(user: Annotated[OAuth2PasswordRequestForm, Depends()] , db: Session = Depends(get_db)):

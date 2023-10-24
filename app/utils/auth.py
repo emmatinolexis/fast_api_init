@@ -12,7 +12,8 @@ from app.utils.hashing import (
     verify_token,
     ACCESS_TOKEN_EXPIRE_MINUTES,
     SECRET_KEY,
-    ALGORITHM
+    ALGORITHM,
+    VERIFY_TOKEN_EXPIRE_MINUTES
 )
 
 from datetime import datetime, timedelta
@@ -46,6 +47,13 @@ def generate_access_token(user:schemas.UserLogin, db_user, db: Session = Depends
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,detail= "Invalid Credentials")
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(data={"sub": user.email_address}, expires_delta=access_token_expires)
+    return access_token
+
+def generate_verification_token():
+    access_token_expires = timedelta(minutes=VERIFY_TOKEN_EXPIRE_MINUTES)
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+    access_token = create_access_token(data="", expires_delta=access_token_expires)
     return access_token
 
 def verify_token_frontend(token: str) -> bool:

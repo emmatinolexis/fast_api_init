@@ -13,10 +13,10 @@ def read_email_template():
 def send_email(subject, recipient, message):
     try:
         # Create an SMTP connection to the Mailtrap server
-        server = smtplib.SMTP(os.environ.get('MAIL_HOST'), os.environ.get('MAIL_PORT'))
+        server = smtplib.SMTP("sandbox.smtp.mailtrap.io", "2525")
 
         # Login to the Mailtrap server
-        server.login(os.environ.get('MAIL_USERNAME'), os.environ.get('MAIL_PASSWORD'))
+        server.login("43fdc16faa9f48", "fbc44bb9382425")
 
         # Create an email message
         msg = MIMEMultipart()
@@ -26,7 +26,9 @@ def send_email(subject, recipient, message):
         msg.attach(MIMEText(message, 'plain'))
 
         # Send the email
-        server.sendmail(os.environ.get('MAIL_USERNAME'), recipient, msg.as_string())
+        server.sendmail("43fdc16faa9f48", recipient, msg.as_string())
+
+        return {"message": "mail sent"}
 
         # Close the SMTP connection
         server.quit()
