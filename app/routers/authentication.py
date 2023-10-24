@@ -67,10 +67,9 @@ async def verify_user_email(email:schemas.EmailVerfication):
 
 
 # async def login_handler(user: Annotated[OAuth2PasswordRequestForm, Depends()] , db: Session = Depends(get_db)):
-from typing import Optional
 
 @router.post("/login", response_model=None)
-async def login_handler(user: schemas.UserLogin, google_auth: Optional[bool] = False, db: Session = Depends(get_db)):
+async def login_handler(user: schemas.UserLogin, db: Session = Depends(get_db)):
     db_user = db.query(models.User).filter(models.User.email_address == user.email_address).first()
 
     if db_user is None:
