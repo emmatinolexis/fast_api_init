@@ -24,12 +24,14 @@ class User(BaseModel):
     email_address = Column(String(length=100), nullable=False, default="", index=True)
     password = Column(String(length=200), nullable=False)
     # verification_token = Column(String(length=100), nullable=False, default="", index=True)
-    google_auth = Column(String(length=100), nullable=False, default="", index=True)
-    verifiedAt = Column(String(length=100), nullable=True, default="", index=True)
+    # google_auth = Column(String(length=100), nullable=False, default="", index=True)
+    verifiedAt = Column(String(length=100), nullable=True, default=None, index=True)
     location = Column(String(length=30),nullable=True,default="",index=True)
     address = Column(String(length=50),nullable=True,default="",index=True)
     profile = relationship("Profile", uselist=False, back_populates="user")
     user_verification = relationship("EmailVerification", uselist=False, back_populates="user")
+    
+
     
 
 class Profile(BaseModel):
@@ -59,9 +61,12 @@ class TokenTable(Base):
     
 
 class EmailVerification(Base):
-    __tablename__ = "email_verification"
-    user_id = Column(Integer, ForeignKey("users.id"))
+    __tablename__ = "email_verifications"
+    user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
     verification_token = Column(String(450))
     expiry_date = Column(String(450),nullable=False)
+    user = relationship("User", back_populates="user_verification")
+
+    
     
 

@@ -85,7 +85,7 @@ def downgrade() -> None:
     sa.Column('phone_number', sa.VARCHAR(length=20), autoincrement=False, nullable=True),
     sa.Column('email_address', sa.VARCHAR(length=100), autoincrement=False, nullable=False),
     sa.Column('password', sa.VARCHAR(length=200), autoincrement=False, nullable=False),
-    sa.Column('verification_token', sa.VARCHAR(length=100), autoincrement=False, nullable=False),
+    # sa.Column('verification_token', sa.VARCHAR(length=100), autoincrement=False, nullable=False),
     sa.Column('verifiedAt', sa.VARCHAR(length=100), autoincrement=False, nullable=True),
     sa.Column('location', sa.VARCHAR(length=30), autoincrement=False, nullable=True),
     sa.Column('address', sa.VARCHAR(length=50), autoincrement=False, nullable=True),
@@ -113,4 +113,15 @@ def downgrade() -> None:
     sa.PrimaryKeyConstraint('id', name='profiles_pkey')
     )
     op.create_index('ix_profiles_id', 'profiles', ['id'], unique=False)
+
+    op.create_table('email_verifications',
+    sa.Column('user_id', sa.INTEGER(), autoincrement=False, nullable=False),
+    sa.Column('verification_token', sa.VARCHAR(length=100), autoincrement=False, nullable=False),
+    sa.Column('expiry_date', postgresql.TIMESTAMP(timezone=True), autoincrement=False, nullable=False),
+    sa.Column('created_at', postgresql.TIMESTAMP(timezone=True), server_default=sa.text('now()'), autoincrement=False, nullable=False),
+    sa.Column('updated_at', postgresql.TIMESTAMP(timezone=True), autoincrement=False, nullable=True),
+    sa.PrimaryKeyConstraint('id', name='email_verifications_pkey'),
+
+    ),
     # ### end Alembic commands ###
+

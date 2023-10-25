@@ -3,6 +3,7 @@ from fastapi import FastAPI
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from jinja2 import Environment, FileSystemLoader
 
 def read_email_template():
     current_directory = os.path.dirname(os.path.abspath(__file__))
@@ -10,28 +11,36 @@ def read_email_template():
     with open(template_path, "r") as file:
         return file.read()
     
-def send_email(subject, recipient, message):
+def send_email(subject, recipient, message, token=""):
     try:
         # Create an SMTP connection to the Mailtrap server
         server = smtplib.SMTP("sandbox.smtp.mailtrap.io", "2525")
 
+        # Load the email template from a file
+        env = Environment(loader=FileSystemLoader('app/templates'))
+        template = env.get_template('email-template.html')
+
         # Login to the Mailtrap server
         server.login("43fdc16faa9f48", "fbc44bb9382425")
 
+        # Create the email message using the template
+        message_data = template.render(recipient_name=recipient, message=message, verify_token = token)
+
         # Create an email message
         msg = MIMEMultipart()
-        msg["From"] = os.environ.get('MAIL_FROM')
+        msg["From"] = "no-reply@mvtracking.com"
         msg["To"] = recipient
         msg["Subject"] = subject
-        msg.attach(MIMEText(message, 'plain'))
+
+        msg.attach(MIMEText(message_data, 'html'))
 
         # Send the email
         server.sendmail("43fdc16faa9f48", recipient, msg.as_string())
 
-        return {"message": "mail sent"}
-
         # Close the SMTP connection
         server.quit()
+
+        return {"message": "mail sent"}
 
     except Exception as e:
         return {"message": f"Failed to send email: {str(e)}"}

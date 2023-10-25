@@ -12,8 +12,11 @@ from app.utils.auth import generate_access_token
 from app.utils.auth import verify_token_frontend
 from app.utils.email import read_email_template
 from app.utils.hashing import verify_token
-from app.utils.email import send_email
 from app.utils.auth import generate_verification_token
+from app.database.repository import create_verification_token
+from app.utils.hashing import VERIFY_TOKEN_EXPIRE_DAYS
+from datetime import datetime, timedelta
+
 
 
 import smtplib
@@ -41,41 +44,65 @@ password = "ae4bfeca11542d"
 # the token within the cookie undergoes a verification process.
 
 @router.post("/verify-token")
-async def verify_token_route(token_data: schemas.VerifyToken):
-    # send_email("Test Email","nuellexis@gmail.com", 'This is my message to you')
-    if verify_token_frontend(token_data.Token):
-        return {"message": "Token is valid"}
+async def verify_token_route(token_data: schemas.VerifyToken, db: Session = Depends(get_db) ):
+    #check if token exist
+    user_token = db.query(models.EmailVerification).filter(models.EmailVerification.verification_token == token_data.Token).first()
+    if user_token:
+        current_datetime = datetime.now()
+        date_format = "%Y-%m-%d %H:%M:%S.%f"
+        current_date = current_datetime.strftime(date_format)        
+        expiry_date = user_token.expiry_date 
+
+        #check if token has expired
+        if expiry_date > current_date:
+            #update user table verifiedAt to current date
+            user_token.user.verifiedAt = datetime.now()
+            db.commit()
+
+            # delete user token from token table
+            db.query(models.EmailVerification).filter(models.EmailVerification.verification_token == token_data.Token).delete()
+            db.commit()
+
+            return {"detail": "User verified successfully"}
+        else:
+            raise HTTPException(status_code=404,detail="Verification code expired")
     else:
-        raise HTTPException(status_code=401, detail="Token is invalid or expired")
+        raise HTTPException(status_code=404,detail="Verification token not found")
+
+
 
 
 @router.post("/verify-email")
-async def verify_user_email():
-    # generate verify_token
-    # update user details with generated token in verificatin_token
-    #send veriy email to user 
-    verify_token = generate_verification_token()
-    return verify_token
-    # sender_email = "tariqsulley3c@gmail.co"
-    # receiver_email = "tariqsulley3c@gmail.com"
-    # message = MIMEMultipart("alternative")
-    # message["Subject"] = "MVI Tracking Email Verification"
-    # message["From"] = sender_email
-    # message["To"] = receiver_email
-    # html_content = read_email_template().replace("{name}","Ganda")
+async def verify_user_email(user: schemas.UserEmailVerification, db: Session = Depends(get_db) ):
+    #check if user already verified
+    db_user = db.query(models.User).filter(models.User.id == user.user_id).first()
+    if db_user:
+        if db_user.verifiedAt is None:
+            #check if token already generated
+            verified_user = db.query(models.EmailVerification).filter(models.EmailVerification.user_id == user.user_id).first()
 
-    # html_payload = MIMEText(html_content, "html")
-    # message.attach(html_payload)
+            if verified_user is None:
 
-    # with smtplib.SMTP("sandbox.smtp.mailtrap.io", 587) as server:
-    #     server.login(login, password)
-    #     server.sendmail(
-    #         sender_email, receiver_email, message.as_string()
-    #     )
-    # return {"done":"success"}
+                # Generate token
+                verify_token = generate_verification_token()
+                
+                token_detail = {
+                    "user_id" : user.user_id,
+                    "verification_token" : verify_token,
+                }
+
+                # save generated token into db
+                return create_verification_token(db, user,token_detail)
+            else:
+                raise HTTPException(status_code=404,detail="Verification code already generated, please check email to verify")
+        else:
+            raise HTTPException(status_code=404,detail="User already verified")
+    else:
+        raise HTTPException(status_code=404,detail="User not found")
 
 
-# async def login_handler(user: Annotated[OAuth2PasswordRequestForm, Depends()] , db: Session = Depends(get_db)):
+
+    
 
 @router.post("/login", response_model=None)
 async def login_handler(user: schemas.UserLogin, db: Session = Depends(get_db)):

@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.database import schemas
 from fastapi.security import OAuth2PasswordBearer
 from typing import Annotated
+import random
+import string
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
@@ -13,7 +15,6 @@ from app.utils.hashing import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     SECRET_KEY,
     ALGORITHM,
-    VERIFY_TOKEN_EXPIRE_MINUTES
 )
 
 from datetime import datetime, timedelta
@@ -49,12 +50,9 @@ def generate_access_token(user:schemas.UserLogin, db_user, db: Session = Depends
     access_token = create_access_token(data={"sub": user.email_address}, expires_delta=access_token_expires)
     return access_token
 
-def generate_verification_token():
-    access_token_expires = timedelta(minutes=VERIFY_TOKEN_EXPIRE_MINUTES)
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
-    access_token = create_access_token(data="", expires_delta=access_token_expires)
-    return access_token
+def generate_verification_token(length = 100):
+    verify_token = ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+    return verify_token
 
 def verify_token_frontend(token: str) -> bool:
     try:

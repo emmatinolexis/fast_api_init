@@ -58,8 +58,7 @@ async def update_username(get_current_user: schemas.User = Depends(get_current_u
     pass
 
 @router.delete("/{username}", response_model=None)
-async def delete_user_by_username_handler(username: str, db: Session = Depends(get_db),
-                                          current_user: schemas.User = Depends(get_current_user)):
+async def delete_user_by_username_handler(username: str, db: Session = Depends(get_db),current_user: schemas.User = Depends(get_current_user)):
     user = get_user_by_username(db=db, username=username)
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")

@@ -25,12 +25,12 @@
             <div style="display: flex; align-items: center; justify-content: center;">
                 <img src="https://i.imgur.com/GEvKmxh.png" alt="MV Tracking Logo" style="width: 200px; height:120px;">
             </div>
-            <p style="font-size:20px; font-weight:bold;"> Hello. {name}</p>
-            <p style="font-size:20px "> Please use the button link below to verify your account and get started with MVI 
-            tracking solutions.</p>
-            <button style="background: #00458d; color: white; font-size:20px; padding: 18px 25px; border: none; border-radius: 12px; cursor: pointer;">
-            <a href="" style="color:white;">Verify your email</a>
-            </button>
+            <p style="font-size:20px; font-weight:bold;"> Hello, {{recipient_name}}</p>
+            <p style="font-size:20px "> {{message}}</p>
+            <a href="http://127.0.0.1:8000/verify_token/{{verify_token}}" style="color:white; ">
+                <button style="background: #00458d; color: white; font-size:20px; padding: 18px 25px; border: none; border-radius: 12px; cursor: pointer;">Verify Email
+                </button>
+            </a>
             <p style="font-size:20px"> If you did not make this request, please ignore this email.
             </div>
     </body>

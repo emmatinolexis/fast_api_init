@@ -13,16 +13,19 @@ class User(BaseModel):
     phone_number: Optional[str]
     email_address: EmailStr
     password: str
-    verification_token: Optional[str]
-    google_auth: str 
-    verifiedAt: Optional[str] = "null"
     
 class UserLogin(BaseModel):
     email_address: EmailStr
     password: str
     
-class EmailVerfication(BaseModel):
-    email: str
+class EmailVerification(BaseModel):
+    user_id: str
+    verification_token: str
+    expiry_date: str
+
+class UserEmailVerification(BaseModel):
+    user_id: str
+
     
 class AssetType(BaseModel):
     asset_type_name: str
