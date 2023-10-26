@@ -85,8 +85,8 @@ class Package(BaseModel):
     
 class PackageItemAssignment(BaseModel):
     __tablename__ = "package_item_assignments"
-    package_id = Column(Integer,nullable=False,default="", index=True)
-    package_item_id = Column(Integer(length=50),nullable=False,default="", index=True)
+    package_id = Column(Integer, ForeignKey("packages.id"))
+    package_item_id = Column(Integer, ForeignKey("package_items.id"))
     package_item = relationship("PackageItem", uselist=False)
 
 class Feature(BaseModel):
@@ -99,7 +99,7 @@ class Feature(BaseModel):
 class Equipment(BaseModel):
     __tablename__ = "equipments"
     equipment_name = Column(String(length=50),nullable=False,default="", index=True)
-    equipment_type_id = Column(Integer(length=50),nullable=False,default="", index=True)
+    equipment_type_id = Column(Integer, ForeignKey("equipment_types.id"))
     marker_icon_url = Column(String(length=50),nullable=False,default="", index=True)
     marker_icon_colour = Column(String(length=50),nullable=False,default="", index=True)
     equipment_type = relationship("EquipmentType", uselist=False, back_populates="equipment")
@@ -114,17 +114,17 @@ class EquipmentType(BaseModel):
     
 class Onboarding(BaseModel):
     __tablename__ = "onboardings"
-    asset_type_id = Column(Integer(length=10),nullable=False,default="", index=True)
+    asset_type_id = Column(Integer, ForeignKey("asset_types.id"))
     number_of_assets = Column(String(length=50),nullable=False,default="", index=True)
-    package_id = Column(Integer(length=10),nullable=False,default="", index=True)
-    user_id = Column(Integer(length=10),nullable=False,default="", index=True)
+    package_id = Column(Integer, ForeignKey("packages.id"))
+    user_id = Column(Integer, ForeignKey("users.id"))
     user = relationship("User", uselist=False)
 
     
 class OnboardingFeatureAssignment(BaseModel):
     __tablename__ = "onboarding_feature_assignments"
-    onboarding_id = Column(Integer(length=10),nullable=False,default="", index=True)
-    feature_id = Column(Integer(length=10),nullable=False,default="", index=True)
+    onboarding_id = Column(Integer, ForeignKey("onboardings.id"))
+    feature_id = Column(Integer, ForeignKey("features.id"))
     
 class ContactSale(BaseModel):
     __tablename__ = "contact_sales"
