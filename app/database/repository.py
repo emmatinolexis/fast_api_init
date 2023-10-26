@@ -40,12 +40,23 @@ def create_user(db: Session, user: schemas.User):
         password=hash_user_password(user.password),
     )
 
-    user_dict = extract_user_data(db_user)
-
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
-    return user_dict
+
+    created_user = db.query(models.User).filter(models.User.email_address == db_user.email_address).first()
+    
+    returned_user = {
+        "first_name": created_user.first_name,
+        "last_name": created_user.last_name,
+        "location": created_user.location,
+        "address": created_user.address,
+        "phone_number": created_user.phone_number,
+        "email_address": created_user.email_address,
+        "user_id": created_user.id
+    } 
+
+    return returned_user
 
 def create_verification_token(db: Session, user_verify: schemas.UserEmailVerification, verification_token:schemas.EmailVerification) -> bool:
     

@@ -77,5 +77,4 @@ def extract_user_data(user):
         "address": user.address,
         "phone_number": user.phone_number,
         "email_address": user.email_address,
-        "user_id" : user.id
     } 

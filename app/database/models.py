@@ -45,10 +45,10 @@ class Asset(BaseModel):
     __tablename__ = "assets"
     asset_name = Column(String(length=50),nullable=False,default="", index=True)
     asset_status = Column(String(length=15),nullable=False,default="", index=True)
-    user_id = Column(Integer,nullable=False,default="", index=True)
-    asset_type_id = Column(Integer,nullable=False,default="", index=True)
-    equipment_id = Column(Integer,nullable=False,default="", index=True)
-    vin_no = Column(Integer,nullable=True,default="", index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    asset_type_id = Column(Integer, ForeignKey("asset_types.id"))
+    equipment_id = Column(Integer, ForeignKey("equipments.id"))
+    vin_no = Column(String(length=100),nullable=True,default="", index=True)
     user = relationship("User", uselist=False)
     asset_type = relationship("AssetType", uselist=False)
     equipment = relationship("Equipment", uselist=False)
@@ -99,13 +99,12 @@ class Equipment(BaseModel):
     equipment_type_id = Column(Integer, ForeignKey("equipment_types.id"))
     marker_icon_url = Column(String(length=50),nullable=False,default="", index=True)
     marker_icon_colour = Column(String(length=50),nullable=False,default="", index=True)
-    equipment_type = relationship("EquipmentType", uselist=False, back_populates="equipment")
+    equipment_type = relationship("EquipmentType", uselist=False)
 
 class EquipmentType(BaseModel):
     __tablename__ = "equipment_types"
     equipment_type_name = Column(String(length=50),nullable=False,default="", index=True)
     status = Column(String(length=50),nullable=False,default="", index=True)
-    equipments= relationship("EquipmentType", uselist=True, back_populates="equipment_type")
 
 class Onboarding(BaseModel):
     __tablename__ = "onboardings"
