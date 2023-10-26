@@ -28,9 +28,6 @@ class User(BaseModel):
     profile = relationship("Profile", uselist=False, back_populates="user")
     user_verification = relationship("EmailVerification", uselist=False, back_populates="user")
     
-
-    
-
 class Profile(BaseModel):
     __tablename__ = "profiles"
 
@@ -44,16 +41,17 @@ class AssetType(BaseModel):
     icon_url = Column(String(length=50), nullable=False, default="", index=True)
     status = Column(String(length=50), nullable=False, default="", index=True)
 
-
 class Asset(BaseModel):
     __tablename__ = "assets"
     asset_name = Column(String(length=50),nullable=False,default="", index=True)
-    asset_id = Column(String(length=10),nullable=False,default="", index=True)
     asset_status = Column(String(length=15),nullable=False,default="", index=True)
     user_id = Column(Integer,nullable=False,default="", index=True)
     asset_type_id = Column(Integer,nullable=False,default="", index=True)
     equipment_id = Column(Integer,nullable=False,default="", index=True)
     vin_no = Column(Integer,nullable=True,default="", index=True)
+    user = relationship("User", uselist=False)
+    asset_type = relationship("AssetType", uselist=False)
+    equipment = relationship("Equipment", uselist=False)
 
 class TokenTable(Base):
     __tablename__ = "token"
@@ -63,7 +61,6 @@ class TokenTable(Base):
     status = Column(Boolean)
     created_date = Column(DateTime, default=datetime.datetime.now)
     
-
 class EmailVerification(Base):
     __tablename__ = "email_verifications"
     user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
@@ -104,14 +101,12 @@ class Equipment(BaseModel):
     marker_icon_colour = Column(String(length=50),nullable=False,default="", index=True)
     equipment_type = relationship("EquipmentType", uselist=False, back_populates="equipment")
 
-
 class EquipmentType(BaseModel):
     __tablename__ = "equipment_types"
     equipment_type_name = Column(String(length=50),nullable=False,default="", index=True)
     status = Column(String(length=50),nullable=False,default="", index=True)
     equipments= relationship("EquipmentType", uselist=True, back_populates="equipment_type")
 
-    
 class Onboarding(BaseModel):
     __tablename__ = "onboardings"
     asset_type_id = Column(Integer, ForeignKey("asset_types.id"))
@@ -119,8 +114,10 @@ class Onboarding(BaseModel):
     package_id = Column(Integer, ForeignKey("packages.id"))
     user_id = Column(Integer, ForeignKey("users.id"))
     user = relationship("User", uselist=False)
+    package = relationship("Package", uselist=False)
+    asset_type = relationship("AssetType", uselist=False)
+    features = relationship("OnboardingFeatureAssignment", uselist=True)
 
-    
 class OnboardingFeatureAssignment(BaseModel):
     __tablename__ = "onboarding_feature_assignments"
     onboarding_id = Column(Integer, ForeignKey("onboardings.id"))
