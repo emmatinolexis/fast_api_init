@@ -50,10 +50,10 @@ class Asset(BaseModel):
     asset_name = Column(String(length=50),nullable=False,default="", index=True)
     asset_id = Column(String(length=10),nullable=False,default="", index=True)
     asset_status = Column(String(length=15),nullable=False,default="", index=True)
-    user_id = Column(Integer(length=50),nullable=False,default="", index=True)
-    asset_type_id = Column(Integer(length=50),nullable=False,default="", index=True)
-    equipment_id = Column(Integer(length=50),nullable=False,default="", index=True)
-    vin_no = Column(Integer(length=50),nullable=True,default="", index=True)
+    user_id = Column(Integer,nullable=False,default="", index=True)
+    asset_type_id = Column(Integer,nullable=False,default="", index=True)
+    equipment_id = Column(Integer,nullable=False,default="", index=True)
+    vin_no = Column(Integer,nullable=True,default="", index=True)
 
 class TokenTable(Base):
     __tablename__ = "token"
@@ -85,7 +85,7 @@ class Package(BaseModel):
     
 class PackageItemAssignment(BaseModel):
     __tablename__ = "package_item_assignments"
-    package_id = Column(Integer(length=50),nullable=False,default="", index=True)
+    package_id = Column(Integer,nullable=False,default="", index=True)
     package_item_id = Column(Integer(length=50),nullable=False,default="", index=True)
     package_item = relationship("PackageItem", uselist=False)
 
