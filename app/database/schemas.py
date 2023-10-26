@@ -54,7 +54,35 @@ class Token(BaseModel):
     access_token: str
     token_type: str
  
+class PackageItems(BaseModel):
+    item_name: str
+    status: str
+    
+class Package(BaseModel):
+    package_name: str
+    package_price: str
+    package_description: str
+    
+class PackageItemAssignment(BaseModel):
+    package_item: str
+    package_item_id: str
 
+class Feature(BaseModel):
+    feature_name: str
+    feature_description: str
+    icon: str
+    status: str
+    
+class Equipment(BaseModel):
+    equipment_name: str
+    equipment_id: str
+    marker_icon: str
+    marker_icon_colour: str
+    
+class EquipmentType(BaseModel):
+    equipment_type_name: str
+    
+    
 
 
 

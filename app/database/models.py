@@ -67,6 +67,57 @@ class EmailVerification(Base):
     expiry_date = Column(String(450),nullable=False)
     user = relationship("User", back_populates="user_verification")
 
+class PackageItems(BaseModel):
+    __tablename__ = "package_items"
+    item_name = Column(String(length=50),nullable=False,default="", index=True)
+    status = Column(String(length=15),nullable=False,default="", index=True)
     
-    
+class Package(BaseModel):
+    __tablename__ = "packages"
+    package_name = Column(String(length=50),nullable=False,default="", index=True)
+    package_price = Column(String(length=50),nullable=False,default="", index=True)      
+    package_description = Column(String(length=50),nullable=False,default="", index=True)
 
+class PackageItemAssignment(BaseModel):
+    __tablename__ = "package_item_assignments"
+    package_item = Column(String(length=50),nullable=False,default="", index=True)
+    package_item_id = Column(String(length=10),nullable=False,default="", index=True)
+
+
+class Feature(BaseModel):
+    __tablename__ = "features"
+    feature_name = Column(String(length=50),nullable=False,default="", index=True)
+    feature_description = Column(String(length=50),nullable=False,default="", index=True)
+    icon = Column(String(length=50),nullable=False,default="", index=True)
+    status = Column(String(length=50),nullable=False,default="", index=True)
+
+class Equipment(BaseModel):
+    __tablename__ = "equipments"
+    equipment_name = Column(String(length=50),nullable=False,default="", index=True)
+    equipment_id = Column(String(length=10),nullable=False,default="", index=True)
+    marker_icon = Column(String(length=50),nullable=False,default="", index=True)
+    marker_icon_colour = Column(String(length=50),nullable=False,default="", index=True)
+
+class EquipmentType(BaseModel):
+    __tablename__ = "equipment_types"
+    equipment_type_name = Column(String(length=50),nullable=False,default="", index=True)
+    
+class Onboarding(BaseModel):
+    __tablename__ = "onboarding"
+    asset_type_id = Column(String(length=10),nullable=False,default="", index=True)
+    number_of_assets = Column(String(length=10),nullable=False,default="", index=True)
+    package_id = Column(String(length=10),nullable=False,default="", index=True)
+    user_id = Column(String(length=10),nullable=False,default="", index=True)
+    
+class OnboardingFeatureAssignment(BaseModel):
+    __tablename__ = "onboarding_features_assignments"
+    onboarding_id = Column(String(length=10),nullable=False,default="", index=True)
+    feature_id = Column(String(length=10),nullable=False,default="", index=True)
+    
+class ContactSales(BaseModel):
+    __tablename__ = "contact_sales"
+    phone_number = Column(String(length=20), nullable=True, default="", index=True)
+    call_time = Column(String(length=20), nullable=True, default="", index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    status = Column(String(length=50),nullable=False,default="", index=True)
+    
