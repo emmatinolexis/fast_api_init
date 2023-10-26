@@ -80,7 +80,7 @@ def create_verification_token(db: Session, user_verify: schemas.UserEmailVerific
     
     message = "Please use the button link below to verify your account and get started with MVI tracking solutions."
 
-    return send_email(subject=subject,recipient=db_user.first_name, message=message, token=db_verify.verification_token)
+    return send_email(subject=subject,recipient=db_user.first_name,email=db_user.email_address, message=message, token=db_verify.verification_token)
 
     
 
