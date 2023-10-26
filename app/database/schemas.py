@@ -14,6 +14,7 @@ class User(BaseModel):
     email_address: EmailStr
     password: str
     
+    
 class UserLogin(BaseModel):
     email_address: EmailStr
     password: str
@@ -24,11 +25,12 @@ class EmailVerification(BaseModel):
     expiry_date: str
 
 class UserEmailVerification(BaseModel):
-    user_id: str
+    user_id: int
 
-    
 class AssetType(BaseModel):
     asset_type_name: str
+    description: str
+    icon_url: str
     status: str
     class Config:
         orm_model = True
@@ -37,7 +39,7 @@ class Asset(BaseModel):
     asset_name: str
     asset_id: int
     asset_status: str
-    user_id: str
+    user_id: int
     class Config:
         orm_model = True
 
@@ -64,24 +66,59 @@ class Package(BaseModel):
     package_description: str
     
 class PackageItemAssignment(BaseModel):
-    package_item: str
     package_item_id: str
+    package_id: int
 
 class Feature(BaseModel):
     feature_name: str
     feature_description: str
-    icon: str
+    icon_url: str
     status: str
     
 class Equipment(BaseModel):
     equipment_name: str
     equipment_id: str
-    marker_icon: str
+    marker_icon_url: str
     marker_icon_colour: str
     
 class EquipmentType(BaseModel):
     equipment_type_name: str
+
+class ContactSale(BaseModel):
+    phone: str
+    call_time:str
+    user_id:int
+
+class Onboarding(BaseModel):
+    asset_type_id: int 
+    no_of_assets: int
+    package_id: int
+    user_id: int
+
+class Asset(BaseModel):
+    user_id: int
+    asset_type_id: int
+    asset_name: str
+    equipment_id: int
+    vin_no: str
+
+class Equipment:
+    equipment_name:str
+    equipment_type_id: int
+    marker_icon_url: str
+    marker_icon_color: str
+
+class OnboardingFeatureAssignment:
+    onboarding_id:int
+    feature_id: int
+
+class EquipmentType:
+    equipment_type_name: str
+    status: str
+
     
+
+
     
 
 
