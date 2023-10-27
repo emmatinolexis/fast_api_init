@@ -21,22 +21,26 @@ router = APIRouter(
 
 
 @router.get("/", response_model=List[schemas.User])
-async def get_users_handler(db: Session = Depends(get_db)):
+async def get_users_handler(db: Session = Depends(get_db), user: schemas.User = Depends(get_current_user)):
     return get_all_users(db=db)
 
-@router.get("/username/{username}", response_model=None)
+@router.put("/{user}")
+async def update_username(get_current_user: schemas.User = Depends(get_current_user)):
+    pass
+
+@router.get("/username/{username}", response_model=schemas.User)
 async def get_user_by_name(username: str, db: Session = Depends(get_db)):
     user = get_user_by_username(db=db, username=username)
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
     return extract_user_data(user)
 
-@router.get("/email/{email}", response_model=None)
-async def get_user_by_email(email: str, db: Session = Depends(get_db)):
-    user = get_user_by_email_address(db=db, email=email)
-    if user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    return extract_user_data(user)
+# @router.get("/email/{email}", response_model=None)
+# async def get_user_by_email(email: str, db: Session = Depends(get_db)):
+#     user = get_user_by_email_address(db=db, email=email)
+#     if user is None:
+#         raise HTTPException(status_code=404, detail="User not found")
+#     return extract_user_data(user)
 
 @router.post("/", response_model=None)
 async def create_user_handler(user: schemas.User, db: Session = Depends(get_db)):

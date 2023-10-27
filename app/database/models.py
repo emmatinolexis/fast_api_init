@@ -146,5 +146,9 @@ class ContactSale(BaseModel):
     status = Column(String(length=50),nullable=False,default="", index=True)
     user = relationship("User", uselist=False)
 
-
+class Testtb(BaseModel):
+    __tablename__ = "testtd"
+    uuid = Column(String(length=100), nullable=False, default=uuid.uuid4, index=True)
+    onboarding_id = Column(Integer, ForeignKey("onboardings.id"))
+    feature_id = Column(Integer, ForeignKey("features.id"))
 

@@ -53,7 +53,7 @@ def create_user(db: Session, user: schemas.User):
         "address": created_user.address,
         "phone_number": created_user.phone_number,
         "email_address": created_user.email_address,
-        "user_id": created_user.id
+        "uuid": created_user.uuid
     } 
 
     return returned_user
