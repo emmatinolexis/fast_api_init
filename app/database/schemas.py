@@ -4,6 +4,12 @@ from typing import  Union
 from pydantic import BaseModel
 from pydantic import EmailStr
 from pydantic_extra_types.phone_numbers import PhoneNumber
+# from app.utils.utils import generate_uuid
+# from uuid import UUID, uuid4
+
+
+# class BaseUUIDModel(BaseModel):
+#     uuid: UUID = Field(default_factory=uuid4)
 
 class User(BaseModel):
     first_name: str
@@ -13,7 +19,6 @@ class User(BaseModel):
     phone_number: Optional[str]
     email_address: EmailStr
     password: str
-    
     
 class UserLogin(BaseModel):
     email_address: EmailStr
