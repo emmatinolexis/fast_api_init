@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Boolean, ForeignKey, Integer, String, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+from sqlalchemy.dialects.postgresql import UUID
 
 import uuid
 
@@ -19,7 +20,7 @@ class BaseModel(Base):
 
 class User(BaseModel):
     __tablename__ = "users"
-    uuid = Column(String(length=100), nullable=False, default=uuid.uuid4, index=True)
+    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
     first_name = Column(String(length=30),nullable=False,default="",index=True)
     last_name = Column(String(length=30),nullable=False,default="",index=True)
     phone_number = Column(String(length=20), nullable=True, default="", index=True)
@@ -33,13 +34,13 @@ class User(BaseModel):
     
 class Profile(BaseModel):
     __tablename__ = "profiles"
-    uuid = Column(String(length=100), nullable=False, default=uuid.uuid4, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
+    user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
     user = relationship("User", back_populates="profile")
     
 class AssetType(BaseModel):
     __tablename__ = "asset_types"
-    uuid = Column(String(length=100), nullable=False, default=uuid.uuid4, index=True)
+    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
     asset_type_name = Column(String(length=50), nullable=False, default="", index=True)
     description = Column(String(length=100), nullable=True, default="", index=True)
     icon_url = Column(String(length=50), nullable=False, default="", index=True)
@@ -47,12 +48,12 @@ class AssetType(BaseModel):
 
 class Asset(BaseModel):
     __tablename__ = "assets"
-    uuid = Column(String(length=100), nullable=False, default=uuid.uuid4, index=True)
+    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
     asset_name = Column(String(length=50),nullable=False,default="", index=True)
     asset_status = Column(String(length=15),nullable=False,default="", index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    asset_type_id = Column(Integer, ForeignKey("asset_types.id"))
-    equipment_id = Column(Integer, ForeignKey("equipments.id"))
+    user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
+    asset_type_uuid = Column(UUID(as_uuid=True), ForeignKey("asset_types.uuid"), nullable=False)
+    equipment_uuid = Column(UUID(as_uuid=True), ForeignKey("equipments.uuid"), nullable=False)
     vin_no = Column(String(length=100),nullable=True,default="", index=True)
     user = relationship("User", uselist=False)
     asset_type = relationship("AssetType", uselist=False)
@@ -60,8 +61,8 @@ class Asset(BaseModel):
 
 class TokenTable(Base):
     __tablename__ = "token"
-    uuid = Column(String(length=100), nullable=False, default=uuid.uuid4, index=True)
-    user_id = Column(Integer)
+    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
+    user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
     access_toke = Column(String(450), primary_key=True)
     refresh_toke = Column(String(450),nullable=False)
     status = Column(Boolean)
@@ -69,21 +70,21 @@ class TokenTable(Base):
     
 class EmailVerification(Base):
     __tablename__ = "email_verifications"
-    uuid = Column(String(length=100), nullable=False, default=uuid.uuid4, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
+    user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), primary_key=True, nullable=False)
     verification_token = Column(String(450))
     expiry_date = Column(String(450),nullable=False)
     user = relationship("User", back_populates="user_verification")
 
 class PackageItem(BaseModel):
     __tablename__ = "package_items"
-    uuid = Column(String(length=100), nullable=False, default=uuid.uuid4, index=True)
+    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
     item_name = Column(String(length=50),nullable=False,default="", index=True)
     status = Column(String(length=15),nullable=False,default="", index=True)
     
 class Package(BaseModel):
     __tablename__ = "packages"
-    uuid = Column(String(length=100), nullable=False, default=uuid.uuid4, index=True)
+    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
     package_name = Column(String(length=50),nullable=False,default="", index=True)
     package_price = Column(String(length=50),nullable=False,default="", index=True)      
     package_description = Column(String(length=100),nullable=True,default="", index=True)
@@ -91,14 +92,14 @@ class Package(BaseModel):
     
 class PackageItemAssignment(BaseModel):
     __tablename__ = "package_item_assignments"
-    uuid = Column(String(length=100), nullable=False, default=uuid.uuid4, index=True)
-    package_id = Column(Integer, ForeignKey("packages.id"))
-    package_item_id = Column(Integer, ForeignKey("package_items.id"))
+    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
+    package_uuid = Column(UUID(as_uuid=True), ForeignKey("packages.uuid"), nullable=False)
+    package_item_uuid = Column(UUID(as_uuid=True), ForeignKey("package_items.uuid"), nullable=False)
     package_item = relationship("PackageItem", uselist=False)
 
 class Feature(BaseModel):
     __tablename__ = "features"
-    uuid = Column(String(length=100), nullable=False, default=uuid.uuid4, index=True)
+    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
     feature_name = Column(String(length=50),nullable=False,default="", index=True)
     feature_description = Column(String(length=100),nullable=False,default="", index=True)
     icon_url = Column(String(length=50),nullable=False,default="", index=True)
@@ -106,26 +107,26 @@ class Feature(BaseModel):
 
 class Equipment(BaseModel):
     __tablename__ = "equipments"
-    uuid = Column(String(length=100), nullable=False, default=uuid.uuid4, index=True)
+    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
     equipment_name = Column(String(length=50),nullable=False,default="", index=True)
-    equipment_type_id = Column(Integer, ForeignKey("equipment_types.id"))
+    equipment_type_uuid = Column(UUID(as_uuid=True), ForeignKey("equipment_types.uuid"))
     marker_icon_url = Column(String(length=50),nullable=False,default="", index=True)
     marker_icon_colour = Column(String(length=50),nullable=False,default="", index=True)
     equipment_type = relationship("EquipmentType", uselist=False)
 
 class EquipmentType(BaseModel):
     __tablename__ = "equipment_types"
-    uuid = Column(String(length=100), nullable=False, default=uuid.uuid4, index=True)
+    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
     equipment_type_name = Column(String(length=50),nullable=False,default="", index=True)
     status = Column(String(length=50),nullable=False,default="", index=True)
 
 class Onboarding(BaseModel):
     __tablename__ = "onboardings"
-    uuid = Column(String(length=100), nullable=False, default=uuid.uuid4, index=True)
-    asset_type_id = Column(Integer, ForeignKey("asset_types.id"))
+    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
+    asset_type_uuid = Column(UUID(as_uuid=True), ForeignKey("asset_types.uuid"))
     number_of_assets = Column(String(length=50),nullable=False,default="", index=True)
-    package_id = Column(Integer, ForeignKey("packages.id"))
-    user_id = Column(Integer, ForeignKey("users.id"))
+    package_uuid = Column(UUID(as_uuid=True), ForeignKey("packages.uuid"), nullable=False)
+    user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
     user = relationship("User", uselist=False)
     package = relationship("Package", uselist=False)
     asset_type = relationship("AssetType", uselist=False)
@@ -133,22 +134,18 @@ class Onboarding(BaseModel):
 
 class OnboardingFeatureAssignment(BaseModel):
     __tablename__ = "onboarding_feature_assignments"
-    uuid = Column(String(length=100), nullable=False, default=uuid.uuid4, index=True)
-    onboarding_id = Column(Integer, ForeignKey("onboardings.id"))
-    feature_id = Column(Integer, ForeignKey("features.id"))
+    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
+    onboarding_uuid = Column(UUID(as_uuid=True), ForeignKey("onboardings.uuid"), nullable=False)
+    feature_uuid = Column(UUID(as_uuid=True), ForeignKey("features.uuid"), nullable=False)
     
 class ContactSale(BaseModel):
     __tablename__ = "contact_sales"
-    uuid = Column(String(length=100), nullable=False, default=uuid.uuid4, index=True)
+    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
     phone_number = Column(String(length=20), nullable=True, default="", index=True)
     call_time = Column(String(length=20), nullable=True, default="", index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
     status = Column(String(length=50),nullable=False,default="", index=True)
     user = relationship("User", uselist=False)
 
-class Testtb(BaseModel):
-    __tablename__ = "testtd"
-    uuid = Column(String(length=100), nullable=False, default=uuid.uuid4, index=True)
-    onboarding_id = Column(Integer, ForeignKey("onboardings.id"))
-    feature_id = Column(Integer, ForeignKey("features.id"))
+
 

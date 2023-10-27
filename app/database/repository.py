@@ -16,8 +16,15 @@ import uuid
 def get_all_users(db: Session):
     return get_all_items(db, models.User)
 
-def get_user_by_username(db:Session,username:str):
-    return db.query(models.User).filter(models.User.username == username).first()
+def update_user_by_uuid(db:Session,uuid:str, user : schemas.User):
+    user_to_update = db.query(models.User).filter(models.User.uuid == uuid).first()
+    user_to_update.phone_number = user.phone_number
+    user_to_update.address = user.address
+    user_to_update.location = user.location
+
+    db.commit()
+    db.refresh(user_to_update)
+    return user
 
 def get_user_by_email_address(db: Session, email: str):
     return db.query(models.User).filter(models.User.email_address == email).first()
@@ -64,7 +71,7 @@ def create_verification_token(db: Session, user_verify: schemas.UserEmailVerific
     # return user_verify
     
     db_verify = models.EmailVerification(
-        user_id = user_verify.user_id,
+        user_id = user_verify.uuid,
         verification_token = verification_token["verification_token"],
         expiry_date = current_date + timedelta(days=VERIFY_TOKEN_EXPIRE_DAYS)
     )

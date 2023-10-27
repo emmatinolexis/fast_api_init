@@ -136,17 +136,16 @@ async def verify_token_route(token_data: schemas.VerifyToken, db: Session = Depe
         raise HTTPException(status_code=404,detail="Verification token not found")
 
 
-
-
 @router.post("/verify-email")
 async def verify_user_email(user: schemas.UserEmailVerification, db: Session = Depends(get_db) ):
     #check if user already verified
     expiry_time = datetime.now() + timedelta(minutes=30)
-    db_user = db.query(models.User).filter(models.User.id == user.user_id).first()
+    db_user = db.query(models.User).filter(models.User.uuid == user.uuid).first()
     if db_user:
         if db_user.verifiedAt is None:
+
             #check if token already generated
-            verified_user = db.query(models.EmailVerification).filter(models.EmailVerification.user_id == user.user_id).first()
+            verified_user = db.query(models.EmailVerification).filter(models.EmailVerification.uuid == user.uuid).first()
 
             if verified_user is None:
 
@@ -154,7 +153,7 @@ async def verify_user_email(user: schemas.UserEmailVerification, db: Session = D
                 verify_token = generate_verification_token()
                 
                 token_detail = {
-                    "user_id": user.user_id,
+                    "user_id": user.uuid,
                     "verification_token": verify_token,
                     "expiry_date": expiry_time  # Save the expiry time to the database
                 }
