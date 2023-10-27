@@ -7,6 +7,7 @@ import string
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
+
 from app.utils.hashing import (
     verify_password,
     create_access_token,
@@ -77,5 +78,3 @@ def extract_user_data(user):
         "phone_number": user.phone_number,
         "email_address": user.email_address,
     } 
-
-

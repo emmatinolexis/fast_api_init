@@ -82,5 +82,4 @@ def create_verification_token(db: Session, user_verify: schemas.UserEmailVerific
 
     return send_email(subject=subject,recipient=db_user.first_name,email=db_user.email_address, message=message, token=db_verify.verification_token)
 
-    
 

@@ -8,16 +8,30 @@ from .shared import get_db
 from app.database import models
 from app.database import schemas
 from app.routers.users import extract_user_data
-from app.utils.auth import generate_access_token
 from app.utils.auth import verify_token_frontend
+from app.utils.auth import generate_access_token
 from app.utils.email import read_email_template
 from app.utils.hashing import verify_token
 from app.utils.auth import generate_verification_token
+from app.database.repository import get_user_by_email_address
 from app.database.repository import create_verification_token
+from app.utils.auth import extract_user_data, verify_token_frontend
+
 from app.utils.hashing import VERIFY_TOKEN_EXPIRE_DAYS
 from datetime import datetime, timedelta
+from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Union
+from jose import jwt, JWTError
 
-
+from app.utils.hashing import (
+    verify_password,
+    create_access_token,
+    verify_token,
+    
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    SECRET_KEY,
+    ALGORITHM,
+)
 
 import smtplib
 from email.mime.text import MIMEText
@@ -37,15 +51,55 @@ login = "1de0bb762bb183"
 password = "ae4bfeca11542d"
 
 
+def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=15)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
 
+# Removing password check from this function
+def generate_access_token(user_email: str, db_user, db: Session = Depends(get_db)):
+    if not db_user:
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail= "Invalid User")
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(data={"sub": user_email}, expires_delta=access_token_expires)
+    return access_token
+
+
+@router.post("/decode-token")
+async def decode_access_token(token_data:schemas.VerifyToken, db: Session=Depends(get_db)):
+    payload = jwt.decode(token_data.Token, SECRET_KEY, algorithms=[ALGORITHM])
+    email = payload.get("sub")
+    user = get_user_by_email_address(db=db, email=email)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return extract_user_data(user)
+
+
+
+    
 # This endpoint serves a crucial security function for users who choose to register via email.
 # Upon successful registration, the user's access token is stored within a cookie.
 # To ensure the legitimacy of the token and prevent unauthorized generation of tokens,
 # the token within the cookie undergoes a verification process.
-
+@router.post("/verify-token-frontend")
+async def verify_token_route(token_data: schemas.VerifyToken):
+    if verify_token_frontend(token_data.Token):
+        return {"message": "Token is valid"}
+    else:
+        raise HTTPException(status_code=401, detail="Token is invalid or expired")
+    
 @router.post("/verify-token")
 async def verify_token_route(token_data: schemas.VerifyToken, db: Session = Depends(get_db) ):
     #check if token exist
+    current_datetime = datetime.now()
+    # if user_token.expiry_date <= current_datetime:
+    #     raise HTTPException(status_code=404, detail="Verification code expired")
+    
     user_token = db.query(models.EmailVerification).filter(models.EmailVerification.verification_token == token_data.Token).first()
     if user_token:
         current_datetime = datetime.now()
@@ -55,6 +109,14 @@ async def verify_token_route(token_data: schemas.VerifyToken, db: Session = Depe
 
         #check if token has expired
         if expiry_date > current_date:
+            
+            user_data = db.query(models.User).filter(models.User.id == user_token.user_id).first()
+            if not user_data:
+                raise HTTPException(status_code=404, detail="User not found")
+
+            # Assuming your user model has an 'email' field. If it's different, adjust the code.
+            access_token = generate_access_token(user_email=user_data.email_address, db_user=user_data)
+            
             #update user table verifiedAt to current date
             user_token.user.verifiedAt = datetime.now()
             db.commit()
@@ -62,8 +124,12 @@ async def verify_token_route(token_data: schemas.VerifyToken, db: Session = Depe
             # delete user token from token table
             db.query(models.EmailVerification).filter(models.EmailVerification.verification_token == token_data.Token).delete()
             db.commit()
+            
+            # Return the access token to the client
+            return {"access_token": access_token, "token_type": "bearer", "detail": "User verified successfully"}
 
-            return {"detail": "User verified successfully"}
+
+            # return {"detail": "User verified successfully"}
         else:
             raise HTTPException(status_code=404,detail="Verification code expired")
     else:
@@ -75,6 +141,7 @@ async def verify_token_route(token_data: schemas.VerifyToken, db: Session = Depe
 @router.post("/verify-email")
 async def verify_user_email(user: schemas.UserEmailVerification, db: Session = Depends(get_db) ):
     #check if user already verified
+    expiry_time = datetime.now() + timedelta(minutes=30)
     db_user = db.query(models.User).filter(models.User.id == user.user_id).first()
     if db_user:
         if db_user.verifiedAt is None:
@@ -87,8 +154,9 @@ async def verify_user_email(user: schemas.UserEmailVerification, db: Session = D
                 verify_token = generate_verification_token()
                 
                 token_detail = {
-                    "user_id" : user.user_id,
-                    "verification_token" : verify_token,
+                    "user_id": user.user_id,
+                    "verification_token": verify_token,
+                    "expiry_date": expiry_time  # Save the expiry time to the database
                 }
 
                 # save generated token into db
@@ -100,8 +168,7 @@ async def verify_user_email(user: schemas.UserEmailVerification, db: Session = D
     else:
         raise HTTPException(status_code=404,detail="User not found")
 
-
-
+    
     
 
 @router.post("/login", response_model=None)
