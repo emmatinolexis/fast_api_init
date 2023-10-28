@@ -22,15 +22,17 @@ from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import Union
 from jose import jwt, JWTError
+from app.utils.auth import get_current_user
+
 
 from app.utils.hashing import (
     verify_password,
     create_access_token,
     verify_token,
-    
     ACCESS_TOKEN_EXPIRE_MINUTES,
     SECRET_KEY,
     ALGORITHM,
+    VERIFY_TOKEN_EXPIRE_DAYS
 )
 
 import smtplib
@@ -94,13 +96,14 @@ async def verify_token_route(token_data: schemas.VerifyToken):
         raise HTTPException(status_code=401, detail="Token is invalid or expired")
     
 @router.post("/verify-token")
-async def verify_token_route(token_data: schemas.VerifyToken, db: Session = Depends(get_db) ):
+async def verify_token_route(token_data: schemas.VerifyToken, db: Session = Depends(get_db)):
     #check if token exist
     current_datetime = datetime.now()
     # if user_token.expiry_date <= current_datetime:
     #     raise HTTPException(status_code=404, detail="Verification code expired")
     
     user_token = db.query(models.EmailVerification).filter(models.EmailVerification.verification_token == token_data.Token).first()
+
     if user_token:
         current_datetime = datetime.now()
         date_format = "%Y-%m-%d %H:%M:%S.%f"
@@ -128,24 +131,27 @@ async def verify_token_route(token_data: schemas.VerifyToken, db: Session = Depe
             # Return the access token to the client
             return {"access_token": access_token, "token_type": "bearer", "detail": "User verified successfully"}
 
-
             # return {"detail": "User verified successfully"}
         else:
+            # delete expired verification token 
+            user_token = db.query(models.EmailVerification).filter(models.EmailVerification.verification_token == token_data.Token).delete()
+
             raise HTTPException(status_code=404,detail="Verification code expired")
     else:
         raise HTTPException(status_code=404,detail="Verification token not found")
 
 
 @router.post("/verify-email")
-async def verify_user_email(user: schemas.UserEmailVerification, db: Session = Depends(get_db) ):
+async def verify_user_email(user: schemas.UserEmailVerification, db: Session = Depends(get_db)):
+    
     #check if user already verified
-    expiry_time = datetime.now() + timedelta(minutes=30)
+    # expiry_time = datetime.now() + timedelta(minutes=VERIFY_TOKEN_EXPIRE_DAYS)
     db_user = db.query(models.User).filter(models.User.uuid == user.uuid).first()
     if db_user:
         if db_user.verifiedAt is None:
 
             #check if token already generated
-            verified_user = db.query(models.EmailVerification).filter(models.EmailVerification.uuid == user.uuid).first()
+            verified_user = db.query(models.EmailVerification).filter(models.EmailVerification.user_uuid == user.uuid).first()
 
             if verified_user is None:
 
@@ -153,9 +159,9 @@ async def verify_user_email(user: schemas.UserEmailVerification, db: Session = D
                 verify_token = generate_verification_token()
                 
                 token_detail = {
-                    "user_id": user.uuid,
+                    "user_uuid": user.uuid,
                     "verification_token": verify_token,
-                    "expiry_date": expiry_time  # Save the expiry time to the database
+                    # "expiry_date": expiry_time  # Save the expiry time to the database
                 }
 
                 # save generated token into db
