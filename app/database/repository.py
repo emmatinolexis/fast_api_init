@@ -51,16 +51,16 @@ def create_user(db: Session, user: schemas.User):
     db.commit()
     # db.refresh(db_user)
 
-    # created_user = db.query(models.User).filter(models.User.email_address == db_user.email_address).first()
+    created_user = db.query(models.User).filter(models.User.email_address == db_user.email_address).first()
     
     returned_user = {
-        "first_name": db_user.first_name,
-        "last_name": db_user.last_name,
-        "location": db_user.location,
-        "address": db_user.address,
-        "phone_number": db_user.phone_number,
-        "email_address": db_user.email_address,
-        "uuid": db_user.uuid
+        "first_name": created_user.first_name,
+        "last_name": created_user.last_name,
+        "location": created_user.location,
+        "address": created_user.address,
+        "phone_number": created_user.phone_number,
+        "email_address": created_user.email_address,
+        "uuid": created_user.uuid
     } 
 
     return returned_user

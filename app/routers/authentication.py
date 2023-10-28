@@ -113,7 +113,7 @@ async def verify_token_route(token_data: schemas.VerifyToken, db: Session = Depe
         #check if token has expired
         if expiry_date > current_date:
             
-            user_data = db.query(models.User).filter(models.User.id == user_token.user_id).first()
+            user_data = db.query(models.User).filter(models.User.uuid == user_token.user_uuid).first()
             if not user_data:
                 raise HTTPException(status_code=404, detail="User not found")
 
