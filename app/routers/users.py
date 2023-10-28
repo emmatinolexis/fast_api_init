@@ -26,6 +26,7 @@ async def create_user_handler(user: schemas.User, db: Session = Depends(get_db))
         raise HTTPException(status_code=400, detail="Email already exists")
     return create_user(db, user)
 
+
 @router.get("/", response_model=List[schemas.User])
 async def get_users_handler(db: Session = Depends(get_db), user: schemas.User = Depends(get_current_user)):
     return get_all_users(db=db)
