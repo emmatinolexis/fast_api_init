@@ -1,17 +1,12 @@
+from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from app.database.helpers import get_all_items
-from app.utils.hashing import hash_user_password
-from app.utils.auth import extract_user_data
+from app.utils.hashing import hash_user_password,VERIFY_TOKEN_EXPIRE_DAYS
 from app.utils.email import send_email
-from datetime import datetime, timedelta
-from app.utils.hashing import VERIFY_TOKEN_EXPIRE_DAYS
-
-
 
 from . import models, schemas
 from .helpers import get_all_items
-import uuid
 
 def get_all_users(db: Session):
     return get_all_items(db, models.User)

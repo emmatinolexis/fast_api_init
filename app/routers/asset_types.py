@@ -1,14 +1,11 @@
 from typing import List
-
-from fastapi import APIRouter
-from fastapi import Depends
+from fastapi import APIRouter,Depends
 from sqlalchemy.orm import Session
+from .shared import get_db
 
 from app.database import schemas
 from app.database.assets import get_asset_type
 from app.utils.auth import get_current_user
-
-from .shared import get_db
 
 router = APIRouter(
     prefix="/asset_types",

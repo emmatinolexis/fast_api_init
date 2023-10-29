@@ -1,8 +1,6 @@
-from typing import Optional
-from typing import  Union
+from typing import Optional,Union
 
-from pydantic import BaseModel
-from pydantic import EmailStr
+from pydantic import BaseModel,EmailStr
 from pydantic_extra_types.phone_numbers import PhoneNumber
 # from app.utils.utils import generate_uuid
 # from uuid import UUID, uuid4

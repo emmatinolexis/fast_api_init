@@ -4,7 +4,6 @@ from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql import UUID
 
 import uuid
-
 import datetime
 from .core import Base
 

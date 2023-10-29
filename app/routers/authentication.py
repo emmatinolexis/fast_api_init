@@ -1,28 +1,16 @@
-from fastapi import APIRouter, Depends
-from fastapi import HTTPException
+from fastapi import APIRouter, Depends,HTTPException
+from datetime import datetime
+from jose import jwt
 from sqlalchemy.orm import Session
 from .shared import get_db
 
-from app.database import models
-from app.database import schemas
+from app.database import models,schemas
+from app.database.repository import get_user_by_email_address,create_verification_token
 from app.routers.users import extract_user_data
-from app.utils.auth import verify_token_frontend
-from app.utils.auth import generate_access_token
-from app.utils.auth import generate_verification_token
-from app.database.repository import get_user_by_email_address
-from app.database.repository import create_verification_token
-from app.utils.auth import extract_user_data, verify_token_frontend,generate_token_for_new_user,generate_token_for_existing_user
-
-from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException
-from jose import jwt, JWTError
+from app.utils.auth import verify_token_frontend,generate_verification_token
+from app.utils.auth import generate_token_for_new_user,generate_token_for_existing_user
 from app.utils.auth import get_current_user
-
-from app.utils.hashing import ( 
-    SECRET_KEY,
-    ALGORITHM,
-)
-
+from app.utils.hashing import SECRET_KEY,ALGORITHM
 
 
 router = APIRouter(
@@ -141,7 +129,6 @@ async def verify_user_email(user: schemas.UserEmailVerification, db: Session = D
 @router.post("/login", response_model=None)
 async def login_handler(user: schemas.UserLogin, db: Session = Depends(get_db)):
     db_user = db.query(models.User).filter(models.User.email_address == user.email_address).first()
-
     if db_user is None:
         raise HTTPException(status_code=404,detail="User not found")
     user_dict = extract_user_data(db_user)

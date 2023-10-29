@@ -1,23 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from app.database import schemas
-from fastapi.security import OAuth2PasswordBearer
-from typing import Annotated
 import random
 import string
-
-from app.utils.hashing import (
-    verify_password,
-    ACCESS_TOKEN_EXPIRE_MINUTES,
-    SECRET_KEY,
-    ALGORITHM,
-)
-
+from typing import Annotated,Union
 from datetime import datetime, timedelta
 from jose import jwt, JWTError
-from typing import Union
-from app.database import schemas
 from sqlalchemy.orm import Session
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from app.database import schemas
+from app.utils.hashing import verify_password,ACCESS_TOKEN_EXPIRE_MINUTES,SECRET_KEY,ALGORITHM
 from app.routers.shared import get_db
+
 
 router = APIRouter(
     prefix="/login",
@@ -51,6 +44,7 @@ def generate_token_for_new_user(user_email: str, db_user, db: Session = Depends(
     if not db_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invalid User")
     return generate_access_token(user_email)
+
 
 def generate_token_for_existing_user(user: schemas.UserLogin, db_user, db: Session = Depends(get_db)) -> str:
     """

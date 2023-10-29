@@ -1,5 +1,4 @@
-from fastapi import APIRouter
-from fastapi import Depends
+from fastapi import APIRouter, Depends
 from app.database import schemas
 from app.utils.auth import get_current_user
 

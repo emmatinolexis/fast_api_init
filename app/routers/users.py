@@ -1,17 +1,11 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from .shared import get_db
 
 from app.database import schemas
-from app.database.repository import (
-    get_all_users,
-    create_user,
-    update_user_by_uuid,
-    get_user_by_email_address
-)
-from app.utils.auth import get_current_user
-from .shared import get_db
-from app.utils.auth import extract_user_data
+from app.database.repository import get_all_users, create_user,update_user_by_uuid,get_user_by_email_address
+from app.utils.auth import get_current_user, extract_user_data
 
 
 router = APIRouter(
