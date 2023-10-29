@@ -11,7 +11,7 @@ from app.utils.auth import generate_access_token
 from app.utils.auth import generate_verification_token
 from app.database.repository import get_user_by_email_address
 from app.database.repository import create_verification_token
-from app.utils.auth import extract_user_data, verify_token_frontend,generate_access_token_for_registration
+from app.utils.auth import extract_user_data, verify_token_frontend,generate_token_for_new_user,generate_token_for_existing_user
 
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
@@ -83,7 +83,7 @@ async def verify_token_route(token_data: schemas.VerifyToken, db: Session = Depe
                 raise HTTPException(status_code=404, detail="User not found")
 
             # Assuming your user model has an 'email' field. If it's different, adjust the code.
-            access_token = generate_access_token_for_registration(user_email=user_data.email_address, db_user=user_data)
+            access_token = generate_token_for_new_user(user_email=user_data.email_address, db_user=user_data)
             
             #update user table verifiedAt to current date
             user_token.user.verifiedAt = datetime.now()
@@ -145,5 +145,5 @@ async def login_handler(user: schemas.UserLogin, db: Session = Depends(get_db)):
     if db_user is None:
         raise HTTPException(status_code=404,detail="User not found")
     user_dict = extract_user_data(db_user)
-    access_token = generate_access_token(user,db_user)
+    access_token = generate_token_for_existing_user(user,db_user)
     return {"access_token": access_token, "user": user_dict, "permission":""}

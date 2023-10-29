@@ -38,26 +38,28 @@ def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None
     return encoded_jwt
 
 
-# Password check is removed from this check
-# this is to allow an access token to be created for a user now creating an account
-def generate_access_token_for_registration(user_email: str, db_user, db: Session = Depends(get_db)):
-    if not db_user:
-        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail= "Invalid User")
+def generate_access_token(email: str) -> str:
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(data={"sub": user_email}, expires_delta=access_token_expires)
-    return access_token
+    return create_access_token(data={"sub": email}, expires_delta=access_token_expires)
 
 
-# Since a user has already created an account, the validity of the password will
-# be checked before a user tries to login for an access token to be generated
-def generate_access_token(user:schemas.UserLogin, db_user, db: Session = Depends(get_db)):
+def generate_token_for_new_user(user_email: str, db_user, db: Session = Depends(get_db)) -> str:
+    """
+    Generate an access token for a user creating a new account.
+    No password check is required here.
+    """
     if not db_user:
-        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail= "Invalid Credentials")
-    if not verify_password(user.password,db_user.password):
-        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,detail= "Invalid Credentials")
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(data={"sub": user.email_address}, expires_delta=access_token_expires)
-    return access_token
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invalid User")
+    return generate_access_token(user_email)
+
+def generate_token_for_existing_user(user: schemas.UserLogin, db_user, db: Session = Depends(get_db)) -> str:
+    """
+    Generate an access token for a user logging in.
+    Password validation is done before generating the token.
+    """
+    if not db_user or not verify_password(user.password, db_user.password):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invalid Credentials")
+    return generate_access_token(user.email_address)
 
 
 def generate_verification_token(length = 100):
