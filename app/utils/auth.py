@@ -1,6 +1,6 @@
 import random
 import string
-from typing import Annotated,Union
+from typing import Annotated,Union,Dict
 from datetime import datetime, timedelta
 from jose import jwt, JWTError
 from sqlalchemy.orm import Session
@@ -20,7 +20,7 @@ router = APIRouter(
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 
-def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None):
+def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None) -> str:
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
@@ -56,12 +56,12 @@ def generate_token_for_existing_user(user: schemas.UserLogin, db_user, db: Sessi
     return generate_access_token(user.email_address)
 
 
-def generate_verification_token(length = 100):
+def generate_verification_token(length:int = 100) -> str:
     verify_token = ''.join(random.choices(string.ascii_letters + string.digits, k=length))
     return verify_token
 
 
-def verify_token(token: str, credentials_exception):
+def verify_token(token: str, credentials_exception: HTTPException):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
@@ -72,7 +72,7 @@ def verify_token(token: str, credentials_exception):
         raise credentials_exception
     
     
-def verify_token_frontend(token: str):
+def verify_token_frontend(token: str) -> bool:
     try:
         jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return True
@@ -80,7 +80,7 @@ def verify_token_frontend(token: str):
         return False
     
     
-async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> Union[schemas.TokenData, HTTPException]:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -89,7 +89,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
     return  verify_token(token, credentials_exception);
  
  
-def extract_user_data(user):
+def extract_user_data(user) -> Dict[str,str]:
     return {
         "first_name": user.first_name,
         "last_name": user.last_name,

@@ -3,14 +3,15 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from jinja2 import Environment, FileSystemLoader
+from typing import Dict
 
-def read_email_template():
+def read_email_template() -> str:
     current_directory = os.path.dirname(os.path.abspath(__file__))
     template_path = os.path.join(current_directory, '..', 'templates', 'email-template.html')
     with open(template_path, "r") as file:
         return file.read()
     
-def send_email(subject, recipient, email, message, token=""):
+def send_email(subject, recipient, email, message, token="") -> Dict[str, str]:
     try:
         # Create an SMTP connection to the Mailtrap server
         server = smtplib.SMTP("sandbox.smtp.mailtrap.io", "2525")
