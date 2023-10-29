@@ -5,13 +5,8 @@ from typing import Annotated
 import random
 import string
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
-
-
 from app.utils.hashing import (
     verify_password,
-    create_access_token,
-    verify_token,
     ACCESS_TOKEN_EXPIRE_MINUTES,
     SECRET_KEY,
     ALGORITHM,
@@ -31,16 +26,30 @@ router = APIRouter(
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
+
 def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None):
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
+        expire = datetime.utcnow() + timedelta(minutes=1440)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+
+# Password check is removed from this check
+# this is to allow an access token to be created for a user now creating an account
+def generate_access_token_for_registration(user_email: str, db_user, db: Session = Depends(get_db)):
+    if not db_user:
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail= "Invalid User")
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(data={"sub": user_email}, expires_delta=access_token_expires)
+    return access_token
+
+
+# Since a user has already created an account, the validity of the password will
+# be checked before a user tries to login for an access token to be generated
 def generate_access_token(user:schemas.UserLogin, db_user, db: Session = Depends(get_db)):
     if not db_user:
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail= "Invalid Credentials")
@@ -50,16 +59,30 @@ def generate_access_token(user:schemas.UserLogin, db_user, db: Session = Depends
     access_token = create_access_token(data={"sub": user.email_address}, expires_delta=access_token_expires)
     return access_token
 
+
 def generate_verification_token(length = 100):
     verify_token = ''.join(random.choices(string.ascii_letters + string.digits, k=length))
     return verify_token
 
-def verify_token_frontend(token: str) -> bool:
+
+def verify_token(token: str, credentials_exception):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+        token_data = schemas.TokenData(username=username)
+    except JWTError:
+        raise credentials_exception
+    
+    
+def verify_token_frontend(token: str):
     try:
         jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return True
     except JWTError:
         return False
+    
     
 async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
     credentials_exception = HTTPException(
@@ -68,6 +91,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
         headers={"WWW-Authenticate": "Bearer"},
     )
     return  verify_token(token, credentials_exception);
+ 
  
 def extract_user_data(user):
     return {

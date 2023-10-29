@@ -1,5 +1,4 @@
 import os
-from fastapi import FastAPI
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -21,7 +20,7 @@ def send_email(subject, recipient, email, message, token=""):
         template = env.get_template('email-template.html')
 
         # Login to the Mailtrap server
-        server.login("1de0bb762bb183", "ae4bfeca11542d")
+        server.login("3ac816258e1993", "d9e1b01067c879")
 
         # Create the email message using the template
         message_data = template.render(recipient_name=recipient, message=message, verify_token = token)
@@ -35,7 +34,7 @@ def send_email(subject, recipient, email, message, token=""):
         msg.attach(MIMEText(message_data, 'html'))
 
         # Send the email
-        server.sendmail("1de0bb762bb183", email, msg.as_string())
+        server.sendmail("3ac816258e1993", email, msg.as_string())
 
         # Close the SMTP connection
         server.quit()

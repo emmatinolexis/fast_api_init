@@ -21,7 +21,6 @@ router = APIRouter(
 
 @router.post("/", response_model=None)
 async def create_user_handler(user: schemas.User, db: Session = Depends(get_db)):
-    # return user
     if get_user_by_email_address(db=db, email=user.email_address):
         raise HTTPException(status_code=400, detail="Email already exists")
     return create_user(db, user)
@@ -36,8 +35,6 @@ async def get_users_handler(db: Session = Depends(get_db), user: schemas.User = 
 async def update_user(uuid: str,user: schemas.User = Depends(get_current_user)):
      return update_user_by_uuid(uuid = uuid, user = user)
 
-
-    
     
 
 # @router.get("/username/{username}", response_model=schemas.User)

@@ -1,7 +1,5 @@
 from fastapi import APIRouter, Depends
 from fastapi import HTTPException
-from fastapi.security import OAuth2PasswordRequestForm
-from typing import Annotated
 from sqlalchemy.orm import Session
 from .shared import get_db
 
@@ -10,34 +8,21 @@ from app.database import schemas
 from app.routers.users import extract_user_data
 from app.utils.auth import verify_token_frontend
 from app.utils.auth import generate_access_token
-from app.utils.email import read_email_template
-from app.utils.hashing import verify_token
 from app.utils.auth import generate_verification_token
 from app.database.repository import get_user_by_email_address
 from app.database.repository import create_verification_token
-from app.utils.auth import extract_user_data, verify_token_frontend
+from app.utils.auth import extract_user_data, verify_token_frontend,generate_access_token_for_registration
 
-from app.utils.hashing import VERIFY_TOKEN_EXPIRE_DAYS
-from datetime import datetime, timedelta
-from fastapi import APIRouter, Depends, HTTPException, status
-from typing import Union
+from datetime import datetime
+from fastapi import APIRouter, Depends, HTTPException
 from jose import jwt, JWTError
 from app.utils.auth import get_current_user
 
-
-from app.utils.hashing import (
-    verify_password,
-    create_access_token,
-    verify_token,
-    ACCESS_TOKEN_EXPIRE_MINUTES,
+from app.utils.hashing import ( 
     SECRET_KEY,
     ALGORITHM,
-    VERIFY_TOKEN_EXPIRE_DAYS
 )
 
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 
 
 router = APIRouter(
@@ -53,25 +38,6 @@ login = "1de0bb762bb183"
 password = "ae4bfeca11542d"
 
 
-def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None):
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
-
-# Removing password check from this function
-def generate_access_token(user_email: str, db_user, db: Session = Depends(get_db)):
-    if not db_user:
-        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail= "Invalid User")
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(data={"sub": user_email}, expires_delta=access_token_expires)
-    return access_token
-
-
 @router.post("/decode-token")
 async def decode_access_token(token_data:schemas.VerifyToken, db: Session=Depends(get_db)):
     payload = jwt.decode(token_data.Token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -80,9 +46,7 @@ async def decode_access_token(token_data:schemas.VerifyToken, db: Session=Depend
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
     return extract_user_data(user)
-
-
-
+    
     
 # This endpoint serves a crucial security function for users who choose to register via email.
 # Upon successful registration, the user's access token is stored within a cookie.
@@ -94,6 +58,7 @@ async def verify_token_route(token_data: schemas.VerifyToken):
         return {"message": "Token is valid"}
     else:
         raise HTTPException(status_code=401, detail="Token is invalid or expired")
+    
     
 @router.post("/verify-token")
 async def verify_token_route(token_data: schemas.VerifyToken, db: Session = Depends(get_db)):
@@ -118,7 +83,7 @@ async def verify_token_route(token_data: schemas.VerifyToken, db: Session = Depe
                 raise HTTPException(status_code=404, detail="User not found")
 
             # Assuming your user model has an 'email' field. If it's different, adjust the code.
-            access_token = generate_access_token(user_email=user_data.email_address, db_user=user_data)
+            access_token = generate_access_token_for_registration(user_email=user_data.email_address, db_user=user_data)
             
             #update user table verifiedAt to current date
             user_token.user.verifiedAt = datetime.now()
@@ -143,7 +108,6 @@ async def verify_token_route(token_data: schemas.VerifyToken, db: Session = Depe
 
 @router.post("/verify-email")
 async def verify_user_email(user: schemas.UserEmailVerification, db: Session = Depends(get_db)):
-    
     #check if user already verified
     # expiry_time = datetime.now() + timedelta(minutes=VERIFY_TOKEN_EXPIRE_DAYS)
     db_user = db.query(models.User).filter(models.User.uuid == user.uuid).first()
@@ -174,8 +138,6 @@ async def verify_user_email(user: schemas.UserEmailVerification, db: Session = D
         raise HTTPException(status_code=404,detail="User not found")
 
     
-    
-
 @router.post("/login", response_model=None)
 async def login_handler(user: schemas.UserLogin, db: Session = Depends(get_db)):
     db_user = db.query(models.User).filter(models.User.email_address == user.email_address).first()
