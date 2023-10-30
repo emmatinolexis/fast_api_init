@@ -50,6 +50,8 @@ def update_asset_type(db: Session,uuid:str,model:models.AssetType, asset_type: s
         return updated_asset_type_data
     raise HTTPException(status_code=404, detail="Error updating asset type ")
     
+
+
 def delete_asset(db: Session, asset_id: int):
     return delete_item(db, models.Asset, asset_id)
 
