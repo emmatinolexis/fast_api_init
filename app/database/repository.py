@@ -11,7 +11,7 @@ from .helpers import get_all_items
 def get_all_users(db: Session):
     return get_all_items(db, models.User)
 
-def update_user_by_uuid(db:Session,uuid:str, user : schemas.User):
+def update_user_by_uuid(db:Session,uuid:str, user : schemas.UpdateUser):
     user_to_update = db.query(models.User).filter(models.User.uuid == uuid).first()
     user_to_update.phone_number = user.phone_number
     user_to_update.address = user.address

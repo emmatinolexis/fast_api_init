@@ -19,6 +19,13 @@ class User(BaseModel):
     password: str
     class Config:
         orm_model = True
+
+class UpdateUser(BaseModel):
+    location: Optional[str]
+    address: Optional[str]
+    phone_number: Optional[str]
+    class Config:
+        orm_model = True
     
 class UserLogin(BaseModel):
     email_address: EmailStr
