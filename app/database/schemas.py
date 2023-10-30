@@ -32,6 +32,9 @@ class UserLogin(BaseModel):
     password: str
     class Config:
         orm_model = True
+
+class GetPackage(BaseModel):
+    uuid: str
     
 class EmailVerification(BaseModel):
     user_uuid: str
