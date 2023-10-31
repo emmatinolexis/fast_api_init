@@ -38,7 +38,7 @@ def create_asset_type(db: Session, asset_type: schemas.AssetType):
     }
     return create_item(db, models.AssetType, asset_type_data)
 
-def update_asset_type(db: Session,uuid:str,model:models.AssetType, asset_type: schemas.AssetType):
+# def update_asset_type(db: Session,uuid:str,model:models.AssetType, asset_type: schemas.AssetType):
     updated_asset_type_data = {
         "asset_type_name": asset_type.asset_type_name,
         "description": asset_type.description,
@@ -49,8 +49,15 @@ def update_asset_type(db: Session,uuid:str,model:models.AssetType, asset_type: s
     if updated:
         return updated_asset_type_data
     raise HTTPException(status_code=404, detail="Error updating asset type ")
-    
 
+def update_asset_type(db: Session, uuid: str, model: models.AssetType, asset_type: schemas.AssetType):
+    # Prepare the data for the update
+    updated_asset_type_data = {
+        "asset_type_name": asset_type.asset_type_name,
+        "description": asset_type.description,
+        "icon_url": asset_type.icon_url,
+        "status": asset_type.status
+    }   
 
 def delete_asset(db: Session, asset_id: int):
     return delete_item(db, models.Asset, asset_id)
