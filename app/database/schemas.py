@@ -113,9 +113,10 @@ class EquipmentType(BaseModel):
         orm_model = True
 
 class ContactSale(BaseModel):
-    phone: str
+    phone_number: str
     call_time:str
     user_uuid:str
+    
     class Config:
         orm_model = True
 

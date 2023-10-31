@@ -16,7 +16,7 @@ from app.database import models,schemas
 from app.utils.auth import get_current_user
 
 router = APIRouter(
-    prefix="",
+    prefix="/features",
     tags=["features"],
 )
 

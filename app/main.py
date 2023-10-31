@@ -7,6 +7,7 @@ from app.routers import packages
 from app.routers import asset_types
 from app.routers import assets
 from app.routers import features
+from app.routers import contact
 
 from app.routers import authentication
 from app.database.core import init_db
@@ -25,6 +26,7 @@ app.include_router(asset_types.router)
 app.include_router(assets.router)
 app.include_router(authentication.router)
 app.include_router(features.router)
+app.include_router(contact.router)
 
 app.add_middleware(
     CORSMiddleware,
