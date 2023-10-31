@@ -25,8 +25,8 @@ async def get_users_handler(db: Session = Depends(get_db), user: schemas.User = 
     return get_all_users(db=db)
 
 
-@router.put("/update/{uuid}", response_model=schemas.UpdateUser)
-async def update_user(uuid: str,user: schemas.UpdateUser , db: Session = Depends(get_db), auth_user: schemas.User = Depends(get_current_user) ):
+@router.put("/{uuid}", response_model=schemas.UpdateUser)
+async def update_user(uuid: str,user: schemas.UpdateUser , db: Session = Depends(get_db) ):
      return update_user_by_uuid(uuid = uuid, user = user, db=db)
 
     
