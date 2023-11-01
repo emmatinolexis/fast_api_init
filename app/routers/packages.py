@@ -11,10 +11,10 @@ from app.database.packages import (
     update_package,
     get_package_by_uuid,
     delete_package,
-
+    assign_package_item,
+    delete_package_item
 )
  
-dummy_options = ["Option" + str(i) for i in range(1, 11)]
 
 router = APIRouter(
     prefix="/packages",
@@ -40,3 +40,13 @@ async def get_package_by_uuid_handler(uuid:str,db: Session = Depends(get_db), au
 @router.delete("/delete/{uuid}", response_model=schemas.Package)
 async def delete_package_by_uuid_handler(uuid:str,db: Session = Depends(get_db), auth_user: schemas.User = Depends(get_current_user)):
     return delete_package(db,uuid)
+
+@router.post("/package_item_assignment", response_model=None)
+async def assign_package_item_handler(data: schemas.PackageItemAssignment, db: Session = Depends(get_db), auth_user: schemas.User = Depends(get_current_user)):
+    return assign_package_item(db,data)
+
+@router.delete("/package_item_assignment/{package_uuid}/{package_item_uuid}", response_model=None)
+async def delete_package_item_from_package_handler(package_uuid, package_item_uuid, db: Session = Depends(get_db)):
+    return delete_package_item(db,package_uuid,package_item_uuid)
+
+ 
