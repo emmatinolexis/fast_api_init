@@ -116,15 +116,17 @@ class ContactSale(BaseModel):
     phone_number: str
     call_time:str
     user_uuid:str
+    status:str
     
     class Config:
         orm_model = True
 
 class Onboarding(BaseModel):
     asset_type_uuid: str 
-    no_of_assets: int
+    number_of_assets: int
     package_uuid: str
     user_uuid: str
+    number_of_months:int
     class Config:
         orm_model = True
 

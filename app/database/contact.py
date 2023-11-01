@@ -15,44 +15,50 @@ from .helpers import (
 #CRUD functionalities for Assets
 
 def get_all_contacts(db: Session):
-    contacts =  get_all_items(db, models.ContactSale)
-    if contacts:
+    try:
+        contacts =  get_all_items(db, models.ContactSale)
         return contacts
-    raise HTTPException(status_code=404, detail="Contacts Not Found")
-    
-    
-
-def create_contact(db: Session, contact: schemas.ContactSale, user_uuid: str):
-    contact_data = {
-        "phone_number": contact.phone_number,
-        "call_time": contact.call_time,
-        "user_uuid": user_uuid,
-    }
-    created_contact = create_item(db, models.ContactSale, contact_data)
-    if created_contact:
-        return created_contact
-    raise HTTPException(status_code=500, detail="Error creating contact")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"{e}")
     
 
-def update_contact(db: Session, user_uuid: str,model: models.ContactSale, updated_contact: schemas.ContactSale):
-    updated_contact_data = {
-        "phone_number": updated_contact.phone_number,
-        "call_time": updated_contact.call_time,
-        "user_uuid": user_uuid,
-    }
-    updated = update_item(db, user_uuid,model, updated_contact_data)
-    if updated:
+def create_contact(db: Session, contact: schemas.ContactSale):
+    try:
+        contact_data = {
+            "phone_number": contact.phone_number,
+            "call_time": contact.call_time,
+            "user_uuid": contact.user_uuid,
+        }
+        create_item(db, models.ContactSale, contact_data)
+        return contact_data
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"{e}")
+    
+
+def update_contact(db: Session, uuid: str, model: models.ContactSale, updated_contact: schemas.ContactSale):
+    try:
+        updated_contact_data = {
+            "phone_number": updated_contact.phone_number,
+            "call_time": updated_contact.call_time,
+            "user_uuid": updated_contact.user_uuid
+        }
+        updated = update_item(db,uuid,model,updated_contact_data)
         return updated
-    raise HTTPException(status_code=500, detail="Error Updating contact")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"{e}")
     
 
 def delete_contact(db: Session, uuid: str):
-    return delete_item(db, models.ContactSale, uuid)
-
+    try:
+        return delete_item(db, models.ContactSale, uuid)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"{e}")
+    
 def get_contact_by_uuid(db: Session, uuid: str):
-    contact = get_item_by_id(db, model=models.ContactSale, uuid=uuid)
-    if contact:
+    try:
+        contact = get_item_by_id(db, model=models.ContactSale, uuid=uuid)
         return contact
-    raise HTTPException(status_code=404, detail="contact not found")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"{e}")
 
 
