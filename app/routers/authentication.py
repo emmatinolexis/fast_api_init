@@ -1,37 +1,136 @@
-from fastapi import APIRouter, Depends
-from app.database import models, schemas
-
-from app.database import models
-from fastapi.security import OAuth2PasswordRequestForm
-from app.database import schemas
-from sqlalchemy.orm import Session
-import datetime
-from app.utils.hashing import SECRET_KEY
-from app.utils.hashing import ALGORITHM
-from .shared import get_db
-from app.utils.auth import generate_access_token
+from fastapi import APIRouter, Depends,HTTPException
+from datetime import datetime
 from jose import jwt
+from sqlalchemy.orm import Session
+from .shared import get_db
+
+from app.database import models,schemas
+from app.database.repository import get_user_by_email_address,create_verification_token
+from app.routers.users import extract_user_data
+from app.utils.auth import verify_token_frontend,generate_verification_token
+from app.utils.auth import generate_token_for_new_user,generate_token_for_existing_user
+from app.utils.auth import get_current_user
+from app.utils.hashing import SECRET_KEY,ALGORITHM
+
+
 router = APIRouter(
     prefix="",
     tags=["authentication"],
 )
 
 db_user = None
-sessions  = {}
+
+port = 587
+smtp_server = "live.smtp.mailtrap.io"
+login = "1de0bb762bb183"
+password = "ae4bfeca11542d"
 
 
-@router.post("/", response_model= None)
-async def login_handler(user:schemas.LoginPayload, db: Session = Depends(get_db)) -> any:
-    if user.email_address:
-        db_user = db.query(models.User).filter(models.User.email_address == user.email_address).first()
-        access_token = generate_access_token(user,db_user)
+@router.post("/decode-token")
+async def decode_access_token(token_data:schemas.VerifyToken, db: Session=Depends(get_db)):
+    payload = jwt.decode(token_data.Token, SECRET_KEY, algorithms=[ALGORITHM])
+    email = payload.get("sub")
+    user = get_user_by_email_address(db=db, email=email)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return extract_user_data(user)
     
-    if user.phone_number:
-        db_user = db.query(models.User).filter(models.User.phone_number == user.phone_number).first()
-        access_token = generate_access_token(user,db_user)
-    return {"access_token": access_token, "token_type": "bearer", "user": db_user}
+    
+# This endpoint serves a crucial security function for users who choose to register via email.
+# Upon successful registration, the user's access token is stored within a cookie.
+# To ensure the legitimacy of the token and prevent unauthorized generation of tokens,
+# the token within the cookie undergoes a verification process.
+@router.post("/verify-token-frontend")
+async def verify_token_route(token_data: schemas.VerifyToken):
+    if verify_token_frontend(token_data.Token):
+        return {"message": "Token is valid"}
+    else:
+        raise HTTPException(status_code=401, detail="Token is invalid or expired")
+    
+    
+@router.post("/verify-token")
+async def verify_token_route(token_data: schemas.VerifyToken, db: Session = Depends(get_db)):
+    #check if token exist
+    current_datetime = datetime.now()
+    # if user_token.expiry_date <= current_datetime:
+    #     raise HTTPException(status_code=404, detail="Verification code expired")
+    
+    user_token = db.query(models.EmailVerification).filter(models.EmailVerification.verification_token == token_data.Token).first()
 
-@router.get("/logout")
-async def logout_handler(db: Session = Depends(get_db)):
-    pass
+    if user_token:
+        current_datetime = datetime.now()
+        date_format = "%Y-%m-%d %H:%M:%S.%f"
+        current_date = current_datetime.strftime(date_format)        
+        expiry_date = user_token.expiry_date 
 
+        #check if token has expired
+        if expiry_date > current_date:
+            
+            user_data = db.query(models.User).filter(models.User.uuid == user_token.user_uuid).first()
+            if not user_data:
+                raise HTTPException(status_code=404, detail="User not found")
+
+            # Assuming your user model has an 'email' field. If it's different, adjust the code.
+            access_token = generate_token_for_new_user(user_email=user_data.email_address, db_user=user_data)
+            
+            #update user table verifiedAt to current date
+            user_token.user.verifiedAt = datetime.now()
+            db.commit()
+
+            # delete user token from token table
+            db.query(models.EmailVerification).filter(models.EmailVerification.verification_token == token_data.Token).delete()
+            db.commit()
+            
+            # Return the access token to the client
+            return {"access_token": access_token, "token_type": "bearer", "detail": "User verified successfully"}
+
+            # return {"detail": "User verified successfully"}
+        else:
+            # delete expired verification token 
+            user_token = db.query(models.EmailVerification).filter(models.EmailVerification.verification_token == token_data.Token).delete()
+
+            raise HTTPException(status_code=404,detail="Verification code expired")
+    else:
+        raise HTTPException(status_code=404,detail="Verification token not found")
+
+
+@router.post("/verify-email")
+async def verify_user_email(user: schemas.UserEmailVerification, db: Session = Depends(get_db)):
+    #check if user already verified
+    # expiry_time = datetime.now() + timedelta(minutes=VERIFY_TOKEN_EXPIRE_DAYS)
+    db_user = db.query(models.User).filter(models.User.uuid == user.uuid).first()
+    if db_user:
+        if db_user.verifiedAt is None:
+
+            #check if token already generated
+            verified_user = db.query(models.EmailVerification).filter(models.EmailVerification.user_uuid == user.uuid).first()
+
+            if verified_user is None:
+
+                # Generate token
+                verify_token = generate_verification_token()
+                
+                token_detail = {
+                    "user_uuid": user.uuid,
+                    "verification_token": verify_token,
+                    # "expiry_date": expiry_time  # Save the expiry time to the database
+                }
+
+                # save generated token into db
+                return create_verification_token(db, user,token_detail)
+            else:
+                raise HTTPException(status_code=404,detail="Verification code already generated, please check email to verify")
+        else:
+            raise HTTPException(status_code=404,detail="User already verified")
+    else:
+        raise HTTPException(status_code=404,detail="User not found")
+
+    
+@router.post("/login", response_model=None)
+async def login_handler(user: schemas.UserLogin, db: Session = Depends(get_db)):
+    db_user = db.query(models.User).filter(models.User.email_address == user.email_address).first()
+    if db_user is None:
+        raise HTTPException(status_code=404,detail="User not found")
+    user_dict = extract_user_data(db_user)
+    access_token = generate_token_for_existing_user(user,db_user)
+    return {"access_token": access_token, "user": user_dict, "permission":""}
