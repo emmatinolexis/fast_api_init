@@ -7,6 +7,8 @@ from app.routers import packages
 from app.routers import package_items
 from app.routers import asset_types
 from app.routers import assets
+from app.routers import onboarding
+
 
 from app.routers import authentication
 from app.database.core import init_db
@@ -24,6 +26,7 @@ app.include_router(packages.router)
 app.include_router(package_items.router)
 app.include_router(asset_types.router)
 app.include_router(assets.router)
+app.include_router(onboarding.router)
 app.include_router(authentication.router)
 
 app.add_middleware(

@@ -122,7 +122,8 @@ class ContactSale(BaseModel):
 
 class Onboarding(BaseModel):
     asset_type_uuid: str 
-    no_of_assets: int
+    number_of_assets: int
+    number_of_months: int
     package_uuid: str
     user_uuid: str
     class Config:

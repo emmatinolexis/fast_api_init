@@ -123,7 +123,8 @@ class Onboarding(BaseModel):
     __tablename__ = "onboardings"
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
     asset_type_uuid = Column(UUID(as_uuid=True), ForeignKey("asset_types.uuid"))
-    number_of_assets = Column(String(length=50),nullable=False,default="", index=True)
+    number_of_assets = Column(Integer,nullable=False,default="", index=True)
+    number_of_months = Column(Integer,nullable=False,default="", index=True)
     package_uuid = Column(UUID(as_uuid=True), ForeignKey("packages.uuid"), nullable=False)
     user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
     user = relationship("User", uselist=False)
