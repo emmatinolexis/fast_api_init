@@ -31,4 +31,3 @@ def delete_item(db: Session, model, uuid: str):
         db.delete(db_item)
         db.commit()
     return db_item
-
