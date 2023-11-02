@@ -127,6 +127,7 @@ class Onboarding(BaseModel):
     number_of_months = Column(Integer,nullable=False,default="", index=True)
     package_uuid = Column(UUID(as_uuid=True), ForeignKey("packages.uuid"), nullable=False)
     user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
+    number_of_months = Column(Integer,nullable=False,default="", index=True)
     user = relationship("User", uselist=False)
     package = relationship("Package", uselist=False)
     asset_type = relationship("AssetType", uselist=False)
