@@ -11,6 +11,7 @@ from app.database.assets import update_asset
 from app.database import models
 from app.utils.auth import get_current_user
 
+
 from .shared import get_db
 
 router = APIRouter(
@@ -29,9 +30,9 @@ async def create_asset_handler(asset_type: schemas.Asset, db: Session = Depends(
     return create_asset(db, asset_type)
 
 @router.put("/{asset_id}", response_model=schemas.Asset)
-async def update_asset_handler(asset_id: int, updated_asset_type: schemas.Asset, 
+async def update_asset_handler(asset_id: int, updated_asset_: schemas.Asset, 
                                db: Session = Depends(get_db),get_current_user: schemas.User = Depends(get_current_user)):
-    updated_asset = update_asset(db, asset_id, updated_asset_type)
+    updated_asset = update_asset(db, asset_id, updated_asset_)
     if updated_asset is None:
         raise HTTPException(status_code=404, detail="Asset not found")
     return updated_asset
