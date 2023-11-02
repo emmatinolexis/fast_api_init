@@ -36,9 +36,7 @@ def update_package_item(db: Session, package_item_uuid: str,model: models.Packag
             "status": updated_package_item.status
         }
         updated = update_item(db, package_item_uuid,model, updated_package_item_data)
-        if updated:
-            return updated
-        raise HTTPException(status_code=500, detail="Error Updating package item")
+        return updated
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"{e}")
     
@@ -51,9 +49,7 @@ def delete_package_item(db: Session, uuid: str):
 def get_package_item_by_uuid(db: Session, uuid: str):
     try:
         package = get_item_by_id(db, model=models.PackageItem, uuid=uuid)
-        if package:
-            return package
-        raise HTTPException(status_code=404, detail="Package item not found")
+        return package
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"{e}")
 

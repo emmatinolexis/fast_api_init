@@ -7,6 +7,8 @@ from app.routers import packages
 from app.routers import package_items
 from app.routers import asset_types
 from app.routers import assets
+from app.routers import onboarding
+
 from app.routers import features
 from app.routers import contact
 
@@ -26,6 +28,7 @@ app.include_router(packages.router)
 app.include_router(package_items.router)
 app.include_router(asset_types.router)
 app.include_router(assets.router)
+app.include_router(onboarding.router)
 app.include_router(authentication.router)
 app.include_router(features.router)
 app.include_router(contact.router)
