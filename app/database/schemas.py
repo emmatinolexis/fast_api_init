@@ -2,6 +2,7 @@ from typing import Optional,Union
 
 from pydantic import BaseModel,EmailStr
 from pydantic_extra_types.phone_numbers import PhoneNumber
+from typing import List
 # from app.utils.utils import generate_uuid
 # from uuid import UUID, uuid4
 
@@ -86,7 +87,7 @@ class Package(BaseModel):
         orm_model = True
     
 class PackageItemAssignment(BaseModel):
-    package_item_uuid: str
+    package_item_uuids: List[str]
     package_uuid: str
     class Config:
         orm_model = True

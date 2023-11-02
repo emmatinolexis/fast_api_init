@@ -20,7 +20,6 @@ def get_all_packages(db: Session):
         return packages
     raise HTTPException(status_code=404, detail="Packages Not Found")
     
-    
 
 def create_package(db: Session, package: schemas.Package):
     package_data = {
@@ -43,7 +42,7 @@ def update_package(db: Session, package_uuid: str,model: models.Package, updated
     updated = update_item(db, package_uuid,model, updated_package_data)
     if updated:
         return updated
-    raise HTTPException(status_code=500, detail="Error Updating packagin")
+    raise HTTPException(status_code=500, detail="Error Updating package")
     
 
 def delete_package(db: Session, uuid: str):
@@ -55,3 +54,42 @@ def get_package_by_uuid(db: Session, uuid: str):
         return package
     raise HTTPException(status_code=404, detail="Package not found")
 
+
+def assign_package_item(db: Session, data: schemas.PackageItemAssignment):
+    # return data.package_item_uuids
+    try:
+        for item in data.package_item_uuids:
+
+            data_items = {
+                "package_uuid" : data.package_uuid,
+                "package_item_uuid" : item
+            }
+
+            db_item = db.query(models.PackageItemAssignment).filter(
+            models.PackageItemAssignment.package_uuid == data.package_uuid,
+            models.PackageItemAssignment.package_item_uuid == item
+            ).first()
+
+            if db_item:
+                pass
+            else:
+                create_item(db, models.PackageItemAssignment, data_items)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"{e}")
+    
+    raise HTTPException(status_code=200, detail="Success")
+
+def delete_package_item(db: Session, package_uuid: str, package_item_uuid: str):
+    try:
+        db_item = db.query(models.PackageItemAssignment).filter(
+                models.PackageItemAssignment.package_uuid == package_uuid,
+                models.PackageItemAssignment.package_item_uuid == package_item_uuid
+                ).first()
+        if db_item:
+            db.delete(db_item)
+            db.commit()
+        return db_item
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"{e}")
+        
+    

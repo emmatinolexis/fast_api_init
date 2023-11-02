@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routers import system
 from app.routers import users
 from app.routers import packages
+from app.routers import package_items
 from app.routers import asset_types
 from app.routers import assets
 from app.routers import features
@@ -21,6 +22,7 @@ app = FastAPI(
 app.include_router(system.router)
 app.include_router(users.router)
 app.include_router(packages.router)
+app.include_router(package_items.router)
 app.include_router(asset_types.router)
 app.include_router(assets.router)
 app.include_router(authentication.router)
