@@ -91,7 +91,7 @@ async def verify_token_route(token_data: schemas.VerifyToken, db: Session = Depe
 
             raise HTTPException(status_code=404,detail="Verification code expired")
     else:
-        raise HTTPException(status_code=404,detail="Verification token not found")
+        raise HTTPException(status_code=409,detail="Verification token not found")
 
 
 @router.post("/verify-email")
@@ -119,9 +119,9 @@ async def verify_user_email(user: schemas.UserEmailVerification, db: Session = D
                 # save generated token into db
                 return create_verification_token(db, user,token_detail)
             else:
-                raise HTTPException(status_code=404,detail="Verification code already generated, please check email to verify")
+                raise HTTPException(status_code=409,detail="Verification code already generated, please check email to verify")
         else:
-            raise HTTPException(status_code=404,detail="User already verified")
+            raise HTTPException(status_code=409,detail="User already verified")
     else:
         raise HTTPException(status_code=404,detail="User not found")
 
