@@ -21,7 +21,8 @@ def send_email(subject, recipient, email, message, token="") -> Dict[str, str]:
         template = env.get_template('email-template.html')
 
         # Login to the Mailtrap server
-        server.login("3ac816258e1993", "d9e1b01067c879")
+        server.login("9ca32e462abc06", "f355e3500b61e0")
+        
 
         # Create the email message using the template
         message_data = template.render(recipient_name=recipient, message=message, verify_token = token)
@@ -35,7 +36,7 @@ def send_email(subject, recipient, email, message, token="") -> Dict[str, str]:
         msg.attach(MIMEText(message_data, 'html'))
 
         # Send the email
-        server.sendmail("3ac816258e1993", email, msg.as_string())
+        server.sendmail("9ca32e462abc06", email, msg.as_string())
 
         # Close the SMTP connection
         server.quit()
