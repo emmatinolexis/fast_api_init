@@ -43,7 +43,7 @@ def update_contact(db: Session, uuid: str, model: models.ContactSale, updated_co
             "user_uuid": updated_contact.user_uuid
         }
         updated = update_item(db,uuid,model,updated_contact_data)
-        return updated
+        return updated_contact_data
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"{e}")
     

@@ -21,7 +21,7 @@ router = APIRouter(
     tags=["packages"],
 )
 
-@router.get("/", response_model=List[schemas.Package])
+@router.get("/", response_model=None)
 async def get_product_packages_handler(db: Session = Depends(get_db),  auth_user: schemas.User = Depends(get_current_user)):
     return get_all_packages(db)
     
