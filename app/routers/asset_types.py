@@ -17,7 +17,7 @@ from app.utils.auth import get_current_user
 
 router = APIRouter(
     prefix="/asset_types",
-    tags=["assets"],
+    tags=["asset_types"],
 )
 
 @router.get("/", response_model=List[schemas.AssetType])
