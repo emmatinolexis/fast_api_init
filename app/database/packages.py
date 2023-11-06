@@ -20,13 +20,8 @@ def get_all_packages(db: Session):
         packages = []
         for package in db_packages:
             package_items = db.query(models.PackageItem).join(models.PackageItemAssignment, models.PackageItemAssignment.package_item_uuid == models.PackageItem.uuid).filter(models.PackageItemAssignment.package_uuid == package.uuid).all()
-            # package_item = db_item = db.query(models.PackageItem).filter(
-            # # models.PackageItem.uuid == package.,
-            # ).first()
-
             packages.append({
                 "package": package,
-                # "package_items": package.package_item_assignments if package.package_item_assignments else None
                 "package_items": package_items
 
             })
