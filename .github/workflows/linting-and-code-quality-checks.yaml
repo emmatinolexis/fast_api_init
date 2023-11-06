@@ -22,8 +22,9 @@ jobs:
           pip install flake8
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: Code Formatting Checks
-        run: |
-          black ./app
+        uses: rickstaa/action-black@v1
+        with:
+          black_args: "./app --check"
       - name: Import Sorting Checks
         run: |
           isort ./app
