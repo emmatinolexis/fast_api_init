@@ -4,7 +4,7 @@ from pydantic import BaseModel,EmailStr
 from pydantic_extra_types.phone_numbers import PhoneNumber
 from typing import List
 # from app.utils.utils import generate_uuid
-# from uuid import UUID, uuid4
+from uuid import UUID
 
 
 # class BaseUUIDModel(BaseModel):
@@ -85,12 +85,24 @@ class Package(BaseModel):
     package_description: str
     class Config:
         orm_model = True
-    
+
 class PackageItemAssignment(BaseModel):
     package_item_uuids: List[str]
     package_uuid: str
     class Config:
         orm_model = True
+
+class PackageOutput(BaseModel):
+    package_name: str
+    package_price: str
+    package_description: str
+    uuid:UUID
+    # package_item:PackageItemAssignment
+    
+    class Config:
+        orm_model = True
+    
+
 
 class Feature(BaseModel):
     feature_name: str

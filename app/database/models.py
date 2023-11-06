@@ -42,14 +42,14 @@ class AssetType(BaseModel):
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
     asset_type_name = Column(String(length=50), nullable=False, default="", index=True)
     description = Column(String(length=100), nullable=True, default="", index=True)
-    icon_url = Column(String(length=50), nullable=False, default="", index=True)
+    icon_url = Column(String(length=100), nullable=False, default="", index=True)
     status = Column(String(length=50), nullable=False, default="", index=True)
 
 class Asset(BaseModel):
     __tablename__ = "assets"
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
     asset_name = Column(String(length=50),nullable=False,default="", index=True)
-    asset_status = Column(String(length=15),nullable=False,default="", index=True)
+    asset_status = Column(String(length=50),nullable=False,default="", index=True)
     user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
     asset_type_uuid = Column(UUID(as_uuid=True), ForeignKey("asset_types.uuid"), nullable=False)
     equipment_uuid = Column(UUID(as_uuid=True), ForeignKey("equipments.uuid"), nullable=False)
@@ -88,20 +88,21 @@ class Package(BaseModel):
     package_price = Column(String(length=50),nullable=False,default="", index=True)      
     package_description = Column(String(length=100),nullable=True,default="", index=True)
     package_item_assignments = relationship("PackageItemAssignment", uselist=True)
+    # items = relationship("PackageItem", back_populates="package")
     
 class PackageItemAssignment(BaseModel):
     __tablename__ = "package_item_assignments"
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
     package_uuid = Column(UUID(as_uuid=True), ForeignKey("packages.uuid"), nullable=False)
     package_item_uuid = Column(UUID(as_uuid=True), ForeignKey("package_items.uuid"), nullable=False)
-    package_item = relationship("PackageItem", uselist=False)
+    package_item = relationship("PackageItem", uselist=False, lazy="joined")
 
 class Feature(BaseModel):
     __tablename__ = "features"
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
     feature_name = Column(String(length=50),nullable=False,default="", index=True)
     feature_description = Column(String(length=100),nullable=False,default="", index=True)
-    icon_url = Column(String(length=50),nullable=False,default="", index=True)
+    icon_url = Column(String(length=100),nullable=False,default="", index=True)
     status = Column(String(length=50),nullable=False,default="", index=True)
 
 class Equipment(BaseModel):
