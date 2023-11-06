@@ -24,7 +24,7 @@ jobs:
       - name: Code Formatting Checks
         uses: rickstaa/action-black@v1
         with:
-          black_args: "./app --check"
+          black_args: "./app --exclude=venv --exclude=env --exclude=alembic --check"
       - name: Import Sorting Checks
         run: |
           isort ./app
