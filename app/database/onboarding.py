@@ -25,8 +25,10 @@ def create_onboarding(db: Session, onboarding:schemas.Onboarding):
             "number_of_assets": onboarding.number_of_assets,
             "number_of_months":onboarding.number_of_months,
             "package_uuid":onboarding.package_uuid,
-            "user_uuid" : onboarding.user_uuid
+            "user_uuid" : onboarding.user_uuid,
+            "features_uuids": onboarding.features_uuids
         }
+        # return onboarding_item
         create_item(db, models.Onboarding, onboarding_item)
         return onboarding_item
     except Exception as e:

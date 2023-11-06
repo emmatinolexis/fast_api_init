@@ -8,6 +8,8 @@ from app.routers import package_items
 from app.routers import asset_types
 from app.routers import assets
 from app.routers import onboarding
+from app.routers import organisation_contact
+
 
 from app.routers import features
 from app.routers import contact
@@ -32,6 +34,7 @@ app.include_router(onboarding.router)
 app.include_router(authentication.router)
 app.include_router(features.router)
 app.include_router(contact.router)
+app.include_router(organisation_contact.router)
 
 app.add_middleware(
     CORSMiddleware,

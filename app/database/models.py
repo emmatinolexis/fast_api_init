@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Boolean, ForeignKey, Integer, String, DateTime
+from sqlalchemy import Column, Boolean, ForeignKey, Integer, String, DateTime, JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql import UUID
@@ -28,15 +28,33 @@ class User(BaseModel):
     verifiedAt = Column(String(length=100), nullable=True, default=None, index=True)
     location = Column(String(length=30),nullable=True,default="",index=True)
     address = Column(String(length=50),nullable=True,default="",index=True)
-    profile = relationship("Profile", uselist=False, back_populates="user")
+    account_type = Column(String(length=50),nullable=True,index=True)
+    business_profile_uuid = Column(UUID(as_uuid=True), ForeignKey("business_profiles.uuid"), nullable=True)
+    business_profile = relationship("BusinessProfile", uselist=False, back_populates="users")
     user_verification = relationship("EmailVerification", uselist=False, back_populates="user")
     
-class Profile(BaseModel):
-    __tablename__ = "profiles"
+class BusinessProfile(BaseModel):
+    __tablename__ = "business_profiles"
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
-    user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
-    user = relationship("User", back_populates="profile")
+    business_name = Column(String(length=100),nullable=False,index=True)
+    business_email = Column(String(length=100),nullable=False,index=True)
+    business_phone = Column(String(length=100),nullable=False,index=True)
+    business_location = Column(String(length=100),nullable=True,index=True)
+    business_logo = Column(String(length=100),nullable=True,index=True)
+    business_address = Column(String(length=100),nullable=True,index=True)
+    users = relationship("User",uselist=True, back_populates="business_profile")
     
+class OrganisationContact(BaseModel):
+    __tablename__ = "organisation_contacts"
+    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
+    first_name = Column(String(length=100),nullable=False,index=True)
+    last_name = Column(String(length=100),nullable=False,index=True)
+    role = Column(String(length=100),nullable=False,index=True)
+    country = Column(String(length=100),nullable=True,index=True)
+    message = Column(String(length=255),nullable=True,index=True)
+    user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
+    user = relationship("User")
+
 class AssetType(BaseModel):
     __tablename__ = "asset_types"
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
@@ -124,9 +142,10 @@ class Onboarding(BaseModel):
     __tablename__ = "onboardings"
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
     asset_type_uuid = Column(UUID(as_uuid=True), ForeignKey("asset_types.uuid"))
-    number_of_assets = Column(Integer,nullable=False,default="", index=True)
+    number_of_assets = Column(String(length=50),nullable=False,default="", index=True)
     number_of_months = Column(Integer,nullable=False,default="", index=True)
     package_uuid = Column(UUID(as_uuid=True), ForeignKey("packages.uuid"), nullable=False)
+    features_uuids = Column(JSON)
     user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
     number_of_months = Column(Integer,nullable=False,default="", index=True)
     user = relationship("User", uselist=False)
