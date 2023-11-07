@@ -8,11 +8,13 @@ VERIFY_TOKEN_EXPIRE_DAYS = 3
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-def hash_user_password(password: str) -> str: 
+def hash_user_password(password: str) -> str:
     return pwd_context.hash(password)
+
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
+
 
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
