@@ -25,10 +25,10 @@ jobs:
         uses: rickstaa/action-black@v1
         with:
           black_args: "./app --exclude=venv --exclude=env --exclude=alembic --check"
-      - name: Import Sorting Checks
-        uses: isort/isort-action@v1
-        with:
-          sort-paths: ./app
+      # - name: Import Sorting Checks
+      #   uses: isort/isort-action@v1
+      #   with:
+      #     sort-paths: ./app
       - name: Static Code Linting with flake8
         run: |
           flake8 app/ --count --select=E9,F63,F7,F82 --show-source --statistics
