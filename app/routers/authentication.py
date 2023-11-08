@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.database import models, schemas
 from app.database.repository import create_verification_token, get_user_by_email_address
-from app.routers.users import extract_user_data
+from app.utils.auth import extract_user_data
 from app.utils.auth import (
     generate_token_for_existing_user,
     generate_token_for_new_user,
