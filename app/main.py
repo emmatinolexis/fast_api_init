@@ -2,9 +2,19 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database.core import init_db
-from app.routers import (asset_types, assets, authentication, contact,
-                         features, onboarding, organisation_contact,
-                         package_items, packages, system, users)
+from app.routers import (
+    asset_types,
+    assets,
+    authentication,
+    contact,
+    features,
+    onboarding,
+    organisation_contact,
+    package_items,
+    packages,
+    system,
+    users,
+)
 
 app = FastAPI(
     title="MVI Tracking",

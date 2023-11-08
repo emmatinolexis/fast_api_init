@@ -4,9 +4,13 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database import models, schemas
-from app.database.features import (create_feature, delete_feature,
-                                   get_all_features, get_feature_by_uuid,
-                                   update_feature)
+from app.database.features import (
+    create_feature,
+    delete_feature,
+    get_all_features,
+    get_feature_by_uuid,
+    update_feature,
+)
 from app.utils.auth import get_current_user
 
 from .shared import get_db

@@ -10,8 +10,12 @@ from sqlalchemy.orm import Session
 
 from app.database import schemas
 from app.routers.shared import get_db
-from app.utils.hashing import (ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM,
-                               SECRET_KEY, verify_password)
+from app.utils.hashing import (
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    ALGORITHM,
+    SECRET_KEY,
+    verify_password,
+)
 
 router = APIRouter(
     prefix="/login",

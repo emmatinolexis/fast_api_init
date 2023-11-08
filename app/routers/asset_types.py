@@ -4,8 +4,12 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database import models, schemas
-from app.database.assets import (create_asset_type, delete_asset_type,
-                                 get_asset_type, update_asset_type)
+from app.database.assets import (
+    create_asset_type,
+    delete_asset_type,
+    get_asset_type,
+    update_asset_type,
+)
 from app.utils.auth import get_current_user
 
 from .shared import get_db

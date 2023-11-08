@@ -2,9 +2,13 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database import schemas
-from app.database.onboarding import (create_onboarding, delete_onboarding,
-                                     get_all_onboardings, get_onboarding,
-                                     update_onboarding)
+from app.database.onboarding import (
+    create_onboarding,
+    delete_onboarding,
+    get_all_onboardings,
+    get_onboarding,
+    update_onboarding,
+)
 from app.utils.auth import get_current_user
 
 from .shared import get_db
