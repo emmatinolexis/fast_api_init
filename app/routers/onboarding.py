@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session
 
 from app.database import schemas
 from app.database.onboarding import (
-    create_onboarding,
+    create_business_onboarding,
+    create_individual_onboarding,
     delete_onboarding,
     get_all_onboardings,
     get_onboarding,
@@ -26,13 +27,22 @@ async def get_all_onboardings_handler(
     return get_all_onboardings(db)
 
 
-@router.post("/create", response_model=schemas.Onboarding)
-async def create_onboarding_handler(
+@router.post("/create", response_model=None)
+async def create_individual_onboarding_handler(
     onboarding: schemas.Onboarding,
     db: Session = Depends(get_db),
-    auth_user: schemas.User = Depends(get_current_user),
+    # auth_user: schemas.User = Depends(get_current_user),
 ):
-    return create_onboarding(db, onboarding)
+    return create_individual_onboarding(db, onboarding)
+
+
+@router.post("/create/organisation", response_model=None)
+async def create_organisation_onboarding_handler(
+    onboarding: schemas.BusinessOnboarding,
+    db: Session = Depends(get_db),
+    # auth_user: schemas.User = Depends(get_current_user),
+):
+    return create_business_onboarding(db, onboarding)
 
 
 @router.put("/update/{uuid}", response_model=schemas.Onboarding)
