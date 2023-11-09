@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.database.core import init_db
 from app.routers import (
+    asset_location,
     asset_types,
     assets,
     authentication,
@@ -14,7 +15,6 @@ from app.routers import (
     packages,
     system,
     users,
-    asset_location,
 )
 
 app = FastAPI(

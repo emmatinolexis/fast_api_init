@@ -4,11 +4,11 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database import models, schemas
-from app.database.asset_location import(
+from app.database.asset_location import (
     create_asset_location,
-    update_asset_location,
-    get_all_asset_location,
     delete_asset_location,
+    get_all_asset_location,
+    update_asset_location,
 )
 from app.utils.auth import get_current_user
 
@@ -22,8 +22,7 @@ router = APIRouter(
 
 @router.get("/", response_model=List[schemas.AssetLocation])
 async def get_all_asset_location_handler(
-    db: Session = Depends(get_db), 
-    auth_user: schemas.User = Depends(get_current_user)
+    db: Session = Depends(get_db), auth_user: schemas.User = Depends(get_current_user)
 ):
     return get_all_asset_location(db)
 
@@ -45,7 +44,10 @@ async def update_asset_location_handler(
     auth_user: schemas.User = Depends(get_current_user),
 ):
     return update_asset_location(
-        db, uuid, model=models.AssetLocation, updated_asset_location=updated_asset_location
+        db,
+        uuid,
+        model=models.AssetLocation,
+        updated_asset_location=updated_asset_location,
     )
 
 

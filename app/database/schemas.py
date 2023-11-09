@@ -258,7 +258,8 @@ class BusinessProfile(BaseModel):
     business_phone: str
     user_uuid: UUID
 
+
 class AssetLocation(BaseModel):
     asset_uuid: UUID
     longitude: str
-    latitude: str  
+    latitude: str
