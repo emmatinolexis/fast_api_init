@@ -7,6 +7,7 @@ from app.database import schemas
 from app.database.assets import create_asset, delete_asset, get_all_assets, update_asset
 from app.utils.auth import get_current_user
 
+
 from .shared import get_db
 
 router = APIRouter(

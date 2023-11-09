@@ -148,6 +148,7 @@ class Asset(BaseModel):
     marker_icon_uuid = Column(
         UUID(as_uuid=True), ForeignKey("marker_icons.uuid"), nullable=False
     )
+    marker_color = Column(String(length=100), nullable=False, index=True)
     marker_icon = relationship("MarkerIcon", uselist=False)
     user = relationship("User", uselist=False)
     asset_type = relationship("AssetType", uselist=False)

@@ -2,9 +2,8 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database import models, schemas
-from app.database.marker_icon import (
+from app.database.marker_icon import (  # delete_marker_icon,
     create_marker_icon,
-    # delete_marker_icon,
     get_all_marker_icons,
     get_marker_icon_by_uuid,
     update_marker_icon,
@@ -45,6 +44,7 @@ async def update_marker_icon_handler(
     return update_marker_icon(
         db=db, uuid=uuid, model=models.MarkerIcon, updated_icon=icon
     )
+
 
 @router.get("/{uuid}", response_model=schemas.MarkerIcon)
 async def get_marker_by_uuid_handler(
