@@ -57,5 +57,9 @@ async def get_contact_by_uuid_handler(
 
 
 @router.delete("/delete/{uuid}", response_model=None)
-async def delete_contact_by_uuid_handler(uuid: str, db: Session = Depends(get_db),auth_user: schemas.User = Depends(get_current_user)):
+async def delete_contact_by_uuid_handler(
+    uuid: str,
+    db: Session = Depends(get_db),
+    auth_user: schemas.User = Depends(get_current_user),
+):
     return delete_contact(db, uuid)
