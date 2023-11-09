@@ -1,14 +1,15 @@
-from typing import Optional,Union
+from typing import List, Optional, Union
 
-from pydantic import BaseModel,EmailStr
-from pydantic_extra_types.phone_numbers import PhoneNumber
-from typing import List
 # from app.utils.utils import generate_uuid
 from uuid import UUID
 
+from pydantic import BaseModel, EmailStr
+
+# from pydantic_extra_types.phone_numbers import PhoneNumber
 
 # class BaseUUIDModel(BaseModel):
 #     uuid: UUID = Field(default_factory=uuid4)
+
 
 class User(BaseModel):
     first_name: str
@@ -18,90 +19,132 @@ class User(BaseModel):
     phone_number: Optional[str]
     email_address: EmailStr
     password: str
+
     class Config:
         orm_model = True
+
 
 class UpdateUser(BaseModel):
     location: Optional[str]
     address: Optional[str]
     phone_number: Optional[str]
+
     class Config:
         orm_model = True
-    
+
+
 class UserLogin(BaseModel):
     email_address: EmailStr
     password: str
+
     class Config:
         orm_model = True
+
 
 class GetPackage(BaseModel):
     uuid: str
-    
+
+
 class EmailVerification(BaseModel):
-    user_uuid: str
+    user_uuid: UUID
     verification_token: str
     expiry_date: str
+
     class Config:
         orm_model = True
 
+
 class UserEmailVerification(BaseModel):
     uuid: str
+
     class Config:
         orm_model = True
+
+
+class AssetTypeInput(BaseModel):
+    asset_type_name: str
+    description: str
+    icon_url: str
+    status: str
+
+    class Config:
+        orm_model = True
+
 
 class AssetType(BaseModel):
     asset_type_name: str
     description: str
     icon_url: str
     status: str
+    uuid: UUID
+
     class Config:
         orm_model = True
 
 
 class VerifyToken(BaseModel):
     Token: str
-    
+
     class Config:
         orm_model = True
 
+
 class TokenData(BaseModel):
     username: Union[str, None] = None
-    
+
+
 class Token(BaseModel):
     access_token: str
     token_type: str
+
     class Config:
         orm_model = True
- 
+
+
 class PackageItems(BaseModel):
     item_name: str
     status: str
+
     class Config:
         orm_model = True
-    
+
+
 class Package(BaseModel):
     package_name: str
     package_price: str
     package_description: str
+
     class Config:
         orm_model = True
 
+
 class PackageItemAssignment(BaseModel):
-    package_item_uuids: List[str]
-    package_uuid: str
+    package_item_uuids: List[UUID]
+    package_uuid: UUID
+
     class Config:
         orm_model = True
+
 
 class PackageOutput(BaseModel):
     package_name: str
     package_price: str
     package_description: str
-    uuid:UUID
+    uuid: UUID
     # package_item:PackageItemAssignment
-    
+
     class Config:
         orm_model = True
-    
+
+
+class FeatureInput(BaseModel):
+    feature_name: str
+    feature_description: str
+    icon_url: str
+    status: str
+
+    class Config:
+        orm_model = True
 
 
 class Feature(BaseModel):
@@ -109,77 +152,86 @@ class Feature(BaseModel):
     feature_description: str
     icon_url: str
     status: str
+    uuid: UUID
+
     class Config:
         orm_model = True
-    
+
+
 class Equipment(BaseModel):
     equipment_name: str
-    equipment_type_uuid: str
+    equipment_type_uuid: UUID
     marker_icon_url: str
     marker_icon_colour: str
+
     class Config:
         orm_model = True
-    
-class EquipmentType(BaseModel):
-    equipment_type_name: str
-    class Config:
-        orm_model = True
+
 
 class ContactSale(BaseModel):
     phone_number: str
-    call_time:str
-    user_uuid:str
-    status:str
-    
+    call_time: str
+    user_uuid: UUID
+    status: str
+
     class Config:
         orm_model = True
+
 
 class Onboarding(BaseModel):
-    asset_type_uuid: str 
-    number_of_assets: int
+    asset_type_uuid: UUID
+    number_of_assets: str
     number_of_months: int
-    package_uuid: str
-    user_uuid: str
-    number_of_months:int
+    package_uuid: UUID
+    user_uuid: UUID
+    features_uuids: List[str]
+    number_of_months: int
+
     class Config:
         orm_model = True
+
 
 class Asset(BaseModel):
-    user_uuid: str
+    user_uuid: UUID
     asset_type_uuid: str
     asset_name: str
-    equipment_uuid: str
+    equipment_uuid: UUID
     vin_no: str
+
     class Config:
         orm_model = True
 
-class Equipment:
-    equipment_name:str
-    equipment_type_uuid: str
-    marker_icon_url: str
-    marker_icon_color: str
+
+class OnboardingFeatureAssignment(BaseModel):
+    onboarding_uuid: UUID
+    feature_uuid: UUID
+
     class Config:
         orm_model = True
 
-class OnboardingFeatureAssignment:
-    onboarding_uuid:str
-    feature_uuid: str
-    class Config:
-        orm_model = True
 
-class EquipmentType:
+class EquipmentType(BaseModel):
     equipment_type_name: str
     status: str
+
     class Config:
         orm_model = True
 
-    
+
+class OrganisationContact(BaseModel):
+    first_name: str
+    last_name: str
+    role: str
+    country: str
+    message: str
+    user_uuid: UUID
+
+    class Config:
+        orm_model = True
 
 
-    
-
-
-
-
-
-   
+class BusinessProfile(BaseModel):
+    businness_name: str
+    business_email: str
+    business_phone: str
+    user_uuid: UUID
