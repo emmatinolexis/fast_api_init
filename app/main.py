@@ -3,10 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.database.core import init_db
 from app.routers import (
+    asset_location,
     asset_types,
     assets,
     authentication,
     contact,
+    equipment_type,
     features,
     onboarding,
     organisation_contact,
@@ -34,6 +36,8 @@ app.include_router(authentication.router)
 app.include_router(features.router)
 app.include_router(contact.router)
 app.include_router(organisation_contact.router)
+app.include_router(asset_location.router)
+app.include_router(equipment_type.router)
 
 app.add_middleware(
     CORSMiddleware,

@@ -328,3 +328,17 @@ class ContactSale(BaseModel):
     user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
     status = Column(String(length=50), nullable=False, default="", index=True)
     user = relationship("User", uselist=False)
+
+
+class AssetLocation(BaseModel):
+    __tablename__ = "asset_locations"
+    uuid = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        unique=True,
+        nullable=False,
+    )
+    asset_uuid = Column(UUID(as_uuid=True), ForeignKey("assets.uuid"), nullable=False)
+    longitude = Column(String(length=100), nullable=False, index=True)
+    latitude = Column(String(length=100), nullable=False, index=True)
