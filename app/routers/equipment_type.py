@@ -42,8 +42,12 @@ async def update_equipment_type_handler(
     auth_user: schemas.User = Depends(get_current_user),
 ):
     return update_equipment_type(
-        db=db, uuid=uuid, model=models.EquipmentType, updated_equipment_type=updated_equipment_type
+        db=db,
+        uuid=uuid,
+        model=models.EquipmentType,
+        updated_equipment_type=updated_equipment_type,
     )
+
 
 @router.delete("/delete/{uuid}", response_model=None)
 async def delete_equipment_type(

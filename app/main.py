@@ -8,6 +8,7 @@ from app.routers import (
     assets,
     authentication,
     contact,
+    equipment_type,
     features,
     onboarding,
     organisation_contact,
@@ -15,7 +16,6 @@ from app.routers import (
     packages,
     system,
     users,
-    equipment_type,
 )
 
 app = FastAPI(

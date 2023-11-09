@@ -2,12 +2,7 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from . import models, schemas
-from .helpers import (
-    create_item,
-    delete_item,
-    get_all_items,
-    update_item,
-)
+from .helpers import create_item, delete_item, get_all_items, update_item
 
 # CRUD functionalities for Equipment Type
 
@@ -34,7 +29,7 @@ def create_equipment_type(db: Session, equipment_type: schemas.EquipmentType):
 
 def update_equipment_type(
     db: Session,
-    uuid:str,
+    uuid: str,
     model: models.EquipmentType,
     updated_equipment_type: schemas.EquipmentType,
 ):
@@ -43,7 +38,7 @@ def update_equipment_type(
             "equipment_type_name": updated_equipment_type.equipment_type_name,
             "status": updated_equipment_type.status,
         }
-        update_item(db,uuid, model, updated_equipment_type_data)
+        update_item(db, uuid, model, updated_equipment_type_data)
         return updated_equipment_type_data
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"{e}")
@@ -54,4 +49,3 @@ def delete_equipment_type(db: Session, uuid: str):
         return delete_item(db, models.EquipmentType, uuid)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"{e}")
-
