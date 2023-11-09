@@ -30,8 +30,6 @@ def get_user_by_email_address(email: str, db: Session):
         user = db.query(models.User).filter(models.User.email_address == email).first()
         if user:
             return user
-        else:
-            raise HTTPException(status_code=400, detail="User not found")
     except Exception:
         raise HTTPException(status_code=400, detail="User not found")
 

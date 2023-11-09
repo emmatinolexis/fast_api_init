@@ -165,14 +165,14 @@ class Feature(BaseModel):
         orm_model = True
 
 
-class Equipment(BaseModel):
-    equipment_name: str
-    equipment_type_uuid: UUID
-    marker_icon_url: str
-    marker_icon_colour: str
+# class Equipment(BaseModel):
+#     equipment_name: str
+#     equipment_type_uuid: UUID
+#     marker_icon_url: str
+#     marker_icon_colour: str
 
-    class Config:
-        orm_model = True
+#     class Config:
+#         orm_model = True
 
 
 class ContactSale(BaseModel):
@@ -213,12 +213,30 @@ class BusinessOnboarding(BaseModel):
         orm_model = True
 
 
+class MarkerIcon(BaseModel):
+    icon_name: str
+    icon_url: str
+    status: str
+   
+    class Config:
+        orm_model = True
+
+
+class EquipmentType(BaseModel):
+    equipment_type_name: str
+    
+    class Config:
+        orm_model = True
+
 class Asset(BaseModel):
     user_uuid: UUID
-    asset_type_uuid: str
+    asset_type_uuid: UUID
     asset_name: str
-    equipment_uuid: UUID
+    asset_status: str
+    equipment_type_uuid: UUID
     vin_no: str
+    marker_icon_uuid: UUID
+    marker_color: str
 
     class Config:
         orm_model = True
@@ -231,13 +249,6 @@ class OnboardingFeatureAssignment(BaseModel):
     class Config:
         orm_model = True
 
-
-class EquipmentType(BaseModel):
-    equipment_type_name: str
-    status: str
-
-    class Config:
-        orm_model = True
 
 
 class OrganisationContact(BaseModel):

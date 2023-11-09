@@ -14,6 +14,7 @@ from app.routers import (
     packages,
     system,
     users,
+    marker_icon
 )
 
 app = FastAPI(
@@ -34,6 +35,8 @@ app.include_router(authentication.router)
 app.include_router(features.router)
 app.include_router(contact.router)
 app.include_router(organisation_contact.router)
+app.include_router(marker_icon.router)
+
 
 app.add_middleware(
     CORSMiddleware,

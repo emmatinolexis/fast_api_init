@@ -20,7 +20,7 @@ router = APIRouter(
 )
 
 
-@router.post("/create/", response_model=None)
+@router.post("/create", response_model=None)
 async def create_user_handler(user: schemas.User, db: Session = Depends(get_db)):
     if get_user_by_email_address(db=db, email=user.email_address):
         raise HTTPException(status_code=400, detail="Email already exists")
