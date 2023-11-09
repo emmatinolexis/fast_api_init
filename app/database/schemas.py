@@ -268,3 +268,9 @@ class BusinessProfile(BaseModel):
     business_email: str
     business_phone: str
     user_uuid: UUID
+
+
+class AssetLocation(BaseModel):
+    asset_uuid: UUID
+    longitude: str
+    latitude: str
