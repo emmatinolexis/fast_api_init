@@ -15,6 +15,7 @@ from app.routers import (
     packages,
     system,
     users,
+    equipment_type,
 )
 
 app = FastAPI(
@@ -36,6 +37,7 @@ app.include_router(features.router)
 app.include_router(contact.router)
 app.include_router(organisation_contact.router)
 app.include_router(asset_location.router)
+app.include_router(equipment_type.router)
 
 app.add_middleware(
     CORSMiddleware,
