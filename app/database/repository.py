@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.database.helpers import get_all_items
@@ -24,8 +25,15 @@ def update_user_by_uuid(db: Session, uuid: str, user: schemas.UpdateUser):
     return user
 
 
-def get_user_by_email_address(db: Session, email: str):
-    return db.query(models.User).filter(models.User.email_address == email).first()
+def get_user_by_email_address(email: str, db: Session):
+    try:
+        user = db.query(models.User).filter(models.User.email_address == email).first()
+        if user:
+            return user
+        else:
+            raise HTTPException(status_code=400, detail="User not found")
+    except Exception:
+        raise HTTPException(status_code=400, detail="User not found")
 
 
 def get_user_by_phone_number(db: Session, phone_number: str):

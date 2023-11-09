@@ -1,7 +1,7 @@
 import datetime
 import uuid
 
-from sqlalchemy import JSON, Boolean, Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -269,18 +269,32 @@ class Onboarding(BaseModel):
         nullable=False,
     )
     asset_type_uuid = Column(UUID(as_uuid=True), ForeignKey("asset_types.uuid"))
-    number_of_assets = Column(String(length=50), nullable=False, default="", index=True)
-    number_of_months = Column(Integer, nullable=False, default="", index=True)
+    number_of_assets = Column(String(length=50), nullable=False, index=True)
+    number_of_months = Column(String(length=50), nullable=True, index=True)
+    onboarding_type = Column(String(length=50), nullable=False, index=True)
     package_uuid = Column(
-        UUID(as_uuid=True), ForeignKey("packages.uuid"), nullable=False
+        UUID(as_uuid=True), ForeignKey("packages.uuid"), nullable=True
     )
-    features_uuids = Column(JSON)
     user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
-    number_of_months = Column(Integer, nullable=False, default="", index=True)
     user = relationship("User", uselist=False)
     package = relationship("Package", uselist=False)
     asset_type = relationship("AssetType", uselist=False)
     features = relationship("OnboardingFeatureAssignment", uselist=True)
+
+
+class UserOrganisationAssignment(BaseModel):
+    __tablename__ = "user_organisation_assignments"
+    uuid = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        unique=True,
+        nullable=False,
+    )
+    user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
+    business_profile_uuid = Column(
+        UUID(as_uuid=True), ForeignKey("business_profiles.uuid"), nullable=False
+    )
 
 
 class OnboardingFeatureAssignment(BaseModel):

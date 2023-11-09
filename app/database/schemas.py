@@ -41,6 +41,13 @@ class UserLogin(BaseModel):
         orm_model = True
 
 
+class UserEmail(BaseModel):
+    email_address: str
+
+    class Config:
+        orm_model = True
+
+
 class GetPackage(BaseModel):
     uuid: str
 
@@ -184,8 +191,23 @@ class Onboarding(BaseModel):
     number_of_months: int
     package_uuid: UUID
     user_uuid: UUID
-    features_uuids: List[str]
-    number_of_months: int
+    features_uuid: list[UUID]
+
+    class Config:
+        orm_model = True
+
+
+class BusinessOnboarding(BaseModel):
+    asset_type_uuid: UUID
+    number_of_assets: str
+    user_uuid: UUID
+    features_uuid: list[UUID]
+    business_name: str
+    business_email: str
+    business_location: str
+    business_phone: str
+    business_logo: str
+    business_address: str
 
     class Config:
         orm_model = True
