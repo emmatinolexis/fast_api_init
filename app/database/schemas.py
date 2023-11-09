@@ -217,16 +217,17 @@ class MarkerIcon(BaseModel):
     icon_name: str
     icon_url: str
     status: str
-   
+
     class Config:
         orm_model = True
 
 
 class EquipmentType(BaseModel):
     equipment_type_name: str
-    
+
     class Config:
         orm_model = True
+
 
 class Asset(BaseModel):
     user_uuid: UUID
@@ -248,7 +249,6 @@ class OnboardingFeatureAssignment(BaseModel):
 
     class Config:
         orm_model = True
-
 
 
 class OrganisationContact(BaseModel):

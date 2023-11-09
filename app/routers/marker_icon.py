@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.database import models, schemas
 from app.database.marker_icon import (
     create_marker_icon,
-    delete_marker_icon,
+    # delete_marker_icon,
     get_all_marker_icons,
     get_marker_icon_by_uuid,
     update_marker_icon,
@@ -18,11 +18,13 @@ router = APIRouter(
     tags=["marker_icons"],
 )
 
+
 @router.get("/", response_model=list[schemas.MarkerIcon])
 async def get_all_marker_icons_handler(
     db: Session = Depends(get_db), auth_user: schemas.User = Depends(get_current_user)
 ):
     return get_all_marker_icons(db)
+
 
 @router.post("/create", response_model=None)
 async def create_marker_icon_handler(
@@ -31,6 +33,7 @@ async def create_marker_icon_handler(
     auth_user: schemas.User = Depends(get_current_user),
 ):
     return create_marker_icon(db, icon)
+
 
 @router.put("/update/{uuid}", response_model=None)
 async def update_marker_icon_handler(
@@ -42,3 +45,11 @@ async def update_marker_icon_handler(
     return update_marker_icon(
         db=db, uuid=uuid, model=models.MarkerIcon, updated_icon=icon
     )
+
+@router.get("/{uuid}", response_model=schemas.MarkerIcon)
+async def get_marker_by_uuid_handler(
+    uuid: str,
+    db: Session = Depends(get_db),
+    auth_user: schemas.User = Depends(get_current_user),
+):
+    return get_marker_icon_by_uuid(db, uuid)

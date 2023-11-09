@@ -108,9 +108,7 @@ class EquipmentType(BaseModel):
         unique=True,
         nullable=False,
     )
-    equipment_type_name = Column(
-        String(length=100), nullable=False, index=True
-    )
+    equipment_type_name = Column(String(length=100), nullable=False, index=True)
     status = Column(String(length=50), nullable=False, index=True)
 
 
@@ -123,12 +121,8 @@ class MarkerIcon(BaseModel):
         unique=True,
         nullable=False,
     )
-    icon_name = Column(
-        String(length=50), nullable=False, index=True
-    )
-    icon_url = Column(
-        String(length=100), nullable=False, index=True
-    )
+    icon_name = Column(String(length=50), nullable=False, index=True)
+    icon_url = Column(String(length=100), nullable=False, index=True)
     status = Column(String(length=50), nullable=False, index=True)
 
 
@@ -142,7 +136,7 @@ class Asset(BaseModel):
         nullable=False,
     )
     asset_name = Column(String(length=50), nullable=False, index=True)
-    asset_status = Column(String(length=50), nullable=False,  index=True)
+    asset_status = Column(String(length=50), nullable=False, index=True)
     user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
     asset_type_uuid = Column(
         UUID(as_uuid=True), ForeignKey("asset_types.uuid"), nullable=False
@@ -151,7 +145,9 @@ class Asset(BaseModel):
         UUID(as_uuid=True), ForeignKey("equipment_types.uuid"), nullable=False
     )
     vin_no = Column(String(length=100), nullable=True, default="", index=True)
-    marker_icon_uuid = Column(UUID(as_uuid=True), ForeignKey("marker_icons.uuid"), nullable=False)
+    marker_icon_uuid = Column(
+        UUID(as_uuid=True), ForeignKey("marker_icons.uuid"), nullable=False
+    )
     marker_icon = relationship("MarkerIcon", uselist=False)
     user = relationship("User", uselist=False)
     asset_type = relationship("AssetType", uselist=False)
@@ -277,8 +273,6 @@ class Feature(BaseModel):
 #         String(length=50), nullable=False, default="", index=True
 #     )
 #     equipment_type = relationship("EquipmentType", uselist=False)
-
-
 
 
 class Onboarding(BaseModel):

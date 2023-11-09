@@ -8,13 +8,13 @@ from app.routers import (
     authentication,
     contact,
     features,
+    marker_icon,
     onboarding,
     organisation_contact,
     package_items,
     packages,
     system,
     users,
-    marker_icon
 )
 
 app = FastAPI(
