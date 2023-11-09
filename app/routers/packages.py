@@ -78,6 +78,9 @@ async def assign_package_item_handler(
     "/package_item_assignment/{package_uuid}/{package_item_uuid}", response_model=None
 )
 async def delete_package_item_from_package_handler(
-    package_uuid, package_item_uuid, db: Session = Depends(get_db)
+    package_uuid,
+    package_item_uuid,
+    db: Session = Depends(get_db),
+    auth_user: schemas.User = Depends(get_current_user),
 ):
     return delete_package_item(db, package_uuid, package_item_uuid)
