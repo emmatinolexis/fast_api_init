@@ -22,7 +22,7 @@ router = APIRouter(
 
 @router.get("/", response_model=List[schemas.AssetLocation])
 async def get_all_asset_location_handler(
-    db: Session = Depends(get_db), 
+    db: Session = Depends(get_db),
     # auth_user: schemas.User = Depends(get_current_user)
 ):
     return get_all_asset_location(db)
