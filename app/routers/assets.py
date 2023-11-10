@@ -4,10 +4,8 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database import models, schemas
-
 from app.database.assets import create_asset, delete_asset, get_all_assets, update_asset
 from app.utils.auth import get_current_user
-
 
 from .shared import get_db
 
@@ -41,7 +39,9 @@ async def update_asset_handler(
     auth_user: schemas.User = Depends(get_current_user),
 ):
     # return updated_asset
-    return update_asset(db=db,uuid=uuid,model=models.Asset,updated_asset=updated_asset)
+    return update_asset(
+        db=db, uuid=uuid, model=models.Asset, updated_asset=updated_asset
+    )
 
 
 @router.delete("/delete/{uuid}", response_model=schemas.Asset)

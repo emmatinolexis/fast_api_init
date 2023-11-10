@@ -50,7 +50,7 @@ async def update_equipment_type_handler(
 
 
 @router.delete("/delete/{uuid}", response_model=None)
-async def delete_equipment_type(
+async def delete_equipment_type_handler(
     uuid: str,
     db: Session = Depends(get_db),
     auth_user: schemas.User = Depends(get_current_user),

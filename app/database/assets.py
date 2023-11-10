@@ -13,17 +13,18 @@ def get_all_assets(db: Session):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"{e}")
 
+
 def create_asset(db: Session, asset: schemas.Asset):
     try:
         asset_data = {
             "asset_name": asset.asset_name,
             "user_uuid": asset.user_uuid,
-            "asset_status" : asset.asset_status,
+            "asset_status": asset.asset_status,
             "asset_type_uuid": asset.asset_type_uuid,
             "vin_no": asset.vin_no,
             "equipment_type_uuid": asset.equipment_type_uuid,
             "marker_icon_uuid": asset.marker_icon_uuid,
-            "marker_color": asset.marker_color
+            "marker_color": asset.marker_color,
         }
 
         create_item(db, models.Asset, asset_data)
@@ -32,20 +33,22 @@ def create_asset(db: Session, asset: schemas.Asset):
         raise HTTPException(status_code=400, detail=f"{e}")
 
 
-def update_asset(db: Session, uuid: str, model:models.Asset, updated_asset: schemas.Asset):
+def update_asset(
+    db: Session, uuid: str, model: models.Asset, updated_asset: schemas.Asset
+):
     try:
         updated_asset_data = {
             "asset_name": updated_asset.asset_name,
             "user_uuid": updated_asset.user_uuid,
-            "asset_status" : updated_asset.asset_status,
+            "asset_status": updated_asset.asset_status,
             "asset_type_uuid": updated_asset.asset_type_uuid,
             "vin_no": updated_asset.vin_no,
             "equipment_type_uuid": updated_asset.equipment_type_uuid,
-            "marker_icon_uuid":updated_asset.marker_icon_uuid,
-            "marker_color": updated_asset.marker_color
+            "marker_icon_uuid": updated_asset.marker_icon_uuid,
+            "marker_color": updated_asset.marker_color,
         }
-        
-        update_item(db, uuid,model, updated_asset_data)
+
+        update_item(db, uuid, model, updated_asset_data)
         return updated_asset_data
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"{e}")
