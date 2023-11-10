@@ -25,13 +25,14 @@ def create_asset(db: Session, asset: schemas.Asset):
             "marker_icon_uuid": asset.marker_icon_uuid,
             "marker_color": asset.marker_color
         }
+
         create_item(db, models.Asset, asset_data)
         return asset_data
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"{e}")
 
 
-def update_asset(db: Session, uuid: str, updated_asset: schemas.Asset):
+def update_asset(db: Session, uuid: str, model:models.Asset, updated_asset: schemas.Asset):
     try:
         updated_asset_data = {
             "asset_name": updated_asset.asset_name,
@@ -43,8 +44,9 @@ def update_asset(db: Session, uuid: str, updated_asset: schemas.Asset):
             "marker_icon_uuid":updated_asset.marker_icon_uuid,
             "marker_color": updated_asset.marker_color
         }
-        update_item(db, uuid, updated_asset_data)
-        return update_item
+        
+        update_item(db, uuid,model, updated_asset_data)
+        return updated_asset_data
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"{e}")
 

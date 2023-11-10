@@ -4,6 +4,7 @@ from typing import List, Optional, Union
 from uuid import UUID
 
 from pydantic import BaseModel, EmailStr
+# from app.utils.enums import ActiveInactive
 
 # from pydantic_extra_types.phone_numbers import PhoneNumber
 
@@ -224,12 +225,33 @@ class MarkerIcon(BaseModel):
 
 class EquipmentType(BaseModel):
     equipment_type_name: str
+    uuid:UUID
+    status: str
+    class Config:
+        orm_model = True
+
+class EquipmentTypeCreate(BaseModel):
+    equipment_type_name: str
+    status: str
+    class Config:
+        orm_model = True
+
+class Asset(BaseModel):
+    user_uuid: UUID
+    asset_type_uuid: UUID
+    asset_name: str
+    asset_status: str
+    equipment_type_uuid: UUID
+    vin_no: str
+    marker_icon_uuid: UUID
+    marker_color: str
+    # uuid:UUID
 
     class Config:
         orm_model = True
 
 
-class Asset(BaseModel):
+class AssetCreate(BaseModel):
     user_uuid: UUID
     asset_type_uuid: UUID
     asset_name: str
