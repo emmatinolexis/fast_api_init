@@ -18,23 +18,23 @@ router = APIRouter(
 )
 
 
-@router.get("/", response_model=None)
+@router.get("/", response_model=list[schemas.EquipmentType])
 async def get_all_equipment_types_handler(
     db: Session = Depends(get_db), auth_user: schemas.User = Depends(get_current_user)
 ):
     return get_all_equipment_types(db)
 
 
-@router.post("/create", response_model=None)
+@router.post("/create", response_model=schemas.EquipmentTypeCreate)
 async def create_equipment_type_handler(
-    equipment_type: schemas.EquipmentType,
+    equipment_type: schemas.EquipmentTypeCreate,
     db: Session = Depends(get_db),
     auth_user: schemas.User = Depends(get_current_user),
 ):
     return create_equipment_type(db, equipment_type)
 
 
-@router.put("/update/{uuid}", response_model=None)
+@router.put("/update/{uuid}", response_model=schemas.EquipmentType)
 async def update_equipment_type_handler(
     uuid: str,
     updated_equipment_type: schemas.EquipmentType,
@@ -50,7 +50,7 @@ async def update_equipment_type_handler(
 
 
 @router.delete("/delete/{uuid}", response_model=None)
-async def delete_equipment_type(
+async def delete_equipment_type_handler(
     uuid: str,
     db: Session = Depends(get_db),
     auth_user: schemas.User = Depends(get_current_user),

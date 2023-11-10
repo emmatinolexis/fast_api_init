@@ -15,7 +15,7 @@ def get_all_equipment_types(db: Session):
         raise HTTPException(status_code=400, detail=f"{e}")
 
 
-def create_equipment_type(db: Session, equipment_type: schemas.EquipmentType):
+def create_equipment_type(db: Session, equipment_type: schemas.EquipmentTypeCreate):
     try:
         equipment_type_data = {
             "equipment_type_name": equipment_type.equipment_type_name,

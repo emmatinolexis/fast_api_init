@@ -10,6 +10,7 @@ from app.routers import (
     contact,
     equipment_type,
     features,
+    marker_icon,
     onboarding,
     organisation_contact,
     package_items,
@@ -36,6 +37,8 @@ app.include_router(authentication.router)
 app.include_router(features.router)
 app.include_router(contact.router)
 app.include_router(organisation_contact.router)
+app.include_router(marker_icon.router)
+
 app.include_router(asset_location.router)
 app.include_router(equipment_type.router)
 

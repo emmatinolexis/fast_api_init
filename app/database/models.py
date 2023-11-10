@@ -99,6 +99,33 @@ class AssetType(BaseModel):
     status = Column(String(length=50), nullable=False, default="", index=True)
 
 
+class EquipmentType(BaseModel):
+    __tablename__ = "equipment_types"
+    uuid = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        unique=True,
+        nullable=False,
+    )
+    equipment_type_name = Column(String(length=100), nullable=False, index=True)
+    status = Column(String(length=50), nullable=False, index=True)
+
+
+class MarkerIcon(BaseModel):
+    __tablename__ = "marker_icons"
+    uuid = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        unique=True,
+        nullable=False,
+    )
+    icon_name = Column(String(length=50), nullable=False, index=True)
+    icon_url = Column(String(length=100), nullable=False, index=True)
+    status = Column(String(length=50), nullable=False, index=True)
+
+
 class Asset(BaseModel):
     __tablename__ = "assets"
     uuid = Column(
@@ -108,19 +135,24 @@ class Asset(BaseModel):
         unique=True,
         nullable=False,
     )
-    asset_name = Column(String(length=50), nullable=False, default="", index=True)
-    asset_status = Column(String(length=50), nullable=False, default="", index=True)
+    asset_name = Column(String(length=50), nullable=False, index=True)
+    asset_status = Column(String(length=50), nullable=False, index=True)
     user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
     asset_type_uuid = Column(
         UUID(as_uuid=True), ForeignKey("asset_types.uuid"), nullable=False
     )
-    equipment_uuid = Column(
-        UUID(as_uuid=True), ForeignKey("equipments.uuid"), nullable=False
+    equipment_type_uuid = Column(
+        UUID(as_uuid=True), ForeignKey("equipment_types.uuid"), nullable=False
     )
     vin_no = Column(String(length=100), nullable=True, default="", index=True)
+    marker_icon_uuid = Column(
+        UUID(as_uuid=True), ForeignKey("marker_icons.uuid"), nullable=False
+    )
+    marker_color = Column(String(length=100), nullable=False, index=True)
+    marker_icon = relationship("MarkerIcon", uselist=False)
     user = relationship("User", uselist=False)
     asset_type = relationship("AssetType", uselist=False)
-    equipment = relationship("Equipment", uselist=False)
+    equipment_type = relationship("EquipmentType", uselist=False)
 
 
 class TokenTable(Base):
@@ -226,37 +258,22 @@ class Feature(BaseModel):
     status = Column(String(length=50), nullable=False, default="", index=True)
 
 
-class Equipment(BaseModel):
-    __tablename__ = "equipments"
-    uuid = Column(
-        UUID(as_uuid=True),
-        primary_key=True,
-        default=uuid.uuid4,
-        unique=True,
-        nullable=False,
-    )
-    equipment_name = Column(String(length=50), nullable=False, default="", index=True)
-    equipment_type_uuid = Column(UUID(as_uuid=True), ForeignKey("equipment_types.uuid"))
-    marker_icon_url = Column(String(length=50), nullable=False, default="", index=True)
-    marker_icon_colour = Column(
-        String(length=50), nullable=False, default="", index=True
-    )
-    equipment_type = relationship("EquipmentType", uselist=False)
-
-
-class EquipmentType(BaseModel):
-    __tablename__ = "equipment_types"
-    uuid = Column(
-        UUID(as_uuid=True),
-        primary_key=True,
-        default=uuid.uuid4,
-        unique=True,
-        nullable=False,
-    )
-    equipment_type_name = Column(
-        String(length=50), nullable=False, default="", index=True
-    )
-    status = Column(String(length=50), nullable=False, default="", index=True)
+# class Equipment(BaseModel):
+#     __tablename__ = "equipments"
+#     uuid = Column(
+#         UUID(as_uuid=True),
+#         primary_key=True,
+#         default=uuid.uuid4,
+#         unique=True,
+#         nullable=False,
+#     )
+#     equipment_name = Column(String(length=50), nullable=False, default="", index=True)
+#     equipment_type_uuid = Column(UUID(as_uuid=True), ForeignKey("equipment_types.uuid"))
+#     marker_icon_url = Column(String(length=50), nullable=False, default="", index=True)
+#     marker_icon_colour = Column(
+#         String(length=50), nullable=False, default="", index=True
+#     )
+#     equipment_type = relationship("EquipmentType", uselist=False)
 
 
 class Onboarding(BaseModel):

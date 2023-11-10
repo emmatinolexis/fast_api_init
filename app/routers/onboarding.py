@@ -31,7 +31,7 @@ async def get_all_onboardings_handler(
 async def create_individual_onboarding_handler(
     onboarding: schemas.Onboarding,
     db: Session = Depends(get_db),
-    # auth_user: schemas.User = Depends(get_current_user),
+    auth_user: schemas.User = Depends(get_current_user),
 ):
     return create_individual_onboarding(db, onboarding)
 
@@ -40,7 +40,7 @@ async def create_individual_onboarding_handler(
 async def create_organisation_onboarding_handler(
     onboarding: schemas.BusinessOnboarding,
     db: Session = Depends(get_db),
-    # auth_user: schemas.User = Depends(get_current_user),
+    auth_user: schemas.User = Depends(get_current_user),
 ):
     return create_business_onboarding(db, onboarding)
 

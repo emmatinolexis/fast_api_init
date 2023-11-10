@@ -3,7 +3,7 @@ from typing import List
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.database import schemas
+from app.database import models, schemas
 from app.database.assets import create_asset, delete_asset, get_all_assets, update_asset
 from app.utils.auth import get_current_user
 
@@ -22,7 +22,7 @@ async def get_asset_handler(
     return get_all_assets(db)
 
 
-@router.post("/create", response_model=schemas.Asset)
+@router.post("/create", response_model=schemas.AssetCreate)
 async def create_asset_handler(
     asset: schemas.Asset,
     db: Session = Depends(get_db),
@@ -31,14 +31,17 @@ async def create_asset_handler(
     return create_asset(db, asset)
 
 
-@router.put("/update/{uuid}", response_model=schemas.Asset)
+@router.put("/update/{uuid}", response_model=None)
 async def update_asset_handler(
     uuid: str,
     updated_asset: schemas.Asset,
     db: Session = Depends(get_db),
     auth_user: schemas.User = Depends(get_current_user),
 ):
-    updated_asset = update_asset(db, uuid, updated_asset)
+    # return updated_asset
+    return update_asset(
+        db=db, uuid=uuid, model=models.Asset, updated_asset=updated_asset
+    )
 
 
 @router.delete("/delete/{uuid}", response_model=schemas.Asset)

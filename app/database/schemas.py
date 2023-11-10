@@ -5,6 +5,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, EmailStr
 
+# from app.utils.enums import ActiveInactive
+
 # from pydantic_extra_types.phone_numbers import PhoneNumber
 
 # class BaseUUIDModel(BaseModel):
@@ -165,14 +167,14 @@ class Feature(BaseModel):
         orm_model = True
 
 
-class Equipment(BaseModel):
-    equipment_name: str
-    equipment_type_uuid: UUID
-    marker_icon_url: str
-    marker_icon_colour: str
+# class Equipment(BaseModel):
+#     equipment_name: str
+#     equipment_type_uuid: UUID
+#     marker_icon_url: str
+#     marker_icon_colour: str
 
-    class Config:
-        orm_model = True
+#     class Config:
+#         orm_model = True
 
 
 class ContactSale(BaseModel):
@@ -213,12 +215,56 @@ class BusinessOnboarding(BaseModel):
         orm_model = True
 
 
+class MarkerIcon(BaseModel):
+    icon_name: str
+    icon_url: str
+    status: str
+
+    class Config:
+        orm_model = True
+
+
+class EquipmentType(BaseModel):
+    equipment_type_name: str
+    uuid: UUID
+    status: str
+
+    class Config:
+        orm_model = True
+
+
+class EquipmentTypeCreate(BaseModel):
+    equipment_type_name: str
+    status: str
+
+    class Config:
+        orm_model = True
+
+
 class Asset(BaseModel):
     user_uuid: UUID
-    asset_type_uuid: str
+    asset_type_uuid: UUID
     asset_name: str
-    equipment_uuid: UUID
+    asset_status: str
+    equipment_type_uuid: UUID
     vin_no: str
+    marker_icon_uuid: UUID
+    marker_color: str
+    # uuid:UUID
+
+    class Config:
+        orm_model = True
+
+
+class AssetCreate(BaseModel):
+    user_uuid: UUID
+    asset_type_uuid: UUID
+    asset_name: str
+    asset_status: str
+    equipment_type_uuid: UUID
+    vin_no: str
+    marker_icon_uuid: UUID
+    marker_color: str
 
     class Config:
         orm_model = True
@@ -227,14 +273,6 @@ class Asset(BaseModel):
 class OnboardingFeatureAssignment(BaseModel):
     onboarding_uuid: UUID
     feature_uuid: UUID
-
-    class Config:
-        orm_model = True
-
-
-class EquipmentType(BaseModel):
-    equipment_type_name: str
-    status: str
 
     class Config:
         orm_model = True
