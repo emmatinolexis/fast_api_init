@@ -22,7 +22,8 @@ router = APIRouter(
 
 @router.get("/", response_model=List[schemas.AssetLocation])
 async def get_all_asset_location_handler(
-    db: Session = Depends(get_db), auth_user: schemas.User = Depends(get_current_user)
+    db: Session = Depends(get_db), 
+    # auth_user: schemas.User = Depends(get_current_user)
 ):
     return get_all_asset_location(db)
 
@@ -31,7 +32,7 @@ async def get_all_asset_location_handler(
 async def create_asset_location_handler(
     asset_location: schemas.AssetLocation,
     db: Session = Depends(get_db),
-    auth_user: schemas.User = Depends(get_current_user),
+    # auth_user: schemas.User = Depends(get_current_user),
 ):
     return create_asset_location(db, asset_location)
 
@@ -41,7 +42,7 @@ async def update_asset_location_handler(
     uuid: str,
     updated_asset_location: schemas.AssetLocation,
     db: Session = Depends(get_db),
-    auth_user: schemas.User = Depends(get_current_user),
+    # auth_user: schemas.User = Depends(get_current_user),
 ):
     return update_asset_location(
         db,
@@ -55,6 +56,6 @@ async def update_asset_location_handler(
 async def delete_asset_location_handler(
     uuid: str,
     db: Session = Depends(get_db),
-    auth_user: schemas.User = Depends(get_current_user),
+    # auth_user: schemas.User = Depends(get_current_user),
 ):
     return delete_asset_location(db, uuid)
