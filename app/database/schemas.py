@@ -301,3 +301,10 @@ class AssetLocation(BaseModel):
     asset_uuid: UUID
     longitude: str
     latitude: str
+
+
+class AssetLocationFetch(BaseModel):
+    asset_uuid: UUID
+    longitude: str
+    latitude: str
+    created_at: str
