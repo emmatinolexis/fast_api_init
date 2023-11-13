@@ -46,37 +46,40 @@ def get_user_by_phone_number(db: Session, phone_number: str):
 
 
 def create_user(db: Session, user: schemas.User):
-    db_user = models.User(
-        first_name=user.first_name,
-        last_name=user.last_name,
-        location=user.location,
-        address=user.address,
-        phone_number=user.phone_number,
-        email_address=user.email_address,
-        password=hash_user_password(user.password),
-    )
+    try:
+        db_user = models.User(
+            first_name=user.first_name,
+            last_name=user.last_name,
+            location=user.location,
+            address=user.address,
+            phone_number=user.phone_number,
+            email_address=user.email_address,
+            password=hash_user_password(user.password),
+        )
 
-    db.add(db_user)
-    db.commit()
-    # db.refresh(db_user)
+        db.add(db_user)
+        db.commit()
+        # db.refresh(db_user)
 
-    created_user = (
-        db.query(models.User)
-        .filter(models.User.email_address == db_user.email_address)
-        .first()
-    )
+        created_user = (
+            db.query(models.User)
+            .filter(models.User.email_address == db_user.email_address)
+            .first()
+        )
 
-    returned_user = {
-        "first_name": created_user.first_name,
-        "last_name": created_user.last_name,
-        "location": created_user.location,
-        "address": created_user.address,
-        "phone_number": created_user.phone_number,
-        "email_address": created_user.email_address,
-        "uuid": created_user.uuid,
-    }
+        returned_user = {
+            "first_name": created_user.first_name,
+            "last_name": created_user.last_name,
+            "location": created_user.location,
+            "address": created_user.address,
+            "phone_number": created_user.phone_number,
+            "email_address": created_user.email_address,
+            "uuid": created_user.uuid,
+        }
 
-    return returned_user
+        return returned_user
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"{e}")
 
 
 def create_verification_token(
@@ -84,30 +87,35 @@ def create_verification_token(
     user_verify: schemas.UserEmailVerification,
     verification_token: schemas.EmailVerification,
 ) -> bool:
-    current_date = datetime.now()
-    # return user_verify
+    try:
+        current_date = datetime.now()
+        # return user_verify
 
-    db_verify = models.EmailVerification(
-        user_uuid=user_verify.uuid,
-        verification_token=verification_token["verification_token"],
-        expiry_date=current_date + timedelta(days=VERIFY_TOKEN_EXPIRE_DAYS),
-    )
+        db_verify = models.EmailVerification(
+            user_uuid=user_verify.uuid,
+            verification_token=verification_token["verification_token"],
+            expiry_date=current_date + timedelta(days=VERIFY_TOKEN_EXPIRE_DAYS),
+        )
 
-    db.add(db_verify)
-    db.commit()
+        db.add(db_verify)
+        db.commit()
 
-    db_user = db.query(models.User).filter(models.User.uuid == user_verify.uuid).first()
+        db_user = (
+            db.query(models.User).filter(models.User.uuid == user_verify.uuid).first()
+        )
 
-    # return result
-    # send email
-    subject = "MVI tracking email verification"
+        # return result
+        # send email
+        subject = "MVI tracking email verification"
 
-    message = "Please use the button link below to verify your account and get started with MVI tracking solutions."
+        message = "Please use the button link below to verify your account and get started with MVI tracking solutions."
 
-    return send_email(
-        subject=subject,
-        recipient=db_user.first_name,
-        email=db_user.email_address,
-        message=message,
-        token=db_verify.verification_token,
-    )
+        return send_email(
+            subject=subject,
+            recipient=db_user.first_name,
+            email=db_user.email_address,
+            message=message,
+            token=db_verify.verification_token,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"{e}")
