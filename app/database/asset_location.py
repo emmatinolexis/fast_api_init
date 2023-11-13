@@ -7,9 +7,7 @@ from .helpers import create_item, delete_item, get_all_items, update_item
 # CRUD functionalities for Asset Location
 
 
-def get_all_asset_location(
-    db: Session,
-):
+def get_all_asset_location(db: Session):
     try:
         locations = get_all_items(db, models.AssetLocation)
         return locations
