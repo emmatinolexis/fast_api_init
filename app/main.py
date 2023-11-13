@@ -1,21 +1,23 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import system
-from app.routers import users
-from app.routers import packages
-from app.routers import package_items
-from app.routers import asset_types
-from app.routers import assets
-from app.routers import onboarding
-from app.routers import organisation_contact
-
-
-from app.routers import features
-from app.routers import contact
-
-from app.routers import authentication
 from app.database.core import init_db
+from app.routers import (
+    asset_location,
+    asset_types,
+    assets,
+    authentication,
+    contact,
+    equipment_type,
+    features,
+    marker_icon,
+    onboarding,
+    organisation_contact,
+    package_items,
+    packages,
+    system,
+    users,
+)
 
 app = FastAPI(
     title="MVI Tracking",
@@ -35,15 +37,20 @@ app.include_router(authentication.router)
 app.include_router(features.router)
 app.include_router(contact.router)
 app.include_router(organisation_contact.router)
+app.include_router(marker_icon.router)
+
+app.include_router(asset_location.router)
+app.include_router(equipment_type.router)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:8000",
-        "https://localhost:8000",
-        "http://localhost:3000",
-        "http://localhost",
-    ],
+    # allow_origins=[
+    #     "http://localhost:8000",
+    #     "https://localhost:8000",
+    #     "http://localhost:3000",
+    #     "http://localhost",
+    # ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
