@@ -1,0 +1,30 @@
+name: Install & Run Caddy
+
+on:
+  workflow_run:
+    workflows: ["Dockerization And Staging Deployment"]
+    types:
+      - completed
+
+jobs:
+  install-caddy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Check if Caddy is installed
+        run: |
+          if docker ps -a --format '{{.Names}}' | grep -q '^caddy$'
+          then
+              echo "Caddy is already installed and running."
+          else
+              echo "Installing Caddy..."
+              docker run -d -p 80:80 -p 443:443 -v $(pwd)/Caddyfile:/etc/caddy/Caddyfile -v $(pwd)/site:/srv -e ACME_AGREE=true --name caddy caddy
+              echo "Caddy installed and running."
+          fi
+        working-directory: ${{ github.workspace }}
+
+      - name: Start Caddy
+        run: caddy run
