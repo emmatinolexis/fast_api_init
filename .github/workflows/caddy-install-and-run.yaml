@@ -1,6 +1,12 @@
 name: Install & Run Caddy
 
 on:
+  pull_request:
+    branches:
+      - 'main'
+  push:
+    branches:
+      - 'main'
   workflow_run:
     workflows: ["Dockerization And Staging Deployment"]
     types:
