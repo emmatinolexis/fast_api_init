@@ -316,3 +316,4 @@ class Driver(BaseModel):
     last_name: str
     phone_number: str
     license_url: str
+    profile_picture_url: str

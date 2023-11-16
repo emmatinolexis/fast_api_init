@@ -29,6 +29,7 @@ def create_driver(db: Session, driver: schemas.Driver):
             "last_name": driver.last_name,
             "phone_number": driver.phone_number,
             "license_url": driver.license_url,
+            "profile_picture_url": driver.profile_picture_url,
         }
         created_driver = create_item(db, models.Driver, driver_data)
         return driver_data
@@ -49,6 +50,7 @@ def update_driver(
             "last_name": updated_driver.last_name,
             "phone_number": updated_driver.phone_number,
             "license_url": updated_driver.license_url,
+            "profile_picture_url": updated_driver.profile_picture_url,
         }
         updated = update_item(db, driver_uuid, model, updated_driver_data)
         return updated
