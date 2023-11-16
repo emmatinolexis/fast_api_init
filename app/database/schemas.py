@@ -308,3 +308,12 @@ class AssetLocationFetch(BaseModel):
     longitude: str
     latitude: str
     created_at: str
+
+
+class Driver(BaseModel):
+    asset_uuid: UUID
+    first_name: str
+    last_name: str
+    phone_number: str
+    license_url: str
+    profile_picture_url: str

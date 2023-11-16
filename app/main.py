@@ -8,6 +8,7 @@ from app.routers import (
     assets,
     authentication,
     contact,
+    driver,
     equipment_type,
     features,
     marker_icon,
@@ -38,9 +39,9 @@ app.include_router(features.router)
 app.include_router(contact.router)
 app.include_router(organisation_contact.router)
 app.include_router(marker_icon.router)
-
 app.include_router(asset_location.router)
 app.include_router(equipment_type.router)
+app.include_router(driver.router)
 
 app.add_middleware(
     CORSMiddleware,
