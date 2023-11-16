@@ -23,8 +23,7 @@ router = APIRouter(
 
 @router.get("/", response_model=List[schemas.Driver])
 async def get_all_drivers_handler(
-    db: Session = Depends(get_db),
-    # auth_user: schemas.User = Depends(get_current_user)
+    db: Session = Depends(get_db), auth_user: schemas.User = Depends(get_current_user)
 ):
     return get_all_drivers(db)
 
@@ -33,7 +32,7 @@ async def get_all_drivers_handler(
 async def create_driver_handler(
     driver: schemas.Driver,
     db: Session = Depends(get_db),
-    # auth_user: schemas.User = Depends(get_current_user),
+    auth_user: schemas.User = Depends(get_current_user),
 ):
     return create_driver(db=db, driver=driver)
 
@@ -43,7 +42,7 @@ async def update_driver_handler(
     uuid: str,
     driver: schemas.Driver,
     db: Session = Depends(get_db),
-    # auth_user: schemas.User = Depends(get_current_user),
+    auth_user: schemas.User = Depends(get_current_user),
 ):
     return update_driver(db, uuid, model=models.Driver, updated_driver=driver)
 
@@ -52,7 +51,7 @@ async def update_driver_handler(
 async def get_driver_by_uuid_handler(
     uuid: str,
     db: Session = Depends(get_db),
-    # auth_user: schemas.User = Depends(get_current_user),
+    auth_user: schemas.User = Depends(get_current_user),
 ):
     return get_driver_by_uuid(db, uuid)
 
@@ -61,6 +60,6 @@ async def get_driver_by_uuid_handler(
 async def delete_driver_by_uuid_handler(
     uuid: str,
     db: Session = Depends(get_db),
-    # auth_user: schemas.User = Depends(get_current_user),
+    auth_user: schemas.User = Depends(get_current_user),
 ):
     return delete_driver(db, uuid)
