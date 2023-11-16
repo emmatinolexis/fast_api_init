@@ -30,7 +30,7 @@ async def get_all_asset_location_handler(
 async def create_asset_location_handler(
     asset_location: schemas.AssetLocation,
     db: Session = Depends(get_db),
-    auth_user: schemas.User = Depends(get_current_user),
+    # auth_user: schemas.User = Depends(get_current_user),
 ):
     return create_asset_location(db, asset_location)
 
