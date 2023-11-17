@@ -61,6 +61,5 @@ async def send_email(
         fm = FastMail(config=get_email_config())
         await fm.send_message(msg, template_name="email-template.html")
 
-        return {"status": "success", "message": "Mail sent"}
     except Exception as e:
         raise Exception(str(e))
