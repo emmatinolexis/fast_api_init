@@ -126,7 +126,6 @@ async def verify_user_email(
     user: schemas.UserEmailVerification, db: Session = Depends(get_db)
 ):
     # check if user already verified
-    # expiry_time = datetime.now() + timedelta(minutes=VERIFY_TOKEN_EXPIRE_DAYS)
     db_user = db.query(models.User).filter(models.User.uuid == user.uuid).first()
     if db_user:
         if db_user.verifiedAt is None:
@@ -148,7 +147,9 @@ async def verify_user_email(
                 }
 
                 # save generated token into db
-                return create_verification_token(db, user, token_detail)
+                await create_verification_token(
+                    db, user_verify=user, verification_token=token_detail
+                )
             else:
                 raise HTTPException(
                     status_code=409,

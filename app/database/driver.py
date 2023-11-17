@@ -31,7 +31,7 @@ def create_driver(db: Session, driver: schemas.Driver):
             "license_url": driver.license_url,
             "profile_picture_url": driver.profile_picture_url,
         }
-        created_driver = create_item(db, models.Driver, driver_data)
+        create_item(db, models.Driver, driver_data)
         return driver_data
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"{e}")

@@ -1,10 +1,20 @@
 import os
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+
+# from jinja2 import Environment, FileSystemLoader
+from pathlib import Path
+
+# import smtplib
+# from email.mime.multipart import MIMEMultipart
+# from email.mime.text import MIMEText
 from typing import Dict
 
-from jinja2 import Environment, FileSystemLoader
+from fastapi_mail import ConnectionConfig, FastMail, MessageSchema, MessageType
+
+SMTP_SERVER = "live.smtp.mailtrap.io"
+SMTP_PORT = 587
+SMTP_USERNAME = "api"
+SMTP_PASSWORD = "9133d6b20cae5592a71b2c1246c9e8e9"
+SMTP_FROM = "MVI Tracking <info@sagemicrosystems.net>"
 
 
 def read_email_template() -> str:
@@ -12,42 +22,45 @@ def read_email_template() -> str:
     template_path = os.path.join(
         current_directory, "..", "templates", "email-template.html"
     )
+
     with open(template_path, "r") as file:
         return file.read()
 
 
-def send_email(subject, recipient, email, message, token="") -> Dict[str, str]:
+def get_email_config() -> ConnectionConfig:
+    templates_dir = Path(__file__).parent.parent / "templates"
+
+    return ConnectionConfig(
+        MAIL_USERNAME=SMTP_USERNAME,
+        MAIL_PASSWORD=SMTP_PASSWORD,
+        MAIL_FROM=SMTP_FROM,
+        MAIL_PORT=SMTP_PORT,
+        MAIL_SERVER=SMTP_SERVER,
+        MAIL_STARTTLS=True,
+        MAIL_SSL_TLS=False,
+        TEMPLATE_FOLDER=templates_dir,
+        USE_CREDENTIALS=True,
+    )
+
+
+async def send_email(
+    subject, recipient_name, email, message, token=""
+) -> Dict[str, str]:
     try:
-        # Create an SMTP connection to the Mailtrap server
-        server = smtplib.SMTP("sandbox.smtp.mailtrap.io", "2525")
-
-        # Load the email template from a file
-        env = Environment(loader=FileSystemLoader("app/templates"))
-        template = env.get_template("email-template.html")
-
-        # Login to the Mailtrap server
-        server.login("9ca32e462abc06", "f355e3500b61e0")
-
-        # Create the email message using the template
-        message_data = template.render(
-            recipient_name=recipient, message=message, verify_token=token
+        msg = MessageSchema(
+            subject=subject,
+            recipients=[email],
+            template_body={
+                "message": message,
+                "recipient_name": recipient_name,
+                "verify_token": token,
+            },
+            subtype=MessageType.html,
         )
 
-        # Create an email message
-        msg = MIMEMultipart()
-        msg["From"] = "no-reply@mvtracking.com"
-        msg["To"] = email
-        msg["Subject"] = subject
+        fm = FastMail(config=get_email_config())
+        await fm.send_message(msg, template_name="email-template.html")
 
-        msg.attach(MIMEText(message_data, "html"))
-
-        # Send the email
-        server.sendmail("9ca32e462abc06", email, msg.as_string())
-
-        # Close the SMTP connection
-        server.quit()
-
-        return {"message": "mail sent"}
-
+        return {"status": "success", "message": "Mail sent"}
     except Exception as e:
-        return {"message": f"Failed to send email: {str(e)}"}
+        raise Exception(str(e))
