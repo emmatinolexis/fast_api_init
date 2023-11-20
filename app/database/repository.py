@@ -82,14 +82,13 @@ def create_user(db: Session, user: schemas.User):
         raise HTTPException(status_code=400, detail=f"{e}")
 
 
-def create_verification_token(
+async def create_verification_token(
     db: Session,
     user_verify: schemas.UserEmailVerification,
     verification_token: schemas.EmailVerification,
-) -> bool:
+):
     try:
         current_date = datetime.now()
-        # return user_verify
 
         db_verify = models.EmailVerification(
             user_uuid=user_verify.uuid,
@@ -104,18 +103,17 @@ def create_verification_token(
             db.query(models.User).filter(models.User.uuid == user_verify.uuid).first()
         )
 
-        # return result
         # send email
         subject = "MVI tracking email verification"
 
         message = "Please use the button link below to verify your account and get started with MVI tracking solutions."
-
-        return send_email(
+        # return message
+        await send_email(
             subject=subject,
-            recipient=db_user.first_name,
+            recipient_name=db_user.first_name,
             email=db_user.email_address,
             message=message,
             token=db_verify.verification_token,
         )
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"{e}")
+        raise Exception(str(e))
