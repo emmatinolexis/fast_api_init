@@ -170,6 +170,8 @@ async def login_handler(user: schemas.UserLogin, db: Session = Depends(get_db)):
     )
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
+    if db_user.verifiedAt is None:
+        raise HTTPException(status_code=404, detail="User email not verified")
     user_dict = extract_user_data(db_user)
     access_token = generate_token_for_existing_user(user, db_user)
     return {"access_token": access_token, "user": user_dict, "permission": ""}
