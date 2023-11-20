@@ -43,6 +43,7 @@ app.include_router(asset_location.router)
 app.include_router(equipment_type.router)
 app.include_router(driver.router)
 
+
 app.add_middleware(
     CORSMiddleware,
     # allow_origins=[
