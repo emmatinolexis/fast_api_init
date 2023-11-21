@@ -246,11 +246,14 @@ class Asset(BaseModel):
     asset_type_uuid: UUID
     asset_name: str
     asset_status: str
-    equipment_type_uuid: UUID
-    vin_no: str
+    equipment_type_uuid: Optional[UUID] = None
+    vin_no: Optional[str] = None
     marker_icon_uuid: UUID
     marker_color: str
-    # uuid:UUID
+    equipment_uuid: UUID
+    serial_no: Optional[str] = None
+    make: Optional[str] = None
+    model: Optional[str] = None
 
     class Config:
         orm_model = True
@@ -261,10 +264,14 @@ class AssetCreate(BaseModel):
     asset_type_uuid: UUID
     asset_name: str
     asset_status: str
-    equipment_type_uuid: UUID
-    vin_no: str
+    equipment_type_uuid: Optional[UUID] = None
+    vin_no: Optional[str] = None
     marker_icon_uuid: UUID
     marker_color: str
+    equipment_uuid: UUID
+    serial_no: Optional[str] = None
+    make: Optional[str] = None
+    model: Optional[str] = None
 
     class Config:
         orm_model = True
