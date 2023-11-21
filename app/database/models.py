@@ -158,9 +158,15 @@ class Asset(BaseModel):
         UUID(as_uuid=True), ForeignKey("asset_types.uuid"), nullable=False
     )
     equipment_type_uuid = Column(
-        UUID(as_uuid=True), ForeignKey("equipment_types.uuid"), nullable=False
+        UUID(as_uuid=True), ForeignKey("equipment_types.uuid"), nullable=True
     )
-    vin_no = Column(String(length=100), nullable=True, default="", index=True)
+    equipment_uuid = Column(
+        UUID(as_uuid=True), ForeignKey("equipments.uuid"), nullable=False
+    )
+    vin_no = Column(String(length=100), nullable=True, index=True)
+    serial_no = Column(String(length=100), nullable=True, index=True)
+    make = Column(String(length=100), nullable=True, index=True)
+    model = Column(String(length=100), nullable=True, index=True)
     marker_icon_uuid = Column(
         UUID(as_uuid=True), ForeignKey("marker_icons.uuid"), nullable=False
     )
