@@ -317,3 +317,9 @@ class Driver(BaseModel):
     phone_number: str
     license_url: str
     profile_picture_url: str
+
+
+class AlertPolicyType(BaseModel):
+    name: str
+    description: str
+    status: str
