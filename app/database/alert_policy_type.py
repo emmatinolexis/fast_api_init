@@ -26,9 +26,7 @@ def create_alert_policy_type(db: Session, alert_policy_type: schemas.AlertPolicy
             "description": alert_policy_type.description,
             "status": alert_policy_type.status,
         }
-        created_alert_policy_type = create_item(
-            db, models.AlertPolicyType, alert_policy_types_data
-        )
+        create_item(db, models.AlertPolicyType, alert_policy_types_data)
         return alert_policy_types_data
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"{e}")
