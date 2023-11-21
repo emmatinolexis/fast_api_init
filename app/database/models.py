@@ -99,6 +99,19 @@ class AssetType(BaseModel):
     status = Column(String(length=50), nullable=False, default="", index=True)
 
 
+class Equipment(BaseModel):
+    __tablename__ = "equipments"
+    uuid = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        unique=True,
+        nullable=False,
+    )
+    name = Column(String(length=100), nullable=False, index=True)
+    status = Column(String(length=50), nullable=False, index=True)
+
+
 class EquipmentType(BaseModel):
     __tablename__ = "equipment_types"
     uuid = Column(
@@ -110,6 +123,9 @@ class EquipmentType(BaseModel):
     )
     equipment_type_name = Column(String(length=100), nullable=False, index=True)
     status = Column(String(length=50), nullable=False, index=True)
+    equipment_uuid = Column(
+        UUID(as_uuid=True), ForeignKey("equipments.uuid"), nullable=True
+    )
 
 
 class MarkerIcon(BaseModel):
