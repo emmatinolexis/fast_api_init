@@ -224,10 +224,16 @@ class MarkerIcon(BaseModel):
         orm_model = True
 
 
+class Equipment(BaseModel):
+    name: str
+    status: str
+
+
 class EquipmentType(BaseModel):
     equipment_type_name: str
     uuid: UUID
     status: str
+    equipment_uuid: Optional[UUID] = None
 
     class Config:
         orm_model = True
@@ -236,6 +242,7 @@ class EquipmentType(BaseModel):
 class EquipmentTypeCreate(BaseModel):
     equipment_type_name: str
     status: str
+    equipment_uuid: Optional[UUID] = None
 
     class Config:
         orm_model = True
@@ -246,11 +253,14 @@ class Asset(BaseModel):
     asset_type_uuid: UUID
     asset_name: str
     asset_status: str
-    equipment_type_uuid: UUID
-    vin_no: str
+    equipment_type_uuid: Optional[UUID] = None
+    vin_no: Optional[str] = None
     marker_icon_uuid: UUID
     marker_color: str
-    # uuid:UUID
+    equipment_uuid: UUID
+    serial_no: Optional[str] = None
+    make: Optional[str] = None
+    model: Optional[str] = None
 
     class Config:
         orm_model = True
@@ -261,10 +271,14 @@ class AssetCreate(BaseModel):
     asset_type_uuid: UUID
     asset_name: str
     asset_status: str
-    equipment_type_uuid: UUID
-    vin_no: str
+    equipment_type_uuid: Optional[UUID] = None
+    vin_no: Optional[str] = None
     marker_icon_uuid: UUID
     marker_color: str
+    equipment_uuid: UUID
+    serial_no: Optional[str] = None
+    make: Optional[str] = None
+    model: Optional[str] = None
 
     class Config:
         orm_model = True
@@ -317,3 +331,9 @@ class Driver(BaseModel):
     phone_number: str
     license_url: str
     profile_picture_url: str
+
+
+class AlertPolicyType(BaseModel):
+    name: str
+    description: str
+    status: str

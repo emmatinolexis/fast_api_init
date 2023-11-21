@@ -25,8 +25,11 @@ def create_asset(db: Session, asset: schemas.Asset):
             "equipment_type_uuid": asset.equipment_type_uuid,
             "marker_icon_uuid": asset.marker_icon_uuid,
             "marker_color": asset.marker_color,
+            "equipment_uuid": asset.equipment_uuid,
+            "serial_no": asset.serial_no,
+            "make": asset.make,
+            "model": asset.model,
         }
-
         create_item(db, models.Asset, asset_data)
         return asset_data
     except Exception as e:
@@ -46,6 +49,10 @@ def update_asset(
             "equipment_type_uuid": updated_asset.equipment_type_uuid,
             "marker_icon_uuid": updated_asset.marker_icon_uuid,
             "marker_color": updated_asset.marker_color,
+            "equipment_uuid": updated_asset.equipment_uuid,
+            "serial_no": updated_asset.serial_no,
+            "make": updated_asset.make,
+            "model": updated_asset.model,
         }
 
         update_item(db, uuid, model, updated_asset_data)

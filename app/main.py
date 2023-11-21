@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.database.core import init_db
 from app.routers import (
+    alert_policy_type,
     asset_location,
     asset_types,
     assets,
@@ -10,6 +11,7 @@ from app.routers import (
     contact,
     driver,
     equipment_type,
+    equipments,
     features,
     marker_icon,
     onboarding,
@@ -44,7 +46,8 @@ app.include_router(asset_location.router)
 app.include_router(equipment_type.router)
 app.include_router(driver.router)
 app.include_router(tracking.router)
-
+app.include_router(alert_policy_type.router)
+app.include_router(equipments.router)
 
 app.add_middleware(
     CORSMiddleware,
