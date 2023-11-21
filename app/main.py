@@ -17,6 +17,7 @@ from app.routers import (
     package_items,
     packages,
     system,
+    tracking,
     users,
 )
 
@@ -42,6 +43,7 @@ app.include_router(marker_icon.router)
 app.include_router(asset_location.router)
 app.include_router(equipment_type.router)
 app.include_router(driver.router)
+app.include_router(tracking.router)
 
 
 app.add_middleware(
