@@ -233,7 +233,7 @@ class EquipmentType(BaseModel):
     equipment_type_name: str
     uuid: UUID
     status: str
-    equipment_uuid: UUID
+    equipment_uuid: Optional[UUID]
 
     class Config:
         orm_model = True
