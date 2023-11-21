@@ -20,8 +20,7 @@ router = APIRouter(
 
 @router.get("/", response_model=list[schemas.EquipmentType])
 async def get_all_equipment_types_handler(
-    db: Session = Depends(get_db), 
-    auth_user: schemas.User = Depends(get_current_user)
+    db: Session = Depends(get_db), auth_user: schemas.User = Depends(get_current_user)
 ):
     return get_all_equipment_types(db)
 
