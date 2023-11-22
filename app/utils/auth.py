@@ -118,4 +118,5 @@ def extract_user_data(user) -> Dict[str, str]:
         "email_address": user.email_address,
         "uuid": user.uuid,
         "verifiedAt": user.verifiedAt,
+        "account_type": user.account_type,
     }

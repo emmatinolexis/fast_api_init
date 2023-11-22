@@ -5,7 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, EmailStr
 
-# from app.utils.enums import ActiveInactive
+from app.utils.enums import AccountType
 
 # from pydantic_extra_types.phone_numbers import PhoneNumber
 
@@ -16,20 +16,21 @@ from pydantic import BaseModel, EmailStr
 class User(BaseModel):
     first_name: str
     last_name: str
-    location: Optional[str]
-    address: Optional[str]
-    phone_number: Optional[str]
+    location: Optional[str] = None
+    address: Optional[str] = None
+    phone_number: Optional[str] = None
     email_address: EmailStr
     password: str
+    account_type: AccountType
 
     class Config:
         orm_model = True
 
 
 class UpdateUser(BaseModel):
-    location: Optional[str]
-    address: Optional[str]
-    phone_number: Optional[str]
+    location: Optional[str] = None
+    address: Optional[str] = None
+    phone_number: Optional[str] = None
 
     class Config:
         orm_model = True
