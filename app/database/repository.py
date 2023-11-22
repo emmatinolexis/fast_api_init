@@ -55,6 +55,7 @@ def create_user(db: Session, user: schemas.User):
             phone_number=user.phone_number,
             email_address=user.email_address,
             password=hash_user_password(user.password),
+            account_type=user.account_type,
         )
 
         db.add(db_user)
@@ -75,6 +76,7 @@ def create_user(db: Session, user: schemas.User):
             "phone_number": created_user.phone_number,
             "email_address": created_user.email_address,
             "uuid": created_user.uuid,
+            "account_type": created_user.account_type,
         }
 
         return returned_user
