@@ -255,6 +255,7 @@ class Asset(BaseModel):
     serial_no: Optional[str] = None
     make: Optional[str] = None
     model: Optional[str] = None
+    equipment: List[Equ] = []
 
     class Config:
         orm_model = True
