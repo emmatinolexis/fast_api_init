@@ -175,6 +175,7 @@ class Asset(BaseModel):
     user = relationship("User", uselist=False)
     asset_type = relationship("AssetType", uselist=False)
     equipment_type = relationship("EquipmentType", uselist=False)
+    equipment = relationship("Equipment", uselist=False)
 
 
 class TokenTable(Base):
@@ -400,3 +401,17 @@ class Driver(BaseModel):
     profile_picture_url = Column(
         String(length=100), nullable=True, default="", index=True
     )
+
+
+class AlertPolicyType(BaseModel):
+    __tablename__ = "alert_policy_type"
+    uuid = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        unique=True,
+        nullable=False,
+    )
+    name = Column(String(length=30), nullable=False, default="", index=True)
+    description = Column(String(length=30), nullable=False, default="", index=True)
+    status = Column(String(length=30), nullable=False, default="", index=True)

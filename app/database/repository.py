@@ -25,9 +25,13 @@ def update_user_by_uuid(db: Session, uuid: str, user: schemas.UpdateUser):
     return user
 
 
-def get_user_by_email_address(email: str, db: Session):
+def get_user_by_email_address(email: schemas.UserEmail, db: Session):
     try:
-        user = db.query(models.User).filter(models.User.email_address == email).first()
+        user = (
+            db.query(models.User)
+            .filter(models.User.email_address == email.email_address)
+            .first()
+        )
         if user:
             return user
     except Exception:

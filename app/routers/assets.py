@@ -24,7 +24,7 @@ async def get_asset_handler(
 
 @router.post("/create", response_model=schemas.AssetCreate)
 async def create_asset_handler(
-    asset: schemas.Asset,
+    asset: schemas.AssetCreate,
     db: Session = Depends(get_db),
     auth_user: schemas.User = Depends(get_current_user),
 ):

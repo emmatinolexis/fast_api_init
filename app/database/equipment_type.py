@@ -20,6 +20,7 @@ def create_equipment_type(db: Session, equipment_type: schemas.EquipmentTypeCrea
         equipment_type_data = {
             "equipment_type_name": equipment_type.equipment_type_name,
             "status": equipment_type.status,
+            "equipment_uuid": equipment_type.equipment_uuid,
         }
         create_item(db, models.EquipmentType, equipment_type_data)
         return equipment_type_data
@@ -37,6 +38,7 @@ def update_equipment_type(
         updated_equipment_type_data = {
             "equipment_type_name": updated_equipment_type.equipment_type_name,
             "status": updated_equipment_type.status,
+            "equipment_uuid": updated_equipment_type.equipment_uuid,
         }
         update_item(db, uuid, model, updated_equipment_type_data)
         return updated_equipment_type_data

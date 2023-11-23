@@ -45,5 +45,5 @@ async def update_user(
 
 
 @router.get("/{email_address}", response_model=schemas.UserEmail)
-async def get_user_by_email(email: str, db: Session = Depends(get_db)):
+async def get_user_by_email(email: schemas.UserEmail, db: Session = Depends(get_db)):
     return get_user_by_email_address(email, db=db)
