@@ -25,13 +25,15 @@ def update_user_by_uuid(db: Session, uuid: str, user: schemas.UpdateUser):
     return user
 
 
-def get_user_by_email_address(email: str, db: Session):
+def get_user_by_email_address(email: str, db: Session) -> bool:
     try:
         user = db.query(models.User).filter(models.User.email_address == email).first()
         if user:
-            return user
-    except Exception:
-        raise HTTPException(status_code=400, detail="User not found")
+            return True
+        else:
+            return False
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"{e}")
 
 
 def get_user_by_phone_number(db: Session, phone_number: str):
@@ -55,6 +57,7 @@ def create_user(db: Session, user: schemas.User):
             phone_number=user.phone_number,
             email_address=user.email_address,
             password=hash_user_password(user.password),
+            account_type=user.account_type,
         )
 
         db.add(db_user)
@@ -75,6 +78,7 @@ def create_user(db: Session, user: schemas.User):
             "phone_number": created_user.phone_number,
             "email_address": created_user.email_address,
             "uuid": created_user.uuid,
+            "account_type": created_user.account_type,
         }
 
         return returned_user

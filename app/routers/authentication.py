@@ -151,9 +151,22 @@ async def verify_user_email(
                     db, user_verify=user, verification_token=token_detail
                 )
             else:
-                raise HTTPException(
-                    status_code=409,
-                    detail="Verification code already generated, please check email to verify",
+                # Delete old verification token
+                db.delete(verified_user)
+                db.commit()
+
+                # Generate new verification token
+                verify_token = generate_verification_token()
+
+                token_detail = {
+                    "user_uuid": user.uuid,
+                    "verification_token": verify_token,
+                    # "expiry_date": expiry_time  # Save the expiry time to the database
+                }
+
+                # save generated token into db
+                await create_verification_token(
+                    db, user_verify=user, verification_token=token_detail
                 )
         else:
             raise HTTPException(status_code=409, detail="User already verified")
