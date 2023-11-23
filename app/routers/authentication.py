@@ -36,9 +36,10 @@ async def decode_access_token(
 ):
     payload = jwt.decode(token_data.Token, SECRET_KEY, algorithms=[ALGORITHM])
     email = payload.get("sub")
-    user = get_user_by_email_address(db=db, email=email)
-    if user is None:
+    get_user = get_user_by_email_address(email, db)
+    if get_user is None:
         raise HTTPException(status_code=404, detail="User not found")
+    user = db.query(models.User).filter(models.User.email_address == email).first()
     return extract_user_data(user)
 
 
