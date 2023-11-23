@@ -45,7 +45,7 @@ class UserLogin(BaseModel):
 
 
 class UserEmail(BaseModel):
-    email_address: str
+    email_address: EmailStr
 
     class Config:
         orm_model = True
@@ -229,12 +229,16 @@ class Equipment(BaseModel):
     name: str
     status: str
 
+    class Config:
+        orm_model = True
+
 
 class EquipmentType(BaseModel):
     equipment_type_name: str
     uuid: UUID
     status: str
     equipment_uuid: Optional[UUID] = None
+    equipment: Equipment = None
 
     class Config:
         orm_model = True
@@ -262,6 +266,10 @@ class Asset(BaseModel):
     serial_no: Optional[str] = None
     make: Optional[str] = None
     model: Optional[str] = None
+    equipment: Optional[Equipment] = None
+    equipment_type: Optional[EquipmentType] = None
+    asset_type: Optional[AssetType] = None
+    marker_icon: MarkerIcon = None
 
     class Config:
         orm_model = True

@@ -28,14 +28,14 @@ class User(BaseModel):
         unique=True,
         nullable=False,
     )
-    first_name = Column(String(length=30), nullable=False, default="", index=True)
-    last_name = Column(String(length=30), nullable=False, default="", index=True)
-    phone_number = Column(String(length=20), nullable=True, default="", index=True)
-    email_address = Column(String(length=100), nullable=False, default="", index=True)
+    first_name = Column(String(length=30), nullable=False, unique=True, index=True)
+    last_name = Column(String(length=30), nullable=False, index=True)
+    phone_number = Column(String(length=20), nullable=True, index=True)
+    email_address = Column(String(length=100), nullable=False, index=True)
     password = Column(String(length=200), nullable=False)
     verifiedAt = Column(String(length=100), nullable=True, default=None, index=True)
-    location = Column(String(length=30), nullable=True, default="", index=True)
-    address = Column(String(length=50), nullable=True, default="", index=True)
+    location = Column(String(length=30), nullable=True, index=True)
+    address = Column(String(length=50), nullable=True, index=True)
     account_type = Column(String(length=50), nullable=True, index=True)
     business_profile_uuid = Column(
         UUID(as_uuid=True), ForeignKey("business_profiles.uuid"), nullable=True
@@ -175,6 +175,7 @@ class Asset(BaseModel):
     user = relationship("User", uselist=False)
     asset_type = relationship("AssetType", uselist=False)
     equipment_type = relationship("EquipmentType", uselist=False)
+    equipment = relationship("Equipment", uselist=False)
 
 
 class TokenTable(Base):

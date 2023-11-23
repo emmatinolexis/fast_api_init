@@ -22,9 +22,11 @@ router = APIRouter(
 
 @router.post("/create", response_model=None)
 async def create_user_handler(user: schemas.User, db: Session = Depends(get_db)):
-    if get_user_by_email_address(db=db, email=user.email_address):
-        raise HTTPException(status_code=400, detail="Email already exists")
-    return create_user(db, user)
+    get_user = get_user_by_email_address(user.email_address, db)
+    if get_user:
+        raise HTTPException(status_code=400, detail="User Already exist")
+    else:
+        return create_user(db, user)
 
 
 @router.get("/", response_model=List[schemas.User])
@@ -44,6 +46,9 @@ async def update_user(
     return update_user_by_uuid(uuid=uuid, user=user, db=db)
 
 
-@router.get("/{email_address}", response_model=schemas.UserEmail)
-async def get_user_by_email(email: str, db: Session = Depends(get_db)):
-    return get_user_by_email_address(email, db=db)
+@router.get("/{email_address}", response_model=None)
+async def get_user_by_email(email_address, db: Session = Depends(get_db)):
+    result = get_user_by_email_address(email_address, db=db)
+    if result:
+        raise HTTPException(status_code=200, detail="User found")
+    raise HTTPException(status_code=400, detail="User Not Found")
