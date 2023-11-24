@@ -51,4 +51,4 @@ async def get_user_by_email(email_address, db: Session = Depends(get_db)):
     result = get_user_by_email_address(email_address, db=db)
     if result:
         raise HTTPException(status_code=200, detail="User found")
-    raise HTTPException(status_code=400, detail="User Not Found")
+    raise HTTPException(status_code=201, detail="User Not Found")

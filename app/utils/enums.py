@@ -14,3 +14,13 @@ class ActiveInactive(str, Enum):
 class TrueOrFals(str, Enum):
     TRUE = "True"
     FALSE = "False"
+    
+class GeofenceType(str, Enum):
+    ZONE_EXIT = "zone_exit"
+    ZONE_ENTRY = "zone_entry"
+
+
+class AlertType(str, Enum):
+    SMS = "sms"
+    EMAIL = "email"
+    VOICE = "voice"
