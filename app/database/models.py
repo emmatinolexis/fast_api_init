@@ -415,3 +415,67 @@ class AlertPolicyType(BaseModel):
     name = Column(String(length=30), nullable=False, default="", index=True)
     description = Column(String(length=30), nullable=False, default="", index=True)
     status = Column(String(length=30), nullable=False, default="", index=True)
+
+
+class AlertRecipient(BaseModel):
+    __tablename__ = "alert_recipients"
+    uuid = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        unique=True,
+        nullable=False,
+    )
+    phone_number = Column(String(length=20), nullable=True, default="", index=True)
+    alert_policy_uuid = Column(
+        UUID(as_uuid=True), ForeignKey("alert_policies.uuid"), nullable=False
+    )
+
+
+class AlertPolicyAsset(BaseModel):
+    __tablename__ = "alert_policy_assets"
+    uuid = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        unique=True,
+        nullable=False,
+    )
+    asset_uuid = Column(UUID(as_uuid=True), ForeignKey("assets.uuid"), nullable=False)
+    alert_policy_uuid = Column(
+        UUID(as_uuid=True), ForeignKey("alert_policies.uuid"), nullable=False
+    )
+
+
+class AlertPolicy(BaseModel):
+    __tablename__ = "alert_policies"
+    uuid = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        unique=True,
+        nullable=False,
+    )
+    alert_policy_type_uuid = Column(
+        UUID(as_uuid=True), ForeignKey("alert_policy_type.uuid"), nullable=False
+    )
+    geofence_location = Column(String(length=30), nullable=True, index=True)
+    geofence_type = Column(String(length=100), nullable=False, index=True)
+    policy_name = Column(String(length=100), nullable=False, index=True)
+    minimum_idle_time = Column(String(length=100), nullable=False, index=True)
+    # maintenance_type_uuid = Column(UUID(as_uuid=True), ForeignKey("maintenance_types.uuid"), nullable=False)
+
+
+class AlertPolicyNotification(BaseModel):
+    __tablename__ = "alert_policy_notifications"
+    uuid = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        unique=True,
+        nullable=False,
+    )
+    alert_policy_uuid = Column(
+        UUID(as_uuid=True), ForeignKey("alert_policies.uuid"), nullable=False
+    )
+    alert_notification_type = Column(String(length=100), nullable=False, index=True)

@@ -346,3 +346,27 @@ class AlertPolicyType(BaseModel):
     name: str
     description: str
     status: str
+
+
+class AlertRecipient(BaseModel):
+    phone_number: str
+    alert_policy_uuid: UUID
+
+
+class AlertPolicyAsset(BaseModel):
+    asset_uuid: UUID
+    alert_policy_uuid: UUID
+
+
+class AlertPolicy(BaseModel):
+    alert_policy_type_uuid: UUID
+    geofence_location: str
+    geofence_type: str
+    policy_name: str
+    minimum_idle_time: str
+    # maintenance_type_uuid:list[UUID]
+
+
+class AlertPolicyNotification(BaseModel):
+    alert_policy_uuid: UUID
+    alert_notification_type: str
