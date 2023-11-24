@@ -505,5 +505,7 @@ class MaintenanceSchedule(BaseModel):
         unique=True,
         nullable=False,
     )
-    alert_policy_uuid = Column(UUID(as_uuid=True), ForeignKey("alert_policies.uuid"), nullable=False)
+    alert_policy_uuid = Column(
+        UUID(as_uuid=True), ForeignKey("alert_policies.uuid"), nullable=False
+    )
     number_of_days = Column(String(length=100), nullable=True, index=True)
