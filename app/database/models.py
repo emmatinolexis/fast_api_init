@@ -494,3 +494,16 @@ class AlertMaintenanceType(BaseModel):
     )
     name = Column(String(length=100), nullable=True, index=True)
     status = Column(String(length=100), nullable=True, index=True)
+
+
+class MaintenanceSchedule(BaseModel):
+    __tablename__ = "maintenance_schedule"
+    uuid = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        unique=True,
+        nullable=False,
+    )
+    alert_policy_uuid = Column(UUID(as_uuid=True), ForeignKey("alert_policies.uuid"), nullable=False)
+    number_of_days = Column(String(length=100), nullable=True, index=True)
