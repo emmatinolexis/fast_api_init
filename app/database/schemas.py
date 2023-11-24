@@ -5,7 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, EmailStr
 
-from app.utils.enums import AccountType
+from app.utils.enums import AccountType, TrueOrFals
 
 # from pydantic_extra_types.phone_numbers import PhoneNumber
 
@@ -221,6 +221,13 @@ class MarkerIcon(BaseModel):
     icon_url: str
     status: str
 
+
+class MarkerIconFetch(BaseModel):
+    icon_name: str
+    icon_url: str
+    status: str
+    uuid: UUID
+
     class Config:
         orm_model = True
 
@@ -228,6 +235,15 @@ class MarkerIcon(BaseModel):
 class Equipment(BaseModel):
     name: str
     status: str
+
+    class Config:
+        orm_model = True
+
+
+class EquipmentFetch(BaseModel):
+    name: str
+    status: str
+    uuid: UUID
 
     class Config:
         orm_model = True
@@ -288,6 +304,12 @@ class AssetCreate(BaseModel):
     serial_no: Optional[str] = None
     make: Optional[str] = None
     model: Optional[str] = None
+    add_driver: TrueOrFals = TrueOrFals.FALSE
+    driver_first_name: Optional[str] = None
+    driver_last_name: Optional[str] = None
+    driver_phone_number: Optional[str] = None
+    driver_license_url: Optional[str] = None
+    driver_profile_picture_url: Optional[str] = None
 
     class Config:
         orm_model = True
@@ -350,21 +372,21 @@ class AlertPolicyType(BaseModel):
 
 class AlertRecipient(BaseModel):
     phone_number: str
-    alert_policy_uuid: UUID
+    alert_policy_uuids: list[UUID]
 
 
 class AlertPolicyAsset(BaseModel):
-    asset_uuid: UUID
+    asset_uuids: list[UUID]
     alert_policy_uuid: UUID
 
 
 class AlertPolicy(BaseModel):
     alert_policy_type_uuid: UUID
-    geofence_location: str
-    geofence_type: str
+    geofence_location: Optional[str] = None
+    geofence_type: Optional[str] = None
     policy_name: str
-    minimum_idle_time: str
-    # maintenance_type_uuid:list[UUID]
+    minimum_idle_time: Optional[str] = None
+    maintenance_type_uuid: Optional[str] = None
 
 
 class AlertPolicyNotification(BaseModel):

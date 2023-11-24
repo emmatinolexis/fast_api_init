@@ -18,7 +18,7 @@ router = APIRouter(
 )
 
 
-@router.get("/", response_model=list[schemas.Equipment])
+@router.get("/", response_model=list[schemas.EquipmentFetch])
 async def get_all_equipments_handler(
     db: Session = Depends(get_db), auth_user: schemas.User = Depends(get_current_user)
 ):

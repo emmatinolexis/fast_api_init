@@ -9,3 +9,8 @@ class AccountType(str, Enum):
 class ActiveInactive(str, Enum):
     ACTIVE = "active"
     INACTIVE = "inactive"
+
+
+class TrueOrFals(str, Enum):
+    TRUE = "True"
+    FALSE = "False"
