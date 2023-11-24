@@ -18,7 +18,7 @@ router = APIRouter(
 )
 
 
-@router.get("/", response_model=list[schemas.MarkerIcon])
+@router.get("/", response_model=list[schemas.MarkerIconFetch])
 async def get_all_marker_icons_handler(
     db: Session = Depends(get_db), auth_user: schemas.User = Depends(get_current_user)
 ):

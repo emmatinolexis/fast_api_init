@@ -11,6 +11,11 @@ class ActiveInactive(str, Enum):
     INACTIVE = "inactive"
 
 
+class TrueOrFals(str, Enum):
+    TRUE = "True"
+    FALSE = "False"
+
+
 class GeofenceType(str, Enum):
     ZONE_EXIT = "zone_exit"
     ZONE_ENTRY = "zone_entry"

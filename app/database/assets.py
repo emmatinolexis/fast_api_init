@@ -1,6 +1,8 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
+from app.utils.enums import TrueOrFals
+
 from . import models, schemas
 from .helpers import create_item, delete_item, get_all_items, update_item
 
@@ -14,7 +16,7 @@ def get_all_assets(db: Session):
         raise HTTPException(status_code=400, detail=f"{e}")
 
 
-def create_asset(db: Session, asset: schemas.Asset):
+def create_asset(db: Session, asset: schemas.AssetCreate):
     try:
         asset_data = {
             "asset_name": asset.asset_name,
@@ -30,7 +32,21 @@ def create_asset(db: Session, asset: schemas.Asset):
             "make": asset.make,
             "model": asset.model,
         }
-        create_item(db, models.Asset, asset_data)
+
+        created_asset = create_item(db, models.Asset, asset_data)
+
+        if asset.add_driver == TrueOrFals.TRUE:
+            driver_data = {
+                "asset_uuid": created_asset.uuid,
+                "first_name": asset.driver_first_name,
+                "last_name": asset.driver_last_name,
+                "phone_number": asset.driver_phone_number,
+                "license_url": asset.driver_license_url,
+                "profile_picture_url": asset.driver_profile_picture_url,
+            }
+
+            create_item(db, models.Driver, driver_data)
+
         return asset_data
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"{e}")
