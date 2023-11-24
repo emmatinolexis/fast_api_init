@@ -460,10 +460,12 @@ class AlertPolicy(BaseModel):
         UUID(as_uuid=True), ForeignKey("alert_policy_type.uuid"), nullable=False
     )
     geofence_location = Column(String(length=30), nullable=True, index=True)
-    geofence_type = Column(String(length=100), nullable=False, index=True)
+    geofence_type = Column(String(length=100), nullable=True, index=True)
     policy_name = Column(String(length=100), nullable=False, index=True)
     minimum_idle_time = Column(String(length=100), nullable=False, index=True)
-    # maintenance_type_uuid = Column(UUID(as_uuid=True), ForeignKey("maintenance_types.uuid"), nullable=False)
+    alert_maintenance_type_uuid = Column(
+        UUID(as_uuid=True), ForeignKey("alert_maintenance_types.uuid"), nullable=False
+    )
 
 
 class AlertPolicyNotification(BaseModel):
@@ -479,3 +481,16 @@ class AlertPolicyNotification(BaseModel):
         UUID(as_uuid=True), ForeignKey("alert_policies.uuid"), nullable=False
     )
     alert_notification_type = Column(String(length=100), nullable=False, index=True)
+
+
+class AlertMaintenanceType(BaseModel):
+    __tablename__ = "alert_maintenance_types"
+    uuid = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        unique=True,
+        nullable=False,
+    )
+    name = Column(String(length=100), nullable=True, index=True)
+    status = Column(String(length=100), nullable=True, index=True)

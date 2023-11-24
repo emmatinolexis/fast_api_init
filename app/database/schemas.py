@@ -370,3 +370,8 @@ class AlertPolicy(BaseModel):
 class AlertPolicyNotification(BaseModel):
     alert_policy_uuid: UUID
     alert_notification_type: str
+
+
+class AlertMaintenanceType(BaseModel):
+    name: str
+    status: str
