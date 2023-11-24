@@ -2,16 +2,15 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database import schemas
-from app.database.alert_recipient import (
+from app.database.alert_recipient import (  # get_alert_recipient_by_uuid,; get_all_alert_recipients,; update_alert_recipient,
     create_alert_recipient,
     delete_alert_recipient,
-    # get_alert_recipient_by_uuid,
-    # get_all_alert_recipients,
-    # update_alert_recipient,
 )
-# from app.utils.auth import get_current_user
 
 from .shared import get_db
+
+# from app.utils.auth import get_current_user
+
 
 router = APIRouter(
     prefix="/alert_recipients",

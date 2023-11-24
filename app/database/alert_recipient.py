@@ -1,8 +1,6 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-# from app.utils.enums import AccountType
-
 from . import models, schemas
 from .helpers import (
     create_item,
@@ -11,6 +9,8 @@ from .helpers import (
     get_item_by_id,
     update_item,
 )
+
+# from app.utils.enums import AccountType
 
 
 def get_all_alert_recipients(db: Session):

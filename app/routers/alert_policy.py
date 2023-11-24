@@ -10,9 +10,11 @@ from app.database.alert_policy import (
     get_all_alert_policies,
     update_alert_policy,
 )
-# from app.utils.auth import get_current_user
 
 from .shared import get_db
+
+# from app.utils.auth import get_current_user
+
 
 router = APIRouter(
     prefix="/alert_policy",
