@@ -22,6 +22,9 @@ class User(BaseModel):
     email_address: EmailStr
     password: str
     account_type: AccountType
+    business_name: Optional[str] = None
+    business_email: Optional[str] = None
+    business_phone: Optional[str] = None
 
     class Config:
         orm_model = True

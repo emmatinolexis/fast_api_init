@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.database.helpers import get_all_items
 from app.utils.email import send_email
+from app.utils.enums import AccountType
 from app.utils.hashing import VERIFY_TOKEN_EXPIRE_DAYS, hash_user_password
 
 from . import models, schemas
@@ -62,24 +63,46 @@ def create_user(db: Session, user: schemas.User):
 
         db.add(db_user)
         db.commit()
-        # db.refresh(db_user)
-
         created_user = (
             db.query(models.User)
             .filter(models.User.email_address == db_user.email_address)
             .first()
         )
 
-        returned_user = {
-            "first_name": created_user.first_name,
-            "last_name": created_user.last_name,
-            "location": created_user.location,
-            "address": created_user.address,
-            "phone_number": created_user.phone_number,
-            "email_address": created_user.email_address,
-            "uuid": created_user.uuid,
-            "account_type": created_user.account_type,
-        }
+        if user.account_type == AccountType.BUSINESS:
+            business_data = models.BusinessProfile(
+                business_name=user.business_name,
+                business_email=user.business_email,
+                business_phone=user.business_phone,
+            )
+
+            db.add(business_data)
+            db.commit()
+
+            returned_user = {
+                "first_name": created_user.first_name,
+                "last_name": created_user.last_name,
+                "location": created_user.location,
+                "address": created_user.address,
+                "phone_number": created_user.phone_number,
+                "email_address": created_user.email_address,
+                "uuid": created_user.uuid,
+                "account_type": created_user.account_type,
+                "business_name": user.business_name,
+                "business_email": user.business_email,
+                "business_phone": user.business_phone,
+            }
+        else:
+            returned_user = {
+                "first_name": created_user.first_name,
+                "last_name": created_user.last_name,
+                "location": created_user.location,
+                "address": created_user.address,
+                "phone_number": created_user.phone_number,
+                "email_address": created_user.email_address,
+                "uuid": created_user.uuid,
+                "account_type": created_user.account_type,
+            }
 
         return returned_user
     except Exception as e:
