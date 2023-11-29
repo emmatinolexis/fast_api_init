@@ -25,3 +25,9 @@ class AlertType(str, Enum):
     SMS = "sms"
     EMAIL = "email"
     VOICE = "voice"
+
+
+class MaintenanceAlertSchedule(str, Enum):
+    THIRTY_DAYS = "30 days"
+    SIXTY_DAYS = "60 days"
+    NINETY_DAYS = "90 days"

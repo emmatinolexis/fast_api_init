@@ -5,10 +5,7 @@ from app.database.core import init_db
 from app.routers import (
     alert_maintenance_types,
     alert_policy,
-    alert_policy_asset,
-    alert_policy_notifications,
     alert_policy_type,
-    alert_recipient,
     asset_location,
     asset_types,
     assets,
@@ -54,9 +51,6 @@ app.include_router(tracking.router)
 app.include_router(alert_policy_type.router)
 app.include_router(equipments.router)
 app.include_router(alert_policy.router)
-app.include_router(alert_policy_asset.router)
-app.include_router(alert_recipient.router)
-app.include_router(alert_policy_notifications.router)
 app.include_router(alert_maintenance_types.router)
 
 app.add_middleware(

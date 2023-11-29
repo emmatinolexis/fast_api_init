@@ -83,30 +83,32 @@ async def verify_token_route(
                 .filter(models.User.uuid == user_token.user_uuid)
                 .first()
             )
+
             if not user_data:
                 raise HTTPException(status_code=404, detail="User not found")
+            else:
+                # Assuming your user model has an 'email' field. If it's different, adjust the code.
+                access_token = generate_token_for_new_user(
+                    user_email=user_data.email_address, db_user=user_data
+                )
 
-            # Assuming your user model has an 'email' field. If it's different, adjust the code.
-            access_token = generate_token_for_new_user(
-                user_email=user_data.email_address, db_user=user_data
-            )
+                # update user table verifiedAt to current date
+                user_token.user.verifiedAt = datetime.now()
+                db.commit()
 
-            # update user table verifiedAt to current date
-            user_token.user.verifiedAt = datetime.now()
-            db.commit()
+                # delete user token from token table
+                db.query(models.EmailVerification).filter(
+                    models.EmailVerification.verification_token == token_data.Token
+                ).delete()
+                db.commit()
 
-            # delete user token from token table
-            db.query(models.EmailVerification).filter(
-                models.EmailVerification.verification_token == token_data.Token
-            ).delete()
-            db.commit()
-
-            # Return the access token to the client
-            return {
-                "access_token": access_token,
-                "token_type": "bearer",
-                "detail": "User verified successfully",
-            }
+                # Return the access token to the client
+                return {
+                    "access_token": access_token,
+                    "token_type": "bearer",
+                    "detail": "User verified successfully",
+                    "account_type": user_data.account_type,
+                }
 
             # return {"detail": "User verified successfully"}
         else:
