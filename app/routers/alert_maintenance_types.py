@@ -10,11 +10,9 @@ from app.database.alert_maintenance_types import (
     get_all_alert_maintenance_types,
     update_alert_maintenance_type,
 )
+from app.utils.auth import get_current_user
 
 from .shared import get_db
-
-# from app.utils.auth import get_current_user
-
 
 router = APIRouter(
     prefix="/alert_maintenance_types",
@@ -22,10 +20,9 @@ router = APIRouter(
 )
 
 
-@router.get("/", response_model=List[schemas.AlertMaintenanceType])
+@router.get("/", response_model=List[schemas.AlertMaintenanceTypeFetch])
 async def get_alert_maintenance_types_handler(
-    db: Session = Depends(get_db),
-    # auth_user: schemas.User = Depends(get_current_user)
+    db: Session = Depends(get_db), auth_user: schemas.User = Depends(get_current_user)
 ):
     return get_all_alert_maintenance_types(db)
 
@@ -34,7 +31,7 @@ async def get_alert_maintenance_types_handler(
 async def create_alert_maintenance_type_handler(
     alert_maintenance_type: schemas.AlertMaintenanceType,
     db: Session = Depends(get_db),
-    # auth_user: schemas.User = Depends(get_current_user),
+    auth_user: schemas.User = Depends(get_current_user),
 ):
     return create_alert_maintenance_type(
         db=db, alert_maintenance_type=alert_maintenance_type
@@ -46,7 +43,7 @@ async def update_alert_maintenance_type_handler(
     uuid: str,
     updated_alert_maintenance_type: schemas.AlertMaintenanceType,
     db: Session = Depends(get_db),
-    # auth_user: schemas.User = Depends(get_current_user),
+    auth_user: schemas.User = Depends(get_current_user),
 ):
     return update_alert_maintenance_type(
         db,
@@ -60,6 +57,6 @@ async def update_alert_maintenance_type_handler(
 async def delete_alert_maintenance_type_by_uuid_handler(
     uuid: str,
     db: Session = Depends(get_db),
-    # auth_user: schemas.User = Depends(get_current_user),
+    auth_user: schemas.User = Depends(get_current_user),
 ):
     return delete_alert_maintenance_type(db, uuid)

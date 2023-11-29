@@ -404,7 +404,7 @@ class Driver(BaseModel):
 
 
 class AlertPolicyType(BaseModel):
-    __tablename__ = "alert_policy_type"
+    __tablename__ = "alert_policy_types"
     uuid = Column(
         UUID(as_uuid=True),
         primary_key=True,
@@ -412,13 +412,13 @@ class AlertPolicyType(BaseModel):
         unique=True,
         nullable=False,
     )
-    name = Column(String(length=30), nullable=False, default="", index=True)
-    description = Column(String(length=30), nullable=False, default="", index=True)
-    status = Column(String(length=30), nullable=False, default="", index=True)
+    name = Column(String(length=100), nullable=False, index=True)
+    description = Column(String(length=100), nullable=False, index=True)
+    status = Column(String(length=100), nullable=False, index=True)
 
 
-class AlertRecipient(BaseModel):
-    __tablename__ = "alert_recipients"
+class AlertNotificationAssignment(BaseModel):
+    __tablename__ = "alert_notification_assignments"
     uuid = Column(
         UUID(as_uuid=True),
         primary_key=True,
@@ -426,14 +426,15 @@ class AlertRecipient(BaseModel):
         unique=True,
         nullable=False,
     )
-    phone_number = Column(String(length=20), nullable=True, default="", index=True)
     alert_policy_uuid = Column(
         UUID(as_uuid=True), ForeignKey("alert_policies.uuid"), nullable=False
     )
+    reciepient = Column(String(length=100), nullable=False, index=True)
+    # notification_type = Column(String(length=100), nullable=False, index=True)
 
 
-class AlertPolicyAsset(BaseModel):
-    __tablename__ = "alert_policy_assets"
+class AlertPolicyAssetAssignment(BaseModel):
+    __tablename__ = "alert_policy_asset_assignments"
     uuid = Column(
         UUID(as_uuid=True),
         primary_key=True,
@@ -457,19 +458,22 @@ class AlertPolicy(BaseModel):
         nullable=False,
     )
     alert_policy_type_uuid = Column(
-        UUID(as_uuid=True), ForeignKey("alert_policy_type.uuid"), nullable=False
+        UUID(as_uuid=True), ForeignKey("alert_policy_types.uuid"), nullable=False
     )
-    geofence_location = Column(String(length=30), nullable=True, index=True)
+    geofence_location_name = Column(String(length=100), nullable=True, index=True)
     geofence_type = Column(String(length=100), nullable=True, index=True)
     policy_name = Column(String(length=100), nullable=False, index=True)
-    minimum_idle_time = Column(String(length=100), nullable=False, index=True)
-    alert_maintenance_type_uuid = Column(
-        UUID(as_uuid=True), ForeignKey("alert_maintenance_types.uuid"), nullable=False
+    minimum_idle_time = Column(String(length=100), nullable=True, index=True)
+    maintenance_alert_schedule = Column(String(length=100), nullable=True, index=True)
+    maintenance_alert_type_uuid = Column(
+        UUID(as_uuid=True), ForeignKey("alert_maintenance_types.uuid"), nullable=True
     )
+    alert_policy_type = relationship("AlertPolicyType", uselist=False)
+    maintenance_alert_type = relationship("AlertMaintenanceType")
 
 
-class AlertPolicyNotification(BaseModel):
-    __tablename__ = "alert_policy_notifications"
+class AlertPolicyNotificationTypeAssignment(BaseModel):
+    __tablename__ = "alert_policy_notification_type_assignment"
     uuid = Column(
         UUID(as_uuid=True),
         primary_key=True,
@@ -492,20 +496,5 @@ class AlertMaintenanceType(BaseModel):
         unique=True,
         nullable=False,
     )
-    name = Column(String(length=100), nullable=True, index=True)
-    status = Column(String(length=100), nullable=True, index=True)
-
-
-class MaintenanceSchedule(BaseModel):
-    __tablename__ = "maintenance_schedule"
-    uuid = Column(
-        UUID(as_uuid=True),
-        primary_key=True,
-        default=uuid.uuid4,
-        unique=True,
-        nullable=False,
-    )
-    alert_policy_uuid = Column(
-        UUID(as_uuid=True), ForeignKey("alert_policies.uuid"), nullable=False
-    )
-    number_of_days = Column(String(length=100), nullable=True, index=True)
+    name = Column(String(length=100), nullable=False, index=True)
+    status = Column(String(length=100), nullable=False, index=True)
