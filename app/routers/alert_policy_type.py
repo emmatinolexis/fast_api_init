@@ -21,7 +21,7 @@ router = APIRouter(
 )
 
 
-@router.get("/", response_model=List[schemas.AlertPolicyType])
+@router.get("/", response_model=List[schemas.AlertPolicyTypeFetch])
 async def get_alert_policy_types_handler(
     db: Session = Depends(get_db), auth_user: schemas.User = Depends(get_current_user)
 ):
