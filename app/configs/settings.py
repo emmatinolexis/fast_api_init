@@ -14,7 +14,7 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
-        # Allow for passing of extra attributes not used in this pydantic mode
+        # Allow for passing of extra attributes not used in this pydantic model
         # Reference - https://docs.pydantic.dev/latest/api/config/#pydantic.config.ConfigDict.extra
         extra = "allow"
 
