@@ -14,7 +14,7 @@ class OrganisationContact(BaseModel):
         default=uuid.uuid4,
         unique=True,
         nullable=False,
-        primary_key=True
+        primary_key=True,
     )
     first_name = Column(String(length=100), nullable=False, index=True)
     last_name = Column(String(length=100), nullable=False, index=True)

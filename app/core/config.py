@@ -16,14 +16,16 @@ class Configs(BaseSettings):
     ENV: str = os.getenv("ENV", ENV)
     API: str = "/api"
     API_V1_STR: str = "/api/v1"
-    
+
     # date
     DATETIME_FORMAT: str = "%Y-%m-%dT%H:%M:%S"
     DATE_FORMAT: str = "%Y-%m-%d"
 
     # auth
     SECRET_KEY: str = os.getenv("SECRET_KEY", "")
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 60 minutes * 24 hours = 1 day why not 30 days??
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = (
+        60 * 24
+    )  # 60 minutes * 24 hours = 1 day why not 30 days??
     AUTH_ALGORITHM: str = os.getenv("AUTH_ALGORITHM", "HS256")
     VERIFY_TOKEN_EXPIRE_DAYS: int = os.getenv("VERIFY_TOKEN_EXPIRE_DAYS", 3)
 
@@ -35,18 +37,20 @@ class Configs(BaseSettings):
     DB_NAME: str = os.getenv("DB_NAME", "mvi_tracking_db")
     DB_ENGINE: str = os.getenv("DB", "postgresql")
 
-    DATABASE_URI: str = "{db_engine}://{user}:{password}@{host}:{port}/{database}".format(
-        db_engine=DB_ENGINE,
-        user=DB_USER,
-        password=DB_PASSWORD,
-        host=DB_HOST,
-        port=DB_PORT,
-        database=DB_NAME,
+    DATABASE_URI: str = (
+        "{db_engine}://{user}:{password}@{host}:{port}/{database}".format(
+            db_engine=DB_ENGINE,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            host=DB_HOST,
+            port=DB_PORT,
+            database=DB_NAME,
+        )
     )
-    
+
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = ["*"]
-    
+
     # mailing
     MAIL_SERVER: str = os.getenv("MAIL_SERVER", "live.smtp.mailtrap.io")
     MAIL_PORT: int = os.getenv("MAIL_PORT", 587)
@@ -59,10 +63,10 @@ class Configs(BaseSettings):
         "MAIL_VERIFICATION_MESSAGE",
         "Please use the button link below to verify your account and get started with MVI tracking solutions.",
     )
-    
+
     # find query
     PAGE: int = 1
-    PAGE_SIZE : int= 20
+    PAGE_SIZE: int = 20
     ORDERING: str = "-id"
 
     class Config:
@@ -70,6 +74,7 @@ class Configs(BaseSettings):
 
 
 configs = Configs()
+
 
 class TestConfigs(Configs):
     ENV: str = "test"

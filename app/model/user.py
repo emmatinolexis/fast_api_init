@@ -9,7 +9,7 @@ from app.model.base_model import BaseModel
 
 class User(BaseModel):
     __tablename__ = "users"
-    
+
     uuid = Column(
         UUID(as_uuid=True),
         primary_key=True,
@@ -35,4 +35,3 @@ class User(BaseModel):
     user_verification = relationship(
         "EmailVerification", uselist=False, back_populates="user"
     )
-

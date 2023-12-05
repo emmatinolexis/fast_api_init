@@ -23,4 +23,3 @@ class PackageItemAssignment(BaseModel):
         UUID(as_uuid=True), ForeignKey("package_items.uuid"), nullable=False
     )
     package_item = relationship("PackageItem", uselist=False, lazy="joined")
-
