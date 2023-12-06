@@ -1,0 +1,44 @@
+from contextlib import AbstractContextManager, contextmanager
+from typing import Any, Callable
+
+from sqlalchemy import create_engine, orm
+from sqlalchemy.ext.declarative import as_declarative, declarative_base, declared_attr
+from sqlalchemy.orm import Session
+
+from app.model.base_model import Base
+
+
+class Database:
+    def __init__(self, db_url: str) -> None:
+        self._engine = create_engine(db_url, echo=True)
+        self._session_factory = orm.scoped_session(
+            orm.sessionmaker(
+                autocommit=False,
+                autoflush=False,
+                bind=self._engine,
+            ),
+        )
+
+    def connected(self) -> bool:
+        try:
+            with self._engine.connect() as connection_str:
+                return True
+        except Exception:
+            return False
+
+    def create_database(self) -> None:
+        try:
+            Base.metadata.create_all(self._engine)
+        except Exception as ex:
+            raise ex
+
+    @contextmanager
+    def session(self) -> Callable[..., AbstractContextManager[Session]]:
+        session: Session = self._session_factory()
+        try:
+            yield session
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()

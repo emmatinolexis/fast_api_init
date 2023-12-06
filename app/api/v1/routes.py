@@ -1,0 +1,50 @@
+from fastapi import APIRouter
+
+from app.api.v1.endpoints.alert_maintenance_type import (
+    router as alert_maintenance_type_router,
+)
+from app.api.v1.endpoints.alert_policy import router as alert_policy_router
+from app.api.v1.endpoints.alert_policy_type import router as alert_policy_type_router
+from app.api.v1.endpoints.asset import router as asset_router
+from app.api.v1.endpoints.asset_location import router as asset_location_router
+from app.api.v1.endpoints.asset_type import router as asset_type_router
+from app.api.v1.endpoints.authentication import router as auth_router
+from app.api.v1.endpoints.driver import router as driver_router
+from app.api.v1.endpoints.equipment import router as equipment_router
+from app.api.v1.endpoints.equipment_type import router as equipment_type_router
+from app.api.v1.endpoints.feature import router as feature_router
+from app.api.v1.endpoints.health_check import router as health_check_router
+from app.api.v1.endpoints.marker_icon import router as marker_icon_router
+from app.api.v1.endpoints.organisation_contact import (
+    router as organisation_contact_router,
+)
+from app.api.v1.endpoints.package import router as package_router
+from app.api.v1.endpoints.package_item import router as package_item_router
+from app.api.v1.endpoints.tracking import router as tracking_router
+from app.api.v1.endpoints.users import router as users_router
+
+routers = APIRouter()
+router_list = [
+    health_check_router,
+    auth_router,
+    users_router,
+    package_item_router,
+    package_router,
+    alert_policy_type_router,
+    alert_maintenance_type_router,
+    equipment_type_router,
+    equipment_router,
+    marker_icon_router,
+    asset_type_router,
+    asset_router,
+    asset_location_router,
+    alert_policy_router,
+    driver_router,
+    feature_router,
+    organisation_contact_router,
+    tracking_router,
+]
+
+for router in router_list:
+    # router.tags = routers.tags.append("v1")
+    routers.include_router(router)
