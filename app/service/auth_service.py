@@ -37,27 +37,30 @@ class AuthService(BaseService):
         super().__init__(user_repository)
 
     def login(self, login_info: UserLogin):
-        db_user = self.user_repository.get_user_by_email_address(
-            login_info.email_address
-        )
+        try:
+            db_user = self.user_repository.get_user_by_email_address(
+                login_info.email_address
+            )
+            log.info("User found", user=db_user)
+            if db_user is None:
+                raise NotFoundError(detail="User not found")
+            if db_user.verifiedAt is None:
+                raise NotVerifiedError(detail="User email not verified")
 
-        if db_user is None:
-            raise NotFoundError(detail="User not found")
-        if db_user.verifiedAt is None:
-            raise NotVerifiedError(detail="User email not verified")
-
-        user = extract_user_data(db_user)
-        access_token, expiration_datetime = generate_token_for_existing_user(
-            login_info, db_user
-        )
-
-        login_result = {
-            "access_token": access_token,
-            "expiration": expiration_datetime,
-            "user": user,
-            "permission": "",
-        }
-        return login_result
+            user = extract_user_data(db_user)
+            access_token, expiration_datetime = generate_token_for_existing_user(
+                login_info, db_user
+            )
+            log.info("Access token generated successfully", access_token=access_token)
+            login_result = {
+                "access_token": access_token,
+                "expiration": expiration_datetime,
+                "user": user,
+                "permission": "",
+            }
+            return login_result
+        except Exception as e:
+            raise e
 
     def decode_access_token(self, token_data: VerifyToken):
         try:

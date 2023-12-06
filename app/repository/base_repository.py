@@ -6,6 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.exceptions import DuplicatedError, NotFoundError
+from app.core.settings import settings
 from app.util.query_builder import dict_to_sqlalchemy_filter_options
 
 log = structlog.get_logger()
