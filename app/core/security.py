@@ -1,9 +1,9 @@
 import random
 import string
 from datetime import datetime, timedelta
-from typing import Annotated, Dict, Union
+from typing import Dict, Union
 
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import HTTPException, Request, status
 from fastapi.security import (
     HTTPAuthorizationCredentials,
     HTTPBearer,
@@ -12,8 +12,8 @@ from fastapi.security import (
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
-from app.core.config import configs
 from app.core.exceptions import AuthError, NotVerifiedError
+from app.core.settings import settings
 from app.model.user import User
 from app.schema.auth_schema import TokenData
 from app.schema.user_schema import UserLogin
@@ -30,18 +30,18 @@ def create_access_token(
         expire = datetime.utcnow() + expires_delta
     else:
         expire = datetime.utcnow() + timedelta(
-            minutes=configs.ACCESS_TOKEN_EXPIRE_MINUTES
+            minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
         )
     payload = {"exp": expire, **data}
     encoded_jwt = jwt.encode(
-        payload, configs.SECRET_KEY, algorithm=configs.AUTH_ALGORITHM
+        payload, settings.SECRET_KEY, algorithm=settings.AUTH_ALGORITHM
     )
-    expiration_datetime = expire.strftime(configs.DATETIME_FORMAT)
+    expiration_datetime = expire.strftime(settings.DATETIME_FORMAT)
     return encoded_jwt, expiration_datetime
 
 
 def generate_access_token(email: str) -> (str, str):
-    access_token_expires = timedelta(minutes=configs.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     return create_access_token(data={"sub": email}, expires_delta=access_token_expires)
 
 
@@ -79,7 +79,7 @@ def generate_verification_token(length: int = 100) -> str:
 def verify_token(token: str):
     try:
         payload = jwt.decode(
-            token, configs.SECRET_KEY, algorithms=[configs.AUTH_ALGORITHM]
+            token, settings.SECRET_KEY, algorithms=[settings.AUTH_ALGORITHM]
         )
         username: str = payload.get("sub")
         if username is None:
@@ -92,7 +92,7 @@ def verify_token(token: str):
 
 def verify_token_frontend(token: str) -> bool:
     try:
-        jwt.decode(token, configs.SECRET_KEY, algorithms=[configs.AUTH_ALGORITHM])
+        jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.AUTH_ALGORITHM])
         return True
     except JWTError:
         return False
@@ -101,7 +101,7 @@ def verify_token_frontend(token: str) -> bool:
 def decode_token(token: str) -> dict:
     try:
         decoded_token = jwt.decode(
-            token, configs.SECRET_KEY, algorithms=configs.AUTH_ALGORITHM
+            token, settings.SECRET_KEY, algorithms=settings.AUTH_ALGORITHM
         )
         return (
             decoded_token

@@ -1,11 +1,10 @@
-import uuid
 from datetime import datetime
 
 import structlog
 from jose import jwt
 
-from app.core.config import configs
 from app.core.exceptions import (
+    AlreadyVerifiedError,
     AuthError,
     ExpriedVerificationCodeError,
     NotFoundError,
@@ -17,10 +16,11 @@ from app.core.security import (
     generate_token_for_new_user,
     generate_verification_token,
 )
+from app.core.settings import settings
 from app.repository.email_verification_repository import EmailVerificationRepository
 from app.repository.user_repository import UserRepository
 from app.schema.auth_schema import UserEmailVerification, VerifyToken
-from app.schema.user_schema import UserEmail, UserLogin
+from app.schema.user_schema import UserLogin
 from app.service.base_service import BaseService
 
 log = structlog.get_logger()
@@ -63,14 +63,18 @@ class AuthService(BaseService):
         try:
             payload = jwt.decode(
                 token_data.Token,
-                configs.SECRET_KEY,
-                algorithms=[configs.AUTH_ALGORITHM],
+                settings.SECRET_KEY,
+                algorithms=[settings.AUTH_ALGORITHM],
             )
             if payload is None:
+                log.error("Invalid jwt token in payload")
                 raise AuthError(detail="Could not decode token")
             email = payload.get("sub")
-        except (jwt.JWTError, Exception):
+        except (jwt.JWTError, jwt.ExpiredSignatureError) as e:
+            log.error(e)
             raise AuthError(detail="Could not decode token")
+        except Exception as e:
+            raise e
 
         user = self.user_repository.get_user_by_email_address(email)
         if not user:
@@ -130,28 +134,31 @@ class AuthService(BaseService):
             raise NotFoundError(detail="Verification token not found")
 
     def verify_user_email(self, user: UserEmailVerification):
-        # check if user already verified
-        db_user = self.user_repository.read_by_uuid(user.uuid)
-        if db_user:
-            if db_user.verifiedAt is None:
-                # check if token already generated
-                verified_user = self.email_verification_repository.read_by_uuid(
-                    user.uuid
-                )
-                if verified_user:
-                    log.info("User already has a verification token")
-                    # Delete old verification token
-                    self.email_verification_repository.delete_by_uuid(user.uuid)
+        try:
+            # check if user already verified
+            db_user = self.user_repository.read_by_uuid(user.uuid)
+            if db_user:
+                if db_user.verifiedAt is None:
+                    # check if token already generated
+                    verified_user = self.email_verification_repository.read_by_uuid(
+                        user.uuid
+                    )
+                    if verified_user:
+                        log.info("User already has a verification token")
+                        # Delete old verification token
+                        self.email_verification_repository.delete_by_uuid(user.uuid)
 
-                # Generate new verification token
-                verify_token = generate_verification_token()
-                token_detail = {
-                    "user_uuid": user.uuid,
-                    "verification_token": verify_token,
-                    # "expiry_date": expiry_time  # Save the expiry time to the database
-                }
-                return token_detail
+                    # Generate new verification token
+                    verify_token = generate_verification_token()
+                    token_detail = {
+                        "user_uuid": user.uuid,
+                        "verification_token": verify_token,
+                        # "expiry_date": expiry_time  # Save the expiry time to the database
+                    }
+                    return token_detail
+                else:
+                    raise AlreadyVerifiedError(detail="User already verified")
             else:
-                raise NotVerifiedError(detail="User already verified")
-        else:
-            raise NotFoundError(detail="User not found")
+                raise NotFoundError(detail="User not found")
+        except Exception as e:
+            raise e

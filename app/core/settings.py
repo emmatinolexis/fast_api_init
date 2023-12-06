@@ -7,10 +7,10 @@ from pydantic_settings import BaseSettings
 
 load_dotenv()
 
-ENV: str = "dev"
+ENV: str = "test"
 
 
-class Configs(BaseSettings):
+class Settings(BaseSettings):
     PROJECT_NAME: str = "MV Tracking Hub"
     API_VERSION: str = os.getenv("API_VERSION", "0.0.1")
     ENV: str = os.getenv("ENV", ENV)
@@ -22,7 +22,7 @@ class Configs(BaseSettings):
     DATE_FORMAT: str = "%Y-%m-%d"
 
     # auth
-    SECRET_KEY: str = os.getenv("SECRET_KEY", "")
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "test_secret_key")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = (
         60 * 24
     )  # 60 minutes * 24 hours = 1 day why not 30 days??
@@ -73,10 +73,10 @@ class Configs(BaseSettings):
         case_sensitive = True
 
 
-configs = Configs()
+settings = Settings()
 
 
-class TestConfigs(Configs):
+class TestConfigs(Settings):
     ENV: str = "test"
 
 
@@ -86,3 +86,8 @@ elif ENV == "staging":
     pass
 elif ENV == "test":
     setting = TestConfigs()
+
+
+@lru_cache
+def get_settings():
+    return settings

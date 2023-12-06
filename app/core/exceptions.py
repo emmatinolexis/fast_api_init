@@ -24,6 +24,13 @@ class NotVerifiedError(HTTPException):
         super().__init__(status.HTTP_401_UNAUTHORIZED, detail, headers)
 
 
+class AlreadyVerifiedError(HTTPException):
+    def __init__(
+        self, detail: Any = None, headers: Optional[Dict[str, Any]] = None
+    ) -> None:
+        super().__init__(status.HTTP_409_CONFLICT, detail, headers)
+
+
 class ExpriedVerificationCodeError(HTTPException):
     def __init__(
         self, detail: Any = None, headers: Optional[Dict[str, Any]] = None

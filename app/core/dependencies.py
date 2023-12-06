@@ -3,14 +3,11 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import Depends
 from jose import jwt
 from pydantic import ValidationError
-from rsa import verify
 
-from app.core.config import configs
 from app.core.container import Container
 from app.core.exceptions import AuthError
 from app.core.security import JWTBearer, verify_token
 from app.model.user import User
-from app.schema.auth_schema import VerifyToken
 from app.service.user_service import UserService
 
 log = structlog.get_logger()

@@ -3,10 +3,10 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import ORJSONResponse
 
-from app.core.config import configs
 from app.core.container import Container
 from app.core.exceptions import InternalServerError
 from app.core.security import verify_token_frontend
+from app.core.settings import settings
 from app.schema.auth_schema import UserEmailVerification, VerifyToken
 from app.schema.user_schema import UserLogin
 from app.service.auth_service import AuthService
@@ -73,19 +73,20 @@ async def verify_user_email(
 ):
     try:
         token_detail = service.verify_user_email(user)
+        log.info("token", token=token_detail)
         # save generated token into db
         user, token = service.user_repository.create_verification_token(
             user_verify=user, verification_token=token_detail
         )
-
+        log.info("user email verified", user=user.email_address)
         if user and token:
             try:
                 # send verification email
                 await send_email(
-                    subject=configs.MAIL_SUBJECT,
+                    subject=settings.MAIL_SUBJECT,
                     recipient_name=user.first_name,
                     email=user.email_address,
-                    message=configs.MAIL_VERIFICATION_MESSAGE,
+                    message=settings.MAIL_VERIFICATION_MESSAGE,
                     token=token,
                 )
             except Exception as e:

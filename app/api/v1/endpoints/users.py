@@ -1,5 +1,3 @@
-from typing import List
-
 import structlog
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -10,7 +8,7 @@ from app.core.dependencies import get_current_user
 from app.core.exceptions import InternalServerError, NotFoundError
 from app.core.security import extract_user_data
 from app.model.user import User
-from app.schema.user_schema import FindUserResult, UpdateUser
+from app.schema.user_schema import UpdateUser
 from app.schema.user_schema import User as UserSchema
 from app.service.user_service import UserService
 from app.util.utils import send_data
@@ -47,7 +45,9 @@ async def get_users(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return service.get_list()
+        users = service.get_list()
+        users_info = [extract_user_data(user) for user in users]
+        return send_data(users_info)
     except Exception as e:
         log.error(e)
         raise InternalServerError(detail="Could not get users")

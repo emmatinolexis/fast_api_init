@@ -5,8 +5,8 @@ from typing import Callable
 import structlog
 from sqlalchemy.orm import Session
 
-from app.core.config import configs
 from app.core.security import hash_user_password
+from app.core.settings import settings
 from app.model.business_profile import BusinessProfile
 from app.model.email_verification import EmailVerification
 from app.model.user import User
@@ -125,7 +125,7 @@ class UserRepository(BaseRepository):
                 user_uuid=user_verify.uuid,
                 verification_token=verification_token["verification_token"],
                 expiry_date=current_date
-                + timedelta(days=configs.VERIFY_TOKEN_EXPIRE_DAYS),
+                + timedelta(days=settings.VERIFY_TOKEN_EXPIRE_DAYS),
             )
 
             session.add(db_verify)
