@@ -35,11 +35,24 @@ jobs:
   
   deploy-docker-image-on-staging:
     runs-on: ubuntu-latest
+    environment: staging
     needs:
       - build-and-upload-docker-image
     steps:
       - name: SSH Into AWS And Deploy
         uses: appleboy/ssh-action@v0.1.7
+        env:
+          API_VERSION: ${{ secrets.API_VERSION }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_USER: ${{ secrets.DB_USER }}
+          ENV: ${{ secrets.ENV }}
+          MAIL_SERVER: ${{ secrets.MAIL_SERVER }}
+          MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
+          MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
         with:
           host: ${{ secrets.STAGING_SERVER_IP }}
           username: ${{ secrets.STAGING_SERVER_USERNAME }}
