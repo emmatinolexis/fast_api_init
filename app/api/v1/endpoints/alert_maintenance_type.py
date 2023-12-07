@@ -31,8 +31,8 @@ async def get_alert_maintenance_types_handler(
     except Exception as e:
         log.error(e)
         raise InternalServerError(
-            user_msg="Could not get alert maintenance types. Please try again later.",
-            dev_msg=str(e),
+            userMsg="Could not get alert maintenance types. Please try again later.",
+            devMsg=str(e),
         )
 
 
@@ -50,8 +50,8 @@ async def create_alert_maintenance_type_handler(
     except Exception as e:
         log.error(e)
         raise InternalServerError(
-            user_msg="Could not create alert maintenance type",
-            dev_msg=str(e),
+            userMsg="Could not create alert maintenance type",
+            devMsg=str(e),
         )
 
 
@@ -70,8 +70,8 @@ async def update_alert_maintenance_type_handler(
     except Exception as e:
         log.error(e)
         raise InternalServerError(
-            user_msg="Could not update alert maintenance type",
-            dev_msg=str(e),
+            userMsg="Could not update alert maintenance type",
+            devMsg=str(e),
         )
 
 
@@ -90,6 +90,6 @@ async def delete_alert_maintenance_type_by_uuid_handler(
     except Exception as e:
         log.error(e)
         raise InternalServerError(
-            user_msg="Could not delete alert maintenance type",
-            dev_msg=str(e),
+            userMsg="Could not delete alert maintenance type",
+            devMsg=str(e),
         )

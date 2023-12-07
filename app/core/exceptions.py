@@ -54,9 +54,9 @@ class InputError(HTTPException):
 
 class InternalServerError(HTTPException):
     def __init__(
-        self, user_msg: str, dev_msg: str, headers: Optional[Dict[str, Any]] = None
+        self, userMsg: str, devMsg: str, headers: Optional[Dict[str, Any]] = None
     ) -> None:
-        detail = {"user_message": user_msg, "dev_message": dev_msg}
+        detail = {"user_message": userMsg, "dev_message": devMsg}
         super().__init__(status.HTTP_500_INTERNAL_SERVER_ERROR, detail, headers)
 
 
