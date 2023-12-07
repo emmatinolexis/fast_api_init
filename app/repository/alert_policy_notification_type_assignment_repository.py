@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.model.alert_polcy_notification_type_assignment import (
     AlertPolicyNotificationTypeAssignment,
 )
-from app.model.asset import Asset
+# from app.model.asset import Asset
 from app.repository.base_repository import BaseRepository
 
 

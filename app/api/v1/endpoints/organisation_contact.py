@@ -1,4 +1,4 @@
-from typing import List
+# from typing import List
 
 import structlog
 from dependency_injector.wiring import Provide, inject

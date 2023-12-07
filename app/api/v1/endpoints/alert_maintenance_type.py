@@ -30,7 +30,10 @@ async def get_alert_maintenance_types_handler(
         return send_data(service.get_list())
     except Exception as e:
         log.error(e)
-        raise InternalServerError(detail="Could not get alert maintenance types")
+        raise InternalServerError(
+            user_msg="Could not get alert maintenance types. Please try again later.",
+            dev_msg=str(e),
+        )
 
 
 @router.post("/", response_class=ORJSONResponse)
@@ -46,7 +49,10 @@ async def create_alert_maintenance_type_handler(
         return send_data(service.add(alert_maintenance_type))
     except Exception as e:
         log.error(e)
-        raise InternalServerError(detail="Could not create alert maintenance type")
+        raise InternalServerError(
+            user_msg="Could not create alert maintenance type",
+            dev_msg=str(e),
+        )
 
 
 @router.put("/{uuid}", response_class=ORJSONResponse)
@@ -63,7 +69,10 @@ async def update_alert_maintenance_type_handler(
         return send_data(service.patch_by_uuid(uuid, updated_alert_maintenance_type))
     except Exception as e:
         log.error(e)
-        raise InternalServerError(detail="Could not update alert maintenance type")
+        raise InternalServerError(
+            user_msg="Could not update alert maintenance type",
+            dev_msg=str(e),
+        )
 
 
 @router.delete("/{uuid}", response_class=ORJSONResponse)
@@ -80,4 +89,7 @@ async def delete_alert_maintenance_type_by_uuid_handler(
         return send_message("Alert maintenance type deleted successfully")
     except Exception as e:
         log.error(e)
-        raise InternalServerError(detail="Could not delete alert maintenance type")
+        raise InternalServerError(
+            user_msg="Could not delete alert maintenance type",
+            dev_msg=str(e),
+        )
