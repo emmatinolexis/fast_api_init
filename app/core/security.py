@@ -108,7 +108,7 @@ def decode_token(token: str) -> dict:
             if decoded_token["exp"] >= int(round(datetime.utcnow().timestamp()))
             else None
         )
-    except Exception as e:
+    except Exception:
         return {}
 
 
@@ -159,7 +159,7 @@ class JWTBearer(HTTPBearer):
         is_token_valid: bool = False
         try:
             payload = decode_token(jwt_token)
-        except Exception as e:
+        except Exception:
             payload = None
         if payload:
             is_token_valid = True

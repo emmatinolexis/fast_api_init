@@ -1,12 +1,13 @@
 import uuid
 
-from sqlalchemy import Column, String, ForeignKey, Enum as SQLAlchemyEnum
+from sqlalchemy import Column
+from sqlalchemy import Enum as SQLAlchemyEnum
+from sqlalchemy import ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from app.util.enums import AccountType
-
 
 from app.model.base_model import BaseModel
+from app.util.enums import AccountType
 
 
 class User(BaseModel):

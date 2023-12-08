@@ -1,13 +1,14 @@
 import uuid
 
-from sqlalchemy import Column, ForeignKey, String, Enum as SQLAlchemyEnum
+from sqlalchemy import Column
+from sqlalchemy import Enum as SQLAlchemyEnum
+from sqlalchemy import ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from app.util.enums import AssetStatus
-
 
 from app.model.asset_type import AssetType
 from app.model.base_model import BaseModel
+from app.util.enums import AssetStatus
 
 
 class Asset(BaseModel):

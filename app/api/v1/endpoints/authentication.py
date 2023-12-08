@@ -5,7 +5,7 @@ from fastapi.responses import ORJSONResponse
 
 from app.core.container import Container
 from app.core.exceptions import InternalServerError
-from app.core.security import verify_token_frontend
+from app.core.security import verify_token_frontend as imported_verify_token_frontend
 from app.core.settings import settings
 from app.schema.auth_schema import UserEmailVerification, VerifyToken
 from app.schema.user_schema import UserLogin
@@ -41,7 +41,7 @@ async def decode_access_token(
 @router.post("/verify-token-frontend", response_class=ORJSONResponse)
 @inject
 async def verify_token_frontend(token_data: VerifyToken):
-    if verify_token_frontend(token_data.Token):
+    if imported_verify_token_frontend(token_data.Token):
         return send_data("Token is valid")
     else:
         error_message = "Token is invalid or expired"

@@ -1,10 +1,12 @@
 import uuid
 
-from sqlalchemy import Column, String, Enum as SQLAlchemyEnum
+from sqlalchemy import Column
+from sqlalchemy import Enum as SQLAlchemyEnum
+from sqlalchemy import String
 from sqlalchemy.dialects.postgresql import UUID
-from app.util.enums import ActiveInactive
 
 from app.model.base_model import BaseModel
+from app.util.enums import ActiveInactive
 
 
 class AssetType(BaseModel):
@@ -19,4 +21,6 @@ class AssetType(BaseModel):
     asset_type_name = Column(String(length=50), nullable=False, default="", index=True)
     description = Column(String(length=100), nullable=True, default="", index=True)
     icon_url = Column(String(length=100), nullable=False, default="", index=True)
-    status = Column(SQLAlchemyEnum(ActiveInactive), nullable=False, default="", index=True)
+    status = Column(
+        SQLAlchemyEnum(ActiveInactive), nullable=False, default="", index=True
+    )
