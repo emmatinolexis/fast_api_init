@@ -52,7 +52,7 @@ async def verify_token_frontend(token_data: VerifyToken):
         )
 
 
-@router.post("/verify-token", response_class=ORJSONResponse)
+@router.post("/verify_token", response_class=ORJSONResponse)
 @inject
 async def verify_token(
     token_data: VerifyToken,
@@ -65,7 +65,7 @@ async def verify_token(
         raise InternalServerError(detail="Could not verify token")
 
 
-@router.post("/verify-email", response_class=ORJSONResponse)
+@router.post("/verify_email", response_class=ORJSONResponse)
 @inject
 async def verify_user_email(
     user: UserEmailVerification,

@@ -57,7 +57,7 @@ class AssetCreate(BaseModel):
     asset_name: str
     asset_status: str
     equipment_type_uuid: Optional[UUID] = None
-    vin_no: Optional[str] = None
+    vin: Optional[str] = None
     marker_icon_uuid: UUID
     marker_color: str
     equipment_uuid: UUID
@@ -81,7 +81,7 @@ class AssetInput(BaseModel):
     asset_name: str
     asset_status: str
     equipment_type_uuid: Optional[UUID] = None
-    vin_no: Optional[str] = None
+    vin: Optional[str] = None
     marker_icon_uuid: UUID
     marker_color: str
     equipment_uuid: UUID

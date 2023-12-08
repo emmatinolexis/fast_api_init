@@ -75,9 +75,11 @@ async def get_user_by_email(
 ):
     try:
         user = service.get_user_by_email_address(email_address)
+        # return user
         if not user:
             raise NotFoundError(detail="User Not Found")
-        return extract_user_data(user)
+        else:
+            return extract_user_data(user)
     except Exception as e:
         log.error(e)
         raise InternalServerError(detail="Could not get user")

@@ -1,7 +1,9 @@
 import uuid
 
-from sqlalchemy import Column, String
+from sqlalchemy import Column, String, Enum as SQLAlchemyEnum
 from sqlalchemy.dialects.postgresql import UUID
+from app.util.enums import ActiveInactive
+
 
 from app.model.base_model import BaseModel
 
@@ -17,4 +19,4 @@ class MarkerIcon(BaseModel):
     )
     icon_name = Column(String(length=50), nullable=False, index=True)
     icon_url = Column(String(length=100), nullable=False, index=True)
-    status = Column(String(length=50), nullable=False, index=True)
+    status = Column(SQLAlchemyEnum(ActiveInactive), nullable=False, index=True)
