@@ -19,4 +19,3 @@ class AlertNotificationAssignment(BaseModel):
         UUID(as_uuid=True), ForeignKey("alert_policies.uuid"), nullable=False
     )
     reciepient = Column(String(length=100), nullable=False, index=True)
- 

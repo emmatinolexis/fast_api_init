@@ -52,4 +52,3 @@ def dict_to_sqlalchemy_filter_options(model_class, search_option_dict):
                     sql_alchemy_filter_options.append(custom_filter)
 
     return and_(True, *sql_alchemy_filter_options)
-
