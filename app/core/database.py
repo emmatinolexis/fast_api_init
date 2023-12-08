@@ -3,7 +3,6 @@ from typing import Callable
 
 from sqlalchemy import create_engine, orm
 
-# from sqlalchemy.ext.declarative import as_declarative, declarative_base, declared_attr
 from sqlalchemy.orm import Session
 
 from app.model.base_model import Base

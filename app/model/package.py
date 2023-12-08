@@ -23,4 +23,4 @@ class Package(BaseModel):
         String(length=100), nullable=True, default="", index=True
     )
     package_item_assignments = relationship(PackageItemAssignment, uselist=True)
-    # items = relationship("PackageItem", back_populates="package")
+
