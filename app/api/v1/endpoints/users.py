@@ -77,4 +77,4 @@ async def get_user_by_email(
     if not user:
         raise NotFoundError(detail="User Not Found")
     else:
-        return extract_user_data(user)
+        return send_data(extract_user_data(user))
