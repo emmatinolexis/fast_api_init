@@ -8,8 +8,6 @@ from app.core.dependencies import get_current_user
 from app.core.exceptions import InternalServerError
 from app.model.user import User
 from app.schema.alert_policy_schema import AlertPolicyType as AlertPolicyTypeSchema
-
-# from app.schema.alert_policy_schema import AlertPolicyTypeFetch
 from app.service.alert_policy_type_service import AlertPolicyTypeService
 from app.util.utils import send_data, send_message
 
