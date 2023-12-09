@@ -1,5 +1,3 @@
-from typing import List
-
 import structlog
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends
@@ -9,7 +7,7 @@ from app.core.container import Container
 from app.core.dependencies import get_current_user
 from app.core.exceptions import InternalServerError
 from app.model.user import User
-from app.schema.marker_schema import MarkerIcon, MarkerIconFetch
+from app.schema.marker_schema import MarkerIcon
 from app.service.marker_icon_service import MarkerIconService
 from app.util.utils import send_data, send_message
 
