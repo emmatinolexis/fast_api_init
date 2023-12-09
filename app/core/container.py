@@ -234,6 +234,7 @@ class Container(containers.DeclarativeContainer):
     organisation_contact_service = providers.Factory(
         organisation_contact_service.OrganisationContactService,
         organisation_contact_repository=organisation_contact_repository,
+        user_repository=user_repository,
     )
     package_item_service = providers.Factory(
         package_item_service.PackageItemService,

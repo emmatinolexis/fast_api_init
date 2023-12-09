@@ -40,12 +40,11 @@ class UserRepository(BaseRepository):
 
     def get_user_by_email_address(self, email: str) -> User:
         with self.session_factory() as session:
-            user = (
+            return (
                 session.query(self.model)
                 .filter(self.model.email_address == email)
                 .first()
             )
-            return user
 
     def get_user_by_phone_number(self, phone_number: str):
         with self.session_factory() as session:

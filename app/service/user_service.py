@@ -1,6 +1,10 @@
+import structlog
+
 from app.repository.user_repository import UserRepository
 from app.schema.user_schema import UpdateUser, User
 from app.service.base_service import BaseService
+
+log = structlog.get_logger()
 
 
 class UserService(BaseService):
@@ -15,4 +19,9 @@ class UserService(BaseService):
         return self.user_repository.update_user_by_uuid(uuid, user)
 
     def get_user_by_email_address(self, email: str):
-        return self.user_repository.get_user_by_email_address(email)
+        try:
+            user = self.user_repository.get_user_by_email_address(email)
+            return user if user else None
+        except Exception as e:
+            log.error(e)
+            raise e

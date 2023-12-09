@@ -1,5 +1,3 @@
-from typing import List
-
 import structlog
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends
@@ -7,7 +5,7 @@ from fastapi.responses import ORJSONResponse
 
 from app.core.container import Container
 from app.core.dependencies import get_current_user
-from app.core.exceptions import InternalServerError
+from app.core.exceptions import InternalServerError, NotFoundError
 from app.model.user import User
 from app.schema.onboarding_schema import OrganisationContact
 from app.service.organisation_contact_service import OrganisationContactService
@@ -45,7 +43,11 @@ async def create_contact_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.add(organisation_contact))
+        contact = service.create_organisation_contact(organisation_contact)
+        return send_data(contact)
+    except NotFoundError as e:
+        log.error(e)
+        return send_message("User not found", 404)
     except Exception as e:
         log.error(e)
         raise InternalServerError(detail="Could not create organisation_contact")

@@ -1,3 +1,6 @@
+from sqlalchemy.exc import IntegrityError
+
+
 class BaseService:
     def __init__(self, repository) -> None:
         self._repository = repository
@@ -12,7 +15,12 @@ class BaseService:
         return self._repository.read_by_uuid(uuid)
 
     def add(self, schema):
-        return self._repository.create(schema)
+        try:
+            return self._repository.create(schema)
+        except IntegrityError as e:
+            raise e
+        except Exception as e:
+            raise e
 
     def patch(self, id: int, schema):
         return self._repository.update(id, schema)

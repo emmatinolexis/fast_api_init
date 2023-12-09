@@ -5,7 +5,7 @@ import structlog
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
-from app.core.exceptions import DuplicatedError, NotFoundError
+from app.core.exceptions import NotFoundError
 from app.core.settings import settings
 from app.util.query_builder import dict_to_sqlalchemy_filter_options
 
@@ -93,10 +93,8 @@ class BaseRepository:
                 session.commit()
                 session.refresh(query)
             except IntegrityError as e:
-                log.error(e)
-                raise DuplicatedError(detail=str(e.orig))
+                raise e
             except Exception as e:
-                log.error(e)
                 raise e
             return query
 
