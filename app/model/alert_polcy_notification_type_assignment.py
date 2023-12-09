@@ -7,7 +7,7 @@ from app.model.base_model import BaseModel
 
 
 class AlertPolicyNotificationTypeAssignment(BaseModel):
-    __tablename__ = "alert_policy_notification_type_assignment"
+    __tablename__ = "alert_policy_notification_type_assignments"
     uuid = Column(
         UUID(as_uuid=True),
         primary_key=True,

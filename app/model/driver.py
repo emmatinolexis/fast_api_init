@@ -7,7 +7,7 @@ from app.model.base_model import BaseModel
 
 
 class Driver(BaseModel):
-    __tablename__ = "driver"
+    __tablename__ = "drivers"
     uuid = Column(
         UUID(as_uuid=True),
         primary_key=True,
