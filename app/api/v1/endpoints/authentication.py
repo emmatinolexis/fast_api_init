@@ -5,7 +5,7 @@ from fastapi.responses import ORJSONResponse
 
 from app.core.container import Container
 from app.core.exceptions import InternalServerError
-from app.core.security import verify_token_frontend as imported_verify_token_frontend
+from app.core.security import verify_token_frontend
 from app.core.settings import settings
 from app.schema.auth_schema import UserEmailVerification, VerifyToken
 from app.schema.user_schema import UserLogin
@@ -21,7 +21,7 @@ router = APIRouter(
 log = structlog.get_logger()
 
 
-@router.post("/decode-token", response_class=ORJSONResponse)
+@router.post("/decode_token", response_class=ORJSONResponse)
 @inject
 async def decode_access_token(
     token_data: VerifyToken,
@@ -38,10 +38,10 @@ async def decode_access_token(
 # Upon successful registration, the user's access token is stored within a cookie.
 # To ensure the legitimacy of the token and prevent unauthorized generation of tokens,
 # the token within the cookie undergoes a verification process.
-@router.post("/verify-token-frontend", response_class=ORJSONResponse)
+@router.post("/verify_token_frontend", response_class=ORJSONResponse)
 @inject
-async def verify_token_frontend(token_data: VerifyToken):
-    if imported_verify_token_frontend(token_data.Token):
+async def verify_token_frontend_handler(token_data: VerifyToken):
+    if verify_token_frontend(token_data.Token):
         return send_data("Token is valid")
     else:
         error_message = "Token is invalid or expired"

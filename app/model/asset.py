@@ -1,8 +1,6 @@
 import uuid
 
-from sqlalchemy import Column
-from sqlalchemy import Enum as SQLAlchemyEnum
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import Column, Enum, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -21,7 +19,7 @@ class Asset(BaseModel):
         nullable=False,
     )
     asset_name = Column(String(length=50), nullable=False, index=True)
-    asset_status = Column(SQLAlchemyEnum(AssetStatus), nullable=False, index=True)
+    asset_status = Column(Enum(AssetStatus), nullable=False, index=True)
     user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
     asset_type_uuid = Column(
         UUID(as_uuid=True), ForeignKey(AssetType.uuid), nullable=False
