@@ -20,7 +20,7 @@ class Database:
 
     def connected(self) -> bool:
         try:
-            with self._engine.connect() as connection_str:
+            with self._engine.connect():
                 return True
         except Exception:
             return False

@@ -73,11 +73,8 @@ async def update_user(
 async def get_user_by_email(
     email_address: str, service: UserService = Depends(Provide[Container.user_service])
 ):
-    try:
-        user = service.get_user_by_email_address(email_address)
-        if not user:
-            raise NotFoundError(detail="User Not Found")
+    user = service.get_user_by_email_address(email_address)
+    if not user:
+        raise NotFoundError(detail="User Not Found")
+    else:
         return send_data(extract_user_data(user))
-    except Exception as e:
-        log.error(e)
-        raise InternalServerError(detail="Could not get user")

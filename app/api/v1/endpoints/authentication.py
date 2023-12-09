@@ -21,7 +21,7 @@ router = APIRouter(
 log = structlog.get_logger()
 
 
-@router.post("/decode-token", response_class=ORJSONResponse)
+@router.post("/decode_token", response_class=ORJSONResponse)
 @inject
 async def decode_access_token(
     token_data: VerifyToken,
@@ -38,9 +38,9 @@ async def decode_access_token(
 # Upon successful registration, the user's access token is stored within a cookie.
 # To ensure the legitimacy of the token and prevent unauthorized generation of tokens,
 # the token within the cookie undergoes a verification process.
-@router.post("/verify-token-frontend", response_class=ORJSONResponse)
+@router.post("/verify_token_frontend", response_class=ORJSONResponse)
 @inject
-async def verify_token_frontend(token_data: VerifyToken):
+async def verify_token_frontend_handler(token_data: VerifyToken):
     if verify_token_frontend(token_data.Token):
         return send_data("Token is valid")
     else:
@@ -52,7 +52,7 @@ async def verify_token_frontend(token_data: VerifyToken):
         )
 
 
-@router.post("/verify-token", response_class=ORJSONResponse)
+@router.post("/verify_token", response_class=ORJSONResponse)
 @inject
 async def verify_token(
     token_data: VerifyToken,
@@ -65,7 +65,7 @@ async def verify_token(
         raise InternalServerError(detail="Could not verify token")
 
 
-@router.post("/verify-email", response_class=ORJSONResponse)
+@router.post("/verify_email", response_class=ORJSONResponse)
 @inject
 async def verify_user_email(
     user: UserEmailVerification,

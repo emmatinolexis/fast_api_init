@@ -8,7 +8,7 @@ from app.model.base_model import Base
 
 
 class Token(Base):
-    __tablename__ = "token"
+    __tablename__ = "tokens"
     uuid = Column(
         UUID(as_uuid=True),
         primary_key=True,
