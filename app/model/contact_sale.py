@@ -1,8 +1,6 @@
 import uuid
 
-from sqlalchemy import Column
-from sqlalchemy import Enum as SQLAlchemyEnum
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import Column, ForeignKey, String, Enum, Column
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -23,6 +21,6 @@ class ContactSale(BaseModel):
     call_time = Column(String(length=20), nullable=True, default="", index=True)
     user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
     status = Column(
-        SQLAlchemyEnum(ContactSaleStatus), nullable=False, default="", index=True
+        Enum(ContactSaleStatus), nullable=False, default="", index=True
     )
     user = relationship("User", uselist=False)

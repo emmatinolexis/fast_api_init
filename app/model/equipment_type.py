@@ -1,8 +1,6 @@
 import uuid
 
-from sqlalchemy import Column
-from sqlalchemy import Enum as SQLAlchemyEnum
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import Column, ForeignKey, String, Column, Enum 
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.model.base_model import BaseModel
@@ -19,7 +17,7 @@ class EquipmentType(BaseModel):
         nullable=False,
     )
     equipment_type_name = Column(String(length=100), nullable=False, index=True)
-    status = Column(SQLAlchemyEnum(ActiveInactive), nullable=False, index=True)
+    status = Column(Enum(ActiveInactive), nullable=False, index=True)
     equipment_uuid = Column(
         UUID(as_uuid=True), ForeignKey("equipments.uuid"), nullable=True
     )

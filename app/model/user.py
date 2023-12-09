@@ -1,8 +1,6 @@
 import uuid
 
-from sqlalchemy import Column
-from sqlalchemy import Enum as SQLAlchemyEnum
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import ForeignKey, String, Enum, Column
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -28,7 +26,7 @@ class User(BaseModel):
     verifiedAt = Column(String(length=100), nullable=True, default=None, index=True)
     location = Column(String(length=30), nullable=True, index=True)
     address = Column(String(length=50), nullable=True, index=True)
-    account_type = Column(SQLAlchemyEnum(AccountType), nullable=False, index=True)
+    account_type = Column(Enum(AccountType), nullable=False, index=True)
     business_profile_uuid = Column(
         UUID(as_uuid=True), ForeignKey("business_profiles.uuid"), nullable=True
     )
