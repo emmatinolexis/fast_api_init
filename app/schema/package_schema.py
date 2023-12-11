@@ -3,20 +3,22 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.util.enums import ActiveStatus
+
 
 class GetPackage(BaseModel):
     uuid: str
 
 
-class PackageItem(BaseModel):
+class PackageItemPayload(BaseModel):
     item_name: str
-    status: str
+    status: ActiveStatus
 
     class Config:
         orm_model = True
 
 
-class Package(BaseModel):
+class PackagePayload(BaseModel):
     package_name: str
     package_price: str
     package_description: str
@@ -25,9 +27,17 @@ class Package(BaseModel):
         orm_model = True
 
 
-class PackageItemAssignment(BaseModel):
+class PackageItemAssignmentPayload(BaseModel):
     package_item_uuids: List[UUID]
     package_uuid: UUID
+
+    class Config:
+        orm_model = True
+
+
+class PackageItemAssignmentInput(BaseModel):
+    package_uuid: UUID
+    package_item_uuid: UUID
 
     class Config:
         orm_model = True

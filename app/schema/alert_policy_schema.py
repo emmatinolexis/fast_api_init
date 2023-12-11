@@ -3,20 +3,18 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.util.enums import AlertType, GeofenceType, MaintenanceAlertSchedule
+from app.util.enums import (
+    ActiveStatus,
+    AlertType,
+    GeofenceType,
+    MaintenanceAlertSchedule,
+)
 
 
-class AlertPolicyType(BaseModel):
+class AlertPolicyTypePayload(BaseModel):
     name: str
     description: str
-    status: str
-
-
-class AlertPolicyTypeFetch(BaseModel):
-    name: str
-    description: str
-    status: str
-    uuid: UUID
+    status: ActiveStatus
 
 
 class AlertRecipient(BaseModel):
@@ -29,7 +27,7 @@ class AlertPolicyAsset(BaseModel):
     alert_policy_uuid: UUID
 
 
-class AlertPolicy(BaseModel):
+class AlertPolicyPayload(BaseModel):
     policy_name: str
     alert_policy_type_uuid: UUID
     alert_types: list[AlertType]

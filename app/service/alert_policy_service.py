@@ -1,6 +1,10 @@
 import structlog
 
-from app.core.exceptions import InternalServerError
+from app.core import messages
+from app.core.exceptions import NotFoundError
+from app.repository.alert_maintenance_type_repository import (
+    AlertMaintenanceTypeRepository,
+)
 from app.repository.alert_notification_assignment_repository import (
     AlertNotificationAssignmentRepository,
 )
@@ -11,12 +15,14 @@ from app.repository.alert_policy_notification_type_assignment_repository import 
     AlertPolicyNotificationTypeAssignmentRepository,
 )
 from app.repository.alert_policy_repository import AlertPolicyRepository
-from app.schema.alert_policy_schema import AlertNotificationAssignment
-from app.schema.alert_policy_schema import AlertPolicy as AlertPolicySchema
+from app.repository.alert_policy_type_repository import AlertPolicyTypeRepository
+from app.repository.asset_repository import AssetRepository
 from app.schema.alert_policy_schema import (
+    AlertNotificationAssignment,
     AlertPolicyAssetAssignment,
     AlertPolicyInput,
     AlertPolicyNotificationTypeAssignment,
+    AlertPolicyPayload,
 )
 from app.service.base_service import BaseService
 
@@ -27,11 +33,16 @@ class AlertPolicyService(BaseService):
     def __init__(
         self,
         alert_policy_repository: AlertPolicyRepository,
+        alert_policy_type_repository: AlertPolicyTypeRepository,
+        alert_maintenance_type_repository: AlertMaintenanceTypeRepository,
         alert_notification_assignment_repository: AlertNotificationAssignmentRepository,
         alert_policy_notification_type_assignment_repository: AlertPolicyNotificationTypeAssignmentRepository,
         alert_policy_asset_assignment_repository: AlertPolicyAssetAssignmentRepository,
+        asset_repository: AssetRepository,
     ):
         self.alert_policy_repository = alert_policy_repository
+        self.alert_policy_type_repository = alert_policy_type_repository
+        self.alert_maintenance_type_repository = alert_maintenance_type_repository
         self.alert_notification_assignment_repository = (
             alert_notification_assignment_repository
         )
@@ -41,6 +52,7 @@ class AlertPolicyService(BaseService):
         self.alert_policy_asset_assignment_repository = (
             alert_policy_asset_assignment_repository
         )
+        self.asset_repository = asset_repository
         super().__init__(alert_policy_repository)
 
     def get_all_alert_policies(self):
@@ -97,10 +109,9 @@ class AlertPolicyService(BaseService):
                 alert_policies.append({"alert_policy": alert_data})
             return alert_policies
         except Exception as e:
-            log.error(e)
-            raise InternalServerError(detail="Could not get alert policies")
+            raise e
 
-    def create_alert_policy(self, alert_policy: AlertPolicySchema):
+    def create_alert_policy(self, alert_policy: AlertPolicyPayload):
         try:
             # create policy
             alert_policy_data = AlertPolicyInput(
@@ -113,8 +124,33 @@ class AlertPolicyService(BaseService):
                 maintenance_alert_schedule=alert_policy.maintenance_alert_schedule,
             )
 
+            if (
+                self.alert_policy_type_repository.read_by_uuid(
+                    alert_policy.alert_policy_type_uuid
+                )
+                is None
+            ):
+                raise NotFoundError(
+                    detail=messages.ALERT_POLICY_TYPE_NOT_FOUND
+                    + str(alert_policy.alert_policy_type_uuid)
+                )
+
+            if (
+                self.alert_maintenance_type_repository.read_by_uuid(
+                    alert_policy.maintenance_alert_policy_type_uuid
+                )
+                is None
+            ):
+                raise NotFoundError(
+                    detail=messages.ALERT_MAINTENANCE_TYPE_NOT_FOUND
+                    + str(alert_policy.maintenance_alert_policy_type_uuid)
+                )
+
+            for item in alert_policy.alert_assets:
+                if self.asset_repository.read_by_uuid(item) is None:
+                    raise NotFoundError(detail=messages.ASSET_NOT_FOUND + str(item))
+
             created_policy = self.add(alert_policy_data)
-            # return created_policy
 
             # create alert reciepients
             for item in alert_policy.alert_reciepients:
@@ -148,5 +184,4 @@ class AlertPolicyService(BaseService):
 
             return alert_policy_data
         except Exception as e:
-            log.error(e)
             raise e

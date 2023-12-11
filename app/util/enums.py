@@ -6,7 +6,7 @@ class AccountType(str, Enum):
     INDIVIDUAL = "individual"
 
 
-class ActiveInactive(str, Enum):
+class ActiveStatus(str, Enum):
     ACTIVE = "active"
     INACTIVE = "inactive"
 

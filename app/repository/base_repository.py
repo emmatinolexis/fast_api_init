@@ -5,7 +5,7 @@ import structlog
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
-from app.core.exceptions import DuplicatedError, NotFoundError
+from app.core.exceptions import NotFoundError
 from app.core.settings import settings
 from app.util.query_builder import dict_to_sqlalchemy_filter_options
 
@@ -93,10 +93,8 @@ class BaseRepository:
                 session.commit()
                 session.refresh(query)
             except IntegrityError as e:
-                log.error(e)
-                raise DuplicatedError(detail=str(e.orig))
+                raise e
             except Exception as e:
-                log.error(e)
                 raise e
             return query
 
@@ -142,6 +140,6 @@ class BaseRepository:
         with self.session_factory() as session:
             query = session.query(self.model).filter(self.model.uuid == uuid).first()
             if not query:
-                raise NotFoundError(detail=f"not found id : {uuid}")
+                raise NotFoundError(detail=f"not found uuid : {uuid}")
             session.delete(query)
             session.commit()

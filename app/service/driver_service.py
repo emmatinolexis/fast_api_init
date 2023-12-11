@@ -1,8 +1,32 @@
+from app.core.exceptions import NotFoundError
+from app.repository.asset_repository import AssetRepository
 from app.repository.driver_repository import DriverRepository
+from app.schema.asset_schema import DriverPayload
 from app.service.base_service import BaseService
 
 
 class DriverService(BaseService):
-    def __init__(self, driver_repository: DriverRepository):
+    def __init__(
+        self, driver_repository: DriverRepository, asset_repository: AssetRepository
+    ):
         self.driver_repository = driver_repository
+        self.asset_repository = asset_repository
         super().__init__(driver_repository)
+
+    def create_driver(self, payload: DriverPayload):
+        try:
+            if self.asset_repository.read_by_uuid(payload.asset_uuid) is None:
+                raise NotFoundError(detail=payload.asset_uuid)
+            driver = self.driver_repository.create(payload)
+            return driver
+        except Exception as e:
+            raise e
+
+    def update_driver(self, uuid: str, payload: DriverPayload):
+        try:
+            if self.asset_repository.read_by_uuid(payload.asset_uuid) is None:
+                raise NotFoundError(detail=payload.asset_uuid)
+            driver = self.driver_repository.update_by_uuid(uuid, payload)
+            return driver
+        except Exception as e:
+            raise e
