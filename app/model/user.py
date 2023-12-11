@@ -20,7 +20,7 @@ class User(BaseModel):
     )
     first_name = Column(String(length=30), nullable=False, index=True)
     last_name = Column(String(length=30), nullable=False, index=True)
-    phone_number = Column(String(length=20), nullable=True, index=True)
+    phone_number = Column(String(length=20), nullable=True, unique=True, index=True)
     email_address = Column(String(length=100), nullable=False, unique=True, index=True)
     password = Column(String(length=200), nullable=False)
     verifiedAt = Column(String(length=100), nullable=True, default=None, index=True)

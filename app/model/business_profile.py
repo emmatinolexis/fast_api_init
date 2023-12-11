@@ -16,9 +16,9 @@ class BusinessProfile(BaseModel):
         unique=True,
         nullable=False,
     )
-    business_name = Column(String(length=100), nullable=False, index=True)
-    business_email = Column(String(length=100), nullable=False, index=True)
-    business_phone = Column(String(length=100), nullable=False, index=True)
+    business_name = Column(String(length=100), nullable=False, unique=True, index=True)
+    business_email = Column(String(length=100), nullable=False, unique=True, index=True)
+    business_phone = Column(String(length=100), nullable=False, unique=True, index=True)
     business_location = Column(String(length=100), nullable=True, index=True)
     business_logo = Column(String(length=100), nullable=True, index=True)
     business_address = Column(String(length=100), nullable=True, index=True)
