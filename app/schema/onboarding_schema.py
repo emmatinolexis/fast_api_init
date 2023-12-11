@@ -6,12 +6,19 @@ from app.util.enums import AccountType
 
 
 class OnboardingPayload(BaseModel):
-    asset_type_uuid: UUID
     number_of_assets: int
     number_of_months: int
     package_uuid: UUID
     user_uuid: UUID
     features_uuid: list[UUID]
+
+    class Config:
+        orm_model = True
+
+
+class OnboardingUpdatePayload(BaseModel):
+    number_of_assets: int
+    number_of_months: int
 
     class Config:
         orm_model = True
