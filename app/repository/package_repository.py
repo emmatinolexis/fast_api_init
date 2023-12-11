@@ -1,12 +1,14 @@
 from contextlib import AbstractContextManager
 from typing import Callable
 
+from sqlalchemy import exc
 from sqlalchemy.orm import Session
 
 from app.model.package import Package
 from app.model.package_item import PackageItem
+from app.model.package_item_assignment import PackageItemAssignment
 from app.repository.base_repository import BaseRepository
-from app.schema.package_schema import PackageItemAssignment
+from app.schema.package_schema import PackageItemAssignmentPayload
 
 
 class PackageRepository(BaseRepository):
@@ -26,7 +28,7 @@ class PackageRepository(BaseRepository):
                 .all()
             )
 
-    def assign_package_item(self, data: PackageItemAssignment):
+    def assign_package_item(self, data: PackageItemAssignmentPayload):
         with self.session_factory() as session:
             try:
                 for item in data.package_item_uuids:
@@ -40,7 +42,13 @@ class PackageRepository(BaseRepository):
                     )
 
                     if not db_item:
-                        self.create(db_item)
+                        query = PackageItemAssignment(
+                            package_item_uuid=item, package_uuid=data.package_uuid
+                        )
+                        session.add(query)
+                        session.commit()
+            except exc.IntegrityError as e:
+                raise e
             except Exception as e:
                 raise e
 

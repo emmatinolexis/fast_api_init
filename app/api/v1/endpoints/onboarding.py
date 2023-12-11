@@ -3,19 +3,26 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends
 from fastapi.responses import ORJSONResponse
 
+from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
-from app.core.exceptions import InternalServerError
+from app.core.exceptions import InternalServerError, NotFoundError
 from app.model.user import User
-from app.schema.onboarding_schema import Onboarding
-from app.service.driver_service import OnboardingService
-from app.util.utils import send_data, send_message
+from app.schema.onboarding_schema import BusinessOnboardingPayload, OnboardingPayload
+from app.service.onboarding_service import OnboardingService
+from app.util.utils import (
+    send_client_side_error,
+    send_data,
+    send_info,
+    send_internal_server_error,
+)
 
 router = APIRouter(
     prefix="/onboarding",
     tags=["onboarding"],
 )
 log = structlog.get_logger()
+msg_prefix = "onboarding"
 
 
 @router.get("/", response_class=ORJSONResponse)
@@ -27,48 +34,55 @@ async def get_all_onboardings_handler(
     try:
         return send_data(service.get_list())
     except Exception as e:
-        log.error(e)
-        raise InternalServerError(detail="Could not get onboarding")
+        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
 
 
 @router.post("/", response_class=ORJSONResponse)
 @inject
 async def create_individual_onboarding_handler(
-    onboarding: Onboarding,
+    payload: OnboardingPayload,
     service: OnboardingService = Depends(Provide[Container.onboarding_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.create_individual_onboarding(onboarding))
+        log.debug("testing")
+        onboarding = service.create_individual_onboarding(payload)
+        return send_data(onboarding)
+    except NotFoundError as e:
+        return send_client_side_error(user_msg=str(e.detail))
     except Exception as e:
-        log.error(e)
-        raise InternalServerError(detail="Could not create onboarding")
+        msg = messages.CREATE_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
 
 
 @router.post("/organisation", response_class=ORJSONResponse)
 @inject
 async def create_organisation_onboarding_handler(
-    onboarding: Onboarding,
+    payload: BusinessOnboardingPayload,
     service: OnboardingService = Depends(Provide[Container.onboarding_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.create_business_onboarding(onboarding))
+        onboarding = service.create_business_onboarding(payload)
+        return send_data(onboarding)
+    except NotFoundError as e:
+        return send_client_side_error(user_msg=str(e.detail))
     except Exception as e:
-        log.error(e)
-        raise InternalServerError(detail="Could not create onboarding")
+        msg = messages.CREATE_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
 
 
 @router.put("/{uuid}", response_class=ORJSONResponse)
 @inject
 async def update_onboarding_handler(
     uuid: str,
-    onboarding: Onboarding,
+    payload: OnboardingPayload,
     service: OnboardingService = Depends(Provide[Container.onboarding_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.patch_by_uuid(uuid, onboarding))
+        return send_data(service.patch_by_uuid(uuid, payload))
     except Exception as e:
         log.error(e)
         raise InternalServerError(detail="Could not update onboarding")
@@ -97,7 +111,7 @@ async def delete_onboarding_by_uuid_handler(
 ):
     try:
         service.remove_by_uuid(uuid)
-        return send_message("Onboarding deleted successfully")
+        return send_info("Onboarding deleted successfully")
     except Exception as e:
         log.error(e)
         raise InternalServerError(detail="Could not delete onboarding")

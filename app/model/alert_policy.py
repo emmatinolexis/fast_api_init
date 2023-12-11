@@ -23,7 +23,7 @@ class AlertPolicy(BaseModel):
     )
     geofence_location_name = Column(String(length=100), nullable=True, index=True)
     geofence_type = Column(String(length=100), nullable=True, index=True)
-    policy_name = Column(String(length=100), nullable=False, index=True)
+    policy_name = Column(String(length=100), nullable=False, unique=True, index=True)
     minimum_idle_time = Column(String(length=100), nullable=True, index=True)
     maintenance_alert_schedule = Column(String(length=100), nullable=True, index=True)
     maintenance_alert_type_uuid = Column(

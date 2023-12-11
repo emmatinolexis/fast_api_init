@@ -2,10 +2,12 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.util.enums import AccountType
 
-class Onboarding(BaseModel):
+
+class OnboardingPayload(BaseModel):
     asset_type_uuid: UUID
-    number_of_assets: str
+    number_of_assets: int
     number_of_months: int
     package_uuid: UUID
     user_uuid: UUID
@@ -15,17 +17,27 @@ class Onboarding(BaseModel):
         orm_model = True
 
 
-class OnboardingInput(BaseModel):
+class OnboardingIndividualInput(BaseModel):
     asset_type_uuid: UUID
-    number_of_assets: str
+    number_of_assets: int
     number_of_months: int
     package_uuid: UUID
     user_uuid: UUID
+    onboarding_type: AccountType
 
 
-class BusinessOnboarding(BaseModel):
+class OnboardingBusinessInput(BaseModel):
     asset_type_uuid: UUID
-    number_of_assets: str
+    number_of_assets: int
+    number_of_months: int
+    user_uuid: UUID
+    onboarding_type: AccountType
+
+
+class BusinessOnboardingPayload(BaseModel):
+    asset_type_uuid: UUID
+    number_of_assets: int
+    number_of_months: int
     user_uuid: UUID
     features_uuid: list[UUID]
     business_name: str
@@ -47,7 +59,7 @@ class OnboardingFeatureAssignment(BaseModel):
         orm_model = True
 
 
-class OrganisationContact(BaseModel):
+class OrganisationContactPayload(BaseModel):
     first_name: str
     last_name: str
     role: str
@@ -60,10 +72,12 @@ class OrganisationContact(BaseModel):
 
 
 class BusinessProfile(BaseModel):
-    businness_name: str
+    business_name: str
     business_email: str
     business_phone: str
-    user_uuid: UUID
+    business_logo: str = None
+    business_address: str = None
+    business_location: str = None
 
 
 class UserOrganisationAssignment(BaseModel):

@@ -140,6 +140,6 @@ class BaseRepository:
         with self.session_factory() as session:
             query = session.query(self.model).filter(self.model.uuid == uuid).first()
             if not query:
-                raise NotFoundError(detail=f"not found id : {uuid}")
+                raise NotFoundError(detail=f"not found uuid : {uuid}")
             session.delete(query)
             session.commit()

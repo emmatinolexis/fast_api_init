@@ -69,6 +69,7 @@ class Container(containers.DeclarativeContainer):
             "app.api.v1.endpoints.organisation_contact",
             "app.api.v1.endpoints.package",
             "app.api.v1.endpoints.package_item",
+            "app.api.v1.endpoints.onboarding",
             "app.core.dependencies",
         ]
     )
@@ -180,9 +181,12 @@ class Container(containers.DeclarativeContainer):
     alert_policy_service = providers.Factory(
         alert_policy_service.AlertPolicyService,
         alert_policy_repository=alert_policy_repository,
+        alert_policy_type_repository=alert_policy_type_repository,
+        alert_maintenance_type_repository=alert_maintenance_type_repository,
         alert_notification_assignment_repository=alert_notification_assignment_repository,
         alert_policy_notification_type_assignment_repository=alert_policy_notification_type_assignment_repository,
         alert_policy_asset_assignment_repository=alert_policy_asset_assignment_repository,
+        asset_repository=asset_repository,
     )
     alert_maintenance_type_service = providers.Factory(
         alert_maintenance_type_service.AlertMaintenanceTypeService,
@@ -191,6 +195,7 @@ class Container(containers.DeclarativeContainer):
     asset_location_service = providers.Factory(
         asset_location_service.AssetLocationService,
         asset_location_repository=asset_location_repository,
+        asset_repository=asset_repository,
     )
     asset_type_service = providers.Factory(
         asset_type_service.AssetTypeService, asset_type_repository=asset_type_repository
@@ -198,6 +203,11 @@ class Container(containers.DeclarativeContainer):
     asset_service = providers.Factory(
         asset_service.AssetService,
         asset_repository=asset_repository,
+        asset_type_repository=asset_type_repository,
+        user_repository=user_repository,
+        equipment_repository=equipment_repository,
+        equipment_type_repository=equipment_type_repository,
+        marker_icon_repository=marker_icon_repository,
         driver_repository=driver_repository,
     )
     contact_sale_service = providers.Factory(
@@ -207,10 +217,12 @@ class Container(containers.DeclarativeContainer):
     driver_service = providers.Factory(
         driver_service.DriverService,
         driver_repository=driver_repository,
+        asset_repository=asset_repository,
     )
     equipment_type_service = providers.Factory(
         equipment_type_service.EquipmentTypeService,
         equipment_type_repository=equipment_type_repository,
+        equipment_repository=equipment_repository,
     )
     equipment_service = providers.Factory(
         equipment_service.EquipmentService,
@@ -226,6 +238,10 @@ class Container(containers.DeclarativeContainer):
     )
     onboarding_service = providers.Factory(
         onboarding_service.OnboardingService,
+        asset_type_repository=asset_type_repository,
+        package_repository=package_repository,
+        user_repository=user_repository,
+        feature_repository=feature_repository,
         onboarding_repository=onboarding_repository,
         onboarding_feature_assignment_repository=onboarding_feature_assignment_repository,
         business_profile_repository=business_profile_repository,

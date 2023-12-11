@@ -4,7 +4,7 @@ from sqlalchemy import Column, Enum, String
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.model.base_model import BaseModel
-from app.util.enums import ActiveInactive
+from app.util.enums import ActiveStatus
 
 
 class PackageItem(BaseModel):
@@ -17,4 +17,4 @@ class PackageItem(BaseModel):
         nullable=False,
     )
     item_name = Column(String(length=50), nullable=False, index=True)
-    status = Column(Enum(ActiveInactive), nullable=False, index=True)
+    status = Column(Enum(ActiveStatus), nullable=False, index=True)

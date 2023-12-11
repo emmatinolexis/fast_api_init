@@ -11,7 +11,7 @@ from app.schema.auth_schema import UserEmailVerification, VerifyToken
 from app.schema.user_schema import UserLogin
 from app.service.auth_service import AuthService
 from app.util.email import send_email
-from app.util.utils import send_data, send_message
+from app.util.utils import send_data, send_info
 
 router = APIRouter(
     prefix="",
@@ -92,7 +92,7 @@ async def verify_user_email(
             except Exception as e:
                 log.error("error sending email", error=str(e))
                 raise InternalServerError(detail="Could not send verification email")
-        return send_message("Verification token generated successfully")
+        return send_info("Verification token generated successfully")
     except Exception as e:
         log.error(e)
         raise InternalServerError(detail="Could not generate verification token")

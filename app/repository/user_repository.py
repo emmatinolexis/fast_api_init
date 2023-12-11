@@ -3,8 +3,10 @@ from datetime import datetime, timedelta
 from typing import Callable
 
 import structlog
+from pydantic import EmailStr
 from sqlalchemy.orm import Session
 
+from app.core.exceptions import NotFoundError
 from app.core.security import hash_user_password
 from app.core.settings import settings
 from app.model.business_profile import BusinessProfile
@@ -13,8 +15,7 @@ from app.model.user import User
 from app.repository.base_repository import BaseRepository
 from app.schema.auth_schema import EmailVerification as EmailVerficationSchema
 from app.schema.auth_schema import UserEmailVerification
-from app.schema.user_schema import UpdateUser
-from app.schema.user_schema import User as UserSchema
+from app.schema.user_schema import UpdateUserPayload, UserPayload
 from app.util.enums import AccountType
 
 log = structlog.get_logger()
@@ -25,20 +26,20 @@ class UserRepository(BaseRepository):
         self.session_factory = session_factory
         super().__init__(session_factory, User)
 
-    def update_user_by_uuid(self, uuid: str, user: UpdateUser):
-        with self.session_factory() as session:
-            user_to_update = (
-                session.query(self.model).filter(self.model.uuid == uuid).first()
-            )
-            user_to_update.phone_number = user.phone_number
-            user_to_update.address = user.address
-            user_to_update.location = user.location
+    def update_user_by_uuid(self, uuid: str, user: UpdateUserPayload):
+        try:
+            with self.session_factory() as session:
+                user_to_update = (
+                    session.query(self.model).filter(self.model.uuid == uuid).first()
+                )
+                if user_to_update is None:
+                    raise NotFoundError(detail=uuid)
 
-            session.commit()
-            session.refresh(user_to_update)
-            return user
+                return self.update_by_uuid(uuid, user)
+        except Exception as e:
+            raise e
 
-    def get_user_by_email_address(self, email: str) -> User:
+    def get_user_by_email_address(self, email: EmailStr) -> User:
         with self.session_factory() as session:
             return (
                 session.query(self.model)
@@ -54,7 +55,7 @@ class UserRepository(BaseRepository):
                 .first()
             )
 
-    def create_user(self, user: UserSchema):
+    def create_user(self, user: UserPayload):
         with self.session_factory() as session:
             db_user = self.model(
                 first_name=user.first_name,

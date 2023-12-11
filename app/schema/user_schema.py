@@ -5,7 +5,7 @@ from pydantic import BaseModel, EmailStr
 from app.util.enums import AccountType
 
 
-class User(BaseModel):
+class UserPayload(BaseModel):
     first_name: str
     last_name: str
     location: Optional[str] = None
@@ -38,7 +38,9 @@ class FindUserResult(BaseModel):
         orm_model = True
 
 
-class UpdateUser(BaseModel):
+class UpdateUserPayload(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
     location: Optional[str] = None
     address: Optional[str] = None
     phone_number: Optional[str] = None

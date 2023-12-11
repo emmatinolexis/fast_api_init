@@ -3,38 +3,20 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.util.enums import ActiveStatus
 
-class Equipment(BaseModel):
+
+class EquipmentPayload(BaseModel):
     name: str
-    status: str
+    status: ActiveStatus
 
     class Config:
         orm_model = True
 
 
-class EquipmentFetch(BaseModel):
-    name: str
-    status: str
-    uuid: UUID
-
-    class Config:
-        orm_model = True
-
-
-class EquipmentType(BaseModel):
+class EquipmentTypePayload(BaseModel):
     equipment_type_name: str
-    uuid: UUID
-    status: str
-    equipment_uuid: Optional[UUID] = None
-    equipment: Equipment = None
-
-    class Config:
-        orm_model = True
-
-
-class EquipmentTypeCreate(BaseModel):
-    equipment_type_name: str
-    status: str
+    status: ActiveStatus
     equipment_uuid: Optional[UUID] = None
 
     class Config:

@@ -1,5 +1,7 @@
 from sqlalchemy.exc import IntegrityError
 
+from app.core.exceptions import NotFoundError
+
 
 class BaseService:
     def __init__(self, repository) -> None:
@@ -38,4 +40,7 @@ class BaseService:
         return self._repository.delete_by_id(id)
 
     def remove_by_uuid(self, uuid: str):
-        return self._repository.delete_by_uuid(uuid)
+        try:
+            return self._repository.delete_by_uuid(uuid)
+        except NotFoundError:
+            raise NotFoundError(detail=uuid)
