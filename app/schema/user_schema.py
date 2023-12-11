@@ -1,18 +1,18 @@
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, constr
 
 from app.util.enums import AccountType
 
 
-class User(BaseModel):
+class UserPayload(BaseModel):
     first_name: str
     last_name: str
     location: Optional[str] = None
     address: Optional[str] = None
-    phone_number: Optional[str] = None
+    phone_number: constr(max_length=15) = None
     email_address: EmailStr
-    password: str
+    password: constr(min_length=6)
     account_type: AccountType
     business_name: Optional[str] = None
     business_email: Optional[str] = None
@@ -22,26 +22,12 @@ class User(BaseModel):
         orm_model = True
 
 
-class FindUserResult(BaseModel):
-    first_name: str
-    last_name: str
+class UpdateUserPayload(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
     location: Optional[str] = None
     address: Optional[str] = None
-    phone_number: Optional[str] = None
-    email_address: EmailStr
-    account_type: AccountType
-    business_name: Optional[str] = None
-    business_email: Optional[str] = None
-    business_phone: Optional[str] = None
-
-    class Config:
-        orm_model = True
-
-
-class UpdateUser(BaseModel):
-    location: Optional[str] = None
-    address: Optional[str] = None
-    phone_number: Optional[str] = None
+    phone_number: constr(max_length=15) = None
 
     class Config:
         orm_model = True

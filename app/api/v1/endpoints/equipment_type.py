@@ -3,19 +3,26 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends
 from fastapi.responses import ORJSONResponse
 
+from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
-from app.core.exceptions import InternalServerError
+from app.core.exceptions import NotFoundError
 from app.model.user import User
-from app.schema.equipment_schema import EquipmentType, EquipmentTypeCreate
+from app.schema.equipment_schema import EquipmentTypePayload
 from app.service.equipment_type_service import EquipmentTypeService
-from app.util.utils import send_data, send_message
+from app.util.utils import (
+    send_client_side_error,
+    send_data,
+    send_info,
+    send_internal_server_error,
+)
 
 router = APIRouter(
     prefix="/equipment_types",
     tags=["equipment types"],
 )
 log = structlog.get_logger()
+msg_prefix = "equipment type"
 
 
 @router.get("/", response_class=ORJSONResponse)
@@ -27,37 +34,51 @@ async def get_all_equipment_types_handler(
     try:
         return send_data(service.get_list())
     except Exception as e:
-        log.error(e)
-        raise InternalServerError(detail="Could not get equipment types")
+        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
 
 
 @router.post("/", response_class=ORJSONResponse)
 @inject
 async def create_equipment_type_handler(
-    equipment_type: EquipmentTypeCreate,
+    payload: EquipmentTypePayload,
     service: EquipmentTypeService = Depends(Provide[Container.equipment_type_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.add(equipment_type))
+        equipment_type = service.create_equipment_type(payload)
+        return send_data(equipment_type)
+    except NotFoundError as e:
+        return send_client_side_error(
+            user_msg=messages.EQUIPMENT_NOT_FOUND + str(e.detail)
+        )
     except Exception as e:
-        log.error(e)
-        raise InternalServerError(detail="Could not create equipment type")
+        msg = messages.CREATE_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
 
 
 @router.put("/{uuid}", response_class=ORJSONResponse)
 @inject
 async def update_equipment_type_handler(
     uuid: str,
-    updated_equipment_type: EquipmentType,
+    payload: EquipmentTypePayload,
     service: EquipmentTypeService = Depends(Provide[Container.equipment_type_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.patch_by_uuid(uuid, updated_equipment_type))
+        equipment_type = service.update_equipment_type(uuid, payload)
+        if equipment_type is None:
+            return send_client_side_error(
+                user_msg=messages.EQUIPMENT_TYPE_NOT_FOUND + uuid
+            )
+        return send_data(equipment_type)
+    except NotFoundError as e:
+        return send_client_side_error(
+            user_msg=messages.EQUIPMENT_NOT_FOUND + str(e.detail)
+        )
     except Exception as e:
-        log.error(e)
-        raise InternalServerError(detail="Could not update equipment type")
+        msg = messages.UPDATE_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
 
 
 @router.delete("/{uuid}", response_class=ORJSONResponse)
@@ -69,7 +90,11 @@ async def delete_equipment_type_handler(
 ):
     try:
         service.remove_by_uuid(uuid)
-        return send_message("Equipment type deleted successfully")
+        return send_info(messages.DELETE_SUCCESS + msg_prefix)
+    except NotFoundError as e:
+        return send_client_side_error(
+            user_msg=messages.EQUIPMENT_TYPE_NOT_FOUND + str(e.detail)
+        )
     except Exception as e:
-        log.error(e)
-        raise InternalServerError(detail="Could not delete equipment type")
+        msg = messages.DELETE_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)

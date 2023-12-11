@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Column, String, ForeignKey
+from sqlalchemy import Column, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.model.base_model import BaseModel
@@ -19,4 +19,3 @@ class AlertNotificationAssignment(BaseModel):
         UUID(as_uuid=True), ForeignKey("alert_policies.uuid"), nullable=False
     )
     reciepient = Column(String(length=100), nullable=False, index=True)
-    # notification_type = Column(String(length=100), nullable=False, index=True)

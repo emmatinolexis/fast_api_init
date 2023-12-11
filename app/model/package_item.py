@@ -1,9 +1,10 @@
 import uuid
 
-from sqlalchemy import Column, String
+from sqlalchemy import Column, Enum, String
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.model.base_model import BaseModel
+from app.util.enums import ActiveStatus
 
 
 class PackageItem(BaseModel):
@@ -15,5 +16,5 @@ class PackageItem(BaseModel):
         unique=True,
         nullable=False,
     )
-    item_name = Column(String(length=50), nullable=False, default="", index=True)
-    status = Column(String(length=15), nullable=False, default="", index=True)
+    item_name = Column(String(length=50), nullable=False, index=True)
+    status = Column(Enum(ActiveStatus), nullable=False, index=True)

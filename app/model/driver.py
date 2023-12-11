@@ -1,13 +1,13 @@
 import uuid
 
-from sqlalchemy import Column, String, ForeignKey
+from sqlalchemy import Column, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.model.base_model import BaseModel
 
 
 class Driver(BaseModel):
-    __tablename__ = "driver"
+    __tablename__ = "drivers"
     uuid = Column(
         UUID(as_uuid=True),
         primary_key=True,

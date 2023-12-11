@@ -1,24 +1,13 @@
-from uuid import UUID
-
 from pydantic import BaseModel
 
+from app.util.enums import ActiveStatus
 
-class FeatureInput(BaseModel):
+
+class FeaturePayload(BaseModel):
     feature_name: str
     feature_description: str
     icon_url: str
-    status: str
-
-    class Config:
-        orm_model = True
-
-
-class Feature(BaseModel):
-    feature_name: str
-    feature_description: str
-    icon_url: str
-    status: str
-    uuid: UUID
+    status: ActiveStatus
 
     class Config:
         orm_model = True

@@ -1,23 +1,28 @@
-from typing import List
-
 import structlog
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends
 from fastapi.responses import ORJSONResponse
 
+from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
-from app.core.exceptions import InternalServerError
+from app.core.exceptions import NotFoundError
 from app.model.user import User
-from app.schema.feature_schema import Feature
+from app.schema.feature_schema import FeaturePayload
 from app.service.feature_service import FeatureService
-from app.util.utils import send_data, send_message
+from app.util.utils import (
+    send_client_side_error,
+    send_data,
+    send_info,
+    send_internal_server_error,
+)
 
 router = APIRouter(
     prefix="/features",
     tags=["features"],
 )
 log = structlog.get_logger()
+msg_prefix = "feature"
 
 
 @router.get("/", response_class=ORJSONResponse)
@@ -29,37 +34,41 @@ async def get_all_features_handler(
     try:
         return send_data(service.get_list())
     except Exception as e:
-        log.error(e)
-        raise InternalServerError(detail="Could not get features")
+        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
 
 
 @router.post("/", response_class=ORJSONResponse)
 @inject
 async def create_feature_handler(
-    feature: Feature,
+    payload: FeaturePayload,
     service: FeatureService = Depends(Provide[Container.feature_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.add(feature))
+        feature = service.add(payload)
+        return send_data(feature)
     except Exception as e:
-        log.error(e)
-        raise InternalServerError(detail="Could not create feature")
+        msg = messages.CREATE_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
 
 
 @router.put("/{uuid}", response_class=ORJSONResponse)
 @inject
 async def update_feature_handler(
     uuid: str,
-    feature: Feature,
+    payload: FeaturePayload,
     service: FeatureService = Depends(Provide[Container.feature_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.patch_by_uuid(uuid, feature))
+        feature = service.patch_by_uuid(uuid, payload)
+        if feature is None:
+            return send_client_side_error(user_msg=messages.FEATURE_NOT_FOUND + uuid)
+        return send_data(feature)
     except Exception as e:
-        log.error(e)
-        raise InternalServerError(detail="Could not update feature")
+        msg = messages.UPDATE_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
 
 
 @router.get("/{uuid}", response_class=ORJSONResponse)
@@ -70,10 +79,13 @@ async def get_feature_by_uuid_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.get_by_uuid(uuid))
+        feature = service.get_by_uuid(uuid)
+        if feature is None:
+            return send_client_side_error(user_msg=messages.FEATURE_NOT_FOUND + uuid)
+        return send_data(feature)
     except Exception as e:
-        log.error(e)
-        raise InternalServerError(detail="Could not get feature")
+        msg = messages.GET_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
 
 
 @router.delete("/{uuid}", response_class=ORJSONResponse)
@@ -85,7 +97,11 @@ async def delete_feature_by_uuid_handler(
 ):
     try:
         service.remove_by_uuid(uuid)
-        return send_message("Feature deleted successfully")
+        return send_info(messages.DELETE_SUCCESS + msg_prefix)
+    except NotFoundError as e:
+        return send_client_side_error(
+            user_msg=messages.FEATURE_NOT_FOUND + str(e.detail)
+        )
     except Exception as e:
-        log.error(e)
-        raise InternalServerError(detail="Could not delete feature")
+        msg = messages.DELETE_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)

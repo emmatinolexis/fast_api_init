@@ -1,9 +1,10 @@
 import uuid
 
-from sqlalchemy import Column, String
+from sqlalchemy import Column, Enum, String
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.model.base_model import BaseModel
+from app.util.enums import ActiveStatus
 
 
 class Feature(BaseModel):
@@ -15,9 +16,7 @@ class Feature(BaseModel):
         unique=True,
         nullable=False,
     )
-    feature_name = Column(String(length=50), nullable=False, default="", index=True)
-    feature_description = Column(
-        String(length=100), nullable=False, default="", index=True
-    )
-    icon_url = Column(String(length=100), nullable=False, default="", index=True)
-    status = Column(String(length=50), nullable=False, default="", index=True)
+    feature_name = Column(String(length=50), nullable=False, unique=True, index=True)
+    feature_description = Column(String(length=100), nullable=False, index=True)
+    icon_url = Column(String(length=100), nullable=False, index=True)
+    status = Column(Enum(ActiveStatus), nullable=False, index=True)

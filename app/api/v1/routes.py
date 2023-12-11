@@ -15,6 +15,7 @@ from app.api.v1.endpoints.equipment_type import router as equipment_type_router
 from app.api.v1.endpoints.feature import router as feature_router
 from app.api.v1.endpoints.health_check import router as health_check_router
 from app.api.v1.endpoints.marker_icon import router as marker_icon_router
+from app.api.v1.endpoints.onboarding import router as onboarding_router
 from app.api.v1.endpoints.organisation_contact import (
     router as organisation_contact_router,
 )
@@ -42,9 +43,9 @@ router_list = [
     driver_router,
     feature_router,
     organisation_contact_router,
+    onboarding_router,
     tracking_router,
 ]
 
 for router in router_list:
-    # router.tags = routers.tags.append("v1")
     routers.include_router(router)

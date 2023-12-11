@@ -4,14 +4,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import ORJSONResponse
 
 from app.core.container import Container
-from app.core.exceptions import InternalServerError
 from app.core.security import verify_token_frontend
 from app.core.settings import settings
 from app.schema.auth_schema import UserEmailVerification, VerifyToken
 from app.schema.user_schema import UserLogin
 from app.service.auth_service import AuthService
 from app.util.email import send_email
-from app.util.utils import send_data, send_message
+from app.util.utils import send_data, send_info, send_internal_server_error
 
 router = APIRouter(
     prefix="",
@@ -21,7 +20,7 @@ router = APIRouter(
 log = structlog.get_logger()
 
 
-@router.post("/decode-token", response_class=ORJSONResponse)
+@router.post("/decode_token", response_class=ORJSONResponse)
 @inject
 async def decode_access_token(
     token_data: VerifyToken,
@@ -30,17 +29,16 @@ async def decode_access_token(
     try:
         return send_data(service.decode_access_token(token_data))
     except Exception as e:
-        log.error(e)
-        raise InternalServerError(detail="Could not decode token")
+        return send_internal_server_error(user_msg="Could not decode token", error=e)
 
 
 # This endpoint serves a crucial security function for users who choose to register via email.
 # Upon successful registration, the user's access token is stored within a cookie.
 # To ensure the legitimacy of the token and prevent unauthorized generation of tokens,
 # the token within the cookie undergoes a verification process.
-@router.post("/verify-token-frontend", response_class=ORJSONResponse)
+@router.post("/verify_token_frontend", response_class=ORJSONResponse)
 @inject
-async def verify_token_frontend(token_data: VerifyToken):
+async def verify_token_frontend_handler(token_data: VerifyToken):
     if verify_token_frontend(token_data.Token):
         return send_data("Token is valid")
     else:
@@ -52,7 +50,7 @@ async def verify_token_frontend(token_data: VerifyToken):
         )
 
 
-@router.post("/verify-token", response_class=ORJSONResponse)
+@router.post("/verify_token", response_class=ORJSONResponse)
 @inject
 async def verify_token(
     token_data: VerifyToken,
@@ -61,11 +59,10 @@ async def verify_token(
     try:
         return send_data(service.verify_token(token_data))
     except Exception as e:
-        log.error(e)
-        raise InternalServerError(detail="Could not verify token")
+        return send_internal_server_error(user_msg="Could not verify token", error=e)
 
 
-@router.post("/verify-email", response_class=ORJSONResponse)
+@router.post("/verify_email", response_class=ORJSONResponse)
 @inject
 async def verify_user_email(
     user: UserEmailVerification,
@@ -90,12 +87,14 @@ async def verify_user_email(
                     token=token,
                 )
             except Exception as e:
-                log.error("error sending email", error=str(e))
-                raise InternalServerError(detail="Could not send verification email")
-        return send_message("Verification token generated successfully")
+                return send_internal_server_error(
+                    user_msg="Could not send verification email", error=e
+                )
+        return send_info("Verification token generated successfully")
     except Exception as e:
-        log.error(e)
-        raise InternalServerError(detail="Could not generate verification token")
+        return send_internal_server_error(
+            user_msg="Could not generate verification token", error=e
+        )
 
 
 @router.post("/login", response_class=ORJSONResponse)
@@ -106,5 +105,4 @@ async def login(
     try:
         return send_data(service.login(user))
     except Exception as e:
-        log.error(e)
-        raise InternalServerError(detail="Could not login user")
+        return send_internal_server_error(user_msg="Could not login user", error=e)

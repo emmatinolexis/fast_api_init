@@ -1,29 +1,19 @@
-import json
 from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel
+from pydantic_extra_types.coordinate import Latitude, Longitude
 
-from app.schema.equipment_schema import Equipment, EquipmentType
-from app.schema.marker_schema import MarkerIcon
+from app.schema.equipment_schema import EquipmentPayload, EquipmentTypePayload
+from app.schema.marker_schema import MarkerIconPayload
+from app.util.enums import ActiveStatus, AssetStatus
 
 
-class AssetTypeCreate(BaseModel):
+class AssetTypePayload(BaseModel):
     asset_type_name: str
     description: str
     icon_url: str
-    status: str
-
-    class Config:
-        orm_model = True
-
-
-class AssetType(BaseModel):
-    asset_type_name: str
-    description: str
-    icon_url: str
-    status: str
-    uuid: UUID
+    status: ActiveStatus
 
     class Config:
         orm_model = True
@@ -33,35 +23,35 @@ class Asset(BaseModel):
     user_uuid: UUID
     asset_type_uuid: UUID
     asset_name: str
-    asset_status: str
+    asset_status: AssetStatus
     equipment_type_uuid: Optional[UUID] = None
     vin_no: Optional[str] = None
     marker_icon_uuid: UUID
     marker_color: str
     equipment_uuid: UUID
-    serial_no: Optional[str] = None
+    serial_number: Optional[str] = None
     make: Optional[str] = None
     model: Optional[str] = None
-    equipment: Optional[Equipment] = None
-    equipment_type: Optional[EquipmentType] = None
-    asset_type: Optional[AssetType] = None
-    marker_icon: MarkerIcon = None
+    equipment: Optional[EquipmentPayload] = None
+    equipment_type: Optional[EquipmentTypePayload] = None
+    asset_type: Optional[AssetTypePayload] = None
+    marker_icon: MarkerIconPayload = None
 
     class Config:
         orm_model = True
 
 
-class AssetCreate(BaseModel):
+class AssetPayload(BaseModel):
     user_uuid: UUID
     asset_type_uuid: UUID
     asset_name: str
-    asset_status: str
+    asset_status: AssetStatus
     equipment_type_uuid: Optional[UUID] = None
-    vin_no: Optional[str] = None
+    vin: Optional[str] = None
     marker_icon_uuid: UUID
     marker_color: str
     equipment_uuid: UUID
-    serial_no: Optional[str] = None
+    serial_number: Optional[str] = None
     make: Optional[str] = None
     model: Optional[str] = None
     add_driver: bool = False
@@ -79,13 +69,13 @@ class AssetInput(BaseModel):
     user_uuid: UUID
     asset_type_uuid: UUID
     asset_name: str
-    asset_status: str
+    asset_status: AssetStatus
     equipment_type_uuid: Optional[UUID] = None
-    vin_no: Optional[str] = None
+    vin: Optional[str] = None
     marker_icon_uuid: UUID
     marker_color: str
     equipment_uuid: UUID
-    serial_no: Optional[str] = None
+    serial_number: Optional[str] = None
     make: Optional[str] = None
     model: Optional[str] = None
 
@@ -93,10 +83,10 @@ class AssetInput(BaseModel):
         orm_model = True
 
 
-class AssetLocation(BaseModel):
+class AssetLocationPayload(BaseModel):
     asset_uuid: UUID
-    longitude: str
-    latitude: str
+    longitude: Longitude
+    latitude: Latitude
 
 
 class AssetLocationFetch(BaseModel):
@@ -106,7 +96,7 @@ class AssetLocationFetch(BaseModel):
     created_at: str
 
 
-class Driver(BaseModel):
+class DriverPayload(BaseModel):
     asset_uuid: UUID
     first_name: str
     last_name: str
@@ -115,12 +105,6 @@ class Driver(BaseModel):
     profile_picture_url: str
 
 
-class AlertMaintenanceType(BaseModel):
+class AlertMaintenanceTypePayload(BaseModel):
     name: str
-    status: str
-
-
-class AlertMaintenanceTypeFetch(BaseModel):
-    name: str
-    status: str
-    uuid: UUID
+    status: ActiveStatus

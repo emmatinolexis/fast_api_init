@@ -17,10 +17,9 @@ class Package(BaseModel):
         unique=True,
         nullable=False,
     )
-    package_name = Column(String(length=50), nullable=False, default="", index=True)
+    package_name = Column(String(length=50), nullable=False, index=True)
     package_price = Column(String(length=50), nullable=False, default="", index=True)
     package_description = Column(
         String(length=100), nullable=True, default="", index=True
     )
     package_item_assignments = relationship(PackageItemAssignment, uselist=True)
-    # items = relationship("PackageItem", back_populates="package")

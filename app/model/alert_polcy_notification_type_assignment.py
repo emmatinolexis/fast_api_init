@@ -1,13 +1,13 @@
 import uuid
 
-from sqlalchemy import Column, String, ForeignKey
+from sqlalchemy import Column, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.model.base_model import BaseModel
 
 
 class AlertPolicyNotificationTypeAssignment(BaseModel):
-    __tablename__ = "alert_policy_notification_type_assignment"
+    __tablename__ = "alert_policy_notification_type_assignments"
     uuid = Column(
         UUID(as_uuid=True),
         primary_key=True,

@@ -1,11 +1,12 @@
 import uuid
 
-from sqlalchemy import Column, ForeignKey, String
+from sqlalchemy import Column, Enum, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from app.model.asset_type import AssetType
 from app.model.base_model import BaseModel
+from app.util.enums import AssetStatus
 
 
 class Asset(BaseModel):
@@ -18,7 +19,7 @@ class Asset(BaseModel):
         nullable=False,
     )
     asset_name = Column(String(length=50), nullable=False, index=True)
-    asset_status = Column(String(length=50), nullable=False, index=True)
+    asset_status = Column(Enum(AssetStatus), nullable=False, index=True)
     user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
     asset_type_uuid = Column(
         UUID(as_uuid=True), ForeignKey(AssetType.uuid), nullable=False
@@ -29,8 +30,8 @@ class Asset(BaseModel):
     equipment_uuid = Column(
         UUID(as_uuid=True), ForeignKey("equipments.uuid"), nullable=False
     )
-    vin_no = Column(String(length=100), nullable=True, index=True)
-    serial_no = Column(String(length=100), nullable=True, index=True)
+    vin = Column(String(length=100), nullable=True, index=True)
+    serial_number = Column(String(length=100), nullable=True, index=True)
     make = Column(String(length=100), nullable=True, index=True)
     model = Column(String(length=100), nullable=True, index=True)
     marker_icon_uuid = Column(

@@ -1,10 +1,11 @@
 import uuid
 
-from sqlalchemy import Column, String, ForeignKey
+from sqlalchemy import Column, Enum, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from app.model.base_model import BaseModel
+from app.util.enums import ContactSaleStatus
 
 
 class ContactSale(BaseModel):
@@ -19,5 +20,7 @@ class ContactSale(BaseModel):
     phone_number = Column(String(length=20), nullable=True, default="", index=True)
     call_time = Column(String(length=20), nullable=True, default="", index=True)
     user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
-    status = Column(String(length=50), nullable=False, default="", index=True)
+    status = Column(
+        Enum(ContactSaleStatus), nullable=False, default="not_attended", index=True
+    )
     user = relationship("User", uselist=False)

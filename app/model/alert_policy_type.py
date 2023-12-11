@@ -1,9 +1,10 @@
 import uuid
 
-from sqlalchemy import Column, String
+from sqlalchemy import Column, Enum, String
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.model.base_model import BaseModel
+from app.util.enums import ActiveStatus
 
 
 class AlertPolicyType(BaseModel):
@@ -15,6 +16,6 @@ class AlertPolicyType(BaseModel):
         unique=True,
         nullable=False,
     )
-    name = Column(String(length=100), nullable=False, index=True)
+    name = Column(String(length=100), nullable=False, unique=True, index=True)
     description = Column(String(length=100), nullable=False, index=True)
-    status = Column(String(length=100), nullable=False, index=True)
+    status = Column(Enum(ActiveStatus), nullable=False, index=True)
