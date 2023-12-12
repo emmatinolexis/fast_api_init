@@ -4,4 +4,4 @@ from pydantic import BaseModel
 
 
 class TrackingDeviceCreate(BaseModel):
-    data: Union[str, list, dict]
+    data: Union[str, dict]
