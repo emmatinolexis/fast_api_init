@@ -1,6 +1,7 @@
 from typing import Optional
 
 from pydantic import BaseModel, EmailStr, constr
+from uuid import UUID
 
 from app.util.enums import AccountType, UserRole
 
@@ -47,3 +48,20 @@ class UserEmail(BaseModel):
 
     class Config:
         orm_model = True
+
+
+class IndividualUser(BaseModel):
+    first_name:str
+    last_name:str
+    location:str
+    address:str
+    phone_number:str
+    email_address:EmailStr
+    uuid:UUID
+    account_type:AccountType
+    role:UserRole
+
+class BussinessUser(IndividualUser):
+    business_name: str
+    business_email: str
+    business_phone: str
