@@ -24,7 +24,7 @@ class PackageRepository(BaseRepository):
                     PackageItemAssignment,
                     PackageItemAssignment.package_item_uuid == PackageItem.uuid,
                 )
-                .filter_by(PackageItemAssignment.package_uuid == uuid)
+                .filter(PackageItemAssignment.package_uuid == uuid)
                 .all()
             )
 
