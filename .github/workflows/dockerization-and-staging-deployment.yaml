@@ -60,6 +60,7 @@ jobs:
           password: ""
           passphrase: ""
           port: 22
+          envs: API_VERSION,DB_HOST,DB_NAME,DB_PASSWORD,DB_PORT,DB_USER,ENV,MAIL_SERVER,MAIL_USERNAME,MAIL_PASSWORD,SECRET_KEY
           script: |
             docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
             docker stop $(docker ps -a -q)
