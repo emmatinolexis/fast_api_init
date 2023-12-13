@@ -12,7 +12,7 @@ from app.core.security import extract_user_data
 from app.model.user import User
 from app.schema.user_schema import UpdateUserPayload, UserPayload
 from app.service.user_service import UserService
-from app.util.utils import send_client_side_error, send_data, send_internal_server_error,allow_admins_only
+from app.util.utils import send_client_side_error, send_data, send_internal_server_error
 
 router = APIRouter(
     prefix="/users",
