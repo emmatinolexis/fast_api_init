@@ -44,7 +44,8 @@ make setup
 
 make run-api
 ```
-
+### Run project on staging server
+docker run -d --publish 8000:8000 --name mvi_hub_api --env-file .env  sagemicrosystems/mvi-hub:latest
 
 ## API
 
