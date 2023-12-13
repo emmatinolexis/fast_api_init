@@ -18,5 +18,5 @@ class Feature(BaseModel):
     )
     feature_name = Column(String(length=50), nullable=False, unique=True, index=True)
     feature_description = Column(String(length=100), nullable=False, index=True)
-    icon_url = Column(String(length=100), nullable=False, index=True)
+    icon_url = Column(String(length=100), nullable=False, unique=True, index=True)
     status = Column(Enum(ActiveStatus), nullable=False, index=True)
