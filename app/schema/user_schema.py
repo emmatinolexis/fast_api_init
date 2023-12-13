@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import BaseModel, EmailStr, constr
 
-from app.util.enums import AccountType
+from app.util.enums import AccountType, UserRole
 
 
 class UserPayload(BaseModel):
@@ -17,6 +17,7 @@ class UserPayload(BaseModel):
     business_name: Optional[str] = None
     business_email: Optional[str] = None
     business_phone: Optional[str] = None
+    role: UserRole
 
     class Config:
         orm_model = True

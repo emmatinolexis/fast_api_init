@@ -43,9 +43,11 @@ def create_access_token(
     return encoded_jwt, expiration_datetime
 
 
-def generate_access_token(email: str) -> (str, str):
+def generate_access_token(email: str, role: str) -> (str, str):
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    return create_access_token(data={"sub": email}, expires_delta=access_token_expires)
+    return create_access_token(
+        data={"sub": email, "role": role}, expires_delta=access_token_expires
+    )
 
 
 def generate_token_for_new_user(user_email: str, db_user) -> (str, str):
@@ -127,6 +129,7 @@ def extract_user_data(user: User) -> Dict[str, str]:
         "uuid": user.uuid,
         "verifiedAt": user.verifiedAt,
         "account_type": user.account_type,
+        "role": user.role,
     }
 
 

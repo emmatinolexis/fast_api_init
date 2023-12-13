@@ -66,6 +66,7 @@ class UserRepository(BaseRepository):
                 email_address=user.email_address,
                 password=hash_user_password(user.password),
                 account_type=user.account_type,
+                role=user.role,
             )
 
             session.add(db_user)
@@ -98,6 +99,7 @@ class UserRepository(BaseRepository):
                     "business_name": user.business_name,
                     "business_email": user.business_email,
                     "business_phone": user.business_phone,
+                    "role": created_user.role,
                 }
             else:
                 returned_user = {
@@ -109,6 +111,7 @@ class UserRepository(BaseRepository):
                     "email_address": created_user.email_address,
                     "uuid": created_user.uuid,
                     "account_type": created_user.account_type,
+                    "role": created_user.role,
                 }
 
             return returned_user

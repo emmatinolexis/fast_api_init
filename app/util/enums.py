@@ -39,3 +39,8 @@ class AssetStatus(str, Enum):
     MOVING = "moving"
     ACTIVE = "active"
     INACTIVE = "inactive"
+
+
+class UserRole(str, Enum):
+    CUSTOMER = "customer"
+    ADMIN = "admin"
