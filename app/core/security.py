@@ -1,7 +1,7 @@
 import random
 import string
 from datetime import datetime, timedelta
-from typing import Dict, Union
+from typing import Dict, List, Union
 
 import structlog
 from fastapi import HTTPException, Request, status
@@ -59,7 +59,7 @@ def generate_token_for_new_user(user_email: str, db_user) -> (str, str):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Invalid User"
         )
-    return generate_access_token(user_email)
+    return generate_access_token(user_email, db_user.role)
 
 
 def generate_token_for_existing_user(user: UserLogin, db_user) -> (str, str):
@@ -71,7 +71,7 @@ def generate_token_for_existing_user(user: UserLogin, db_user) -> (str, str):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Invalid Credentials"
         )
-    return generate_access_token(user.email_address)
+    return generate_access_token(user.email_address, db_user.role)
 
 
 def generate_verification_token(length: int = 100) -> str:
@@ -87,9 +87,10 @@ def verify_token(token: str):
             token, settings.SECRET_KEY, algorithms=[settings.AUTH_ALGORITHM]
         )
         username: str = payload.get("sub")
+        role: str = payload.get("role")
         if username is None:
             raise NotVerifiedError(detail="Could not validate credentials")
-        token_data = TokenData(username=username)
+        token_data = TokenData(username=username, role=role)
         return token_data
     except JWTError:
         raise NotVerifiedError(detail="Could not validate credentials")
@@ -146,8 +147,9 @@ def get_password_hash(password: str) -> str:
 
 
 class JWTBearer(HTTPBearer):
-    def __init__(self, auto_error: bool = True):
+    def __init__(self, allowed_roles: List = None, auto_error: bool = True):
         super(JWTBearer, self).__init__(auto_error=auto_error)
+        self.allowed_roles = allowed_roles
 
     async def __call__(self, request: Request):
         credentials: HTTPAuthorizationCredentials = await super(
@@ -170,5 +172,5 @@ class JWTBearer(HTTPBearer):
             log.error(e)
             payload = None
         if payload:
-            is_token_valid = True
+            is_token_valid = payload.get("role") in self.allowed_roles
         return is_token_valid

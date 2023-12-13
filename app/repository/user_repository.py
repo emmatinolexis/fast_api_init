@@ -76,7 +76,19 @@ class UserRepository(BaseRepository):
                 .filter(self.model.email_address == db_user.email_address)
                 .first()
             )
-
+            # can't we put this data into DAOs of different user info
+            returned_user = {
+                "first_name": created_user.first_name,
+                "last_name": created_user.last_name,
+                "location": created_user.location,
+                "address": created_user.address,
+                "phone_number": created_user.phone_number,
+                "email_address": created_user.email_address,
+                "uuid": created_user.uuid,
+                "account_type": created_user.account_type,
+                "role": created_user.role,
+            }
+            # putting this code before the if saves us from executing the code below if the account type is not a bussiness
             if user.account_type == AccountType.BUSINESS:
                 business_data = BusinessProfile(
                     business_name=user.business_name,
@@ -86,7 +98,7 @@ class UserRepository(BaseRepository):
 
                 session.add(business_data)
                 session.commit()
-
+                # can't we put this data into DAOs of different user info
                 returned_user = {
                     "first_name": created_user.first_name,
                     "last_name": created_user.last_name,
@@ -99,18 +111,6 @@ class UserRepository(BaseRepository):
                     "business_name": user.business_name,
                     "business_email": user.business_email,
                     "business_phone": user.business_phone,
-                    "role": created_user.role,
-                }
-            else:
-                returned_user = {
-                    "first_name": created_user.first_name,
-                    "last_name": created_user.last_name,
-                    "location": created_user.location,
-                    "address": created_user.address,
-                    "phone_number": created_user.phone_number,
-                    "email_address": created_user.email_address,
-                    "uuid": created_user.uuid,
-                    "account_type": created_user.account_type,
                     "role": created_user.role,
                 }
 
