@@ -6,13 +6,11 @@ from fastapi import Depends
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import ORJSONResponse
 
+from app.core.constants import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE
 from app.core.security import JWTBearer
 
 log = structlog.get_logger()
 
-
-CUSTOMER_USER_ROLE = "customer"
-ADMIN_USER_ROLE = "admin"
 
 allow_admins_only = Depends(
     JWTBearer(

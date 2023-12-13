@@ -1,5 +1,7 @@
 from enum import Enum
 
+from app.core.constants import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE
+
 
 class AccountType(str, Enum):
     BUSINESS = "business"
@@ -42,5 +44,5 @@ class AssetStatus(str, Enum):
 
 
 class UserRole(str, Enum):
-    CUSTOMER = "customer"
-    ADMIN = "admin"
+    CUSTOMER = CUSTOMER_USER_ROLE
+    ADMIN = ADMIN_USER_ROLE
