@@ -40,7 +40,7 @@ jobs:
       - build-and-upload-docker-image
     steps:
       - name: SSH Into AWS And Deploy
-        uses: appleboy/ssh-action@v0.1.7
+        uses: appleboy/ssh-action@v1.0.0
         env:
           API_VERSION: ${{ secrets.API_VERSION }}
           DB_HOST: ${{ secrets.DB_HOST }}
@@ -62,6 +62,7 @@ jobs:
           port: 22
           allenvs: true
           script: |
+            echo "API VERSION is $API_VERSION"
             docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
             docker stop $(docker ps -a -q)
             docker rm $(docker ps -a -q)
