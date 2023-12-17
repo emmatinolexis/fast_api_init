@@ -1,11 +1,12 @@
 import uuid
 from typing import Any
 
-import structlog
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import ORJSONResponse
 
-log = structlog.get_logger()
+from app.core.logger import get_logger
+
+log = get_logger()
 
 
 def generate_uuid() -> str:
@@ -32,6 +33,7 @@ def send_data_with_info(data: Any, info: str, status_code: int = 200):
 
 
 def send_info(info: str, status_code: int = 200):
+    log.info(info)
     return ORJSONResponse(
         status_code=status_code,
         content={

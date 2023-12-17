@@ -1,4 +1,3 @@
-import structlog
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends
 from fastapi.responses import ORJSONResponse
@@ -25,7 +24,6 @@ router = APIRouter(
     prefix="/onboarding",
     tags=["onboarding"],
 )
-log = structlog.get_logger()
 msg_prefix = "onboarding"
 
 

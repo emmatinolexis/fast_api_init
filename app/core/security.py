@@ -3,7 +3,6 @@ import string
 from datetime import datetime, timedelta
 from typing import Dict, Union
 
-import structlog
 from fastapi import HTTPException, Request, status
 from fastapi.security import (
     HTTPAuthorizationCredentials,
@@ -14,12 +13,11 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 
 from app.core.exceptions import AuthError, NotVerifiedError
+from app.core.logger import get_logger
 from app.core.settings import settings
 from app.model.user import User
 from app.schema.auth_schema import TokenData
 from app.schema.user_schema import UserLogin
-
-log = structlog.get_logger()
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -112,7 +110,7 @@ def decode_token(token: str) -> dict:
             else None
         )
     except Exception as e:
-        log.error(e)
+        get_logger().error(e)
         return {}
 
 
@@ -164,7 +162,7 @@ class JWTBearer(HTTPBearer):
         try:
             payload = decode_token(jwt_token)
         except Exception as e:
-            log.error(e)
+            get_logger().error(e)
             payload = None
         if payload:
             is_token_valid = True

@@ -2,7 +2,6 @@ from contextlib import AbstractContextManager
 from datetime import datetime, timedelta
 from typing import Callable
 
-import structlog
 from pydantic import EmailStr
 from sqlalchemy.orm import Session
 
@@ -17,8 +16,6 @@ from app.schema.auth_schema import EmailVerification as EmailVerficationSchema
 from app.schema.auth_schema import UserEmailVerification
 from app.schema.user_schema import UpdateUserPayload, UserPayload
 from app.util.enums import AccountType
-
-log = structlog.get_logger()
 
 
 class UserRepository(BaseRepository):

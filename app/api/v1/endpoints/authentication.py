@@ -1,9 +1,9 @@
-import structlog
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import ORJSONResponse
 
 from app.core.container import Container
+from app.core.logger import get_logger
 from app.core.security import verify_token_frontend
 from app.core.settings import settings
 from app.schema.auth_schema import UserEmailVerification, VerifyToken
@@ -17,7 +17,7 @@ router = APIRouter(
     tags=["authentication"],
 )
 
-log = structlog.get_logger()
+log = get_logger()
 
 
 @router.post("/decode_token", response_class=ORJSONResponse)

@@ -1,12 +1,9 @@
-import structlog
 from pydantic import EmailStr
 
 from app.core.exceptions import NotFoundError
 from app.repository.user_repository import UserRepository
 from app.schema.user_schema import UpdateUserPayload, UserPayload
 from app.service.base_service import BaseService
-
-log = structlog.get_logger()
 
 
 class UserService(BaseService):

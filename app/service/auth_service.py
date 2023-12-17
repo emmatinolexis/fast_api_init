@@ -1,6 +1,5 @@
 from datetime import datetime
 
-import structlog
 from jose import jwt
 
 from app.core.exceptions import (
@@ -10,6 +9,7 @@ from app.core.exceptions import (
     NotFoundError,
     NotVerifiedError,
 )
+from app.core.logger import get_logger
 from app.core.security import (
     extract_user_data,
     generate_token_for_existing_user,
@@ -23,7 +23,7 @@ from app.schema.auth_schema import UserEmailVerification, VerifyToken
 from app.schema.user_schema import UserLogin
 from app.service.base_service import BaseService
 
-log = structlog.get_logger()
+log = get_logger()
 
 
 class AuthService(BaseService):

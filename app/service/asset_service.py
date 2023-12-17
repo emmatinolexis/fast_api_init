@@ -1,5 +1,3 @@
-import structlog
-
 from app.core import messages
 from app.core.exceptions import NotFoundError
 from app.repository.asset_repository import AssetRepository
@@ -11,8 +9,6 @@ from app.repository.marker_icon_repository import MarkerIconRepository
 from app.repository.user_repository import UserRepository
 from app.schema.asset_schema import AssetInput, AssetPayload, DriverPayload
 from app.service.base_service import BaseService
-
-log = structlog.get_logger()
 
 
 class AssetService(BaseService):

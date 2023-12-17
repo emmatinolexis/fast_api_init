@@ -1,13 +1,11 @@
-import structlog
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
 from app.api.v1.routes import routers as v1_routers
 from app.core.container import Container
+from app.core.logger import get_logger, init_logger
 from app.core.settings import settings
 from app.util.class_object import singleton
-
-log = structlog.get_logger()
 
 
 @singleton
@@ -20,15 +18,18 @@ class AppCreator:
             version=settings.API_VERSION,
         )
 
+        # set logger
+        init_logger(settings.PROJECT_NAME, settings.GRAYLOG_HOST, settings.GRAYLOG_PORT)
+
         # set db and container
         self.container = Container()
         self.db = self.container.db()
         self.db.create_database()
 
         if self.db.connected():
-            log.info("Successfully connected to the PostgreSQL database")
+            get_logger().info("Successfully connected to the PostgreSQL database")
         else:
-            log.error("Failed to connect to the PostgreSQL database")
+            get_logger().error("Failed to connect to the PostgreSQL database")
 
         # set cors
         if settings.BACKEND_CORS_ORIGINS:

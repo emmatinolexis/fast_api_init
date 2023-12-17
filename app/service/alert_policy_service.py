@@ -1,5 +1,3 @@
-import structlog
-
 from app.core import messages
 from app.core.exceptions import NotFoundError
 from app.repository.alert_maintenance_type_repository import (
@@ -25,8 +23,6 @@ from app.schema.alert_policy_schema import (
     AlertPolicyPayload,
 )
 from app.service.base_service import BaseService
-
-log = structlog.get_logger()
 
 
 class AlertPolicyService(BaseService):
@@ -67,15 +63,10 @@ class AlertPolicyService(BaseService):
                     )
                 )
 
-                log.info("alert_recipients", alert_recipients=alert_recipients)
                 recipients = [row.recipient for row in alert_recipients]
 
                 alert_notification_types = self.alert_policy_notification_type_assignment_repository.read_all_by_uuid(
                     alert.uuid
-                )
-                log.info(
-                    "alert_notification_types",
-                    alert_notification_types=alert_notification_types,
                 )
                 alert_notification_types = [
                     row.alert_notification_type for row in alert_notification_types
@@ -86,7 +77,6 @@ class AlertPolicyService(BaseService):
                         alert.uuid
                     )
                 )
-                log.info("alert_assets", alert_assets=alert_assets)
                 alert_assets = [row.asset_name for row in alert_assets]
 
                 alert_policy_type_name = self.alert_policy_repository.read_by_uuid(
