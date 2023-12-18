@@ -1,7 +1,6 @@
 from typing import Union
 
 from fastapi import APIRouter
-from app.util.utils import allow_admins_only
 
 router = APIRouter(
     prefix="/tracking",
@@ -9,6 +8,6 @@ router = APIRouter(
 )
 
 
-@router.post("/",dependencies=[allow_admins_only])
+@router.post("/")
 async def get_tracker_details(data: Union[str, list, dict]):
     return {"data": data}

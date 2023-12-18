@@ -11,6 +11,7 @@ from app.model.user import User
 from app.schema.marker_schema import MarkerIconPayload
 from app.service.marker_icon_service import MarkerIconService
 from app.util.utils import (
+    allow_admins_only,
     send_client_side_error,
     send_data,
     send_info,
@@ -38,7 +39,7 @@ async def get_all_marker_icons_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.post("/", response_class=ORJSONResponse)
+@router.post("/", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def create_marker_icon_handler(
     payload: MarkerIconPayload,
@@ -53,7 +54,7 @@ async def create_marker_icon_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.put("/{uuid}", response_class=ORJSONResponse)
+@router.put("/{uuid}", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def update_marker_icon_handler(
     uuid: str,
@@ -73,7 +74,9 @@ async def update_marker_icon_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.delete("/{uuid}", response_class=ORJSONResponse)
+@router.delete(
+    "/{uuid}", dependencies=[allow_admins_only], response_class=ORJSONResponse
+)
 @inject
 async def delete_marker_icon_handler(
     uuid: str,

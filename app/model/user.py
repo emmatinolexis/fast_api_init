@@ -28,7 +28,9 @@ class User(BaseModel):
     location = Column(String(length=30), nullable=True, index=True)
     address = Column(String(length=50), nullable=True, index=True)
     account_type = Column(Enum(AccountType), nullable=False, index=True)
-    role = Column(Enum(UserRole), nullable=False, index=True)
+    role = Column(
+        Enum(UserRole), nullable=False, default=UserRole.CUSTOMER.value, index=True
+    )
     business_profile_uuid = Column(
         UUID(as_uuid=True), ForeignKey("business_profiles.uuid"), nullable=True
     )

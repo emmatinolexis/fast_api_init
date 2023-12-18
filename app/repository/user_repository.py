@@ -15,7 +15,7 @@ from app.model.user import User
 from app.repository.base_repository import BaseRepository
 from app.schema.auth_schema import EmailVerification as EmailVerficationSchema
 from app.schema.auth_schema import UserEmailVerification
-from app.schema.user_schema import UpdateUserPayload, UserPayload,IndividualUser
+from app.schema.user_schema import IndividualUser, UpdateUserPayload, UserPayload
 from app.util.enums import AccountType
 
 log = structlog.get_logger()
@@ -88,7 +88,7 @@ class UserRepository(BaseRepository):
 
                 session.add(business_data)
                 session.commit()
-                
+
                 returned_user = {
                     "first_name": created_user.first_name,
                     "last_name": created_user.last_name,
