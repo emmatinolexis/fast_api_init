@@ -8,12 +8,11 @@ from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
 from app.core.exceptions import NotFoundError
-from app.core.security import JWTBearer, extract_user_data
+from app.core.security import extract_user_data
 from app.model.user import User
 from app.schema.user_schema import UpdateUserPayload, UserPayload
 from app.service.user_service import UserService
 from app.util.utils import (
-    ADMIN_USER_ROLE,
     allow_admins_only,
     send_client_side_error,
     send_data,
@@ -48,7 +47,7 @@ async def create_user_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/", response_class=ORJSONResponse)
+@router.get("/", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def get_users(
     service: UserService = Depends(Provide[Container.user_service]),
