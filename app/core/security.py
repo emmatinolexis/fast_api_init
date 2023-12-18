@@ -147,7 +147,7 @@ def get_password_hash(password: str) -> str:
 
 
 class JWTBearer(HTTPBearer):
-    def __init__(self, allowed_roles: List = None, auto_error: bool = True):
+    def __init__(self, allowed_roles: List, auto_error: bool = True):
         super(JWTBearer, self).__init__(auto_error=auto_error)
         self.allowed_roles = allowed_roles
 
