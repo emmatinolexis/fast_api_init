@@ -44,7 +44,7 @@ def send_info(info: str, status_code: int = 200):
 
 
 def send_client_side_error(user_msg: str, dev_msg: str = None, status_code: int = 400):
-    log.error(user_msg)
+    log.error(user_msg, extra={"error": dev_msg})
     return ORJSONResponse(
         status_code=status_code,
         content={
