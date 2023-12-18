@@ -20,13 +20,14 @@ from app.repository import (
     equipment_type_repository,
     feature_repository,
     marker_icon_repository,
+    onboarding_asset_type_assignment_repository,
     onboarding_feature_assignment_repository,
     onboarding_repository,
     organisation_contact_repository,
     package_item_repository,
     package_repository,
     user_organisation_assignment_repository,
-    user_repository,
+    user_repository
 )
 from app.service import (
     alert_maintenance_type_service,
@@ -149,6 +150,10 @@ class Container(containers.DeclarativeContainer):
         onboarding_feature_assignment_repository.OnboardingFeatureAssignmentRepository,
         session_factory=db.provided.session,
     )
+    onboarding_asset_type_assignment_repository = providers.Factory(
+        onboarding_asset_type_assignment_repository.OnboardingAssetTypeAssignmentRepository,
+        session_factory=db.provided.session,
+    )
     organisation_contact_repository = providers.Factory(
         organisation_contact_repository.OrganisationContactRepository,
         session_factory=db.provided.session,
@@ -244,8 +249,9 @@ class Container(containers.DeclarativeContainer):
         feature_repository=feature_repository,
         onboarding_repository=onboarding_repository,
         onboarding_feature_assignment_repository=onboarding_feature_assignment_repository,
-        business_profile_repository=business_profile_repository,
-        user_organisation_assignment_repository=user_organisation_assignment_repository,
+        onboarding_asset_type_assignment_repository=onboarding_asset_type_assignment_repository
+        # business_profile_repository=business_profile_repository,
+        # user_organisation_assignment_repository=user_organisation_assignment_repository,
     )
     organisation_contact_service = providers.Factory(
         organisation_contact_service.OrganisationContactService,

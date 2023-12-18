@@ -10,6 +10,8 @@ from app.core.exceptions import NotFoundError
 from app.core.security import hash_user_password
 from app.core.settings import settings
 from app.model.business_profile import BusinessProfile
+from app.model.user_organisation_assignment import UserOrganisationAssignment
+
 from app.model.email_verification import EmailVerification
 from app.model.user import User
 from app.repository.base_repository import BaseRepository
@@ -84,6 +86,21 @@ class UserRepository(BaseRepository):
                 )
 
                 session.add(business_data)
+                session.commit()
+
+                created_business = (
+                session.query(BusinessProfile)
+                .filter(BusinessProfile.business_email == business_data.business_email)
+                .first()
+                )
+
+                #assign user to organisation
+                assignment_data = UserOrganisationAssignment(
+                    user_uuid = created_user.uuid,
+                    business_profile_uuid = created_business.uuid
+                )
+
+                session.add(assignment_data)
                 session.commit()
 
                 returned_user = {
