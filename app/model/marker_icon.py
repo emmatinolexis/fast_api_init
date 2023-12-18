@@ -23,7 +23,7 @@ class MarkerIcon(BaseModel):
         UUID(as_uuid=True), ForeignKey(AssetType.uuid), nullable=False
     )
     icon_name = Column(String(length=50), nullable=False, unique=True, index=True)
-    icon_url = Column(String(length=100), nullable=False, index=True)
+    icon_url = Column(String(length=100), nullable=False, unique=True, index=True)
     status = Column(Enum(ActiveStatus), nullable=False, index=True)
     asset_type = relationship("AssetType", uselist=False)
 

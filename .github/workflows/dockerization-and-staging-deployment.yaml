@@ -40,7 +40,7 @@ jobs:
       - build-and-upload-docker-image
     steps:
       - name: SSH Into AWS And Deploy
-        uses: appleboy/ssh-action@v0.1.7
+        uses: appleboy/ssh-action@v1.0.0
         env:
           API_VERSION: ${{ secrets.API_VERSION }}
           DB_HOST: ${{ secrets.DB_HOST }}
@@ -60,9 +60,14 @@ jobs:
           password: ""
           passphrase: ""
           port: 22
+          allenvs: true
           script: |
+            echo "API VERSION is $API_VERSION"
             docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
             docker stop $(docker ps -a -q)
             docker rm $(docker ps -a -q)
             docker image rm -f sagemicrosystems/mvi-hub:latest
-            docker run -d --publish 8000:8000 --name mvi_staging_api sagemicrosystems/mvi-hub:latest
+            docker run -d --publish 8000:8000 --name mvi_staging_api -e API_VERSION=$API_VERSION \
+            -e DB_HOST=$DB_HOST -e DB_NAME=$DB_NAME -e DB_PASSWORD=$DB_PASSWORD -e DB_PORT=$DB_PORT \
+            -e DB_USER=$DB_USER -e ENV=$ENV -e MAIL_SERVER=$MAIL_SERVER -e MAIL_USERNAME=$MAIL_USERNAME \
+            -e MAIL_PASSWORD=$MAIL_PASSWORD -e SECRET_KEY=$SECRET_KEY sagemicrosystems/mvi-hub:latest

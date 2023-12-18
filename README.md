@@ -44,8 +44,8 @@ make setup
 
 make run-api
 ```
-### Run project on staging server
-docker run -d --publish 8000:8000 --name mvi_hub_api --env-file .env  sagemicrosystems/mvi-hub:latest
+### Run project on staging server in case auto-deployment from GHA did not work
+docker run -d --publish 8000:8000 --name mvi_staging_api --env-file .env  sagemicrosystems/mvi-hub:latest
 
 ## API
 

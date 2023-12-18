@@ -26,6 +26,7 @@ msg_prefix = "marker icon"
 
 
 @router.get("/", response_class=ORJSONResponse)
+@inject
 async def get_all_marker_icons_handler(
     service: MarkerIconService = Depends(Provide[Container.marker_icon_service]),
     current_user: User = Depends(get_current_user),
