@@ -23,6 +23,7 @@ def send_data(data: Any, status_code: int = 200):
 
 
 def send_data_with_info(data: Any, info: str, status_code: int = 200):
+    log.info(info)
     return ORJSONResponse(
         status_code=status_code,
         content={
@@ -54,7 +55,7 @@ def send_client_side_error(user_msg: str, dev_msg: str = None, status_code: int 
 
 
 def send_internal_server_error(user_msg: str, error: Any, status_code: int = 500):
-    log.error(user_msg, error=error)
+    log.error(user_msg, extra={"error": error})
     return ORJSONResponse(
         status_code=status_code,
         content={
