@@ -80,9 +80,6 @@ async def update_alert_maintenance_type_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-ß
-
-
 @router.delete(
     "/{uuid}", dependencies=[allow_admins_only], response_class=ORJSONResponse
 )
