@@ -39,7 +39,7 @@ class EquipmentTypeService(BaseService):
         except Exception as e:
             raise e
 
-    def get_equipment_type_by_equipment_uuid(self, equipment_uuid: str):
+    def get_equipment_type_by_equipment_uuid(self, equipment_uuid: str) -> None:
         try:
             equipment = self.equipment_repository.get_equipment_by_uuid(equipment_uuid)
 

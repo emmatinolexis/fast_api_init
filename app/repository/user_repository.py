@@ -62,6 +62,7 @@ class UserRepository(BaseRepository):
             user = session.query(self.model).filter(self.model.uuid == uuid).first()
             user.onboarding_status = datetime.now()
             session.commit()
+            session.refresh(user)
             return user
 
     def create_user(self, user: UserPayload):
