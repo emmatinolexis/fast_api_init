@@ -40,19 +40,7 @@ jobs:
       - build-and-upload-docker-image
     steps:
       - name: SSH Into AWS And Deploy
-        uses: appleboy/ssh-action@v0.1.7
-        env:
-          API_VERSION: ${{ secrets.API_VERSION }}
-          DB_HOST: ${{ secrets.DB_HOST }}
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DB_PORT: ${{ secrets.DB_PORT }}
-          DB_USER: ${{ secrets.DB_USER }}
-          ENV: ${{ secrets.ENV }}
-          MAIL_SERVER: ${{ secrets.MAIL_SERVER }}
-          MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
-          MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.STAGING_SERVER_IP }}
           username: ${{ secrets.STAGING_SERVER_USERNAME }}
@@ -60,10 +48,12 @@ jobs:
           password: ""
           passphrase: ""
           port: 22
-          envs: API_VERSION,DB_HOST,DB_NAME,DB_PASSWORD,DB_PORT,DB_USER,ENV,MAIL_SERVER,MAIL_USERNAME,MAIL_PASSWORD,SECRET_KEY
           script: |
             docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
             docker stop $(docker ps -a -q)
             docker rm $(docker ps -a -q)
             docker image rm -f sagemicrosystems/mvi-hub:latest
-            docker run -d --publish 8000:8000 --name mvi_staging_api sagemicrosystems/mvi-hub:latest
+            docker run -d --publish 8000:8000 --name mvi_staging_api -e API_VERSION=${{ secrets.API_VERSION }} \
+            -e DB_HOST=${{ secrets.DB_HOST }} -e DB_NAME=${{ secrets.DB_NAME }} -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} -e DB_PORT=${{ secrets.DB_PORT }} \
+            -e DB_USER=${{ secrets.DB_USER }} -e ENV=staging -e MAIL_SERVER=${{ secrets.MAIL_SERVER }} -e MAIL_USERNAME=${{ secrets.MAIL_USERNAME }} \
+            -e MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }} -e SECRET_KEY=${{ secrets.SECRET_KEY }} -e GRAYLOG_HOST=${{ secrets.GRAYLOG_HOST }} -e GRAYLOG_PORT=${{ secrets.GRAYLOG_PORT }} sagemicrosystems/mvi-hub:latest
