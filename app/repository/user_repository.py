@@ -15,7 +15,7 @@ from app.model.user import User
 from app.repository.base_repository import BaseRepository
 from app.schema.auth_schema import EmailVerification as EmailVerficationSchema
 from app.schema.auth_schema import UserEmailVerification
-from app.schema.user_schema import UpdateUserPayload, UserPayload
+from app.schema.user_schema import IndividualUser, UpdateUserPayload, UserPayload
 from app.util.enums import AccountType
 
 log = structlog.get_logger()
@@ -66,6 +66,7 @@ class UserRepository(BaseRepository):
                 email_address=user.email_address,
                 password=hash_user_password(user.password),
                 account_type=user.account_type,
+                role=user.role,
             )
 
             session.add(db_user)
@@ -75,6 +76,8 @@ class UserRepository(BaseRepository):
                 .filter(self.model.email_address == db_user.email_address)
                 .first()
             )
+
+            returned_user = IndividualUser(**created_user.__dict__)
 
             if user.account_type == AccountType.BUSINESS:
                 business_data = BusinessProfile(
@@ -98,17 +101,7 @@ class UserRepository(BaseRepository):
                     "business_name": user.business_name,
                     "business_email": user.business_email,
                     "business_phone": user.business_phone,
-                }
-            else:
-                returned_user = {
-                    "first_name": created_user.first_name,
-                    "last_name": created_user.last_name,
-                    "location": created_user.location,
-                    "address": created_user.address,
-                    "phone_number": created_user.phone_number,
-                    "email_address": created_user.email_address,
-                    "uuid": created_user.uuid,
-                    "account_type": created_user.account_type,
+                    "role": created_user.role,
                 }
 
             return returned_user

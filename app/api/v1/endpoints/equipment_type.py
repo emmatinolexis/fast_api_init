@@ -11,6 +11,7 @@ from app.model.user import User
 from app.schema.equipment_schema import EquipmentTypePayload
 from app.service.equipment_type_service import EquipmentTypeService
 from app.util.utils import (
+    allow_admins_only,
     send_client_side_error,
     send_data,
     send_info,
@@ -38,7 +39,7 @@ async def get_all_equipment_types_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.post("/", response_class=ORJSONResponse)
+@router.post("/", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def create_equipment_type_handler(
     payload: EquipmentTypePayload,
@@ -57,7 +58,7 @@ async def create_equipment_type_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.put("/{uuid}", response_class=ORJSONResponse)
+@router.put("/{uuid}", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def update_equipment_type_handler(
     uuid: str,
@@ -81,7 +82,9 @@ async def update_equipment_type_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.delete("/{uuid}", response_class=ORJSONResponse)
+@router.delete(
+    "/{uuid}", dependencies=[allow_admins_only], response_class=ORJSONResponse
+)
 @inject
 async def delete_equipment_type_handler(
     uuid: str,
