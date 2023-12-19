@@ -16,7 +16,7 @@ from app.model.user_organisation_assignment import UserOrganisationAssignment
 from app.repository.base_repository import BaseRepository
 from app.schema.auth_schema import EmailVerification as EmailVerficationSchema
 from app.schema.auth_schema import UserEmailVerification
-from app.schema.user_schema import UpdateUserPayload, UserPayload
+from app.schema.user_schema import IndividualUser, UpdateUserPayload, UserPayload
 from app.util.enums import AccountType
 
 log = structlog.get_logger()
@@ -76,6 +76,7 @@ class UserRepository(BaseRepository):
                 email_address=user.email_address,
                 password=hash_user_password(user.password),
                 account_type=user.account_type,
+                role=user.role,
             )
 
             session.add(db_user)
@@ -85,6 +86,8 @@ class UserRepository(BaseRepository):
                 .filter(self.model.email_address == db_user.email_address)
                 .first()
             )
+
+            returned_user = IndividualUser(**created_user.__dict__)
 
             if user.account_type == AccountType.BUSINESS:
                 business_data = BusinessProfile(
