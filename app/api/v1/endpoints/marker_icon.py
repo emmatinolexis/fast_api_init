@@ -49,7 +49,7 @@ async def get_all_marker_icons_by_asset_type_handler(
     try:
         return send_data(service.get_list_by_uuid(asset_type_uuid))
     except Exception as e:
-        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        msg = f"{messages.GET_FAILED} {msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
 
 
