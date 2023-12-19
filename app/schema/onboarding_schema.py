@@ -44,7 +44,6 @@ class BusinessOnboardingPayload(BaseModel):
     number_of_assets: int
     user_uuid: UUID
     features_uuid: list[UUID]
-    
 
     class Config:
         orm_model = True
@@ -57,12 +56,14 @@ class OnboardingFeatureAssignment(BaseModel):
     class Config:
         orm_model = True
 
+
 class OnboardingAssetTypeAssignment(BaseModel):
     onboarding_uuid: UUID
     asset_type_uuid: UUID
 
     class Config:
         orm_model = True
+
 
 class OrganisationContactPayload(BaseModel):
     first_name: str

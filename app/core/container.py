@@ -27,7 +27,7 @@ from app.repository import (
     package_item_repository,
     package_repository,
     user_organisation_assignment_repository,
-    user_repository
+    user_repository,
 )
 from app.service import (
     alert_maintenance_type_service,

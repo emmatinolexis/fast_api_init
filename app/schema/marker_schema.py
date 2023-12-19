@@ -1,8 +1,8 @@
+from uuid import UUID
+
 from pydantic import BaseModel
 
 from app.util.enums import ActiveStatus
-from uuid import UUID
-
 
 
 class MarkerIconPayload(BaseModel):

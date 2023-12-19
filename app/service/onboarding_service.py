@@ -3,25 +3,23 @@ import structlog
 from app.core import messages
 from app.core.exceptions import NotFoundError
 from app.repository.asset_type_repository import AssetTypeRepository
-
 from app.repository.feature_repository import FeatureRepository
-from app.repository.onboarding_feature_assignment_repository import (
-    OnboardingFeatureAssignmentRepository,
-)
 from app.repository.onboarding_asset_type_assignment_repository import (
     OnboardingAssetTypeAssignmentRepository,
 )
+from app.repository.onboarding_feature_assignment_repository import (
+    OnboardingFeatureAssignmentRepository,
+)
 from app.repository.onboarding_repository import OnboardingRepository
 from app.repository.package_repository import PackageRepository
-
 from app.repository.user_repository import UserRepository
 from app.schema.onboarding_schema import (
     BusinessOnboardingPayload,
+    OnboardingAssetTypeAssignment,
     OnboardingBusinessInput,
     OnboardingFeatureAssignment,
     OnboardingIndividualInput,
     OnboardingPayload,
-    OnboardingAssetTypeAssignment
 )
 from app.service.base_service import BaseService
 from app.util.enums import AccountType
@@ -110,19 +108,10 @@ class OnboardingService(BaseService):
                     detail=messages.USER_NOT_FOUND + str(onboarding.user_uuid)
                 )
 
-            # if (
-            #     self.asset_type_repository.read_by_uuid(onboarding.asset_type_uuid)
-            #     is None
-            # ):
-            #     raise NotFoundError(
-            #         detail=messages.ASSET_TYPE_NOT_FOUND
-            #         + str(onboarding.asset_type_uuid)
-            #     )
-
             for item in onboarding.features_uuid:
                 if self.feature_repository.read_by_uuid(item) is None:
                     raise NotFoundError(detail=messages.FEATURE_NOT_FOUND + str(item))
-                
+
             for item in onboarding.asset_types_uuid:
                 if self.asset_type_repository.read_by_uuid(item) is None:
                     raise NotFoundError(detail=messages.ASSET_NOT_FOUND + str(item))
@@ -131,7 +120,7 @@ class OnboardingService(BaseService):
             onboarding_item = OnboardingBusinessInput(
                 number_of_assets=onboarding.number_of_assets,
                 user_uuid=onboarding.user_uuid,
-                onboarding_type=AccountType.BUSINESS
+                onboarding_type=AccountType.BUSINESS,
             )
 
             create_onboarding = self.onboarding_repository.create(onboarding_item)
@@ -155,6 +144,9 @@ class OnboardingService(BaseService):
                 self.onboarding_asset_type_assignment_repository.create(
                     OnboardingAssetTypeAssignment(**asset_type)
                 )
+
+            # update user onboarding status
+            self.user_repository.update_user_onboard_status(onboarding.user_uuid)
 
             return create_onboarding
 

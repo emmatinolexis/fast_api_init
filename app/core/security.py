@@ -127,6 +127,8 @@ def extract_user_data(user: User) -> Dict[str, str]:
         "uuid": user.uuid,
         "verifiedAt": user.verifiedAt,
         "account_type": user.account_type,
+        "onboarding_status": user.onboarding_status,
+        "business_profile": user.business_profile,
     }
 
 

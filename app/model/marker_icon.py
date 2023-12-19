@@ -1,11 +1,10 @@
 import uuid
 
-from sqlalchemy import Column, Enum, String, ForeignKey
+from sqlalchemy import Column, Enum, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
-from app.model.asset_type import AssetType
 from sqlalchemy.orm import relationship
 
-
+from app.model.asset_type import AssetType
 from app.model.base_model import BaseModel
 from app.util.enums import ActiveStatus
 
@@ -26,4 +25,3 @@ class MarkerIcon(BaseModel):
     icon_url = Column(String(length=100), nullable=False, unique=True, index=True)
     status = Column(Enum(ActiveStatus), nullable=False, index=True)
     asset_type = relationship("AssetType", uselist=False)
-
