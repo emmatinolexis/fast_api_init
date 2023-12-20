@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.core.exceptions import NotFoundError
 from app.core.settings import settings
+from app.model.equipment_type import EquipmentType
 from app.util.query_builder import dict_to_sqlalchemy_filter_options
 
 log = structlog.get_logger()
@@ -61,6 +62,26 @@ class BaseRepository:
                 for eager in getattr(self.model, "eagers", []):
                     query = query.options(joinedload(getattr(self.model, eager)))
             query = query.all()
+            return query
+
+    def read_all_by_uuid(self, uuid: str, eager=False):
+        with self.session_factory() as session:
+            query = session.query(self.model)
+            if eager:
+                for eager in getattr(self.model, "eagers", []):
+                    query = query.options(joinedload(getattr(self.model, eager)))
+            query = query.filter(self.model.asset_type_uuid == uuid).all()
+            return query
+
+    def get_equipment_by_uuid(self, equipment_uuid: str, eager=False):
+        with self.session_factory() as session:
+            query = session.query(EquipmentType)
+            if eager:
+                for eager in getattr(EquipmentType, "eagers", []):
+                    query = query.options(joinedload(getattr(EquipmentType, eager)))
+            query = query.filter(EquipmentType.equipment_uuid == equipment_uuid).first()
+            if not query:
+                return None
             return query
 
     def read_by_id(self, id: int, eager=False):

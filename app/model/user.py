@@ -1,5 +1,4 @@
 import uuid
-from enum import Enum
 
 from sqlalchemy import Column, Enum, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
@@ -28,6 +27,7 @@ class User(BaseModel):
     location = Column(String(length=30), nullable=True, index=True)
     address = Column(String(length=50), nullable=True, index=True)
     account_type = Column(Enum(AccountType), nullable=False, index=True)
+    onboarding_status = Column(String(length=50), nullable=True, index=True)
     role = Column(
         Enum(UserRole), nullable=False, default=UserRole.CUSTOMER.value, index=True
     )

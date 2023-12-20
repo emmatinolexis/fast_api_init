@@ -10,6 +10,9 @@ class BaseService:
     def get_list(self):
         return self._repository.read_all()
 
+    def get_list_by_uuid(self, uuid: str):
+        return self._repository.read_all_by_uuid(uuid)
+
     def get_by_id(self, id: int):
         return self._repository.read_by_id(id)
 
