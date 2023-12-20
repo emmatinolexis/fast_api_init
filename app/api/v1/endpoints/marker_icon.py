@@ -11,6 +11,7 @@ from app.model.user import User
 from app.schema.marker_schema import MarkerIconPayload
 from app.service.marker_icon_service import MarkerIconService
 from app.util.utils import (
+    allow_admins_only,
     send_client_side_error,
     send_data,
     send_info,
@@ -38,6 +39,20 @@ async def get_all_marker_icons_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
+@router.get("/get_by_asset_type/{asset_type_uuid}", response_class=ORJSONResponse)
+@inject
+async def get_all_marker_icons_by_asset_type_handler(
+    asset_type_uuid: str,
+    service: MarkerIconService = Depends(Provide[Container.marker_icon_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        return send_data(service.get_list_by_uuid(asset_type_uuid))
+    except Exception as e:
+        msg = f"{messages.GET_FAILED} {msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
 @router.post("/", response_class=ORJSONResponse)
 @inject
 async def create_marker_icon_handler(
@@ -53,7 +68,7 @@ async def create_marker_icon_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.put("/{uuid}", response_class=ORJSONResponse)
+@router.put("/{uuid}", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def update_marker_icon_handler(
     uuid: str,
@@ -73,7 +88,9 @@ async def update_marker_icon_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.delete("/{uuid}", response_class=ORJSONResponse)
+@router.delete(
+    "/{uuid}", dependencies=[allow_admins_only], response_class=ORJSONResponse
+)
 @inject
 async def delete_marker_icon_handler(
     uuid: str,

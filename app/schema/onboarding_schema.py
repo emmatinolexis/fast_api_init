@@ -34,25 +34,16 @@ class OnboardingIndividualInput(BaseModel):
 
 
 class OnboardingBusinessInput(BaseModel):
-    asset_type_uuid: UUID
     number_of_assets: int
-    number_of_months: int
     user_uuid: UUID
     onboarding_type: AccountType
 
 
 class BusinessOnboardingPayload(BaseModel):
-    asset_type_uuid: UUID
+    asset_types_uuid: list[UUID]
     number_of_assets: int
-    number_of_months: int
     user_uuid: UUID
     features_uuid: list[UUID]
-    business_name: str
-    business_email: str
-    business_location: str
-    business_phone: str
-    business_logo: str
-    business_address: str
 
     class Config:
         orm_model = True
@@ -61,6 +52,14 @@ class BusinessOnboardingPayload(BaseModel):
 class OnboardingFeatureAssignment(BaseModel):
     onboarding_uuid: UUID
     feature_uuid: UUID
+
+    class Config:
+        orm_model = True
+
+
+class OnboardingAssetTypeAssignment(BaseModel):
+    onboarding_uuid: UUID
+    asset_type_uuid: UUID
 
     class Config:
         orm_model = True

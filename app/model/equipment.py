@@ -1,8 +1,10 @@
 import uuid
 
-from sqlalchemy import Column, Enum, String
+from sqlalchemy import Column, Enum, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
+from app.model.asset_type import AssetType
 from app.model.base_model import BaseModel
 from app.util.enums import ActiveStatus
 
@@ -16,5 +18,9 @@ class Equipment(BaseModel):
         unique=True,
         nullable=False,
     )
+    asset_type_uuid = Column(
+        UUID(as_uuid=True), ForeignKey(AssetType.uuid), nullable=False
+    )
     name = Column(String(length=100), nullable=False, index=True)
     status = Column(Enum(ActiveStatus), nullable=False, index=True)
+    asset_type = relationship("AssetType", uselist=False)

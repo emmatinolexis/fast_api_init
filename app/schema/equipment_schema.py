@@ -8,6 +8,7 @@ from app.util.enums import ActiveStatus
 
 class EquipmentPayload(BaseModel):
     name: str
+    asset_type_uuid: UUID
     status: ActiveStatus
 
     class Config:
