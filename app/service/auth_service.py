@@ -48,6 +48,7 @@ class AuthService(BaseService):
                 raise NotVerifiedError(detail="User email not verified")
 
             user = extract_user_data(db_user)
+            # return user
             access_token, expiration_datetime = generate_token_for_existing_user(
                 login_info, db_user
             )

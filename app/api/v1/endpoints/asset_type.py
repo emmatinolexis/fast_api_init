@@ -10,6 +10,7 @@ from app.model.user import User
 from app.schema.asset_schema import AssetTypePayload
 from app.service.asset_type_service import AssetTypeService
 from app.util.utils import (
+    allow_admins_only,
     send_client_side_error,
     send_data,
     send_info,
@@ -36,7 +37,7 @@ async def get_asset_type_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.post("/", response_class=ORJSONResponse)
+@router.post("/", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def create_asset_type_handler(
     payload: AssetTypePayload,
@@ -51,7 +52,7 @@ async def create_asset_type_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.put("/{uuid}", response_class=ORJSONResponse)
+@router.put("/{uuid}", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def update_asset_type_handler(
     uuid: str,
@@ -69,7 +70,9 @@ async def update_asset_type_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.delete("/{uuid}", response_class=ORJSONResponse)
+@router.delete(
+    "/{uuid}", dependencies=[allow_admins_only], response_class=ORJSONResponse
+)
 @inject
 async def delete_asset_type_handler(
     uuid: str,

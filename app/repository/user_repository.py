@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from typing import Callable
 
 from pydantic import EmailStr
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.core.exceptions import NotFoundError
 from app.core.security import hash_user_password
@@ -11,10 +11,11 @@ from app.core.settings import settings
 from app.model.business_profile import BusinessProfile
 from app.model.email_verification import EmailVerification
 from app.model.user import User
+from app.model.user_organisation_assignment import UserOrganisationAssignment
 from app.repository.base_repository import BaseRepository
 from app.schema.auth_schema import EmailVerification as EmailVerficationSchema
 from app.schema.auth_schema import UserEmailVerification
-from app.schema.user_schema import UpdateUserPayload, UserPayload
+from app.schema.user_schema import IndividualUser, UpdateUserPayload, UserPayload
 from app.util.enums import AccountType
 
 
@@ -31,7 +32,6 @@ class UserRepository(BaseRepository):
                 )
                 if user_to_update is None:
                     raise NotFoundError(detail=uuid)
-
                 return self.update_by_uuid(uuid, user)
         except Exception as e:
             raise e
@@ -41,6 +41,7 @@ class UserRepository(BaseRepository):
             return (
                 session.query(self.model)
                 .filter(self.model.email_address == email)
+                .options(joinedload(User.business_profile))
                 .first()
             )
 
@@ -52,17 +53,23 @@ class UserRepository(BaseRepository):
                 .first()
             )
 
+    def update_user_onboard_status(self, uuid):
+        with self.session_factory() as session:
+            user = session.query(self.model).filter(self.model.uuid == uuid).first()
+            user.onboarding_status = datetime.now()
+            session.commit()
+            session.refresh(user)
+            return user
+
     def create_user(self, user: UserPayload):
         with self.session_factory() as session:
             db_user = self.model(
                 first_name=user.first_name,
                 last_name=user.last_name,
-                location=user.location,
-                address=user.address,
-                phone_number=user.phone_number,
                 email_address=user.email_address,
                 password=hash_user_password(user.password),
                 account_type=user.account_type,
+                role=user.role,
             )
 
             session.add(db_user)
@@ -72,6 +79,8 @@ class UserRepository(BaseRepository):
                 .filter(self.model.email_address == db_user.email_address)
                 .first()
             )
+
+            returned_user = IndividualUser(**created_user.__dict__)
 
             if user.account_type == AccountType.BUSINESS:
                 business_data = BusinessProfile(
@@ -83,12 +92,30 @@ class UserRepository(BaseRepository):
                 session.add(business_data)
                 session.commit()
 
+                created_business = (
+                    session.query(BusinessProfile)
+                    .filter(
+                        BusinessProfile.business_email == business_data.business_email
+                    )
+                    .first()
+                )
+
+                # assign user to organisation
+                assignment_data = UserOrganisationAssignment(
+                    user_uuid=created_user.uuid,
+                    business_profile_uuid=created_business.uuid,
+                )
+
+                session.add(assignment_data)
+                session.commit()
+
+                # update user with business profile uuid
+                created_user.business_profile_uuid = created_business.uuid
+                session.commit()
+
                 returned_user = {
                     "first_name": created_user.first_name,
                     "last_name": created_user.last_name,
-                    "location": created_user.location,
-                    "address": created_user.address,
-                    "phone_number": created_user.phone_number,
                     "email_address": created_user.email_address,
                     "uuid": created_user.uuid,
                     "account_type": created_user.account_type,
@@ -100,9 +127,6 @@ class UserRepository(BaseRepository):
                 returned_user = {
                     "first_name": created_user.first_name,
                     "last_name": created_user.last_name,
-                    "location": created_user.location,
-                    "address": created_user.address,
-                    "phone_number": created_user.phone_number,
                     "email_address": created_user.email_address,
                     "uuid": created_user.uuid,
                     "account_type": created_user.account_type,

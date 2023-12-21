@@ -29,6 +29,7 @@ class VerifyToken(BaseModel):
 
 class TokenData(BaseModel):
     username: Union[str, None] = None
+    role: Union[str, None] = None
 
 
 class Token(BaseModel):

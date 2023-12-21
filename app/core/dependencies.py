@@ -9,13 +9,16 @@ from app.core.logger import get_logger
 from app.core.security import JWTBearer, verify_token
 from app.model.user import User
 from app.service.user_service import UserService
+from app.util.utils import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE
 
 log = get_logger()
 
 
 @inject
 def get_current_user(
-    token: str = Depends(JWTBearer()),
+    token: str = Depends(
+        JWTBearer(allowed_roles=[ADMIN_USER_ROLE, CUSTOMER_USER_ROLE])
+    ),
     service: UserService = Depends(Provide[Container.user_service]),
 ) -> User:
     try:
@@ -40,7 +43,9 @@ def get_current_active_user(current_user: User = Depends(get_current_user)) -> U
 
 
 def get_current_user_with_no_exception(
-    token: str = Depends(JWTBearer()),
+    token: str = Depends(
+        JWTBearer(allowed_roles=[ADMIN_USER_ROLE, CUSTOMER_USER_ROLE])
+    ),
     service: UserService = Depends(Provide[Container.user_service]),
 ) -> User:
     try:
