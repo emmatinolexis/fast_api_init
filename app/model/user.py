@@ -5,7 +5,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from app.model.base_model import BaseModel
-from app.util.enums import AccountType
+from app.util.enums import AccountType, UserRole
 
 
 class User(BaseModel):
@@ -27,6 +27,10 @@ class User(BaseModel):
     location = Column(String(length=30), nullable=True, index=True)
     address = Column(String(length=50), nullable=True, index=True)
     account_type = Column(Enum(AccountType), nullable=False, index=True)
+    onboarding_status = Column(String(length=50), nullable=True, index=True)
+    role = Column(
+        Enum(UserRole), nullable=False, default=UserRole.CUSTOMER.value, index=True
+    )
     business_profile_uuid = Column(
         UUID(as_uuid=True), ForeignKey("business_profiles.uuid"), nullable=True
     )

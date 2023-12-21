@@ -12,7 +12,12 @@ from app.core.security import extract_user_data
 from app.model.user import User
 from app.schema.user_schema import UpdateUserPayload, UserPayload
 from app.service.user_service import UserService
-from app.util.utils import send_client_side_error, send_data, send_internal_server_error
+from app.util.utils import (
+    allow_admins_only,
+    send_client_side_error,
+    send_data,
+    send_internal_server_error,
+)
 
 router = APIRouter(
     prefix="/users",
@@ -42,7 +47,7 @@ async def create_user_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/", response_class=ORJSONResponse)
+@router.get("/", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def get_users(
     service: UserService = Depends(Provide[Container.user_service]),

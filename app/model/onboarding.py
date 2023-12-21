@@ -17,9 +17,7 @@ class Onboarding(BaseModel):
         unique=True,
         nullable=False,
     )
-    asset_type_uuid = Column(UUID(as_uuid=True), ForeignKey("asset_types.uuid"))
     number_of_assets = Column(String(length=50), nullable=False, index=True)
-    number_of_months = Column(String(length=50), nullable=True, index=True)
     onboarding_type = Column(String(length=50), nullable=False, index=True)
     package_uuid = Column(
         UUID(as_uuid=True), ForeignKey("packages.uuid"), nullable=True
@@ -27,5 +25,4 @@ class Onboarding(BaseModel):
     user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
     user = relationship("User", uselist=False)
     package = relationship("Package", uselist=False)
-    asset_type = relationship("AssetType", uselist=False)
     features = relationship(OnboardingFeatureAssignment, uselist=True)
