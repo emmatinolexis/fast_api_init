@@ -84,9 +84,7 @@ async def update_user(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get(
-    "/{email_address}", dependencies=[allow_admins_only], response_class=ORJSONResponse
-)
+@router.get("/{email_address}", response_class=ORJSONResponse)
 @inject
 async def get_user_by_email(
     email_address: EmailStr,
