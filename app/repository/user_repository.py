@@ -35,7 +35,6 @@ class UserRepository(BaseRepository):
                 )
                 if user_to_update is None:
                     raise NotFoundError(detail=uuid)
-
                 return self.update_by_uuid(uuid, user)
         except Exception as e:
             raise e
@@ -70,9 +69,6 @@ class UserRepository(BaseRepository):
             db_user = self.model(
                 first_name=user.first_name,
                 last_name=user.last_name,
-                location=user.location,
-                address=user.address,
-                phone_number=user.phone_number,
                 email_address=user.email_address,
                 password=hash_user_password(user.password),
                 account_type=user.account_type,
@@ -123,24 +119,17 @@ class UserRepository(BaseRepository):
                 returned_user = {
                     "first_name": created_user.first_name,
                     "last_name": created_user.last_name,
-                    "location": created_user.location,
-                    "address": created_user.address,
-                    "phone_number": created_user.phone_number,
                     "email_address": created_user.email_address,
                     "uuid": created_user.uuid,
                     "account_type": created_user.account_type,
                     "business_name": user.business_name,
                     "business_email": user.business_email,
                     "business_phone": user.business_phone,
-                    # "onboarding_status":
                 }
             else:
                 returned_user = {
                     "first_name": created_user.first_name,
                     "last_name": created_user.last_name,
-                    "location": created_user.location,
-                    "address": created_user.address,
-                    "phone_number": created_user.phone_number,
                     "email_address": created_user.email_address,
                     "uuid": created_user.uuid,
                     "account_type": created_user.account_type,

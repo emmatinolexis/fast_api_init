@@ -9,9 +9,6 @@ from app.util.enums import AccountType, UserRole
 class UserPayload(BaseModel):
     first_name: str
     last_name: str
-    location: Optional[str] = None
-    address: Optional[str] = None
-    phone_number: constr(max_length=15) = None
     email_address: EmailStr
     password: constr(min_length=6)
     account_type: AccountType
@@ -25,11 +22,9 @@ class UserPayload(BaseModel):
 
 
 class UpdateUserPayload(BaseModel):
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    location: Optional[str] = None
-    address: Optional[str] = None
-    phone_number: constr(max_length=15) = None
+    location: str
+    address: str
+    phone_number: constr(max_length=15)
 
     class Config:
         orm_model = True
@@ -53,9 +48,6 @@ class UserEmail(BaseModel):
 class IndividualUser(BaseModel):
     first_name: str
     last_name: str
-    location: str
-    address: str
-    phone_number: str
     email_address: EmailStr
     uuid: UUID
     account_type: AccountType
