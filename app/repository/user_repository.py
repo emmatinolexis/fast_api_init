@@ -77,28 +77,40 @@ class UserRepository(BaseRepository):
             )
 
             if user.account_type == AccountType.BUSINESS:
-                business_data = BusinessProfile(
-                    business_name=user.business_name,
-                    business_email=user.business_email,
-                    business_phone=user.business_phone,
-                )
+                try:
+                    business_data = (
+                        session.query(BusinessProfile)
+                        .filter(BusinessProfile.business_name == user.business_name)
+                        .first()
+                    )
+                    if business_data is not None:
+                        raise Exception("Business email already exists")
 
-                session.add(business_data)
-                session.commit()
+                    business_data = BusinessProfile(
+                        business_name=user.business_name,
+                        business_email=user.business_email,
+                        business_phone=user.business_phone,
+                    )
 
-                returned_user = {
-                    "first_name": created_user.first_name,
-                    "last_name": created_user.last_name,
-                    "location": created_user.location,
-                    "address": created_user.address,
-                    "phone_number": created_user.phone_number,
-                    "email_address": created_user.email_address,
-                    "uuid": created_user.uuid,
-                    "account_type": created_user.account_type,
-                    "business_name": user.business_name,
-                    "business_email": user.business_email,
-                    "business_phone": user.business_phone,
-                }
+                    session.add(business_data)
+                    session.commit()
+
+                    returned_user = {
+                        "first_name": created_user.first_name,
+                        "last_name": created_user.last_name,
+                        "location": created_user.location,
+                        "address": created_user.address,
+                        "phone_number": created_user.phone_number,
+                        "email_address": created_user.email_address,
+                        "uuid": created_user.uuid,
+                        "account_type": created_user.account_type,
+                        "business_name": user.business_name,
+                        "business_email": user.business_email,
+                        "business_phone": user.business_phone,
+                    }
+                except Exception as e:
+                    session.rollback()  # rollback user creation
+                    raise e
             else:
                 returned_user = {
                     "first_name": created_user.first_name,
