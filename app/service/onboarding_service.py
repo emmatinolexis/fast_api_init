@@ -1,4 +1,3 @@
-import structlog
 
 from app.core import messages
 from app.core.exceptions import NotFoundError
@@ -23,8 +22,6 @@ from app.schema.onboarding_schema import (
 )
 from app.service.base_service import BaseService
 from app.util.enums import AccountType
-
-log = structlog.get_logger()
 
 
 class OnboardingService(BaseService):

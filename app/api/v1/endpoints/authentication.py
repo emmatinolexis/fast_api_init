@@ -1,9 +1,9 @@
-import structlog
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import ORJSONResponse
 
 from app.core.container import Container
+from app.core.logger import get_logger
 from app.core.security import verify_token_frontend
 from app.core.settings import settings
 from app.schema.auth_schema import UserEmailVerification, VerifyToken
@@ -17,7 +17,7 @@ router = APIRouter(
     tags=["authentication"],
 )
 
-log = structlog.get_logger()
+log = get_logger()
 
 
 @router.post("/decode_token", response_class=ORJSONResponse)
@@ -70,12 +70,11 @@ async def verify_user_email(
 ):
     try:
         token_detail = service.verify_user_email(user)
-        log.info("token", token=token_detail)
         # save generated token into db
         user, token = service.user_repository.create_verification_token(
             user_verify=user, verification_token=token_detail
         )
-        log.info("user email verified", user=user.email_address)
+        log.info("User email verified", extra={"email_address": user.email_address})
         if user and token:
             try:
                 # send verification email

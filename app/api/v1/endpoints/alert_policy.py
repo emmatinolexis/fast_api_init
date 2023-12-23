@@ -1,4 +1,3 @@
-import structlog
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends
 from fastapi.responses import ORJSONResponse
@@ -16,7 +15,6 @@ router = APIRouter(
     prefix="/alert_policies",
     tags=["alert policies"],
 )
-log = structlog.get_logger()
 msg_prefix = "alert policy"
 
 
