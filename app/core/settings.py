@@ -24,8 +24,8 @@ class Settings(BaseSettings):
     # auth
     SECRET_KEY: str = os.getenv("SECRET_KEY", "test_secret_key")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = (
-        60 * 24
-    )  # 60 minutes * 24 hours = 1 day why not 30 days??
+        60 * 24 * 7
+    )  # 60 minutes * 24 hours * 7 days = 7 days
     AUTH_ALGORITHM: str = os.getenv("AUTH_ALGORITHM", "HS256")
     VERIFY_TOKEN_EXPIRE_DAYS: int = os.getenv("VERIFY_TOKEN_EXPIRE_DAYS", 3)
 
@@ -47,6 +47,10 @@ class Settings(BaseSettings):
             database=DB_NAME,
         )
     )
+
+    # Graylog
+    GRAYLOG_HOST: str = os.getenv("GRAYLOG_HOST", "localhost")
+    GRAYLOG_PORT: int = os.getenv("GRAYLOG_PORT", 12201)
 
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = ["*"]

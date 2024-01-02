@@ -1,12 +1,11 @@
-import structlog
+from uuid import UUID
+
 from pydantic import EmailStr
 
 from app.core.exceptions import NotFoundError
 from app.repository.user_repository import UserRepository
 from app.schema.user_schema import UpdateUserPayload, UserPayload
 from app.service.base_service import BaseService
-
-log = structlog.get_logger()
 
 
 class UserService(BaseService):
@@ -19,6 +18,9 @@ class UserService(BaseService):
 
     def update_user_by_uuid(self, uuid: str, payload: UpdateUserPayload):
         try:
+            # check uuid is valid
+            if not UUID(uuid):
+                return None
             user = self.user_repository.update_user_by_uuid(uuid, payload)
             return user if user else None
         except NotFoundError as e:

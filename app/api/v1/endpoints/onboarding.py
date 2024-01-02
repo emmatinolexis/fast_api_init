@@ -1,4 +1,3 @@
-import structlog
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends
 from fastapi.responses import ORJSONResponse
@@ -25,7 +24,6 @@ router = APIRouter(
     prefix="/onboarding",
     tags=["onboarding"],
 )
-log = structlog.get_logger()
 msg_prefix = "onboarding"
 
 
@@ -50,7 +48,6 @@ async def create_individual_onboarding_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        log.debug("testing")
         onboarding = service.create_individual_onboarding(payload)
         return send_data(onboarding)
     except NotFoundError as e:

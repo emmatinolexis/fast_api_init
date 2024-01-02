@@ -1,6 +1,5 @@
 from datetime import datetime
 
-import structlog
 from jose import jwt
 
 from app.core.exceptions import (
@@ -10,6 +9,7 @@ from app.core.exceptions import (
     NotFoundError,
     NotVerifiedError,
 )
+from app.core.logger import get_logger
 from app.core.security import (
     extract_user_data,
     generate_token_for_existing_user,
@@ -23,7 +23,7 @@ from app.schema.auth_schema import UserEmailVerification, VerifyToken
 from app.schema.user_schema import UserLogin
 from app.service.base_service import BaseService
 
-log = structlog.get_logger()
+log = get_logger()
 
 
 class AuthService(BaseService):
@@ -41,7 +41,7 @@ class AuthService(BaseService):
             db_user = self.user_repository.get_user_by_email_address(
                 login_info.email_address
             )
-            log.info("User found", user=db_user)
+            log.info("User found", db_user)
             if db_user is None:
                 raise NotFoundError(detail="User not found")
             if db_user.verifiedAt is None:
@@ -52,7 +52,7 @@ class AuthService(BaseService):
             access_token, expiration_datetime = generate_token_for_existing_user(
                 login_info, db_user
             )
-            log.info("Access token generated successfully", access_token=access_token)
+            log.info("Access token generated successfully", access_token)
             login_result = {
                 "access_token": access_token,
                 "expiration": expiration_datetime,
