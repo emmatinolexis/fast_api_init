@@ -41,14 +41,14 @@ class EquipmentTypeService(BaseService):
 
     def get_equipment_type_by_equipment_uuid(self, equipment_uuid: str) -> None:
         try:
-            equipment = self.equipment_repository.get_equipment_by_uuid(equipment_uuid)
-
-            if equipment:
-                return EquipmentTypePayload(
-                    equipment_type_name=equipment.equipment_type_name,
-                    status=equipment.status,
-                    equipment_uuid=equipment.equipment_uuid,
+            equipment_types = (
+                self.equipment_type_repository.get_equipment_types_by_equipment_uuid(
+                    equipment_uuid
                 )
+            )
+
+            if equipment_types:
+                return equipment_types
             else:
                 return None
         except Exception as e:
