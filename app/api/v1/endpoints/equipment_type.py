@@ -37,7 +37,7 @@ async def get_all_equipment_types_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.post("/", dependencies=[allow_admins_only], response_class=ORJSONResponse)
+@router.post("/", response_class=ORJSONResponse)
 @inject
 async def create_equipment_type_handler(
     payload: EquipmentTypePayload,

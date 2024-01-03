@@ -36,6 +36,20 @@ async def get_asset_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
+@router.get("/{user_uuid}", response_class=ORJSONResponse)
+@inject
+async def get_asset_by_user_uuid_handler(
+    user_uuid: str,
+    service: AssetService = Depends(Provide[Container.asset_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        return send_data(service.get_assets_by_user_uuid(user_uuid))
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
 @router.post("/", response_class=ORJSONResponse)
 @inject
 async def create_asset_handler(

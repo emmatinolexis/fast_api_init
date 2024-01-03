@@ -36,8 +36,8 @@ class MaintenanceAlertSchedule(str, Enum):
 
 
 class AssetStatus(str, Enum):
-    IDDLE = "iddle"
     STOP = "stop"
+    IDDLE = "iddle"
     MOVING = "moving"
     ACTIVE = "active"
     INACTIVE = "inactive"
