@@ -21,12 +21,3 @@ class AssetRepository(BaseRepository):
                 .options(joinedload(Asset.asset_type))
                 .all()
             )
-
-    def read_all_assets(self) -> Asset:
-        with self.session_factory() as session:
-            return (
-                session.query(self.model)
-                .options(joinedload(Asset.marker_icon))
-                .options(joinedload(Asset.asset_type))
-                .all()
-            )
