@@ -144,13 +144,18 @@ class AuthService(BaseService):
             if db_user:
                 if db_user.verifiedAt is None:
                     # check if token already generated
-                    verified_user = self.email_verification_repository.read_by_uuid(
-                        user.uuid
+                    verified_user = (
+                        self.email_verification_repository.read_by_user_uuid(user.uuid)
                     )
                     if verified_user:
-                        log.info("User already has a verification token")
+                        log.info(
+                            "User already has a verification token",
+                            extra={"user": verified_user.user_uuid},
+                        )
                         # Delete old verification token
-                        self.email_verification_repository.delete_by_uuid(user.uuid)
+                        self.email_verification_repository.delete_by_user_uuid(
+                            user.uuid
+                        )
 
                     # Generate new verification token
                     verify_token = generate_verification_token()

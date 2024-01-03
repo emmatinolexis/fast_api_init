@@ -12,6 +12,12 @@ class EmailVerificationRepository(BaseRepository):
         self.session_factory = session_factory
         super().__init__(session_factory, EmailVerification)
 
+    def read_by_user_uuid(self, uuid: str):
+        with self.session_factory() as session:
+            return (
+                session.query(self.model).filter(self.model.user_uuid == uuid).first()
+            )
+
     def get_by_token(self, token: str):
         with self.session_factory() as session:
             return (
@@ -26,6 +32,14 @@ class EmailVerificationRepository(BaseRepository):
                 session.query(self.model)
                 .filter(self.model.verification_token == token)
                 .first()
+            )
+            session.delete(query)
+            session.commit()
+
+    def delete_by_user_uuid(self, uuid: str):
+        with self.session_factory() as session:
+            query = (
+                session.query(self.model).filter(self.model.user_uuid == uuid).first()
             )
             session.delete(query)
             session.commit()
