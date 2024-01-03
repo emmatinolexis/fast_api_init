@@ -69,3 +69,9 @@ class AssetService(BaseService):
             return created_asset
         except Exception as e:
             raise e
+
+    def get_assets_by_user_uuid(self, uuid: str):
+        try:
+            return self.asset_repository.read_all_assets_by_uuid(uuid)
+        except Exception as e:
+            raise e
