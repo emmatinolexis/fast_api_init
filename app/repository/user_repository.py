@@ -11,11 +11,10 @@ from app.core.settings import settings
 from app.model.business_profile import BusinessProfile
 from app.model.email_verification import EmailVerification
 from app.model.user import User
-from app.model.user_organisation_assignment import UserOrganisationAssignment
 from app.repository.base_repository import BaseRepository
 from app.schema.auth_schema import EmailVerification as EmailVerficationSchema
 from app.schema.auth_schema import UserEmailVerification
-from app.schema.user_schema import IndividualUser, UpdateUserPayload, UserPayload
+from app.schema.user_schema import UpdateUserPayload, UserPayload
 from app.util.enums import AccountType
 
 
@@ -73,65 +72,53 @@ class UserRepository(BaseRepository):
             )
 
             session.add(db_user)
-            session.commit()
-            created_user = (
-                session.query(self.model)
-                .filter(self.model.email_address == db_user.email_address)
-                .first()
-            )
-
-            returned_user = IndividualUser(**created_user.__dict__)
 
             if user.account_type == AccountType.BUSINESS:
-                business_data = BusinessProfile(
-                    business_name=user.business_name,
-                    business_email=user.business_email,
-                    business_phone=user.business_phone,
-                )
-
-                session.add(business_data)
-                session.commit()
-
-                created_business = (
-                    session.query(BusinessProfile)
-                    .filter(
-                        BusinessProfile.business_email == business_data.business_email
+                try:
+                    business_data = (
+                        session.query(BusinessProfile)
+                        .filter(
+                            (BusinessProfile.business_name == user.business_name)
+                            | (BusinessProfile.business_email == user.business_email)
+                        )
+                        .first()
                     )
-                    .first()
-                )
+                    if business_data is not None:
+                        raise Exception("Business already exists")
 
-                # assign user to organisation
-                assignment_data = UserOrganisationAssignment(
-                    user_uuid=created_user.uuid,
-                    business_profile_uuid=created_business.uuid,
-                )
+                    business_data = BusinessProfile(
+                        business_name=user.business_name,
+                        business_email=user.business_email,
+                        business_phone=user.business_phone,
+                    )
 
-                session.add(assignment_data)
-                session.commit()
+                    session.add(business_data)
 
-                # update user with business profile uuid
-                created_user.business_profile_uuid = created_business.uuid
-                session.commit()
-
-                returned_user = {
-                    "first_name": created_user.first_name,
-                    "last_name": created_user.last_name,
-                    "email_address": created_user.email_address,
-                    "uuid": created_user.uuid,
-                    "account_type": created_user.account_type,
-                    "business_name": user.business_name,
-                    "business_email": user.business_email,
-                    "business_phone": user.business_phone,
-                }
+                    returned_user = {
+                        "first_name": db_user.first_name,
+                        "last_name": db_user.last_name,
+                        "location": db_user.location,
+                        "address": db_user.address,
+                        "phone_number": db_user.phone_number,
+                        "email_address": db_user.email_address,
+                        "uuid": db_user.uuid,
+                        "account_type": db_user.account_type,
+                        "business_name": user.business_name,
+                        "business_email": user.business_email,
+                        "business_phone": user.business_phone,
+                    }
+                except Exception as e:
+                    session.rollback()  # rollback user creation
+                    raise e
             else:
                 returned_user = {
-                    "first_name": created_user.first_name,
-                    "last_name": created_user.last_name,
-                    "email_address": created_user.email_address,
-                    "uuid": created_user.uuid,
-                    "account_type": created_user.account_type,
+                    "first_name": db_user.first_name,
+                    "last_name": db_user.last_name,
+                    "email_address": db_user.email_address,
+                    "uuid": db_user.uuid,
+                    "account_type": db_user.account_type,
                 }
-
+            session.commit()
             return returned_user
 
     def create_verification_token(

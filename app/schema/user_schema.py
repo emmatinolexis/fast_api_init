@@ -15,7 +15,7 @@ class UserPayload(BaseModel):
     business_name: Optional[str] = None
     business_email: Optional[str] = None
     business_phone: Optional[str] = None
-    role: UserRole
+    role: Optional[UserRole] = UserRole.CUSTOMER
 
     class Config:
         orm_model = True
