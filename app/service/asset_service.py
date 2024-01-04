@@ -43,15 +43,6 @@ class AssetService(BaseService):
                     detail=messages.ASSET_TYPE_NOT_FOUND + str(asset.asset_type_uuid)
                 )
 
-            if (
-                self.equipment_type_repository.read_by_uuid(asset.equipment_type_uuid)
-                is None
-            ):
-                raise NotFoundError(
-                    detail=messages.EQUIPMENT_TYPE_NOT_FOUND
-                    + str(asset.equipment_type_uuid)
-                )
-
             if self.equipment_repository.read_by_uuid(asset.equipment_uuid) is None:
                 raise NotFoundError(
                     detail=messages.EQUIPMENT_NOT_FOUND + str(asset.equipment_uuid)
@@ -64,7 +55,14 @@ class AssetService(BaseService):
 
             created_asset = self.asset_repository.create(AssetInput(**asset.dict()))
             if asset.add_driver:
-                driver_data = DriverPayload(asset_uuid=created_asset.uuid, **asset)
+                driver_data = DriverPayload(
+                    asset_uuid=created_asset.uuid,
+                    first_name=asset.driver_first_name,
+                    last_name=asset.driver_last_name,
+                    phone_number=asset.driver_phone_number,
+                    license_url=asset.driver_license_url,
+                    profile_picture_url=asset.driver_profile_picture_url,
+                )
                 self.driver_repository.create(driver_data)
             return created_asset
         except Exception as e:

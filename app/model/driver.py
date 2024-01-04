@@ -19,7 +19,5 @@ class Driver(BaseModel):
     first_name = Column(String(length=30), nullable=False, index=True)
     last_name = Column(String(length=30), nullable=False, index=True)
     phone_number = Column(String(length=20), nullable=True, unique=True, index=True)
-    license_url = Column(String(length=100), nullable=True, default="", index=True)
-    profile_picture_url = Column(
-        String(length=100), nullable=True, default="", index=True
-    )
+    license_url = Column(String(length=100), nullable=True, index=True)
+    profile_picture_url = Column(String(length=100), nullable=True, index=True)
