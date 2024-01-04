@@ -11,7 +11,6 @@ from app.core.settings import settings
 from app.model.business_profile import BusinessProfile
 from app.model.email_verification import EmailVerification
 from app.model.user import User
-from app.model.user_organisation_assignment import UserOrganisationAssignment
 from app.repository.base_repository import BaseRepository
 from app.schema.auth_schema import EmailVerification as EmailVerficationSchema
 from app.schema.auth_schema import UserEmailVerification
