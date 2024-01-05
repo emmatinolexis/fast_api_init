@@ -95,6 +95,27 @@ class UserRepository(BaseRepository):
                     )
 
                     session.add(business_data)
+                    session.commit()
+
+                    # get created business details
+                    created_business = (
+                        session.query(BusinessProfile)
+                        .filter(
+                            (BusinessProfile.business_name == user.business_name)
+                            | (BusinessProfile.business_email == user.business_email)
+                        )
+                        .first()
+                    )
+
+                    # update created user with business uuid
+                    user_to_update = (
+                        session.query(self.model)
+                        .filter(self.model.uuid == created_user.uuid)
+                        .first()
+                    )
+                    user_to_update.business_profile_uuid = created_business.uuid
+                    session.commit()
+                    session.refresh(user_to_update)
 
                     returned_user = {
                         "first_name": db_user.first_name,
