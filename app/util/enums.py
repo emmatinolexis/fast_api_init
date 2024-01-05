@@ -41,6 +41,8 @@ class AssetStatus(str, Enum):
     MOVING = "moving"
     ACTIVE = "active"
     INACTIVE = "inactive"
+    OFFLINE = "offline"
+    PENDING_INSTALLATION = "pending_installation"
 
 
 class UserRole(str, Enum):
