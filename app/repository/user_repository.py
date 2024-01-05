@@ -70,10 +70,8 @@ class UserRepository(BaseRepository):
                 account_type=user.account_type,
                 role=user.role,
             )
-            session.add(db_user)
-            session.commit()
 
-            created_user = self.get_user_by_email_address(user.email_address)
+            session.add(db_user)
 
             if user.account_type == AccountType.BUSINESS:
                 try:
@@ -95,27 +93,6 @@ class UserRepository(BaseRepository):
                     )
 
                     session.add(business_data)
-                    session.commit()
-
-                    # get created business details
-                    created_business = (
-                        session.query(BusinessProfile)
-                        .filter(
-                            (BusinessProfile.business_name == user.business_name)
-                            | (BusinessProfile.business_email == user.business_email)
-                        )
-                        .first()
-                    )
-
-                    # update created user with business uuid
-                    user_to_update = (
-                        session.query(self.model)
-                        .filter(self.model.uuid == created_user.uuid)
-                        .first()
-                    )
-                    user_to_update.business_profile_uuid = created_business.uuid
-                    session.commit()
-                    session.refresh(user_to_update)
 
                     returned_user = {
                         "first_name": db_user.first_name,
@@ -124,7 +101,7 @@ class UserRepository(BaseRepository):
                         "address": db_user.address,
                         "phone_number": db_user.phone_number,
                         "email_address": db_user.email_address,
-                        "uuid": created_user.uuid,
+                        "uuid": db_user.uuid,
                         "account_type": db_user.account_type,
                         "business_name": user.business_name,
                         "business_email": user.business_email,
@@ -138,7 +115,7 @@ class UserRepository(BaseRepository):
                     "first_name": db_user.first_name,
                     "last_name": db_user.last_name,
                     "email_address": db_user.email_address,
-                    "uuid": created_user.uuid,
+                    "uuid": db_user.uuid,
                     "account_type": db_user.account_type,
                 }
             session.commit()
