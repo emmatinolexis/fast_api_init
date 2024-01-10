@@ -40,11 +40,12 @@ async def get_asset_handler(
 @inject
 async def get_asset_by_user_uuid_handler(
     user_uuid: str,
+    asset_type_uuid: str = None,
     service: AssetService = Depends(Provide[Container.asset_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.get_assets_by_user_uuid(user_uuid))
+        return send_data(service.get_assets_by_user_uuid(user_uuid, asset_type_uuid))
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
