@@ -41,7 +41,7 @@ async def get_asset_handler(
 async def get_asset_by_user_uuid_handler(
     user_uuid: str,
     asset_type_uuid: str = None,
-    page: int = Query(1, ge=1, description="Page number, default is 1"),
+    page: int = Query(1, ge=1, description="Page number, default is set to 1"),
     page_size: int = Query(
         10, ge=1, le=100, description="Items per page, default is 10"
     ),
