@@ -70,10 +70,8 @@ class UserRepository(BaseRepository):
                 account_type=user.account_type,
                 role=user.role,
             )
-            session.add(db_user)
-            session.commit()
 
-            created_user = self.get_user_by_email_address(user.email_address)
+            session.add(db_user)
 
             if user.account_type == AccountType.BUSINESS:
                 try:
@@ -103,7 +101,7 @@ class UserRepository(BaseRepository):
                         "address": db_user.address,
                         "phone_number": db_user.phone_number,
                         "email_address": db_user.email_address,
-                        "uuid": created_user.uuid,
+                        "uuid": db_user.uuid,
                         "account_type": db_user.account_type,
                         "business_name": user.business_name,
                         "business_email": user.business_email,
@@ -117,7 +115,7 @@ class UserRepository(BaseRepository):
                     "first_name": db_user.first_name,
                     "last_name": db_user.last_name,
                     "email_address": db_user.email_address,
-                    "uuid": created_user.uuid,
+                    "uuid": db_user.uuid,
                     "account_type": db_user.account_type,
                 }
             session.commit()
