@@ -1,5 +1,5 @@
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
 
 from app.core import messages
@@ -41,11 +41,23 @@ async def get_asset_handler(
 async def get_asset_by_user_uuid_handler(
     user_uuid: str,
     asset_type_uuid: str = None,
+    page: int = Query(1, ge=1, description="Page number, default is 1"),
+    page_size: int = Query(
+        10, ge=1, le=100, description="Items per page, default is 10"
+    ),
     service: AssetService = Depends(Provide[Container.asset_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.get_assets_by_user_uuid(user_uuid, asset_type_uuid))
+        assets = service.get_assets_by_user_uuid(user_uuid, asset_type_uuid)
+
+        # Apply pagination
+        start_idx = (page - 1) * page_size
+        end_idx = start_idx + page_size
+        paginated_assets = assets[start_idx:end_idx]
+
+        return send_data(paginated_assets)
+
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
