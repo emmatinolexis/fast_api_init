@@ -49,14 +49,10 @@ async def get_asset_by_user_uuid_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        assets = service.get_assets_by_user_uuid(user_uuid, asset_type_uuid)
-
-        # Apply pagination
-        start_idx = (page - 1) * page_size
-        end_idx = start_idx + page_size
-        paginated_assets = assets[start_idx:end_idx]
-
-        return send_data(paginated_assets)
+        assets = service.get_assets_by_user_uuid(
+            user_uuid, asset_type_uuid, page, page_size
+        )
+        return send_data(assets)
 
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
