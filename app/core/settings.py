@@ -68,6 +68,13 @@ class Settings(BaseSettings):
         "Please use the button link below to verify your account and get started with MVI tracking solutions.",
     )
 
+    # mqtt
+    MQTT_HOST: str = os.getenv("MQTT_HOST", "3.98.106.16")
+    MQTT_PORT: int = os.getenv("MQTT_PORT", 1883)
+    MQTT_TOPIC: str = os.getenv("MQTT_TOPIC", "tracking/istartek")
+    MQTT_USERNAME: str = os.getenv("MQTT_USERNAME", "admin")
+    MQTT_PASSWORD: str = os.getenv("MQTT_PASSWORD", "public")
+
     # find query
     PAGE: int = 1
     PAGE_SIZE: int = 20

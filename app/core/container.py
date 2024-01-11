@@ -1,5 +1,6 @@
 from dependency_injector import containers, providers
 
+from app.client.mqtt_service import MQTTService
 from app.core.database import Database
 from app.core.settings import settings
 from app.repository import (
@@ -76,6 +77,14 @@ class Container(containers.DeclarativeContainer):
     )
 
     db = providers.Singleton(Database, db_url=settings.DATABASE_URI)
+    mqtt_service = providers.Singleton(
+        MQTTService,
+        host=settings.MQTT_HOST,
+        port=settings.MQTT_PORT,
+        username=settings.MQTT_USERNAME,
+        password=settings.MQTT_PASSWORD,
+        topic=settings.MQTT_TOPIC,
+    )
 
     # Repositories
     user_repository = providers.Factory(
