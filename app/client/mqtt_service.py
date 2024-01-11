@@ -1,9 +1,13 @@
+import json
 import random
 import time
 
 from paho.mqtt import client as mqtt_client
+from sqlalchemy.exc import IntegrityError
 
 from app.core.logger import get_logger
+from app.model.tracking_event import TrackingEvent
+from app.schema.mqtt_data import MQTTDataPayload
 
 log = get_logger()
 
@@ -18,12 +22,13 @@ FLAG_EXIT = False
 
 
 class MQTTService:
-    def __init__(self, host, port, username, password, topic):
+    def __init__(self, host, port, username, password, topic, session_factory):
         self.host = host
         self.port = port
         self.username = username
         self.password = password
         self.topic = topic
+        self.session_factory = session_factory
 
     def on_connect(self, client, userdata, flags, rc):
         if rc == 0 and client.is_connected():
@@ -80,6 +85,19 @@ class MQTTService:
     def subscribe(self, mqtt_client):
         def on_message(mqtt_client, userdata, msg):
             log.info(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
+            event_received = json.loads(msg.payload.decode())
+            event = MQTTDataPayload(**event_received)
+            with self.session_factory() as session:
+                query = TrackingEvent(**event.model_dump())
+                try:
+                    session.add(query)
+                    session.commit()
+                    session.refresh(query)
+                except IntegrityError as e:
+                    log.error(f"Integrity Error: {e}")
+                except Exception as e:
+                    log.error(f"Exception: {e}")
+                log.info(f"Event saved to database: {event_received}")
 
         try:
             log.info(f"Subscribing to topic: {self.topic}")
