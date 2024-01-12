@@ -9,6 +9,7 @@ from app.api.v1.endpoints.asset import router as asset_router
 from app.api.v1.endpoints.asset_location import router as asset_location_router
 from app.api.v1.endpoints.asset_type import router as asset_type_router
 from app.api.v1.endpoints.authentication import router as auth_router
+from app.api.v1.endpoints.device import router as device_router
 from app.api.v1.endpoints.driver import router as driver_router
 from app.api.v1.endpoints.equipment import router as equipment_router
 from app.api.v1.endpoints.equipment_type import router as equipment_type_router
@@ -41,6 +42,7 @@ router_list = [
     asset_location_router,
     alert_policy_router,
     driver_router,
+    device_router,
     feature_router,
     organisation_contact_router,
     onboarding_router,
