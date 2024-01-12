@@ -31,6 +31,10 @@ class AppCreator:
         else:
             get_logger().error("Failed to connect to the PostgreSQL database")
 
+        # set mqtt
+        mqtt_service = self.container.mqtt_service()
+        mqtt_service.subscribe(mqtt_service.connect_mqtt())
+
         # set cors
         if settings.BACKEND_CORS_ORIGINS:
             self.app.add_middleware(
