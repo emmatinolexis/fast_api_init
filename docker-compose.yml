@@ -12,12 +12,6 @@ services:
     restart: on-failure
     env_file:
       - .env
-    healthcheck:
-      test: curl --fail http://localhost:8000 || exit 1
-      interval: 60s
-      retries: 5
-      start_period: 20s
-      timeout: 10s
     depends_on:
       - database
 
@@ -30,10 +24,14 @@ services:
     expose:
       - "5432"
     healthcheck:
-        test: ["CMD-SHELL", "pg_isready -U mvi_tracking_user -d mvi_tracking_db"]
-        interval: 10s
-        timeout: 5s
-        retries: 5
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U mvi_tracking_user -d mvi_tracking_db"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     env_file:
       - .env
     restart: always
