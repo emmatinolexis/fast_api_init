@@ -1,0 +1,33 @@
+from contextlib import AbstractContextManager
+from datetime import datetime
+from typing import Callable
+
+from sqlalchemy.orm import Session
+
+from app.model.tracking_event import TrackingEvent
+from app.repository.base_repository import BaseRepository
+
+
+class TrackingEventRepository(BaseRepository):
+    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
+        self.session_factory = session_factory
+        super().__init__(session_factory, TrackingEvent)
+
+    def read_all_events_by_device_imei(
+        self, device_imei: str, date: str, limit: int
+    ) -> TrackingEvent:
+        with self.session_factory() as session:
+            query = (
+                session.query(self.model)
+                .filter(
+                    self.model.device_imei == device_imei,
+                    self.model.event_datetime >= datetime.strptime(date, "%d/%m/%Y"),
+                    self.model.event_type.in_(
+                        ["Stop_Moving", "Start_Moving", "Idling_Alarm", "Ignition_Off"]
+                    ),
+                )
+                .limit(limit)
+                .all()
+            )
+
+            return query
