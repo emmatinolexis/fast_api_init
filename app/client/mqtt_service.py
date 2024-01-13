@@ -101,6 +101,9 @@ class MQTTService:
 
         try:
             log.info(f"Subscribing to topic: {self.topic}")
+            if not mqtt_client.is_connected():
+                log.error("MQTT client is not connected!")
+                mqtt_client = self.connect_mqtt()
             mqtt_client.subscribe(self.topic)
             mqtt_client.on_message = on_message
         except Exception as e:
