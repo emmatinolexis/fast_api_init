@@ -27,6 +27,7 @@ from app.repository import (
     organisation_contact_repository,
     package_item_repository,
     package_repository,
+    tracking_event_repository,
     user_organisation_assignment_repository,
     user_repository,
 )
@@ -48,6 +49,7 @@ from app.service import (
     organisation_contact_service,
     package_item_service,
     package_service,
+    tracking_event_service,
     user_service,
 )
 
@@ -72,6 +74,7 @@ class Container(containers.DeclarativeContainer):
             "app.api.v1.endpoints.package",
             "app.api.v1.endpoints.package_item",
             "app.api.v1.endpoints.onboarding",
+            "app.api.v1.endpoints.tracking",
             "app.core.dependencies",
         ]
     )
@@ -179,6 +182,10 @@ class Container(containers.DeclarativeContainer):
         user_organisation_assignment_repository.UserOrganisationAssignmentRepository,
         session_factory=db.provided.session,
     )
+    tracking_event_repository = providers.Factory(
+        tracking_event_repository.TrackingEventRepository,
+        session_factory=db.provided.session,
+    )
 
     # Services
     auth_service = providers.Factory(
@@ -275,4 +282,8 @@ class Container(containers.DeclarativeContainer):
     package_service = providers.Factory(
         package_service.PackageService,
         package_repository=package_repository,
+    )
+    tracking_event_service = providers.Factory(
+        tracking_event_service.TrackingEventService,
+        tracking_event_repository=tracking_event_repository,
     )
