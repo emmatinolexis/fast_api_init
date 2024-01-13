@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from app.core.logger import get_logger
 from app.repository.tracking_event_repository import TrackingEventRepository
 from app.service.base_service import BaseService
@@ -15,13 +17,17 @@ class TrackingEventService(BaseService):
 
     def get_events_by_device_imei(self, device_imei: str, date: str, limit: int):
         try:
+            if not date:
+                date = datetime.now().strftime("%d/%m/%Y")
+
             events = self.tracking_event_repository.read_all_events_by_device_imei(
                 device_imei, date, limit
             )
             if events is None:
                 return []
             log.info(f"Number of events retrieved: {len(events)}")
-            response = {"uuid": events[0].device_uuid, "date": date, "events": []}
+
+            response = {"uuid": events[0].device_uuid, "date": str(date), "events": []}
             prev_end_time = None
             for event in events:
                 period = (
