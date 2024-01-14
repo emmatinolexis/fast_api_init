@@ -46,6 +46,15 @@ class TrackingEventService(BaseService):
         except Exception as e:
             raise e
 
+    def get_route_replay_events_by_device_imei(self, device_imei: str):
+        try:
+            return self.tracking_event_repository.read_all_route_replay_events_by_device_imei(
+                device_imei
+            )
+
+        except Exception as e:
+            raise e
+
 
 def get_status(status: str):
     if status == "Start_Moving":

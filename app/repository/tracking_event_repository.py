@@ -1,6 +1,6 @@
 from contextlib import AbstractContextManager
 from datetime import datetime
-from typing import Callable
+from typing import Callable, List, Tuple
 
 from sqlalchemy.orm import Session
 
@@ -31,3 +31,27 @@ class TrackingEventRepository(BaseRepository):
             )
 
             return query
+
+    def read_all_route_replay_events_by_device_imei(
+        self, device_imei: str
+    ) -> List[Tuple[float, float, float, datetime]]:
+        with self.session_factory() as session:
+            query = (
+                session.query(
+                    self.model.latitude,
+                    self.model.longitude,
+                    self.model.speed,
+                    self.model.event_datetime,
+                )
+                .filter(
+                    self.model.device_imei == device_imei,
+                )
+                .all()
+            )
+
+            # Convert the results to a list of tuples
+            result = [
+                (latitude, longitude, speed, event_datetime)
+                for latitude, longitude, speed, event_datetime in query
+            ]
+            return result
