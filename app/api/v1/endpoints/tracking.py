@@ -30,3 +30,17 @@ async def get_tracking_details_handler(
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/route_replay/{device_imei}", response_class=ORJSONResponse)
+@inject
+async def get_route_replay_tracking_details_handler(
+    device_imei: str,
+    service: TrackingEventService = Depends(Provide[Container.tracking_event_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        return send_data(service.get_route_replay_events_by_device_imei(device_imei))
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
