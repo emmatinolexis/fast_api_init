@@ -92,3 +92,16 @@ def send_internal_server_error(user_msg: str, error: Any, status_code: int = 500
             "devMsg": str(error),
         },
     )
+
+
+def get_status(status: str):
+    if status == "Start_Moving":
+        return "moving"
+    elif status == "Stop_Moving":
+        return "stopped"
+    elif status == "Idling_Alarm":
+        return "idle"
+    elif status == "Ignition_Off":
+        return "stopped"
+    else:
+        return "unknown"

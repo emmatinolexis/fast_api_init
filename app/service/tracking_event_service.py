@@ -3,6 +3,7 @@ from datetime import datetime
 from app.core.logger import get_logger
 from app.repository.tracking_event_repository import TrackingEventRepository
 from app.service.base_service import BaseService
+from app.util.utils import get_status
 
 log = get_logger()
 
@@ -54,19 +55,6 @@ class TrackingEventService(BaseService):
 
         except Exception as e:
             raise e
-
-
-def get_status(status: str):
-    if status == "Start_Moving":
-        return "moving"
-    elif status == "Stop_Moving":
-        return "stopped"
-    elif status == "Idling_Alarm":
-        return "idle"
-    elif status == "Ignition_Off":
-        return "stopped"
-    else:
-        return "unknown"
 
 
 def generateTimeRange(start=None, end=None):

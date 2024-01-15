@@ -22,16 +22,16 @@ class DriverService(BaseService):
         except Exception as e:
             raise e
 
-    def get_driver_by_user_uuid(self, user_uuid: str):
+    def get_drivers_by_user_uuid(self, user_uuid: str):
         try:
-            driver = self.driver_repository.get_driver_by_user_uuid(user_uuid)
+            driver = self.driver_repository.get_drivers_by_user_uuid(user_uuid)
             return driver
         except Exception as e:
             raise e
 
-    def get_driver_by_business_uuid(self, business_uuid: str):
+    def get_drivers_by_business_uuid(self, business_uuid: str):
         try:
-            driver = self.driver_repository.get_driver_by_business_uuid(business_uuid)
+            driver = self.driver_repository.get_drivers_by_business_uuid(business_uuid)
             return driver
         except Exception as e:
             raise e

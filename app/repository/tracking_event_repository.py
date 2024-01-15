@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.model.tracking_event import TrackingEvent
 from app.repository.base_repository import BaseRepository
+from app.util.utils import get_status
 
 
 class TrackingEventRepository(BaseRepository):
@@ -52,7 +53,7 @@ class TrackingEventRepository(BaseRepository):
                     "latitude": entry.longitude,
                     "speed": entry.speed,
                     "timestamp": entry.event_datetime,
-                    "event_type": entry.event_type,
+                    "event_type": get_status(entry.event_type),
                 }
                 for entry in query
             )
