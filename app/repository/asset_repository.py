@@ -20,16 +20,16 @@ class AssetRepository(BaseRepository):
             # Calculate the offset based on the page and per_page values
             offset = (page - 1) * page_size
 
+            query = session.query(self.model).filter(self.model.user_uuid == uuid)
+
+            if asset_type_uuid is not None:
+                query = query.filter(self.model.asset_type_uuid == asset_type_uuid)
+
             query = (
-                session.query(self.model)
-                .filter(self.model.user_uuid == uuid)
-                .order_by(desc(self.model.created_at))
+                query.order_by(desc(self.model.created_at))
                 .offset(offset)
                 .limit(page_size)
             )
-
-            if asset_type_uuid:
-                query = query.filter(self.model.asset_type_uuid == asset_type_uuid)
 
             assets = (
                 query.options(joinedload(Asset.marker_icon))

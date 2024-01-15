@@ -1,11 +1,13 @@
 from contextlib import AbstractContextManager
 from datetime import datetime
-from typing import Callable, List, Tuple
+from typing import Callable
 
+from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
 from app.model.tracking_event import TrackingEvent
 from app.repository.base_repository import BaseRepository
+from app.util.utils import get_status
 
 
 class TrackingEventRepository(BaseRepository):
@@ -32,26 +34,27 @@ class TrackingEventRepository(BaseRepository):
 
             return query
 
-    def read_all_route_replay_events_by_device_imei(
-        self, device_imei: str
-    ) -> List[Tuple[float, float, float, datetime]]:
+    def read_all_route_replay_events_by_device_imei(self, device_imei: str):
         with self.session_factory() as session:
             query = (
-                session.query(
-                    self.model.latitude,
-                    self.model.longitude,
-                    self.model.speed,
-                    self.model.event_datetime,
-                )
+                session.query(self.model)
                 .filter(
                     self.model.device_imei == device_imei,
+                    self.model.event_type.in_(
+                        ["Stop_Moving", "Start_Moving", "Idling_Alarm"]
+                    ),
                 )
+                .order_by(desc(self.model.event_datetime))
                 .all()
             )
-
-            # Convert the results to a list of tuples
-            result = [
-                (latitude, longitude, speed, event_datetime)
-                for latitude, longitude, speed, event_datetime in query
-            ]
-            return result
+            formatted_data = (
+                {
+                    "longitude": entry.latitude,
+                    "latitude": entry.longitude,
+                    "speed": entry.speed,
+                    "timestamp": entry.event_datetime,
+                    "event_type": get_status(entry.event_type),
+                }
+                for entry in query
+            )
+            return formatted_data
