@@ -47,6 +47,7 @@ class AssetPayload(BaseModel):
     asset_name: str
     asset_status: AssetStatus
     equipment_type_uuid: Optional[UUID] = None
+    device_imei: Optional[str] = None
     vin: Optional[str] = None
     marker_icon_uuid: UUID
     marker_color: str
@@ -71,6 +72,7 @@ class AssetInput(BaseModel):
     asset_name: str
     asset_status: AssetStatus
     equipment_type_uuid: Optional[UUID] = None
+    device_imei: Optional[str] = None
     vin: Optional[str] = None
     marker_icon_uuid: UUID
     marker_color: str
@@ -98,6 +100,8 @@ class AssetLocationFetch(BaseModel):
 
 class DriverPayload(BaseModel):
     asset_uuid: UUID
+    user_uuid: UUID
+    business_uuid: UUID
     first_name: str
     last_name: str
     phone_number: str

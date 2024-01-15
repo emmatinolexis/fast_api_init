@@ -30,6 +30,7 @@ class Asset(BaseModel):
     equipment_uuid = Column(
         UUID(as_uuid=True), ForeignKey("equipments.uuid"), nullable=False
     )
+    device_imei = Column(String(length=100), nullable=True, index=True)
     vin = Column(String(length=100), nullable=True, index=True)
     serial_number = Column(String(length=100), nullable=True, index=True)
     make = Column(String(length=100), nullable=True, index=True)
