@@ -100,6 +100,8 @@ class AssetLocationFetch(BaseModel):
 
 class DriverPayload(BaseModel):
     asset_uuid: UUID
+    user_uuid: UUID
+    business_uuid: UUID
     first_name: str
     last_name: str
     phone_number: str
