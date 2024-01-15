@@ -90,6 +90,46 @@ async def get_driver_by_uuid_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
+@router.get("/get_drivers_by_user_uuid/{user_uuid}", response_class=ORJSONResponse)
+@inject
+async def get_driver_by_user_uuid_handler(
+    user_uuid: str,
+    service: DriverService = Depends(Provide[Container.driver_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        driver = service.get_driver_by_user_uuid(user_uuid)
+        if driver is None:
+            return send_client_side_error(
+                user_msg=messages.DRIVER_NOT_FOUND + user_uuid
+            )
+        return send_data(driver)
+    except Exception as e:
+        msg = messages.GET_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get(
+    "/get_drivers_by_business_uuid/{business_uuid}", response_class=ORJSONResponse
+)
+@inject
+async def get_driver_by_business_uuid_handler(
+    business_uuid: str,
+    service: DriverService = Depends(Provide[Container.driver_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        driver = service.get_driver_by_business_uuid(business_uuid)
+        if driver is None:
+            return send_client_side_error(
+                user_msg=messages.DRIVER_NOT_FOUND + business_uuid
+            )
+        return send_data(driver)
+    except Exception as e:
+        msg = messages.GET_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
 @router.delete("/{uuid}", response_class=ORJSONResponse)
 @inject
 async def delete_driver_by_uuid_handler(

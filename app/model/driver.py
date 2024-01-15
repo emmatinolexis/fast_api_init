@@ -16,6 +16,10 @@ class Driver(BaseModel):
         nullable=False,
     )
     asset_uuid = Column(UUID(as_uuid=True), ForeignKey("assets.uuid"), nullable=False)
+    user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
+    business_uuid = Column(
+        UUID(as_uuid=True), ForeignKey("business_profiles.uuid"), nullable=False
+    )
     first_name = Column(String(length=30), nullable=False, index=True)
     last_name = Column(String(length=30), nullable=False, index=True)
     phone_number = Column(String(length=20), nullable=True, unique=True, index=True)

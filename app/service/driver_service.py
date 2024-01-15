@@ -22,6 +22,20 @@ class DriverService(BaseService):
         except Exception as e:
             raise e
 
+    def get_driver_by_user_uuid(self, user_uuid: str):
+        try:
+            driver = self.driver_repository.get_driver_by_user_uuid(user_uuid)
+            return driver
+        except Exception as e:
+            raise e
+
+    def get_driver_by_business_uuid(self, business_uuid: str):
+        try:
+            driver = self.driver_repository.get_driver_by_business_uuid(business_uuid)
+            return driver
+        except Exception as e:
+            raise e
+
     def update_driver(self, uuid: str, payload: DriverPayload):
         try:
             if self.asset_repository.read_by_uuid(payload.asset_uuid) is None:
