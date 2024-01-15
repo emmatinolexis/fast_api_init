@@ -62,7 +62,4 @@ def generateTimeRange(start=None, end=None):
     end = end.strftime("%H:%M") if end else "0"
     if end == start:
         end = "0"
-    return {
-        "start": start,
-        "end": end,
-    }
+    return f"{start} to {end}"
