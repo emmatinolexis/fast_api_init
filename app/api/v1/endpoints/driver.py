@@ -90,9 +90,9 @@ async def get_driver_by_uuid_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/drivers_by_users/{user_uuid}", response_class=ORJSONResponse)
+@router.get("/drivers_by_user/{user_uuid}", response_class=ORJSONResponse)
 @inject
-async def get_driver_by_user_uuid_handler(
+async def get_drivers_by_user_uuid_handler(
     user_uuid: str,
     service: DriverService = Depends(Provide[Container.driver_service]),
     current_user: User = Depends(get_current_user),
@@ -111,7 +111,7 @@ async def get_driver_by_user_uuid_handler(
 
 @router.get("/drivers_by_business/{business_uuid}", response_class=ORJSONResponse)
 @inject
-async def get_driver_by_business_uuid_handler(
+async def get_drivers_by_business_uuid_handler(
     business_uuid: str,
     service: DriverService = Depends(Provide[Container.driver_service]),
     current_user: User = Depends(get_current_user),
