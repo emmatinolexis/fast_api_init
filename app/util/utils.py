@@ -103,5 +103,7 @@ def get_status(status: str):
         return "idle"
     elif status == "Ignition_Off":
         return "stopped"
+    elif status == "Time_Interval_Tracking":
+        return "time_interval_tracking"
     else:
         return "unknown"

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 
 from app.core.logger import get_logger
 from app.repository.tracking_event_repository import TrackingEventRepository
@@ -47,10 +47,10 @@ class TrackingEventService(BaseService):
         except Exception as e:
             raise e
 
-    def get_route_replay_events_by_device_imei(self, device_imei: str):
+    def get_route_replay_events_by_device_imei(self, device_imei: str, date:date):
         try:
             return self.tracking_event_repository.read_all_route_replay_events_by_device_imei(
-                device_imei
+                device_imei, date
             )
 
         except Exception as e:
