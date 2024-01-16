@@ -47,12 +47,15 @@ class TrackingEventService(BaseService):
         except Exception as e:
             raise e
 
-    def get_route_replay_events_by_device_imei(self, device_imei: str):
+    def get_route_replay_events_by_device_imei(
+        self, device_imei: str, date: str, limit: int
+    ):
         try:
+            if not date:
+                date = datetime.now().strftime("%d/%m/%Y")
             return self.tracking_event_repository.read_all_route_replay_events_by_device_imei(
-                device_imei
+                device_imei, date, limit
             )
-
         except Exception as e:
             raise e
 
