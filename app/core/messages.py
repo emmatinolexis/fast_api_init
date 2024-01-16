@@ -19,6 +19,7 @@ EQUIPMENT_TYPE_NOT_FOUND = "No equipment type was found with the given uuid : "
 EQUIPMENT_NOT_FOUND = "No equipment was found with the given uuid : "
 DRIVER_NOT_FOUND = "No driver was found with the given uuid : "
 ONBOARDING_NOT_FOUND = "No onboarding was found with the given uuid : "
+NO_DATA = "No data available"
 
 PACKAGE_ITEM_ASSIGNED_SUCCESS = "Package item assigned successfully"
 
