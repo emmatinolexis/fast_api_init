@@ -47,6 +47,52 @@ class TrackingEventService(BaseService):
         except Exception as e:
             raise e
 
+    def get_events_by_user(self, user_uuid: str, date: str, limit: int):
+        try:
+            if not date:
+                date = datetime.now().strftime("%d/%m/%Y")
+
+            device_events = self.tracking_event_repository.read_all_events_by_user(
+                user_uuid, date, limit
+            )
+
+            if device_events is None:
+                return []
+            log.info(f"Number of events retrieved: {len(device_events)}")
+
+            response = []
+
+            for device_imei in device_events.items():
+                device_response = {
+                    "uuid": str,
+                    "device_imei": device_imei[0],
+                    "date": str(date),
+                    "events": [],
+                }
+
+                prev_end_time = None
+
+                for event in device_imei[1]:
+                    period = (
+                        generateTimeRange(prev_end_time, event.event_datetime)
+                        if prev_end_time
+                        else generateTimeRange(end=event.event_datetime)
+                    )
+
+                    device_response["events"].append(
+                        {
+                            "status": get_status(event.event_type),
+                            "period": period,
+                        }
+                    )
+
+                    prev_end_time = event.event_datetime
+
+                    response.append(device_response)
+            return response
+        except Exception as e:
+            raise e
+
     def get_route_replay_events_by_device_imei(
         self, device_imei: str, date: str, limit: int
     ):
