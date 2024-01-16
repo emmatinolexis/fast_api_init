@@ -1,7 +1,6 @@
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends
 from fastapi.responses import ORJSONResponse
-from datetime import date
 
 from app.core import messages
 from app.core.container import Container
@@ -39,7 +38,7 @@ async def get_tracking_details_handler(
 @router.get("/route_replay/{device_imei}", response_class=ORJSONResponse)
 @inject
 async def get_route_replay_tracking_details_handler(
-    device_imei: str, 
+    device_imei: str,
     service: TrackingEventService = Depends(Provide[Container.tracking_event_service]),
     current_user: User = Depends(get_current_user),
     date: str = None,

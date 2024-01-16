@@ -1,4 +1,4 @@
-from datetime import datetime, date
+from datetime import datetime
 
 from app.core.logger import get_logger
 from app.repository.tracking_event_repository import TrackingEventRepository

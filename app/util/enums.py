@@ -43,7 +43,7 @@ class AssetStatus(str, Enum):
     ACTIVE = "active"
     INACTIVE = "inactive"
     OFFLINE = "offline"
-    
+
 
 class UserRole(str, Enum):
     CUSTOMER = CUSTOMER_USER_ROLE

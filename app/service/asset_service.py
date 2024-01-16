@@ -52,7 +52,7 @@ class AssetService(BaseService):
                 raise NotFoundError(
                     detail=messages.MARKER_ICON_NOT_FOUND + str(asset.marker_icon_uuid)
                 )
-            
+
             created_asset = self.asset_repository.create(AssetInput(**asset.dict()))
             if asset.add_driver:
                 driver_data = DriverPayload(
