@@ -50,7 +50,7 @@ async def get_tracking_details_by_user_handler(
             return send_client_side_error(user_msg=messages.NO_DATA_FOUND)
         return send_data(events)
     except Exception as e:
-        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        msg = f"{messages.GET_FAILED} {msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
 
 
@@ -71,5 +71,5 @@ async def get_route_replay_tracking_details_handler(
             return send_client_side_error(user_msg=messages.NO_DATA_FOUND)
         return send_data(events)
     except Exception as e:
-        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        msg = f"{messages.GET_FAILED} {msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
