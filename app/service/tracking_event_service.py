@@ -57,22 +57,22 @@ class TrackingEventService(BaseService):
             )
 
             if device_events is None:
-                return []
+                return {}
+
             log.info(f"Number of events retrieved: {len(device_events)}")
 
-            response = []
+            response = {}
 
-            for device_imei in device_events.items():
+            for device_imei, events in device_events.items():
                 device_response = {
-                    "uuid": str,
-                    "device_imei": device_imei[0],
+                    "device_imei": device_imei,
                     "date": str(date),
                     "events": [],
                 }
 
                 prev_end_time = None
 
-                for event in device_imei[1]:
+                for event in events:
                     period = (
                         generateTimeRange(prev_end_time, event.event_datetime)
                         if prev_end_time
@@ -88,8 +88,10 @@ class TrackingEventService(BaseService):
 
                     prev_end_time = event.event_datetime
 
-                    response.append(device_response)
+                response[device_imei] = device_response
+
             return response
+
         except Exception as e:
             raise e
 
