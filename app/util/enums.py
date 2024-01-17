@@ -48,3 +48,11 @@ class AssetStatus(str, Enum):
 class UserRole(str, Enum):
     CUSTOMER = CUSTOMER_USER_ROLE
     ADMIN = ADMIN_USER_ROLE
+
+
+class EventStatus(str, Enum):
+    START_MOVING = ("Start_Moving",)
+    STOP_MOVING = ("Stop_Moving",)
+    IDLING_ALARM = ("Idling_Alarm",)
+    IGNITION_OFF = ("Ignition_off",)
+    TIME_INTERVAL_TRACKING = "Time_Interval_Tracking"

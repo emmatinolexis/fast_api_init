@@ -8,6 +8,7 @@ from fastapi.responses import ORJSONResponse
 from app.core.constants import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE
 from app.core.logger import get_logger
 from app.core.security import JWTBearer
+from app.util.enums import EventStatus
 
 log = get_logger()
 
@@ -95,15 +96,15 @@ def send_internal_server_error(user_msg: str, error: Any, status_code: int = 500
 
 
 def get_status(status: str):
-    if status == "Start_Moving":
+    if status == EventStatus.START_MOVING:
         return "moving"
-    elif status == "Stop_Moving" or status == "Ignition_Off":
+    elif status == EventStatus.STOP_MOVING or status == EventStatus.IGNITION_OFF:
         return "stopped"
-    elif status == "Idling_Alarm":
+    elif status == EventStatus.IDLING_ALARM:
         return "idle"
-    elif status == "Ignition_Off":
+    elif status == EventStatus.IGNITION_OFF:
         return "stopped"
-    elif status == "Time_Interval_Tracking":
+    elif status == EventStatus.TIME_INTERVAL_TRACKING:
         return "in_motion"
     else:
         return "unknown"
