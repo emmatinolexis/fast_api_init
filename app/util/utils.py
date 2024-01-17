@@ -8,7 +8,7 @@ from fastapi.responses import ORJSONResponse
 from app.core.constants import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE
 from app.core.logger import get_logger
 from app.core.security import JWTBearer
-from app.util.enums import EventStatus
+
 
 log = get_logger()
 
@@ -101,7 +101,7 @@ def get_status(status: str):
         "Stop_Moving": "stopped",
         "Ignition_Off": "stopped",
         "Idling_Alarm": "idle",
-        "Time_Interval_Tracking": "in_motion",
+        "Time_Interval_Tracking": "moving",
     }
 
     return status_mapping.get(status, "unknown")

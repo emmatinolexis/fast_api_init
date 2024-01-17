@@ -107,8 +107,8 @@ class TrackingEventRepository(BaseRepository):
             )
             formatted_data = (
                 {
-                    "longitude": entry.latitude,
-                    "latitude": entry.longitude,
+                    "lng": entry.latitude,
+                    "lat": entry.longitude,
                     "speed": entry.speed,
                     "timestamp": entry.event_datetime,
                     "event_type": get_status(entry.event_type),

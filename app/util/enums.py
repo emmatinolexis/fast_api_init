@@ -51,8 +51,8 @@ class UserRole(str, Enum):
 
 
 class EventStatus(str, Enum):
-    START_MOVING = ("Start_Moving",)
-    STOP_MOVING = ("Stop_Moving",)
-    IDLING_ALARM = ("Idling_Alarm",)
-    IGNITION_OFF = ("Ignition_off",)
+    START_MOVING = "Start_Moving"
+    STOP_MOVING = "Stop_Moving"
+    IDLING_ALARM = "Idling_Alarm"
+    IGNITION_OFF = "Ignition_off"
     TIME_INTERVAL_TRACKING = "Time_Interval_Tracking"
