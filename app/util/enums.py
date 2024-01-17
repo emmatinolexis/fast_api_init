@@ -36,13 +36,13 @@ class MaintenanceAlertSchedule(str, Enum):
 
 
 class AssetStatus(str, Enum):
+    PENDING_INSTALLATION = "pending_installation"
     STOP = "stop"
     IDDLE = "iddle"
     MOVING = "moving"
     ACTIVE = "active"
     INACTIVE = "inactive"
     OFFLINE = "offline"
-    PENDING_INSTALLATION = "pending_installation"
 
 
 class UserRole(str, Enum):
