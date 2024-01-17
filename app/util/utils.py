@@ -96,15 +96,12 @@ def send_internal_server_error(user_msg: str, error: Any, status_code: int = 500
 
 
 def get_status(status: str):
-    if status == EventStatus.START_MOVING:
-        return "moving"
-    elif status == EventStatus.STOP_MOVING or status == EventStatus.IGNITION_OFF:
-        return "stopped"
-    elif status == EventStatus.IDLING_ALARM:
-        return "idle"
-    elif status == EventStatus.IGNITION_OFF:
-        return "stopped"
-    elif status == EventStatus.TIME_INTERVAL_TRACKING:
-        return "in_motion"
-    else:
-        return "unknown"
+    status_mapping = {
+        "Start_Moving": "moving",
+        "Stop_Moving": "stopped",
+        "Ignition_Off": "stopped",
+        "Idling_Alarm": "idle",
+        "Time_Interval_Tracking": "in_motion",
+    }
+
+    return status_mapping.get(status, "unknown")
