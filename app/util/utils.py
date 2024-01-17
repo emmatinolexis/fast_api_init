@@ -9,7 +9,6 @@ from app.core.constants import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE
 from app.core.logger import get_logger
 from app.core.security import JWTBearer
 
-
 log = get_logger()
 
 
