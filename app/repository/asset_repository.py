@@ -21,6 +21,7 @@ class AssetRepository(BaseRepository):
             offset = (page - 1) * page_size
 
             query = session.query(self.model).filter(self.model.user_uuid == uuid)
+            total_assets = query.count()
 
             if asset_type_uuid is not None:
                 query = query.filter(self.model.asset_type_uuid == asset_type_uuid)
@@ -36,6 +37,5 @@ class AssetRepository(BaseRepository):
                 .options(joinedload(Asset.asset_type))
                 .all()
             )
-            total_assets = query.count()
 
             return assets, total_assets
