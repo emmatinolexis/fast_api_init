@@ -9,4 +9,5 @@ ALLOWED_EVENT_TYPES = [
     "Time_Interval_Tracking",
     "Time_Interval_Tracking_Moving",
     "Time_Interval_Tracking_Stopped",
+    "Time_Interval_Tracking_Idling",
 ]
