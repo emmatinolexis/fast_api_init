@@ -1,5 +1,5 @@
 from contextlib import AbstractContextManager
-from typing import Callable
+from typing import Callable, List, Tuple
 
 from sqlalchemy import desc
 from sqlalchemy.orm import Session, joinedload
@@ -15,12 +15,13 @@ class AssetRepository(BaseRepository):
 
     def read_all_assets_by_uuid(
         self, uuid: str, asset_type_uuid: str = None, page=1, page_size=10
-    ) -> Asset:
+    ) -> Tuple[List[Asset], int]:
         with self.session_factory() as session:
             # Calculate the offset based on the page and per_page values
             offset = (page - 1) * page_size
 
             query = session.query(self.model).filter(self.model.user_uuid == uuid)
+            total_assets = query.count()
 
             if asset_type_uuid is not None:
                 query = query.filter(self.model.asset_type_uuid == asset_type_uuid)
@@ -37,4 +38,4 @@ class AssetRepository(BaseRepository):
                 .all()
             )
 
-            return assets
+            return assets, total_assets

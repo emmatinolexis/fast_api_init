@@ -41,7 +41,7 @@ class AuthService(BaseService):
             db_user = self.user_repository.get_user_by_email_address(
                 login_info.email_address
             )
-            log.info("User found", db_user)
+            log.info("User found", extra={"user": db_user})
             if db_user is None:
                 raise NotFoundError(detail="User not found")
             if db_user.verifiedAt is None:
@@ -53,7 +53,7 @@ class AuthService(BaseService):
             access_token, expiration_datetime = generate_token_for_existing_user(
                 login_info, db_user
             )
-            log.info("Access token generated successfully", access_token)
+            log.info("Access token generated successfully")
             login_result = {
                 "access_token": access_token,
                 "expiration": expiration_datetime,
