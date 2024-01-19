@@ -80,6 +80,21 @@ class TrackingEventRepository(BaseRepository):
                 .order_by(self.model.event_datetime)
                 .all()
             )
+        # unique_entries = set()
+        # formatted_data = []
+
+        # for entry in query:
+        #     key = (entry.latitude, entry.longitude, entry.course)
+        #     if key not in unique_entries:
+        #         unique_entries.add(key)
+        #         formatted_data.append({
+        #             "lat": entry.latitude,
+        #             "lng": entry.longitude,
+        #             "speed": entry.speed,
+        #             "course": entry.course,
+        #             "timestamp": entry.event_datetime,
+        #             "event_type": get_status(entry.event_type),
+        #         })
             formatted_data = (
                 {
                     "lat": entry.latitude,
