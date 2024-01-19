@@ -103,6 +103,7 @@ def get_status(status: str):
         "Time_Interval_Tracking": "moving",
         "Time_Interval_Tracking_Moving": "moving",
         "Time_Interval_Tracking_Stopped": "stopped",
+        "Time_Interval_Tracking_Idling": "idle",
     }
 
     return status_mapping.get(status, "unknown")
