@@ -101,6 +101,8 @@ def get_status(status: str):
         "Ignition_Off": "stopped",
         "Idling_Alarm": "idle",
         "Time_Interval_Tracking": "moving",
+        "Time_Interval_Tracking_Moving": "moving",
+        "Time_Interval_Tracking_Stopped": "stopped",
     }
 
     return status_mapping.get(status, "unknown")

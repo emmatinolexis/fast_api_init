@@ -23,10 +23,9 @@ async def get_tracking_details_handler(
     current_user: User = Depends(get_current_user),
     device_imei: str = None,
     date: str = None,
-    limit: int = 100,
 ):
     try:
-        events = service.get_events_by_device_imei(device_imei, date, limit)
+        events = service.get_events_by_device_imei(device_imei, date)
         if events is None:
             return send_client_side_error(user_msg=messages.NO_DATA_FOUND)
         return send_data(events)
@@ -42,10 +41,9 @@ async def get_tracking_details_by_user_handler(
     service: TrackingEventService = Depends(Provide[Container.tracking_event_service]),
     current_user: User = Depends(get_current_user),
     date: str = None,
-    limit: int = 100,
 ):
     try:
-        events = service.get_events_by_user(user_uuid, date, limit)
+        events = service.get_events_by_user(user_uuid, date)
         if events is None:
             return send_client_side_error(user_msg=messages.NO_DATA_FOUND)
         return send_data(events)
@@ -61,12 +59,9 @@ async def get_route_replay_tracking_details_handler(
     service: TrackingEventService = Depends(Provide[Container.tracking_event_service]),
     current_user: User = Depends(get_current_user),
     date: str = None,
-    limit: int = 100,
 ):
     try:
-        events = service.get_route_replay_events_by_device_imei(
-            device_imei, date, limit
-        )
+        events = service.get_route_replay_events_by_device_imei(device_imei, date)
         if events is None:
             return send_client_side_error(user_msg=messages.NO_DATA_FOUND)
         return send_data(events)

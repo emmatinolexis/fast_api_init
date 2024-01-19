@@ -5,6 +5,7 @@ from typing import Callable, Dict, List
 from sqlalchemy import Date, cast
 from sqlalchemy.orm import Session
 
+from app.core.constants import ALLOWED_EVENT_TYPES
 from app.model.asset import Asset
 from app.model.tracking_event import TrackingEvent
 from app.repository.base_repository import BaseRepository
@@ -17,7 +18,7 @@ class TrackingEventRepository(BaseRepository):
         super().__init__(session_factory, TrackingEvent)
 
     def read_all_events_by_device_imei(
-        self, device_imei: str, date: str, limit: int
+        self, device_imei: str, date: str
     ) -> TrackingEvent:
         with self.session_factory() as session:
             query = (
@@ -26,24 +27,16 @@ class TrackingEventRepository(BaseRepository):
                     self.model.device_imei == device_imei,
                     cast(self.model.event_datetime, Date)
                     == datetime.strptime(date, "%d/%m/%Y"),
-                    self.model.event_type.in_(
-                        [
-                            "Stop_Moving",
-                            "Start_Moving",
-                            "Idling_Alarm",
-                            "Ignition_Off",
-                            "Time_Interval_Tracking",
-                        ]
-                    ),
+                    self.model.event_type.in_(ALLOWED_EVENT_TYPES),
                 )
-                .limit(limit)
+                .order_by(self.model.event_datetime)
                 .all()
             )
 
             return query
 
     def read_all_events_by_user(
-        self, user_uuid: str, date: str, limit: int
+        self, user_uuid: str, date: str
     ) -> Dict[str, List[TrackingEvent]]:
         with self.session_factory() as session:
             # get all device imei for user's assets
@@ -63,17 +56,9 @@ class TrackingEventRepository(BaseRepository):
                         self.model.device_imei == device_imei,
                         cast(self.model.event_datetime, Date)
                         == datetime.strptime(date, "%d/%m/%Y"),
-                        self.model.event_type.in_(
-                            [
-                                "Stop_Moving",
-                                "Start_Moving",
-                                "Idling_Alarm",
-                                "Ignition_Off",
-                                "Time_Interval_Tracking",
-                            ]
-                        ),
+                        self.model.event_type.in_(ALLOWED_EVENT_TYPES),
                     )
-                    .limit(limit)
+                    .order_by(self.model.event_datetime)
                     .all()
                 )
 
@@ -82,9 +67,7 @@ class TrackingEventRepository(BaseRepository):
 
             return events_by_device
 
-    def read_all_route_replay_events_by_device_imei(
-        self, device_imei: str, date: str, limit: int
-    ):
+    def read_all_route_replay_events_by_device_imei(self, device_imei: str, date: str):
         with self.session_factory() as session:
             query = (
                 session.query(self.model)
@@ -92,17 +75,9 @@ class TrackingEventRepository(BaseRepository):
                     self.model.device_imei == device_imei,
                     cast(self.model.event_datetime, Date)
                     == datetime.strptime(date, "%d/%m/%Y"),
-                    self.model.event_type.in_(
-                        [
-                            "Stop_Moving",
-                            "Start_Moving",
-                            "Idling_Alarm",
-                            "Ignition_Off",
-                            "Time_Interval_Tracking",
-                        ]
-                    ),
+                    self.model.event_type.in_(ALLOWED_EVENT_TYPES),
                 )
-                .limit(limit)
+                .order_by(self.model.event_datetime)
                 .all()
             )
             formatted_data = (
