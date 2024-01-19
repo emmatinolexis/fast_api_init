@@ -85,6 +85,7 @@ class TrackingEventRepository(BaseRepository):
                     "lat": entry.latitude,
                     "lng": entry.longitude,
                     "speed": entry.speed,
+                    "course": entry.course,
                     "timestamp": entry.event_datetime,
                     "event_type": get_status(entry.event_type),
                 }
