@@ -15,9 +15,9 @@ class TrackingEvent(Base):
         unique=True,
         nullable=False,
     )
-    device_uuid = Column(UUID, nullable=False)
-    device_imei = Column(String(15), nullable=False)
-    event_type = Column(String(50), nullable=False)
+    device_uuid = Column(UUID, nullable=False, index=True)
+    device_imei = Column(String(15), nullable=False, index=True)
+    event_type = Column(String(50), nullable=False, index=True)
     event_description = Column(String(255))
     event_datetime = Column(DateTime, nullable=False)
     valid = Column(Boolean, nullable=False)

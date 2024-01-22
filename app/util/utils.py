@@ -92,3 +92,18 @@ def send_internal_server_error(user_msg: str, error: Any, status_code: int = 500
             "devMsg": str(error),
         },
     )
+
+
+def get_status(status: str):
+    status_mapping = {
+        "Start_Moving": "moving",
+        "Stop_Moving": "stopped",
+        "Ignition_Off": "stopped",
+        "Idling_Alarm": "idle",
+        "Time_Interval_Tracking": "moving",
+        "Time_Interval_Tracking_Moving": "moving",
+        "Time_Interval_Tracking_Stopped": "stopped",
+        "Time_Interval_Tracking_Idling": "idle",
+    }
+
+    return status_mapping.get(status, "unknown")
