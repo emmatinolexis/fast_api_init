@@ -6,7 +6,7 @@ from app.util.enums import ActiveStatus
 
 
 class DevicePayload(BaseModel):
-    manufacturer_uuid: UUID
+    device_manufacturer_uuid: UUID
     device_name: str
     description: str = None
     device_serial_no: str

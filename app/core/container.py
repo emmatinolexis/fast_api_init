@@ -81,6 +81,7 @@ class Container(containers.DeclarativeContainer):
             "app.api.v1.endpoints.tracking",
             "app.core.dependencies",
             "app.api.v1.endpoints.device",
+            "app.api.v1.endpoints.device_manufacturers",
         ]
     )
 
@@ -253,13 +254,12 @@ class Container(containers.DeclarativeContainer):
         driver_repository=driver_repository,
         asset_repository=asset_repository,
     )
-    device_service = providers.Factory(
-        device_service.DeviceService, device_repository=device_repository
-    )
-
     device_manufacturer_service = providers.Factory(
         device_manufacturer_service.DeviceManufacturerService,
         device_manufacturer_repository=device_manufacturer_repository,
+    )
+    device_service = providers.Factory(
+        device_service.DeviceService, device_repository=device_repository
     )
     equipment_type_service = providers.Factory(
         equipment_type_service.EquipmentTypeService,

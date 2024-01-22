@@ -3,7 +3,7 @@ from typing import Callable
 
 from sqlalchemy.orm import Session
 
-from app.model.device_manufacturer import DeviceManufacturer
+from app.model.device import DeviceManufacturer
 from app.repository.base_repository import BaseRepository
 
 
