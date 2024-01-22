@@ -30,22 +30,42 @@ class TrackingEventService(BaseService):
 
             response = {"uuid": events[0].device_uuid, "date": str(date), "events": []}
 
-            prev_end_time = None
+            current_event = None
             for event in events:
-                end_time = event.event_datetime
-                period = (
-                    generateTimeRange(prev_end_time, end_time)
-                    if prev_end_time
-                    else generateTimeRange(end=end_time)
-                )
-                if "0 to" not in period:
-                    response["events"].append(
-                        {
+                if current_event is None:
+                    current_event = {
+                        "status": get_status(event.event_type),
+                        "start_time": event.event_datetime,
+                        "end_time": event.event_datetime,
+                    }
+                else:
+                    if current_event["status"] == get_status(event.event_type):
+                        current_event["end_time"] = event.event_datetime
+                    else:
+                        response["events"].append(
+                            {
+                                "status": current_event["status"],
+                                "period": generateTimeRange(
+                                    current_event["start_time"],
+                                    current_event["end_time"],
+                                ),
+                            }
+                        )
+                        current_event = {
                             "status": get_status(event.event_type),
-                            "period": period,
+                            "start_time": event.event_datetime,
+                            "end_time": event.event_datetime,
                         }
-                    )
-                prev_end_time = end_time
+            # Append the last event
+            if current_event is not None:
+                response["events"].append(
+                    {
+                        "status": current_event["status"],
+                        "period": generateTimeRange(
+                            current_event["start_time"], current_event["end_time"]
+                        ),
+                    }
+                )
             log.info(f"Number of events retrieved: {len(response['events'])}")
             return response
         except Exception as e:
