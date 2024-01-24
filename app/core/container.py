@@ -15,6 +15,8 @@ from app.repository import (
     asset_type_repository,
     business_profile_repository,
     contact_sale_repository,
+    device_manufacturer_repository,
+    device_repository,
     driver_repository,
     email_verification_repository,
     equipment_repository,
@@ -40,6 +42,8 @@ from app.service import (
     asset_type_service,
     auth_service,
     contact_sale_service,
+    device_manufacturer_service,
+    device_service,
     driver_service,
     equipment_service,
     equipment_type_service,
@@ -76,6 +80,8 @@ class Container(containers.DeclarativeContainer):
             "app.api.v1.endpoints.onboarding",
             "app.api.v1.endpoints.tracking",
             "app.core.dependencies",
+            "app.api.v1.endpoints.device",
+            "app.api.v1.endpoints.device_manufacturers",
         ]
     )
 
@@ -142,6 +148,13 @@ class Container(containers.DeclarativeContainer):
     )
     driver_repository = providers.Factory(
         driver_repository.DriverRepository, session_factory=db.provided.session
+    )
+    device_repository = providers.Factory(
+        device_repository.DeviceRepository, session_factory=db.provided.session
+    )
+    device_manufacturer_repository = providers.Factory(
+        device_manufacturer_repository.DeviceManufacturerRepository,
+        session_factory=db.provided.session,
     )
     equipment_type_repository = providers.Factory(
         equipment_type_repository.EquipmentTypeRepository,
@@ -240,6 +253,13 @@ class Container(containers.DeclarativeContainer):
         driver_service.DriverService,
         driver_repository=driver_repository,
         asset_repository=asset_repository,
+    )
+    device_manufacturer_service = providers.Factory(
+        device_manufacturer_service.DeviceManufacturerService,
+        device_manufacturer_repository=device_manufacturer_repository,
+    )
+    device_service = providers.Factory(
+        device_service.DeviceService, device_repository=device_repository
     )
     equipment_type_service = providers.Factory(
         equipment_type_service.EquipmentTypeService,
