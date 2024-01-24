@@ -22,4 +22,7 @@ class BusinessProfile(BaseModel):
     business_location = Column(String(length=100), nullable=True, index=True)
     business_logo = Column(String(length=100), nullable=True, index=True)
     business_address = Column(String(length=100), nullable=True, index=True)
-    users = relationship("User", uselist=True, back_populates="business_profile")
+    users = relationship(
+        "User",
+        back_populates="business_profile",
+    )

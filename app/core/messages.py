@@ -15,6 +15,11 @@ DEVICE_NOT_FOUND = "No device was found with the given uuid : "
 DEVICE_MANUFACTURER_NOT_FOUND = (
     "No device manufacturer was found with the given uuid : "
 )
+SUBSCRIPTION_NOT_FOUND = "No subscription was found with the given uuid : "
+SUBSCRIPTION_PAYMENT_NOT_FOUND = (
+    "No subscription payment was found with the given uuid : "
+)
+PAYMENT_NOT_FOUND = "No payment was found with the given uuid : "
 ASSET_LOCATION_NOT_FOUND = "No asset location was found with the given uuid : "
 FEATURE_NOT_FOUND = "No feature was found with the given uuid : "
 PACKAGE_ITEM_NOT_FOUND = "No package item was found with the given uuid : "

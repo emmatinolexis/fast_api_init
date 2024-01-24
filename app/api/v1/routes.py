@@ -25,6 +25,11 @@ from app.api.v1.endpoints.organisation_contact import (
 )
 from app.api.v1.endpoints.package import router as package_router
 from app.api.v1.endpoints.package_item import router as package_item_router
+from app.api.v1.endpoints.payment import router as payment_router
+from app.api.v1.endpoints.subscription import router as subscription_router
+from app.api.v1.endpoints.subscription_payment import (
+    router as subscription_payment_router,
+)
 from app.api.v1.endpoints.tracking import router as tracking_router
 from app.api.v1.endpoints.users import router as users_router
 
@@ -51,6 +56,9 @@ router_list = [
     organisation_contact_router,
     onboarding_router,
     tracking_router,
+    subscription_router,
+    payment_router,
+    subscription_payment_router,
 ]
 
 for router in router_list:
