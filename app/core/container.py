@@ -29,6 +29,9 @@ from app.repository import (
     organisation_contact_repository,
     package_item_repository,
     package_repository,
+    payment_repository,
+    subscription_payment_repository,
+    subscription_repository,
     tracking_event_repository,
     user_organisation_assignment_repository,
     user_repository,
@@ -53,6 +56,9 @@ from app.service import (
     organisation_contact_service,
     package_item_service,
     package_service,
+    payment_service,
+    subscription_payment_service,
+    subscription_service,
     tracking_event_service,
     user_service,
 )
@@ -82,6 +88,9 @@ class Container(containers.DeclarativeContainer):
             "app.core.dependencies",
             "app.api.v1.endpoints.device",
             "app.api.v1.endpoints.device_manufacturers",
+            "app.api.v1.endpoints.subscription",
+            "app.api.v1.endpoints.payment",
+            "app.api.v1.endpoints.subscription_payment",
         ]
     )
 
@@ -199,6 +208,18 @@ class Container(containers.DeclarativeContainer):
         tracking_event_repository.TrackingEventRepository,
         session_factory=db.provided.session,
     )
+    subscription_repository = providers.Factory(
+        subscription_repository.SubscriptionRepository,
+        session_factory=db.provided.session,
+    )
+    subscription_payment_repository = providers.Factory(
+        subscription_payment_repository.SubscriptionPaymentRepository,
+        session_factory=db.provided.session,
+    )
+    payment_repository = providers.Factory(
+        payment_repository.PaymentRepository,
+        session_factory=db.provided.session,
+    )
 
     # Services
     auth_service = providers.Factory(
@@ -306,4 +327,16 @@ class Container(containers.DeclarativeContainer):
     tracking_event_service = providers.Factory(
         tracking_event_service.TrackingEventService,
         tracking_event_repository=tracking_event_repository,
+    )
+    subscription_service = providers.Factory(
+        subscription_service.SubscriptionService,
+        subscription_repository=subscription_repository,
+    )
+    subscription_payment_service = providers.Factory(
+        subscription_payment_service.SubscriptionPaymentService,
+        subscription_payment_repository=subscription_payment_repository,
+    )
+    payment_service = providers.Factory(
+        payment_service.PaymentService,
+        payment_repository=payment_repository,
     )
