@@ -22,4 +22,4 @@ class PackageItemAssignment(BaseModel):
     package_item_uuid = Column(
         UUID(as_uuid=True), ForeignKey("package_items.uuid"), nullable=False
     )
-    package_items = relationship("PackageItem", uselist=True, lazy="joined")
+    package_item = relationship("PackageItem", uselist=False, lazy="joined")

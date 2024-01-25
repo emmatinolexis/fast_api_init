@@ -7,7 +7,6 @@ from sqlalchemy.orm import Session, joinedload
 from app.model.package import Package
 from app.model.subscription import Subscription
 from app.model.user import User
-
 from app.repository.base_repository import BaseRepository
 
 
