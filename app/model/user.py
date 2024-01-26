@@ -40,3 +40,4 @@ class User(BaseModel):
     user_verification = relationship(
         "EmailVerification", uselist=False, back_populates="user"
     )
+    # business_profile_assignments = relationship(UserOrganisationAssignment, back_populates='user')

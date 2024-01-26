@@ -6,11 +6,32 @@ from app.core.constants import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE
 class AccountType(str, Enum):
     BUSINESS = "business"
     INDIVIDUAL = "individual"
+    ADMIN = "admin"
 
 
 class ActiveStatus(str, Enum):
     ACTIVE = "active"
     INACTIVE = "inactive"
+
+
+class PaymentTypes(str, Enum):
+    SUBSCRIPTION_PAYMENT = "subscription_payment"
+
+
+class PaymentStatus(str, Enum):
+    SUCCESS = ("success",)
+    PENDING = ("pending",)
+    FAILED = ("failed",)
+
+
+class SubscriptionTypes(str, Enum):
+    INDIVIDUAL_PACKAGE_SUBSCRIPTION = "individual_package_subscription"
+    BUSINESS_PACKAGE_SUBSCRIPTION = "business_package_subscription"
+
+
+class SubscriptionPeriod(str, Enum):
+    MONTHLY = "monthly"
+    YEARLY = "yearly"
 
 
 class ContactSaleStatus(str, Enum):
