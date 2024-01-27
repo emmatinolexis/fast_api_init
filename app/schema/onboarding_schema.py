@@ -6,7 +6,7 @@ from app.util.enums import AccountType
 
 
 class OnboardingPayload(BaseModel):
-    number_of_assets: int
+    number_of_assets: str
     number_of_months: int
     package_uuid: UUID
     user_uuid: UUID
@@ -17,7 +17,7 @@ class OnboardingPayload(BaseModel):
 
 
 class OnboardingUpdatePayload(BaseModel):
-    number_of_assets: int
+    number_of_assets: str
     number_of_months: int
 
     class Config:
@@ -26,7 +26,7 @@ class OnboardingUpdatePayload(BaseModel):
 
 class OnboardingIndividualInput(BaseModel):
     asset_type_uuid: UUID
-    number_of_assets: int
+    number_of_assets: str
     number_of_months: int
     package_uuid: UUID
     user_uuid: UUID
@@ -34,14 +34,14 @@ class OnboardingIndividualInput(BaseModel):
 
 
 class OnboardingBusinessInput(BaseModel):
-    number_of_assets: int
+    number_of_assets: str
     user_uuid: UUID
     onboarding_type: AccountType
 
 
 class BusinessOnboardingPayload(BaseModel):
     asset_types_uuid: list[UUID]
-    number_of_assets: int
+    number_of_assets: str
     user_uuid: UUID
     features_uuid: list[UUID]
 
