@@ -73,7 +73,7 @@ class UserRepository(BaseRepository):
             session.commit()
             session.refresh(user)
 
-            return "Password updated successfully"
+            return user
 
     def update_user_onboard_status(self, uuid):
         with self.session_factory() as session:
