@@ -9,7 +9,7 @@ from app.core.dependencies import get_current_user
 from app.core.exceptions import NotFoundError
 from app.core.security import extract_user_data
 from app.model.user import User
-from app.schema.user_schema import UpdateUserPayload, UserPayload
+from app.schema.user_schema import UpdateUserPayload, UserPayload, UserUpdatePassword
 from app.service.user_service import UserService
 from app.util.utils import (
     allow_admins_only,
@@ -94,6 +94,28 @@ async def get_user_by_email(
                 user_msg=messages.USER_NOT_FOUND + email_address
             )
         return send_data(extract_user_data(user))
+    except Exception as e:
+        msg = messages.GET_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.put("/change_password/{user_uuid}", response_class=ORJSONResponse)
+@inject
+async def change_password(
+    user_uuid: str,
+    payload: UserUpdatePassword,
+    service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        user = service.change_password(
+            user_uuid, payload.old_password, payload.new_password
+        )
+        if user is None:
+            return send_client_side_error(
+                user_msg=messages.USER_NOT_FOUND + user_uuid,
+            )
+        return send_data(user)
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)

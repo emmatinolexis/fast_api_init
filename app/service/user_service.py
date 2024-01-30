@@ -34,3 +34,12 @@ class UserService(BaseService):
             return user if user else None
         except Exception as e:
             raise e
+
+    def change_password(self, user_uuid: str, old_password: str, new_password: str):
+        try:
+            return self.user_repository.change_password(
+                user_uuid, old_password, new_password
+            )
+
+        except Exception as e:
+            raise e
