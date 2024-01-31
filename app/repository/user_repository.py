@@ -52,7 +52,13 @@ class UserRepository(BaseRepository):
                 .first()
             )
 
-    def change_password(self, user_uuid: str, old_password: str, new_password: str):
+    def change_password(
+        self,
+        user_uuid: str,
+        old_password: str,
+        new_password: str,
+        password_confirmation: str,
+    ):
         with self.session_factory() as session:
             user = (
                 session.query(self.model).filter(self.model.uuid == user_uuid).first()
@@ -61,6 +67,10 @@ class UserRepository(BaseRepository):
             # Check if the user exists
             if not user:
                 raise Exception("User not found")
+
+            # check if new password and confirm password match
+            if not new_password == password_confirmation:
+                raise Exception("New password and confirm password does not match")
 
             # Compare the old password with the stored hashed password
             if not verify_password(old_password, user.password):

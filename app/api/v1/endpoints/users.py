@@ -109,7 +109,10 @@ async def change_password(
 ):
     try:
         user = service.change_password(
-            user_uuid, payload.old_password, payload.new_password
+            user_uuid,
+            payload.old_password,
+            payload.new_password,
+            payload.password_confirmation,
         )
         if user is None:
             return send_client_side_error(

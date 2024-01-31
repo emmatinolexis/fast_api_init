@@ -48,6 +48,7 @@ class UserEmail(BaseModel):
 class UserUpdatePassword(BaseModel):
     old_password: str
     new_password: str
+    password_confirmation: str
 
     class Config:
         orm_model = True
