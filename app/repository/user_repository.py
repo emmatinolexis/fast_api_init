@@ -6,7 +6,7 @@ from pydantic import EmailStr
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.exceptions import NotFoundError
-from app.core.security import hash_user_password
+from app.core.security import hash_user_password, verify_password
 from app.core.settings import settings
 from app.model.business_profile import BusinessProfile
 from app.model.email_verification import EmailVerification
@@ -51,6 +51,39 @@ class UserRepository(BaseRepository):
                 .filter(self.model.phone_number == phone_number)
                 .first()
             )
+
+    def change_password(
+        self,
+        user_uuid: str,
+        old_password: str,
+        new_password: str,
+        password_confirmation: str,
+    ):
+        with self.session_factory() as session:
+            user = (
+                session.query(self.model).filter(self.model.uuid == user_uuid).first()
+            )
+
+            # Check if the user exists
+            if not user:
+                raise Exception("User not found")
+
+            # check if new password and confirm password match
+            if not new_password == password_confirmation:
+                raise Exception("New password and confirm password does not match")
+
+            # Compare the old password with the stored hashed password
+            if not verify_password(old_password, user.password):
+                raise Exception("Incorrect old password provided")
+
+            # Update the password with the new hashed password
+            user.password = hash_user_password(new_password)
+
+            # Commit the changes to the database
+            session.commit()
+            session.refresh(user)
+
+            return user
 
     def update_user_onboard_status(self, uuid):
         with self.session_factory() as session:
