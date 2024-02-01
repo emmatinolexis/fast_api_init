@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     )  # 60 minutes * 24 hours * 7 days = 7 days
     AUTH_ALGORITHM: str = os.getenv("AUTH_ALGORITHM", "HS256")
     VERIFY_TOKEN_EXPIRE_DAYS: int = os.getenv("VERIFY_TOKEN_EXPIRE_DAYS", 3)
+    PASSWORD_RESET_TOKEN_EXPIRE_DAYS: int = os.getenv(
+        "PASSWORD_RESET_TOKEN_EXPIRE_DAYS", 3
+    )
 
     # database
     DB_USER: str = os.getenv("DB_USER", "mvi_tracking_user")
@@ -63,9 +66,18 @@ class Settings(BaseSettings):
     MAIL_USERNAME: str = os.getenv("MAIL_USERNAME", "")
     MAIL_PASSWORD: str = os.getenv("MAIL_PASSWORD", "")
     MAIL_SUBJECT: str = os.getenv("MAIL_SUBJECT", "MVI tracking email verification")
+    PASSWORD_RESET_MAIL_SUBJECT: str = os.getenv(
+        "PASSWORD_RESET_MAIL_SUBJECT", "MVI tracking password reset"
+    )
+
     MAIL_VERIFICATION_MESSAGE: str = os.getenv(
         "MAIL_VERIFICATION_MESSAGE",
         "Please use the button link below to verify your account and get started with MVI tracking solutions.",
+    )
+
+    PASSWORD_RESET_MAIL_VERIFICATION_MESSAGE: str = os.getenv(
+        "PASSWORD_RESET_MAIL_VERIFICATION_MESSAGE",
+        "Please use the button link below to reset your password",
     )
 
     # mqtt

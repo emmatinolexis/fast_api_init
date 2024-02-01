@@ -1,4 +1,5 @@
 import random
+import secrets
 import string
 from datetime import datetime, timedelta
 from typing import Dict, List, Union
@@ -144,6 +145,10 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
+
+
+def generate_reset_token():
+    return secrets.token_urlsafe(64)
 
 
 class JWTBearer(HTTPBearer):
