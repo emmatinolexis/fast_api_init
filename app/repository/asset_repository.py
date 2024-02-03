@@ -39,3 +39,13 @@ class AssetRepository(BaseRepository):
             )
 
             return assets, total_assets
+
+    def assign_device_imei(self, asset_uuid, imei: str) -> Asset:
+        with self.session_factory() as session:
+            asset = (
+                session.query(self.model).filter(self.model.uuid == asset_uuid).first()
+            )
+            asset.device_imei = imei
+            session.commit()
+            session.refresh(asset)
+            return asset

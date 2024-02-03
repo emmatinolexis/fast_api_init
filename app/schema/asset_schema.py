@@ -85,6 +85,13 @@ class AssetInput(BaseModel):
         orm_model = True
 
 
+class AssignDeviceInputPayload(BaseModel):
+    device_imei: str
+
+    class Config:
+        orm_model = True
+
+
 class AssetLocationPayload(BaseModel):
     asset_uuid: UUID
     longitude: Longitude

@@ -77,3 +77,10 @@ class AssetService(BaseService):
             )
         except Exception as e:
             raise e
+
+    def assign_device_imei(self, uuid: str, imei: str):
+        try:
+            asset = self.asset_repository.assign_device_imei(uuid, imei)
+            return asset
+        except Exception as e:
+            raise e

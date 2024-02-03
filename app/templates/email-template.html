@@ -54,7 +54,8 @@
       </p>
       <p style="font-size: 20px">{{message}}</p>
       <a
-        href="https://mvitracking-frontend.vercel.app/authentication/email-verification/{{verify_token}}"
+{#        href="https://mvitracking-frontend.vercel.app/authentication/email-verification/{{verify_token}}"#}
+              href="{{ url }}{{verify_token}} "
         style="color: white"
       >
         <button
@@ -69,7 +70,7 @@
             cursor: pointer;
           "
         >
-          Verify Email
+          {{ btn }}
         </button>
       </a>
       <p style="font-size: 20px">
