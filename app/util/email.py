@@ -44,7 +44,13 @@ def get_email_config() -> ConnectionConfig:
 
 
 async def send_email(
-    subject, recipient_name, email, message, token=""
+    subject,
+    recipient_name,
+    email,
+    message,
+    url,
+    btn,
+    token="",
 ) -> Dict[str, str]:
     try:
         msg = MessageSchema(
@@ -54,6 +60,8 @@ async def send_email(
                 "message": message,
                 "recipient_name": recipient_name,
                 "verify_token": token,
+                "url": url,
+                "btn": btn,
             },
             subtype=MessageType.html,
         )

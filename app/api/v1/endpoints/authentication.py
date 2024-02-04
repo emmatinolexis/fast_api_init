@@ -83,6 +83,8 @@ async def verify_user_email(
                     recipient_name=user.first_name,
                     email=user.email_address,
                     message=settings.MAIL_VERIFICATION_MESSAGE,
+                    url=settings.VERIFY_EMAIL_URL,
+                    btn=settings.VERIFY_BTN,
                     token=token,
                 )
             except Exception as e:

@@ -74,6 +74,17 @@ class Settings(BaseSettings):
         "MAIL_VERIFICATION_MESSAGE",
         "Please use the button link below to verify your account and get started with MVI tracking solutions.",
     )
+    VERIFY_EMAIL_URL: str = os.getenv(
+        "VERIFY_EMAIL_URL",
+        "https://mvitracking-frontend.vercel.app/authentication/email-verification/",
+    )
+    RESET_PASSWORD_URL: str = os.getenv(
+        "RESET_PASSWORD_URL",
+        "https://mvitracking-frontend.vercel.app/authentication/set-password/",
+    )
+
+    RESET_BTN: str = os.getenv("RESET_BTN", "Reset Password")
+    VERIFY_BTN: str = os.getenv("VERIFY_BTN", "Verify Email")
 
     PASSWORD_RESET_MAIL_VERIFICATION_MESSAGE: str = os.getenv(
         "PASSWORD_RESET_MAIL_VERIFICATION_MESSAGE",

@@ -5,7 +5,6 @@ from typing import Callable
 from pydantic import EmailStr
 from sqlalchemy.orm import Session, joinedload
 
-from app.core.exceptions import NotFoundError
 from app.core.security import hash_user_password, verify_password
 from app.core.settings import settings
 from app.model.business_profile import BusinessProfile
@@ -29,9 +28,19 @@ class UserRepository(BaseRepository):
                 user_to_update = (
                     session.query(self.model).filter(self.model.uuid == uuid).first()
                 )
-                if user_to_update is None:
-                    raise NotFoundError(detail=uuid)
-                return self.update_by_uuid(uuid, user)
+                if user is None:
+                    raise Exception("User not found")
+
+                # return self.update_by_uuid(uuid, user)
+                user_to_update.location = user.location
+                user_to_update.address = user.address
+                user_to_update.phone_number = user.phone_number
+
+                # Commit the changes to the database
+                session.commit()
+                session.refresh(user_to_update)
+
+                return user_to_update
         except Exception as e:
             raise e
 

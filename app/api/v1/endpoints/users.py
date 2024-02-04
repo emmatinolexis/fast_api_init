@@ -6,7 +6,6 @@ from pydantic import EmailStr
 from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
-from app.core.exceptions import NotFoundError
 from app.core.security import extract_user_data
 from app.core.settings import settings
 from app.model.user import User
@@ -82,11 +81,9 @@ async def update_user(
             return send_client_side_error(
                 user_msg=messages.USER_NOT_FOUND + uuid,
             )
-        return send_data(extract_user_data(user))
-    except NotFoundError as e:
-        return send_client_side_error(user_msg=messages.USER_NOT_FOUND + str(e.detail))
+        return send_data(user)
     except Exception as e:
-        msg = messages.UPDATE_FAILED + msg_prefix
+        msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
 
 
@@ -147,7 +144,7 @@ async def send_password_link_handler(
                 user_msg=f"Email address : {email_address} does not exist",
             )
         reset_password_token = service.reset_password(found_user.uuid)
-        # return reset_password_token
+
         if reset_password_token:
             try:
                 # send verification email
@@ -156,6 +153,8 @@ async def send_password_link_handler(
                     recipient_name=found_user.first_name,
                     email=email_address,
                     message=settings.PASSWORD_RESET_MAIL_VERIFICATION_MESSAGE,
+                    url=settings.RESET_PASSWORD_URL,
+                    btn=settings.RESET_BTN,
                     token=reset_password_token,
                 )
             except Exception as e:
@@ -163,7 +162,11 @@ async def send_password_link_handler(
                     user_msg="Could not send password reset email", error=e
                 )
             reset_message = f"Password reset link sent to: {email_address}"
-        return send_info(reset_message)
+            return send_info(reset_message)
+        else:
+            return send_internal_server_error(
+                user_msg="Invalid Token", error="Error sending password reset link"
+            )
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)

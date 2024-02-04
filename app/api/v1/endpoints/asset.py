@@ -7,7 +7,7 @@ from app.core.container import Container
 from app.core.dependencies import get_current_user
 from app.core.exceptions import NotFoundError
 from app.model.user import User
-from app.schema.asset_schema import AssetPayload
+from app.schema.asset_schema import AssetPayload, AssignDeviceInputPayload
 from app.service.asset_service import AssetService
 from app.util.utils import (
     send_client_side_error,
@@ -108,4 +108,19 @@ async def delete_asset_handler(
         return send_client_side_error(user_msg=messages.ASSET_NOT_FOUND + str(e.detail))
     except Exception as e:
         msg = messages.DELETE_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.post("/{asset_uuid}", response_class=ORJSONResponse)
+@inject
+async def assign_device_to_asset(
+    asset_uuid: str,
+    payload: AssignDeviceInputPayload,
+    service: AssetService = Depends(Provide[Container.asset_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        return service.assign_device_imei(asset_uuid, payload.device_imei)
+    except Exception as e:
+        msg = messages.UPDATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
