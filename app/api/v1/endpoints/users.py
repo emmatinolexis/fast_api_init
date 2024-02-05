@@ -6,15 +6,23 @@ from pydantic import EmailStr
 from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
-from app.core.exceptions import NotFoundError
 from app.core.security import extract_user_data
+from app.core.settings import settings
 from app.model.user import User
-from app.schema.user_schema import UpdateUserPayload, UserPayload
+from app.schema.user_schema import (
+    ResetPasswordPayload,
+    UpdateUserPayload,
+    UserPayload,
+    UserUpdatePassword,
+)
+from app.service.reset_password_service import ResetPassword
 from app.service.user_service import UserService
+from app.util.email import send_email
 from app.util.utils import (
     allow_admins_only,
     send_client_side_error,
     send_data,
+    send_info,
     send_internal_server_error,
 )
 
@@ -73,11 +81,9 @@ async def update_user(
             return send_client_side_error(
                 user_msg=messages.USER_NOT_FOUND + uuid,
             )
-        return send_data(extract_user_data(user))
-    except NotFoundError as e:
-        return send_client_side_error(user_msg=messages.USER_NOT_FOUND + str(e.detail))
+        return send_data(user)
     except Exception as e:
-        msg = messages.UPDATE_FAILED + msg_prefix
+        msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
 
 
@@ -94,6 +100,89 @@ async def get_user_by_email(
                 user_msg=messages.USER_NOT_FOUND + email_address
             )
         return send_data(extract_user_data(user))
+    except Exception as e:
+        msg = messages.GET_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.put("/change_password/{user_uuid}", response_class=ORJSONResponse)
+@inject
+async def change_password(
+    user_uuid: str,
+    payload: UserUpdatePassword,
+    service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        user = service.change_password(
+            user_uuid,
+            payload.old_password,
+            payload.new_password,
+            payload.password_confirmation,
+        )
+        if user is None:
+            return send_client_side_error(
+                user_msg=messages.USER_NOT_FOUND + user_uuid,
+            )
+        return send_data(user)
+    except Exception as e:
+        msg = messages.GET_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.post("/reset_password/{email_address}", response_class=ORJSONResponse)
+@inject
+async def send_password_link_handler(
+    email_address: str,
+    service: ResetPassword = Depends(Provide[Container.reset_password_service]),
+    user_service: UserService = Depends(Provide[Container.user_service]),
+):
+    try:
+        found_user = user_service.get_user_by_email_address(email_address)
+        if not found_user:
+            return send_client_side_error(
+                user_msg=f"Email address : {email_address} does not exist",
+            )
+        reset_password_token = service.reset_password(found_user.uuid)
+
+        if reset_password_token:
+            try:
+                # send verification email
+                await send_email(
+                    subject=settings.PASSWORD_RESET_MAIL_SUBJECT,
+                    recipient_name=found_user.first_name,
+                    email=email_address,
+                    message=settings.PASSWORD_RESET_MAIL_VERIFICATION_MESSAGE,
+                    url=settings.RESET_PASSWORD_URL,
+                    btn=settings.RESET_BTN,
+                    token=reset_password_token,
+                )
+            except Exception as e:
+                return send_internal_server_error(
+                    user_msg="Could not send password reset email", error=e
+                )
+            reset_message = f"Password reset link sent to: {email_address}"
+            return send_info(reset_message)
+        else:
+            return send_internal_server_error(
+                user_msg="Invalid Token", error="Error sending password reset link"
+            )
+    except Exception as e:
+        msg = messages.GET_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.post("/update_password", response_class=ORJSONResponse)
+@inject
+async def change_password_handler(
+    payload: ResetPasswordPayload,
+    service: ResetPassword = Depends(Provide[Container.reset_password_service]),
+):
+    try:
+        password_update = service.update_password(
+            payload.token, payload.new_password, payload.password_confirmation
+        )
+        return send_data(password_update)
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)

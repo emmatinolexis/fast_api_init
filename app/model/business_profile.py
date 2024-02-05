@@ -24,5 +24,8 @@ class BusinessProfile(BaseModel):
     business_address = Column(String(length=100), nullable=True, index=True)
     users = relationship(
         "User",
+        secondary="user_organisation_assignments",
+        primaryjoin="BusinessProfile.uuid == UserOrganisationAssignment.business_profile_uuid",
+        secondaryjoin="User.uuid == UserOrganisationAssignment.user_uuid",
         back_populates="business_profile",
     )

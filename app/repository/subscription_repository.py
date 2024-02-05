@@ -4,6 +4,7 @@ from typing import Callable, List, Tuple
 from sqlalchemy import desc
 from sqlalchemy.orm import Session, joinedload
 
+from app.model.business_profile import BusinessProfile
 from app.model.package import Package
 from app.model.subscription import Subscription
 from app.model.user import User
@@ -41,7 +42,9 @@ class SubscriptionRepository(BaseRepository):
 
             subscriptions = (
                 query.options(
-                    joinedload(Subscription.user).joinedload(User.business_profile)
+                    joinedload(Subscription.user)
+                    .joinedload(User.business_profile)
+                    .joinedload(BusinessProfile.users)
                 )
                 .options(
                     joinedload(Subscription.package).joinedload(

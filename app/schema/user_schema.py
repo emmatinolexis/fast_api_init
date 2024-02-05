@@ -45,6 +45,24 @@ class UserEmail(BaseModel):
         orm_model = True
 
 
+class UserUpdatePassword(BaseModel):
+    old_password: str
+    new_password: str
+    password_confirmation: str
+
+    class Config:
+        orm_model = True
+
+
+class ResetPasswordPayload(BaseModel):
+    token: str
+    new_password: str
+    password_confirmation: str
+
+    class Config:
+        orm_model = True
+
+
 class IndividualUser(BaseModel):
     first_name: str
     last_name: str

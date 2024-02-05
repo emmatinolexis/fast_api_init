@@ -2,6 +2,7 @@ from pydantic import BaseModel
 
 
 class MQTTDataPayload(BaseModel):
+    device_type: str
     device_uuid: str
     device_imei: str
     event_type: str

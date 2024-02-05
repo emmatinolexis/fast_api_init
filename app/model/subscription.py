@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Column, DateTime, Enum, ForeignKey, String
+from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -21,11 +21,11 @@ class Subscription(BaseModel):
     subscription_period = Column(Enum(SubscriptionPeriod), nullable=False, index=True)
     start_date = Column(DateTime(timezone=True), nullable=False)
     end_date = Column(DateTime(timezone=True), nullable=False)
-    subscription_amount = Column(String(length=100), nullable=False, index=True)
+    subscription_amount = Column(Integer, nullable=False, index=True)
     user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
     package_uuid = Column(
         UUID(as_uuid=True), ForeignKey("packages.uuid"), nullable=False
     )
+    status = Column(Enum(ActiveStatus), nullable=False)
     user = relationship("User")
     package = relationship("Package")
-    status = ActiveStatus

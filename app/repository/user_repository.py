@@ -5,8 +5,7 @@ from typing import Callable
 from pydantic import EmailStr
 from sqlalchemy.orm import Session, joinedload
 
-from app.core.exceptions import NotFoundError
-from app.core.security import hash_user_password
+from app.core.security import hash_user_password, verify_password
 from app.core.settings import settings
 from app.model.business_profile import BusinessProfile
 from app.model.email_verification import EmailVerification
@@ -29,9 +28,19 @@ class UserRepository(BaseRepository):
                 user_to_update = (
                     session.query(self.model).filter(self.model.uuid == uuid).first()
                 )
-                if user_to_update is None:
-                    raise NotFoundError(detail=uuid)
-                return self.update_by_uuid(uuid, user)
+                if user is None:
+                    raise Exception("User not found")
+
+                # return self.update_by_uuid(uuid, user)
+                user_to_update.location = user.location
+                user_to_update.address = user.address
+                user_to_update.phone_number = user.phone_number
+
+                # Commit the changes to the database
+                session.commit()
+                session.refresh(user_to_update)
+
+                return user_to_update
         except Exception as e:
             raise e
 
@@ -51,6 +60,39 @@ class UserRepository(BaseRepository):
                 .filter(self.model.phone_number == phone_number)
                 .first()
             )
+
+    def change_password(
+        self,
+        user_uuid: str,
+        old_password: str,
+        new_password: str,
+        password_confirmation: str,
+    ):
+        with self.session_factory() as session:
+            user = (
+                session.query(self.model).filter(self.model.uuid == user_uuid).first()
+            )
+
+            # Check if the user exists
+            if not user:
+                raise Exception("User not found")
+
+            # check if new password and confirm password match
+            if not new_password == password_confirmation:
+                raise Exception("New password and confirm password does not match")
+
+            # Compare the old password with the stored hashed password
+            if not verify_password(old_password, user.password):
+                raise Exception("Incorrect old password provided")
+
+            # Update the password with the new hashed password
+            user.password = hash_user_password(new_password)
+
+            # Commit the changes to the database
+            session.commit()
+            session.refresh(user)
+
+            return user
 
     def update_user_onboard_status(self, uuid):
         with self.session_factory() as session:

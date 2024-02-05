@@ -50,8 +50,8 @@ jobs:
           port: 22
           script: |
             docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
-            docker stop $(docker ps -a -q)
-            docker rm $(docker ps -a -q)
+            docker stop $(docker ps -a -q --filter ancestor=sagemicrosystems/mvi-hub:latest)
+            docker rm $(docker ps -a -q --filter ancestor=sagemicrosystems/mvi-hub:latest)
             docker image rm -f sagemicrosystems/mvi-hub:latest
             docker run -d --publish 8000:8000 --name mvi_staging_api -e API_VERSION=${{ secrets.API_VERSION }} \
             -e DB_HOST=${{ secrets.DB_HOST }} -e DB_NAME=${{ secrets.DB_NAME }} -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} -e DB_PORT=${{ secrets.DB_PORT }} \

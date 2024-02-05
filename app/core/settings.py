@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     )  # 60 minutes * 24 hours * 7 days = 7 days
     AUTH_ALGORITHM: str = os.getenv("AUTH_ALGORITHM", "HS256")
     VERIFY_TOKEN_EXPIRE_DAYS: int = os.getenv("VERIFY_TOKEN_EXPIRE_DAYS", 3)
+    PASSWORD_RESET_TOKEN_EXPIRE_DAYS: int = os.getenv(
+        "PASSWORD_RESET_TOKEN_EXPIRE_DAYS", 3
+    )
 
     # database
     DB_USER: str = os.getenv("DB_USER", "mvi_tracking_user")
@@ -63,15 +66,35 @@ class Settings(BaseSettings):
     MAIL_USERNAME: str = os.getenv("MAIL_USERNAME", "")
     MAIL_PASSWORD: str = os.getenv("MAIL_PASSWORD", "")
     MAIL_SUBJECT: str = os.getenv("MAIL_SUBJECT", "MVI tracking email verification")
+    PASSWORD_RESET_MAIL_SUBJECT: str = os.getenv(
+        "PASSWORD_RESET_MAIL_SUBJECT", "MVI tracking password reset"
+    )
+
     MAIL_VERIFICATION_MESSAGE: str = os.getenv(
         "MAIL_VERIFICATION_MESSAGE",
         "Please use the button link below to verify your account and get started with MVI tracking solutions.",
+    )
+    VERIFY_EMAIL_URL: str = os.getenv(
+        "VERIFY_EMAIL_URL",
+        "https://mvitracking-frontend.vercel.app/authentication/email-verification/",
+    )
+    RESET_PASSWORD_URL: str = os.getenv(
+        "RESET_PASSWORD_URL",
+        "https://mvitracking-frontend.vercel.app/authentication/set-password/",
+    )
+
+    RESET_BTN: str = os.getenv("RESET_BTN", "Reset Password")
+    VERIFY_BTN: str = os.getenv("VERIFY_BTN", "Verify Email")
+
+    PASSWORD_RESET_MAIL_VERIFICATION_MESSAGE: str = os.getenv(
+        "PASSWORD_RESET_MAIL_VERIFICATION_MESSAGE",
+        "Please use the button link below to reset your password",
     )
 
     # mqtt
     MQTT_HOST: str = os.getenv("MQTT_HOST", "3.98.106.16")
     MQTT_PORT: int = os.getenv("MQTT_PORT", 1883)
-    MQTT_TOPIC: str = os.getenv("MQTT_TOPIC", "tracking/istartek")
+    MQTT_TOPIC: str = os.getenv("MQTT_TOPIC", "tracking/events")
     MQTT_USERNAME: str = os.getenv("MQTT_USERNAME", "admin")
     MQTT_PASSWORD: str = os.getenv("MQTT_PASSWORD", "public")
 
