@@ -1,6 +1,6 @@
 name: Linting, Code Formatting, And Testing
 
-on: [push, pull_request]
+on: [push]
 
 jobs:
   check-code-formating-and-quality:
