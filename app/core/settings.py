@@ -94,7 +94,7 @@ class Settings(BaseSettings):
     # mqtt
     MQTT_HOST: str = os.getenv("MQTT_HOST", "3.98.106.16")
     MQTT_PORT: int = os.getenv("MQTT_PORT", 1883)
-    MQTT_TOPIC: str = os.getenv("MQTT_TOPIC", "tracking/istartek")
+    MQTT_TOPIC: str = os.getenv("MQTT_TOPIC", "tracking/events")
     MQTT_USERNAME: str = os.getenv("MQTT_USERNAME", "admin")
     MQTT_PASSWORD: str = os.getenv("MQTT_PASSWORD", "public")
 
