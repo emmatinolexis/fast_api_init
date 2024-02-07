@@ -15,6 +15,7 @@ from app.schema.auth_schema import EmailVerification as EmailVerficationSchema
 from app.schema.auth_schema import UserEmailVerification
 from app.schema.user_schema import UpdateUserPayload, UserPayload
 from app.util.enums import AccountType
+from app.util.utils import toggle_status
 
 
 class UserRepository(BaseRepository):
@@ -52,6 +53,14 @@ class UserRepository(BaseRepository):
                 .options(joinedload(User.business_profile))
                 .first()
             )
+
+    def update_user_status(self, uuid: str) -> User:
+        with self.session_factory() as session:
+            user = session.query(self.model).filter(self.model.uuid == uuid).first()
+            user.status = toggle_status(user.status)
+            session.commit()
+            session.refresh(user)
+            return user
 
     def get_user_by_phone_number(self, phone_number: str):
         with self.session_factory() as session:
@@ -111,6 +120,7 @@ class UserRepository(BaseRepository):
                 password=hash_user_password(user.password),
                 account_type=user.account_type,
                 role=user.role,
+                status=user.status,
             )
 
             session.add(db_user)
@@ -150,6 +160,7 @@ class UserRepository(BaseRepository):
                         "phone_number": db_user.phone_number,
                         "email_address": db_user.email_address,
                         "uuid": created_user.uuid,
+                        "status": created_user.status,
                         "account_type": db_user.account_type,
                         "business_name": user.business_name,
                         "business_email": user.business_email,
@@ -165,6 +176,7 @@ class UserRepository(BaseRepository):
                     "email_address": db_user.email_address,
                     "uuid": created_user.uuid,
                     "account_type": db_user.account_type,
+                    "status": created_user.status,
                 }
             session.commit()
             return returned_user
