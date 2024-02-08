@@ -1,3 +1,4 @@
+from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -10,6 +11,9 @@ class DevicePayload(BaseModel):
     device_name: str
     description: str = None
     device_serial_no: str
+    user_uuid: Optional[UUID] = None
+    business_profile_uuid: Optional[UUID] = None
+    image_url: Optional[str] = None
     assign_to_asset_status: str = None
 
     class Config:

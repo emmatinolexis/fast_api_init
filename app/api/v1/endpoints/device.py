@@ -36,6 +36,20 @@ async def get_all_devices_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
+@router.get("/get_user_devices/{user_uuid}", response_class=ORJSONResponse)
+@inject
+async def get_all_user_devices(
+    user_uuid: str,
+    service: DeviceService = Depends(Provide[Container.device_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        return send_data(service.get_devices_by_user_uuid(user_uuid))
+    except Exception as e:
+        msg = f"{messages.GET_FAILED}  {msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
 @router.post("/", response_class=ORJSONResponse)
 @inject
 async def create_device_handler(
