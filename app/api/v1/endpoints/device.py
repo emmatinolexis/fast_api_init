@@ -36,7 +36,7 @@ async def get_all_devices_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/get_user_devices/{user_uuid}", response_class=ORJSONResponse)
+@router.get("/user_devices/{user_uuid}", response_class=ORJSONResponse)
 @inject
 async def get_all_user_devices(
     user_uuid: str,
