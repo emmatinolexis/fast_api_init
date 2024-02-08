@@ -1,10 +1,12 @@
 from contextlib import AbstractContextManager
+from datetime import datetime
 from typing import Callable, List, Tuple
 
 from sqlalchemy import desc
 from sqlalchemy.orm import Session, joinedload
 
 from app.model.asset import Asset
+from app.model.device import Device
 from app.repository.base_repository import BaseRepository
 
 
@@ -45,7 +47,27 @@ class AssetRepository(BaseRepository):
             asset = (
                 session.query(self.model).filter(self.model.uuid == asset_uuid).first()
             )
+
+            # update asset with device imei
+            if not asset:
+                raise Exception("Asset not found")
+
             asset.device_imei = imei
             session.commit()
             session.refresh(asset)
-            return asset
+
+            device = (
+                session.query(Device)
+                .filter(Device.device_serial_no == asset.device_imei)
+                .first()
+            )
+
+            device.assign_to_asset_status = datetime.now()
+            session.commit()
+            session.refresh(device)
+
+            updated_asset = (
+                session.query(self.model).filter(self.model.uuid == asset_uuid).first()
+            )
+
+            return updated_asset

@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, constr
 
-from app.util.enums import AccountType, UserRole
+from app.util.enums import AccountType, ActiveStatus, UserRole
 
 
 class UserPayload(BaseModel):
@@ -16,6 +16,7 @@ class UserPayload(BaseModel):
     business_email: Optional[str] = None
     business_phone: Optional[str] = None
     role: Optional[UserRole] = UserRole.CUSTOMER
+    status: ActiveStatus = ActiveStatus.ACTIVE
 
     class Config:
         orm_model = True
