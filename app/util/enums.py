@@ -19,9 +19,9 @@ class PaymentTypes(str, Enum):
 
 
 class PaymentStatus(str, Enum):
-    SUCCESS = ("success",)
-    PENDING = ("pending",)
-    FAILED = ("failed",)
+    SUCCESS = "success"
+    PENDING = "pending"
+    FAILED = "failed"
 
 
 class SubscriptionTypes(str, Enum):

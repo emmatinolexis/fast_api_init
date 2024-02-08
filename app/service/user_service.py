@@ -35,6 +35,13 @@ class UserService(BaseService):
         except Exception as e:
             raise e
 
+    def update_user_status(self, uuid: str):
+        try:
+            user = self.user_repository.update_user_status(uuid)
+            return user if user else None
+        except Exception as e:
+            raise e
+
     def change_password(
         self,
         user_uuid: str,

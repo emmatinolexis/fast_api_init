@@ -1,10 +1,13 @@
 from contextlib import AbstractContextManager
+from datetime import datetime
 from typing import Callable, List, Tuple
 
 from sqlalchemy import desc
 from sqlalchemy.orm import Session, joinedload
 
 from app.model.asset import Asset
+from app.model.device import Device
+from app.model.user import User
 from app.repository.base_repository import BaseRepository
 
 
@@ -42,10 +45,40 @@ class AssetRepository(BaseRepository):
 
     def assign_device_imei(self, asset_uuid, imei: str) -> Asset:
         with self.session_factory() as session:
+            device = (
+                session.query(Device).filter(Device.device_serial_no == imei).first()
+            )
+            # check if imei is valid
+            if not device:
+                raise Exception("Imei not found")
+
             asset = (
                 session.query(self.model).filter(self.model.uuid == asset_uuid).first()
             )
+
+            # check if asset exist
+            if not asset:
+                raise Exception("Asset not found")
+
+            # update asset with device imei
             asset.device_imei = imei
             session.commit()
             session.refresh(asset)
-            return asset
+
+            # update device with user_uuid, business_uuid if user type is business
+            user = session.query(User).filter(User.uuid == asset.user_uuid).first()
+
+            device.assign_to_asset_status = datetime.now()
+            device.user_uuid = user.uuid
+
+            if user.business_profile_uuid:
+                device.business_profile_uuid = user.business_profile_uuid
+
+            session.commit()
+            session.refresh(device)
+
+            updated_asset = (
+                session.query(self.model).filter(self.model.uuid == asset_uuid).first()
+            )
+
+            return updated_asset

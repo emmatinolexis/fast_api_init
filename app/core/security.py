@@ -132,6 +132,7 @@ def extract_user_data(user: User) -> Dict[str, str]:
         "onboarding_status": user.onboarding_status,
         "business_profile": user.business_profile,
         "role": user.role,
+        "status": user.status,
     }
 
 

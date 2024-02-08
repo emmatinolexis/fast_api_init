@@ -8,6 +8,7 @@ from fastapi.responses import ORJSONResponse
 from app.core.constants import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE
 from app.core.logger import get_logger
 from app.core.security import JWTBearer
+from app.util.enums import ActiveStatus
 
 log = get_logger()
 
@@ -80,6 +81,14 @@ def send_client_side_error(user_msg: str, dev_msg: str = None, status_code: int 
             "userMsg": user_msg,
             "devMsg": user_msg if dev_msg is None else dev_msg,
         },
+    )
+
+
+def toggle_status(current_status):
+    return (
+        ActiveStatus.ACTIVE
+        if current_status == ActiveStatus.INACTIVE
+        else ActiveStatus.INACTIVE
     )
 
 

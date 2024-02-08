@@ -87,6 +87,26 @@ async def update_user(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
+@router.put("/toggle_status/{uuid}", response_class=ORJSONResponse)
+@inject
+async def update_user_status(
+    uuid: str,
+    service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        user = service.update_user_status(uuid)
+        if user is None:
+            return send_client_side_error(
+                user_msg=messages.USER_NOT_FOUND + uuid,
+            )
+        status_message = f"User status updated to: {user.status}"
+        return send_info(status_message)
+    except Exception as e:
+        msg = messages.GET_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
 @router.get("/{email_address}", response_class=ORJSONResponse)
 @inject
 async def get_user_by_email(
