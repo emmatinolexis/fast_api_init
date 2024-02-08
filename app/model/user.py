@@ -28,7 +28,7 @@ class User(BaseModel):
     address = Column(String(length=50), nullable=True, index=True)
     account_type = Column(Enum(AccountType), nullable=False, index=True)
     onboarding_status = Column(String(length=50), nullable=True, index=True)
-    status = Column(Enum(ActiveStatus), nullable=False)
+    status = Column(Enum(ActiveStatus), default=ActiveStatus.ACTIVE, nullable=False)
     role = Column(
         Enum(UserRole), nullable=False, default=UserRole.CUSTOMER.value, index=True
     )

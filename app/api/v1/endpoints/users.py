@@ -87,7 +87,7 @@ async def update_user(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.put("/update_status/{uuid}", response_class=ORJSONResponse)
+@router.put("/toggle_status/{uuid}", response_class=ORJSONResponse)
 @inject
 async def update_user_status(
     uuid: str,

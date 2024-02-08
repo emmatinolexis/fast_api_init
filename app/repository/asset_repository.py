@@ -50,7 +50,7 @@ class AssetRepository(BaseRepository):
 
             # update asset with device imei
             if not asset:
-                raise Exception("New password and confirm password does not match")
+                raise Exception("Asset not found")
 
             asset.device_imei = imei
             session.commit()
