@@ -10,6 +10,7 @@ class EquipmentPayload(BaseModel):
     name: str
     asset_type_uuid: UUID
     status: ActiveStatus
+    marker_icon_url: str
 
     class Config:
         orm_model = True

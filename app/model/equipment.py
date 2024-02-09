@@ -23,4 +23,5 @@ class Equipment(BaseModel):
     )
     name = Column(String(length=100), nullable=False, index=True)
     status = Column(Enum(ActiveStatus), nullable=False, index=True)
+    marker_icon_url = Column(String(length=100), nullable=False)
     asset_type = relationship("AssetType", uselist=False)

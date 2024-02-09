@@ -25,7 +25,7 @@ class AssetRepository(BaseRepository):
 
             query = session.query(self.model).filter(self.model.user_uuid == uuid)
             total_assets = query.count()
-
+            # return query
             if asset_type_uuid is not None:
                 query = query.filter(self.model.asset_type_uuid == asset_type_uuid)
 
@@ -35,11 +35,7 @@ class AssetRepository(BaseRepository):
                 .limit(page_size)
             )
 
-            assets = (
-                query.options(joinedload(Asset.marker_icon))
-                .options(joinedload(Asset.asset_type))
-                .all()
-            )
+            assets = query.options(joinedload(Asset.asset_type)).all()
 
             return assets, total_assets
 
