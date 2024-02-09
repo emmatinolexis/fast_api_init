@@ -22,6 +22,7 @@ from app.repository.user_repository import UserRepository
 from app.schema.auth_schema import UserEmailVerification, VerifyToken
 from app.schema.user_schema import UserLogin
 from app.service.base_service import BaseService
+from app.util.enums import ActiveStatus
 
 log = get_logger()
 
@@ -46,6 +47,8 @@ class AuthService(BaseService):
                 raise NotFoundError(detail="User not found")
             if db_user.verifiedAt is None:
                 raise NotVerifiedError(detail="User email not verified")
+            if db_user.status == ActiveStatus.DEACTIVATED:
+                raise AuthError(detail="User account is deactivated")
 
             user = extract_user_data(db_user)
 

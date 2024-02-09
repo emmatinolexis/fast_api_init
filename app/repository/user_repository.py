@@ -14,7 +14,7 @@ from app.repository.base_repository import BaseRepository
 from app.schema.auth_schema import EmailVerification as EmailVerficationSchema
 from app.schema.auth_schema import UserEmailVerification
 from app.schema.user_schema import UpdateUserPayload, UserPayload
-from app.util.enums import AccountType
+from app.util.enums import AccountType, ActiveStatus
 from app.util.utils import toggle_status
 
 
@@ -71,11 +71,11 @@ class UserRepository(BaseRepository):
             )
 
     def change_password(
-        self,
-        user_uuid: str,
-        old_password: str,
-        new_password: str,
-        password_confirmation: str,
+            self,
+            user_uuid: str,
+            old_password: str,
+            new_password: str,
+            password_confirmation: str,
     ):
         with self.session_factory() as session:
             user = (
@@ -182,9 +182,9 @@ class UserRepository(BaseRepository):
             return returned_user
 
     def create_verification_token(
-        self,
-        user_verify: UserEmailVerification,
-        verification_token: EmailVerficationSchema,
+            self,
+            user_verify: UserEmailVerification,
+            verification_token: EmailVerficationSchema,
     ):
         with self.session_factory() as session:
             current_date = datetime.now()
@@ -193,7 +193,7 @@ class UserRepository(BaseRepository):
                 user_uuid=user_verify.uuid,
                 verification_token=verification_token["verification_token"],
                 expiry_date=current_date
-                + timedelta(days=settings.VERIFY_TOKEN_EXPIRE_DAYS),
+                            + timedelta(days=settings.VERIFY_TOKEN_EXPIRE_DAYS),
             )
 
             session.add(db_verify)
@@ -206,3 +206,11 @@ class UserRepository(BaseRepository):
             )
 
             return db_user, verification_token["verification_token"]
+
+    def deactivate_account(self, uuid: str) -> User:
+        with self.session_factory() as session:
+            user = session.query(self.model).filter(self.model.uuid == uuid).first()
+            user.status = ActiveStatus.DEACTIVATED
+            session.commit()
+            session.refresh(user)
+            return user

@@ -12,6 +12,7 @@ class AccountType(str, Enum):
 class ActiveStatus(str, Enum):
     ACTIVE = "active"
     INACTIVE = "inactive"
+    DEACTIVATED = "deactivated"
 
 
 class PaymentTypes(str, Enum):
