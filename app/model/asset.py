@@ -21,6 +21,7 @@ class Asset(BaseModel):
     asset_name = Column(String(length=50), nullable=False, index=True)
     asset_status = Column(Enum(AssetStatus), nullable=False, index=True)
     user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
+    vehicle_license_no = Column(String(length=50), nullable=False, index=True)
     asset_type_uuid = Column(
         UUID(as_uuid=True), ForeignKey(AssetType.uuid), nullable=False
     )
@@ -36,7 +37,7 @@ class Asset(BaseModel):
     make = Column(String(length=100), nullable=True, index=True)
     model = Column(String(length=100), nullable=True, index=True)
     marker_icon_uuid = Column(
-        UUID(as_uuid=True), ForeignKey("marker_icons.uuid"), nullable=False
+        UUID(as_uuid=True), ForeignKey("marker_icons.uuid"), nullable=True
     )
     marker_color = Column(String(length=100), nullable=False, index=True)
     marker_icon = relationship("MarkerIcon", uselist=False)
