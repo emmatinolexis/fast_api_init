@@ -13,7 +13,7 @@ from app.model.user import User
 from app.repository.base_repository import BaseRepository
 from app.schema.auth_schema import EmailVerification as EmailVerficationSchema
 from app.schema.auth_schema import UserEmailVerification
-from app.schema.user_schema import UpdateUserPayload, UserPayload
+from app.schema.user_schema import UpdateUserPayload, UserPayload, AccountDeactivationPayload
 from app.util.enums import AccountType, ActiveStatus
 from app.util.utils import toggle_status
 
@@ -207,10 +207,11 @@ class UserRepository(BaseRepository):
 
             return db_user, verification_token["verification_token"]
 
-    def deactivate_account(self, uuid: str) -> User:
+    def deactivate_account(self, payload: AccountDeactivationPayload) -> User:
         with self.session_factory() as session:
-            user = session.query(self.model).filter(self.model.uuid == uuid).first()
+            user = session.query(self.model).filter(self.model.uuid == payload.user_id).first()
             user.status = ActiveStatus.DEACTIVATED
+            user.deactivation_reason = payload.reason
             session.commit()
             session.refresh(user)
             return user

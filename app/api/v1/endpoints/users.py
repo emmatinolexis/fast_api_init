@@ -13,7 +13,7 @@ from app.schema.user_schema import (
     ResetPasswordPayload,
     UpdateUserPayload,
     UserPayload,
-    UserUpdatePassword,
+    UserUpdatePassword, AccountDeactivationPayload,
 )
 from app.service.reset_password_service import ResetPassword
 from app.service.user_service import UserService
@@ -211,16 +211,16 @@ async def change_password_handler(
 @router.post("/deactivate_account", response_class=ORJSONResponse)
 @inject
 async def deactivate_account_handler(
-        uuid: str,
+        payload: AccountDeactivationPayload,
         service: UserService = Depends(Provide[Container.user_service]),
         current_user: User = Depends(get_current_user)
 ):
     try:
-        user = service.deactivate_user_account(uuid)
+        user = service.deactivate_user_account(payload)
 
         if user is None:
             return send_client_side_error(
-                user_msg=messages.USER_NOT_FOUND + uuid,
+                user_msg=messages.USER_NOT_FOUND + payload.user_id,
             )
         status_message = "User account deactivated"
         return send_info(status_message)

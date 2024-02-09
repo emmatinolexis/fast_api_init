@@ -77,3 +77,8 @@ class BussinessUser(IndividualUser):
     business_name: str
     business_email: str
     business_phone: str
+
+
+class AccountDeactivationPayload(BaseModel):
+    user_id: UUID
+    reason: str
