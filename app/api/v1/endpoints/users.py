@@ -208,19 +208,20 @@ async def change_password_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.post("/deactivate_account", response_class=ORJSONResponse)
+@router.patch("/deactivate_account/{uuid}", response_class=ORJSONResponse)
 @inject
 async def deactivate_account_handler(
+        uuid: str,
         payload: AccountDeactivationPayload,
         service: UserService = Depends(Provide[Container.user_service]),
         current_user: User = Depends(get_current_user)
 ):
     try:
-        user = service.deactivate_user_account(payload)
+        user = service.deactivate_user_account(uuid, payload)
 
         if user is None:
             return send_client_side_error(
-                user_msg=messages.USER_NOT_FOUND + payload.user_id,
+                user_msg=messages.USER_NOT_FOUND + uuid,
             )
         status_message = "User account deactivated"
         return send_info(status_message)

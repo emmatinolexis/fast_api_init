@@ -57,9 +57,9 @@ class UserService(BaseService):
         except Exception as e:
             raise e
 
-    def deactivate_user_account(self, payload: AccountDeactivationPayload):
+    def deactivate_user_account(self, uuid: str, payload: AccountDeactivationPayload):
         try:
-            user = self.user_repository.deactivate_account(payload)
+            user = self.user_repository.deactivate_account(uuid, payload)
             return user if user else None
         except Exception as e:
             raise e

@@ -80,5 +80,4 @@ class BussinessUser(IndividualUser):
 
 
 class AccountDeactivationPayload(BaseModel):
-    user_id: UUID
     reason: str
