@@ -4,7 +4,7 @@ from pydantic import EmailStr
 
 from app.core.exceptions import NotFoundError
 from app.repository.user_repository import UserRepository
-from app.schema.user_schema import UpdateUserPayload, UserPayload
+from app.schema.user_schema import UpdateUserPayload, UserPayload, UpdateUserAvatar
 from app.service.base_service import BaseService
 
 
@@ -43,16 +43,25 @@ class UserService(BaseService):
             raise e
 
     def change_password(
-        self,
-        user_uuid: str,
-        old_password: str,
-        new_password: str,
-        password_confirmation: str,
+            self,
+            user_uuid: str,
+            old_password: str,
+            new_password: str,
+            password_confirmation: str,
     ):
         try:
             return self.user_repository.change_password(
                 user_uuid, old_password, new_password, password_confirmation
             )
 
+        except Exception as e:
+            raise e
+
+    def update_user_avatar(self, user_id: str, avatar_url: str):
+        try:
+            return self.user_repository.update_user_avatar(
+                user_id,
+                avatar_url
+            )
         except Exception as e:
             raise e
