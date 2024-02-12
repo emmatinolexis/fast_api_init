@@ -208,7 +208,7 @@ async def change_password_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.patch("/{uuid}/avatar", response_class=ORJSONResponse)
+@router.put("/avatar/{uuid}", response_class=ORJSONResponse)
 @inject
 async def update_user_avatar_handler(
         uuid: str,
