@@ -30,6 +30,7 @@ class User(BaseModel):
     onboarding_status = Column(String(length=50), nullable=True, index=True)
     status = Column(Enum(ActiveStatus), default=ActiveStatus.ACTIVE, nullable=False)
     deactivation_reason = Column(String(length=250), nullable=True)
+    avatar_url = Column(String(length=200), nullable=True)
     role = Column(
         Enum(UserRole), nullable=False, default=UserRole.CUSTOMER.value, index=True
     )

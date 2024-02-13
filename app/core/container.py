@@ -269,7 +269,7 @@ class Container(containers.DeclarativeContainer):
         user_repository=user_repository,
         equipment_repository=equipment_repository,
         equipment_type_repository=equipment_type_repository,
-        marker_icon_repository=marker_icon_repository,
+        # marker_icon_repository=marker_icon_repository,
         driver_repository=driver_repository,
     )
     contact_sale_service = providers.Factory(

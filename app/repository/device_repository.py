@@ -21,14 +21,14 @@ class DeviceRepository(BaseRepository):
             if not user:
                 raise Exception("User not found")
 
-            if user.account_type == AccountType.BUSINESS:
+            if user.account_type == AccountType.INDIVIDUAL:
                 devices = (
                     session.query(self.model)
                     .filter(self.model.user_uuid == user.uuid)
                     .all()
                 )
 
-            if user.account_type == AccountType.INDIVIDUAL:
+            if user.account_type == AccountType.BUSINESS:
                 devices = (
                     session.query(self.model)
                     .filter(

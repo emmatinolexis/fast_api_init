@@ -15,6 +15,8 @@ from app.schema.auth_schema import EmailVerification as EmailVerficationSchema
 from app.schema.auth_schema import UserEmailVerification
 from app.schema.user_schema import UpdateUserPayload, UserPayload, AccountDeactivationPayload
 from app.util.enums import AccountType, ActiveStatus
+from app.schema.user_schema import UpdateUserPayload, UserPayload, UpdateUserAvatar
+from app.util.enums import AccountType
 from app.util.utils import toggle_status
 
 
@@ -71,11 +73,11 @@ class UserRepository(BaseRepository):
             )
 
     def change_password(
-            self,
-            user_uuid: str,
-            old_password: str,
-            new_password: str,
-            password_confirmation: str,
+        self,
+        user_uuid: str,
+        old_password: str,
+        new_password: str,
+        password_confirmation: str,
     ):
         with self.session_factory() as session:
             user = (
@@ -182,9 +184,9 @@ class UserRepository(BaseRepository):
             return returned_user
 
     def create_verification_token(
-            self,
-            user_verify: UserEmailVerification,
-            verification_token: EmailVerficationSchema,
+        self,
+        user_verify: UserEmailVerification,
+        verification_token: EmailVerficationSchema,
     ):
         with self.session_factory() as session:
             current_date = datetime.now()
@@ -193,7 +195,7 @@ class UserRepository(BaseRepository):
                 user_uuid=user_verify.uuid,
                 verification_token=verification_token["verification_token"],
                 expiry_date=current_date
-                            + timedelta(days=settings.VERIFY_TOKEN_EXPIRE_DAYS),
+                + timedelta(days=settings.VERIFY_TOKEN_EXPIRE_DAYS),
             )
 
             session.add(db_verify)
@@ -212,6 +214,14 @@ class UserRepository(BaseRepository):
             user = session.query(self.model).filter(self.model.uuid == uuid).first()
             user.status = ActiveStatus.DEACTIVATED
             user.deactivation_reason = payload.reason
+            session.commit()
+            session.refresh(user)
+            return user
+
+    def update_user_avatar(self, user_id: str, avatar_url: str) -> User:
+        with self.session_factory() as session:
+            user = session.query(self.model).filter(self.model.uuid == user_id).first()
+            user.avatar_url = avatar_url
             session.commit()
             session.refresh(user)
             return user

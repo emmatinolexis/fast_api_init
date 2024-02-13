@@ -1,7 +1,7 @@
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, constr
+from pydantic import BaseModel, EmailStr, constr, Field
 
 from app.util.enums import AccountType, ActiveStatus, UserRole
 
@@ -81,3 +81,7 @@ class BussinessUser(IndividualUser):
 
 class AccountDeactivationPayload(BaseModel):
     reason: str
+
+
+class UpdateUserAvatar(BaseModel):
+    avatar_url: str = Field(min_length=3, max_length=200)
