@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import ORJSONResponse
 
 from app.core.container import Container
+from app.core.exceptions import AuthError
 from app.core.logger import get_logger
 from app.core.security import verify_token_frontend
 from app.core.settings import settings
@@ -105,5 +106,7 @@ async def login(
 ):
     try:
         return send_data(service.login(user))
+    except AuthError as e:
+        return send_internal_server_error(user_msg=str(e.detail), error=e)
     except Exception as e:
         return send_internal_server_error(user_msg="Could not login user", error=e)
