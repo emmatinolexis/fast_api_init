@@ -10,11 +10,12 @@ from app.core.security import extract_user_data
 from app.core.settings import settings
 from app.model.user import User
 from app.schema.user_schema import (
+    AccountDeactivationPayload,
     ResetPasswordPayload,
+    UpdateUserAvatar,
     UpdateUserPayload,
     UserPayload,
-    UserUpdatePassword, AccountDeactivationPayload,
-    UserUpdatePassword, UpdateUserAvatar,
+    UserUpdatePassword,
 )
 from app.service.reset_password_service import ResetPassword
 from app.service.user_service import UserService
@@ -37,8 +38,8 @@ msg_prefix = "user"
 @router.post("/", response_class=ORJSONResponse)
 @inject
 async def create_user_handler(
-        payload: UserPayload,
-        service: UserService = Depends(Provide[Container.user_service]),
+    payload: UserPayload,
+    service: UserService = Depends(Provide[Container.user_service]),
 ):
     try:
         found_user = service.get_user_by_email_address(payload.email_address)
@@ -56,8 +57,8 @@ async def create_user_handler(
 @router.get("/", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def get_users(
-        service: UserService = Depends(Provide[Container.user_service]),
-        current_user: User = Depends(get_current_user),
+    service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
 ):
     try:
         users = service.get_list()
@@ -71,10 +72,10 @@ async def get_users(
 @router.put("/{uuid}", response_class=ORJSONResponse)
 @inject
 async def update_user(
-        uuid: str,
-        payload: UpdateUserPayload,
-        service: UserService = Depends(Provide[Container.user_service]),
-        current_user: User = Depends(get_current_user),
+    uuid: str,
+    payload: UpdateUserPayload,
+    service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
 ):
     try:
         user = service.update_user_by_uuid(uuid, payload)
@@ -91,9 +92,9 @@ async def update_user(
 @router.put("/toggle_status/{uuid}", response_class=ORJSONResponse)
 @inject
 async def update_user_status(
-        uuid: str,
-        service: UserService = Depends(Provide[Container.user_service]),
-        current_user: User = Depends(get_current_user),
+    uuid: str,
+    service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
 ):
     try:
         user = service.update_user_status(uuid)
@@ -111,8 +112,8 @@ async def update_user_status(
 @router.get("/{email_address}", response_class=ORJSONResponse)
 @inject
 async def get_user_by_email(
-        email_address: EmailStr,
-        service: UserService = Depends(Provide[Container.user_service]),
+    email_address: EmailStr,
+    service: UserService = Depends(Provide[Container.user_service]),
 ):
     try:
         user = service.get_user_by_email_address(email_address)
@@ -129,10 +130,10 @@ async def get_user_by_email(
 @router.put("/change_password/{user_uuid}", response_class=ORJSONResponse)
 @inject
 async def change_password(
-        user_uuid: str,
-        payload: UserUpdatePassword,
-        service: UserService = Depends(Provide[Container.user_service]),
-        current_user: User = Depends(get_current_user),
+    user_uuid: str,
+    payload: UserUpdatePassword,
+    service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
 ):
     try:
         user = service.change_password(
@@ -154,9 +155,9 @@ async def change_password(
 @router.post("/reset_password/{email_address}", response_class=ORJSONResponse)
 @inject
 async def send_password_link_handler(
-        email_address: str,
-        service: ResetPassword = Depends(Provide[Container.reset_password_service]),
-        user_service: UserService = Depends(Provide[Container.user_service]),
+    email_address: str,
+    service: ResetPassword = Depends(Provide[Container.reset_password_service]),
+    user_service: UserService = Depends(Provide[Container.user_service]),
 ):
     try:
         found_user = user_service.get_user_by_email_address(email_address)
@@ -196,8 +197,8 @@ async def send_password_link_handler(
 @router.post("/update_password", response_class=ORJSONResponse)
 @inject
 async def change_password_handler(
-        payload: ResetPasswordPayload,
-        service: ResetPassword = Depends(Provide[Container.reset_password_service]),
+    payload: ResetPasswordPayload,
+    service: ResetPassword = Depends(Provide[Container.reset_password_service]),
 ):
     try:
         password_update = service.update_password(
@@ -209,13 +210,28 @@ async def change_password_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.patch("/deactivate_account/{uuid}", response_class=ORJSONResponse)
+@router.put("/avatar/{uuid}", response_class=ORJSONResponse)
+@inject
+async def update_user_avatar_handler(
+    uuid: str,
+    payload: UpdateUserAvatar,
+    service: UserService = Depends(Provide[Container.user_service]),
+):
+    try:
+        user = service.update_user_avatar(user_id=uuid, avatar_url=payload.avatar_url)
+        return send_data(UpdateUserAvatar(avatar_url=user.avatar_url))
+    except Exception as e:
+        msg = messages.GET_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.put("/deactivate_account/{uuid}", response_class=ORJSONResponse)
 @inject
 async def deactivate_account_handler(
-        uuid: str,
-        payload: AccountDeactivationPayload,
-        service: UserService = Depends(Provide[Container.user_service]),
-        current_user: User = Depends(get_current_user)
+    uuid: str,
+    payload: AccountDeactivationPayload,
+    service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
 ):
     try:
         user = service.deactivate_user_account(uuid, payload)
@@ -226,23 +242,6 @@ async def deactivate_account_handler(
             )
         status_message = "User account deactivated"
         return send_info(status_message)
-    except Exception as e:
-        msg = messages.GET_FAILED + msg_prefix
-        return send_internal_server_error(user_msg=msg, error=e)
-
-@router.put("/avatar/{uuid}", response_class=ORJSONResponse)
-@inject
-async def update_user_avatar_handler(
-        uuid: str,
-        payload: UpdateUserAvatar,
-        service: UserService = Depends(Provide[Container.user_service])
-):
-    try:
-        user = service.update_user_avatar(
-            user_id=uuid,
-            avatar_url=payload.avatar_url
-        )
-        return send_data(UpdateUserAvatar(avatar_url=user.avatar_url))
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)

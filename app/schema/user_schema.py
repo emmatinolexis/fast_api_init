@@ -1,7 +1,7 @@
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, constr, Field
+from pydantic import BaseModel, EmailStr, Field, constr
 
 from app.util.enums import AccountType, ActiveStatus, UserRole
 

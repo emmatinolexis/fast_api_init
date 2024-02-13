@@ -13,10 +13,12 @@ from app.model.user import User
 from app.repository.base_repository import BaseRepository
 from app.schema.auth_schema import EmailVerification as EmailVerficationSchema
 from app.schema.auth_schema import UserEmailVerification
-from app.schema.user_schema import UpdateUserPayload, UserPayload, AccountDeactivationPayload
+from app.schema.user_schema import (
+    AccountDeactivationPayload,
+    UpdateUserPayload,
+    UserPayload,
+)
 from app.util.enums import AccountType, ActiveStatus
-from app.schema.user_schema import UpdateUserPayload, UserPayload, UpdateUserAvatar
-from app.util.enums import AccountType
 from app.util.utils import toggle_status
 
 
@@ -209,19 +211,21 @@ class UserRepository(BaseRepository):
 
             return db_user, verification_token["verification_token"]
 
-    def deactivate_account(self, uuid: str, payload: AccountDeactivationPayload) -> User:
-        with self.session_factory() as session:
-            user = session.query(self.model).filter(self.model.uuid == uuid).first()
-            user.status = ActiveStatus.DEACTIVATED
-            user.deactivation_reason = payload.reason
-            session.commit()
-            session.refresh(user)
-            return user
-
     def update_user_avatar(self, user_id: str, avatar_url: str) -> User:
         with self.session_factory() as session:
             user = session.query(self.model).filter(self.model.uuid == user_id).first()
             user.avatar_url = avatar_url
+            session.commit()
+            session.refresh(user)
+            return user
+
+    def deactivate_account(
+        self, uuid: str, payload: AccountDeactivationPayload
+    ) -> User:
+        with self.session_factory() as session:
+            user = session.query(self.model).filter(self.model.uuid == uuid).first()
+            user.status = ActiveStatus.DEACTIVATED
+            user.deactivation_reason = payload.reason
             session.commit()
             session.refresh(user)
             return user
