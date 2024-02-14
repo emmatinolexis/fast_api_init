@@ -2,10 +2,9 @@ from contextlib import AbstractContextManager
 from typing import Callable
 
 from sqlalchemy import exc
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.model.package import Package
-from app.model.package_item import PackageItem
 from app.model.package_item_assignment import PackageItemAssignment
 from app.repository.base_repository import BaseRepository
 from app.schema.package_schema import PackageItemAssignmentPayload
@@ -16,15 +15,11 @@ class PackageRepository(BaseRepository):
         self.session_factory = session_factory
         super().__init__(session_factory, Package)
 
-    def read_all_package_items_by_uuid(self, uuid: str):
+    def get_all_packages(self):
         with self.session_factory() as session:
             return (
-                session.query(PackageItem)
-                .join(
-                    PackageItemAssignment,
-                    PackageItemAssignment.package_item_uuid == PackageItem.uuid,
-                )
-                .filter(PackageItemAssignment.package_uuid == uuid)
+                session.query(self.model)
+                .options(joinedload(Package.package_items))
                 .all()
             )
 

@@ -6,7 +6,7 @@ from app.repository.driver_repository import DriverRepository
 from app.repository.equipment_repository import EquipmentRepository
 from app.repository.equipment_type_repository import EquipmentTypeRepository
 from app.repository.user_repository import UserRepository
-from app.schema.asset_schema import AssetInput, AssetPayload, DriverPayload
+from app.schema.asset_schema import AssetInput, AssetPayload
 from app.service.base_service import BaseService
 
 
@@ -44,19 +44,18 @@ class AssetService(BaseService):
                 raise NotFoundError(
                     detail=messages.EQUIPMENT_NOT_FOUND + str(asset.equipment_uuid)
                 )
-
-            created_asset = self.asset_repository.create(AssetInput(**asset.dict()))
+            # created_asset = self.asset_repository.create(AssetInput(**asset.dict()))
             if asset.add_driver:
-                driver_data = DriverPayload(
-                    asset_uuid=created_asset.uuid,
-                    user_uuid=asset.user_uuid,
-                    first_name=asset.driver_first_name,
-                    last_name=asset.driver_last_name,
-                    phone_number=asset.driver_phone_number,
-                    license_url=asset.driver_license_url,
-                    profile_picture_url=asset.driver_profile_picture_url,
+                if self.driver_repository.read_by_uuid(asset.driver_uuid) is None:
+                    raise NotFoundError(
+                        detail=messages.DRIVER_NOT_FOUND + str(asset.driver_uuid)
+                    )
+                created_asset = self.asset_repository.create(AssetInput(**asset.dict()))
+                self.driver_repository.update_driver_asset(
+                    created_asset.uuid, asset.driver_uuid
                 )
-                self.driver_repository.create(driver_data)
+            else:
+                created_asset = self.asset_repository.create(AssetInput(**asset.dict()))
             return created_asset
         except Exception as e:
             raise e

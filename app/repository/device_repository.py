@@ -1,7 +1,7 @@
 from contextlib import AbstractContextManager
 from typing import Callable
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.model.device import Device
 from app.model.user import User
@@ -25,6 +25,7 @@ class DeviceRepository(BaseRepository):
                 devices = (
                     session.query(self.model)
                     .filter(self.model.user_uuid == user.uuid)
+                    .options(joinedload(Device.asset))
                     .all()
                 )
 
@@ -34,6 +35,7 @@ class DeviceRepository(BaseRepository):
                     .filter(
                         self.model.business_profile_uuid == user.business_profile_uuid
                     )
+                    .options(joinedload(Device.asset))
                     .all()
                 )
 

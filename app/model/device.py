@@ -47,3 +47,9 @@ class Device(BaseModel):
         UUID(as_uuid=True), ForeignKey("device_manufacturers.uuid"), nullable=False
     )
     device_manufacturer = relationship("DeviceManufacturer", uselist=False)
+    asset = relationship(
+        "Asset",
+        uselist=False,
+        primaryjoin="foreign(Device.device_serial_no) == remote(Asset.device_imei)",
+        viewonly=True,
+    )

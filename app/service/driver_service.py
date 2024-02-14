@@ -15,8 +15,6 @@ class DriverService(BaseService):
 
     def create_driver(self, payload: DriverPayload):
         try:
-            if self.asset_repository.read_by_uuid(payload.asset_uuid) is None:
-                raise NotFoundError(detail=payload.asset_uuid)
             driver = self.driver_repository.create(payload)
             return driver
         except Exception as e:
