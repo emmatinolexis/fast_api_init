@@ -18,6 +18,17 @@ class DriverRepository(BaseRepository):
             query = query.filter(self.model.user_uuid == user_uuid).all()
             return query
 
+    def update_driver_asset(self, asset_uuid, driver_uuid):
+        with self.session_factory() as session:
+            query = session.query(self.model)
+            driver = query.filter(self.model.uuid == driver_uuid).first()
+
+            driver.asset_uuid = asset_uuid
+            session.commit()
+            session.refresh(driver)
+
+            return driver
+
     def get_drivers_by_business_uuid(self, business_uuid):
         with self.session_factory() as session:
             query = session.query(self.model)
