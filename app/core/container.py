@@ -35,7 +35,8 @@ from app.repository import (
     subscription_repository,
     tracking_event_repository,
     user_organisation_assignment_repository,
-    user_repository,
+    user_repository, team_member_invitation_repository,
+    # team_member_invitation_repository,
 )
 from app.service import (
     alert_maintenance_type_service,
@@ -63,6 +64,7 @@ from app.service import (
     subscription_service,
     tracking_event_service,
     user_service,
+    invitation_service,
 )
 
 
@@ -234,7 +236,10 @@ class Container(containers.DeclarativeContainer):
         email_verification_repository=email_verfication_repository,
     )
     user_service = providers.Factory(
-        user_service.UserService, user_repository=user_repository
+        user_service.UserService,
+        user_repository=user_repository,
+        business_repository=business_profile_repository,
+        invitation_repository=team_member_invitation_repository,
     )
     alert_policy_type_service = providers.Factory(
         alert_policy_type_service.AlertPolicyTypeService,
@@ -300,6 +305,10 @@ class Container(containers.DeclarativeContainer):
     feature_service = providers.Factory(
         feature_service.FeatureService,
         feature_repository=feature_repository,
+    )
+    invitation_service = providers.Factory(
+        invitation_service.InvitationService,
+        #         # invitation_repository=team_member_invitation_repository,
     )
     marker_icon_service = providers.Factory(
         marker_icon_service.MarkerIconService,

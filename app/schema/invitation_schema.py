@@ -1,0 +1,41 @@
+from datetime import datetime
+from typing import List
+from pydantic import BaseModel, EmailStr, field_validator
+
+from app.util.enums import InvitationStatus
+
+
+class Permissions(BaseModel):
+    """Permissions granted for permissible items
+    """
+    assets: List[str]
+    users: List[str]
+    reports: List[str]
+    alerts: List[str]
+
+    @field_validator("*")
+    def validate_permissions(cls, attributes):
+        valid_permissions = {'view', 'create', 'update', 'delete'}
+        for permission in attributes:
+            if permission not in valid_permissions:
+                raise ValueError(f"Invalid permission {permission}. Must be one of {valid_permissions}")
+
+        return attributes
+
+
+class InvitationCreatePayload(BaseModel):
+    first_name: str
+    last_name: str
+    email: EmailStr
+    permissions: Permissions
+
+
+class InvitationPayload(InvitationCreatePayload):
+    uuid: str | None
+    business_profile_uuid: str
+    status: InvitationStatus = InvitationStatus.PENDING
+    created_at: datetime | None
+    expired_at: datetime | None
+
+    class Config:
+        orm_mode = True
