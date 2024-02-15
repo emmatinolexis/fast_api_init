@@ -36,6 +36,7 @@ from app.repository import (
     tracking_event_repository,
     user_organisation_assignment_repository,
     user_repository,
+    phone_otp_repository,
 )
 from app.service import (
     alert_maintenance_type_service,
@@ -63,6 +64,7 @@ from app.service import (
     subscription_service,
     tracking_event_service,
     user_service,
+    phone_otp_service,
 )
 
 
@@ -195,6 +197,10 @@ class Container(containers.DeclarativeContainer):
         organisation_contact_repository.OrganisationContactRepository,
         session_factory=db.provided.session,
     )
+    phone_otp_repository = providers.Factory(
+        phone_otp_repository.PhoneOtpTokenRepository,
+        session_factory=db.provided.session
+    )
     package_item_repository = providers.Factory(
         package_item_repository.PackageItemRepository,
         session_factory=db.provided.session,
@@ -234,7 +240,8 @@ class Container(containers.DeclarativeContainer):
         email_verification_repository=email_verfication_repository,
     )
     user_service = providers.Factory(
-        user_service.UserService, user_repository=user_repository
+        user_service.UserService,
+        user_repository=user_repository,
     )
     alert_policy_type_service = providers.Factory(
         alert_policy_type_service.AlertPolicyTypeService,
@@ -321,6 +328,10 @@ class Container(containers.DeclarativeContainer):
         organisation_contact_service.OrganisationContactService,
         organisation_contact_repository=organisation_contact_repository,
         user_repository=user_repository,
+    )
+    phone_otp_service = providers.Factory(
+        phone_otp_service.PhoneOTPService,
+        phone_otp_repository=phone_otp_repository,
     )
     package_item_service = providers.Factory(
         package_item_service.PackageItemService,

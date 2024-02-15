@@ -19,7 +19,8 @@ from app.schema.user_schema import (
 )
 from app.service.reset_password_service import ResetPassword
 from app.service.user_service import UserService
-from app.util.email import send_email
+from app.service.phone_otp_service import PhoneOTPService
+from app.util.email import send_email, send_otp_email
 from app.util.utils import (
     allow_admins_only,
     send_client_side_error,
@@ -253,6 +254,7 @@ async def update_phone_handler(
         uuid: str,
         payload: UpdatePhoneNumber,
         service: UserService = Depends(Provide[Container.user_service]),
+        phone_otp_service: PhoneOTPService = Depends(Provide[Container.phone_otp_service]),
         current_user: User = Depends(get_current_user),
 ):
     user = service.get_by_uuid(uuid)
@@ -262,14 +264,25 @@ async def update_phone_handler(
             user_msg=messages.USER_NOT_FOUND + uuid,
         )
 
-    phone_number_exists = service.get_user_by_phone_number(payload.phone_number)
+    user_with_phone_number = service.get_user_by_phone_number(payload.phone_number)
 
-    if phone_number_exists:
+    if user_with_phone_number and not (user_with_phone_number.uuid == user.uuid):
         return send_client_side_error(
             user_msg=messages.PHONE_NUMBER_EXISTS + payload.phone_number
         )
+
     service.patch_by_uuid(uuid, payload)
-    msg = "Phone number update pending verification"
-    return send_info(f"{msg}")
 
-
+    try:
+        token = phone_otp_service.create_phone_verification_token(user.uuid)
+        await send_otp_email(
+            subject=settings.PHONE_OTP_SUBJECT,
+            recipient_name=user.first_name,
+            email=user.email_address,
+            otp=token,
+        )
+        msg = "Phone number update pending verification"
+        return send_info(f"{msg}")
+    except Exception as e:
+        msg = messages.CREATE_FAILED + f"token for user {uuid}"
+        return send_internal_server_error(user_msg=msg, error=str(e))

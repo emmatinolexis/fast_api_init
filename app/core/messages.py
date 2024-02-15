@@ -38,4 +38,4 @@ UPDATE_FAILED = "Failed to update "
 DELETE_FAILED = "Failed to delete "
 DELETE_SUCCESS = "Successfully deleted "
 
-PHONE_NUMBER_EXISTS = "Phone number already exists"
+PHONE_NUMBER_EXISTS = "Phone number already exists "

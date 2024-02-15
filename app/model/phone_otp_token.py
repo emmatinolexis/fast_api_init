@@ -1,7 +1,6 @@
 import uuid
-from xmlrpc.client import DateTime
 
-from sqlalchemy import Column, ForeignKey, String
+from sqlalchemy import Column, ForeignKey, String, DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -22,6 +21,6 @@ class PhoneOtpToken(BaseModel):
         ForeignKey("users.uuid"),
         primary_key=True,
     )
-    token = Column(String, unique=True, nullable=False)
-    expired_at = Column(DateTime, nullable=True)
+    token = Column(String(10), unique=True, nullable=False)
+    expires_at = Column(DateTime, nullable=False)
     user = relationship("User", back_populates="phone_otp_token")
