@@ -79,7 +79,9 @@ class Settings(BaseSettings):
         "https://mvitracking-frontend.vercel.app/authentication/email-verification/",
     )
 
-    PHONE_OTP_SUBJECT: str = os.getenv("PHONE_OTP_SUBJECT", "MVI Tracking Phone Verification")
+    PHONE_OTP_SUBJECT: str = os.getenv(
+        "PHONE_OTP_SUBJECT", "MVI Tracking Phone Verification"
+    )
 
     RESET_PASSWORD_URL: str = os.getenv(
         "RESET_PASSWORD_URL",

@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Column, Enum, ForeignKey, String, DateTime
+from sqlalchemy import Column, DateTime, Enum, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -44,5 +44,7 @@ class User(BaseModel):
     user_verification = relationship(
         "EmailVerification", uselist=False, back_populates="user"
     )
-    phone_otp_token = relationship("PhoneOtpToken", uselist=False, back_populates="user")
+    phone_otp_token = relationship(
+        "PhoneOtpToken", uselist=False, back_populates="user"
+    )
     # business_profile_assignments = relationship(UserOrganisationAssignment, back_populates='user')

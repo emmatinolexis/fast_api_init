@@ -47,11 +47,11 @@ class UserService(BaseService):
             raise e
 
     def change_password(
-            self,
-            user_uuid: str,
-            old_password: str,
-            new_password: str,
-            password_confirmation: str,
+        self,
+        user_uuid: str,
+        old_password: str,
+        new_password: str,
+        password_confirmation: str,
     ):
         try:
             return self.user_repository.change_password(
@@ -81,4 +81,3 @@ class UserService(BaseService):
             raise e
         except Exception as e:
             raise e
-

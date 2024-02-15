@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends
 from fastapi.responses import ORJSONResponse
@@ -8,17 +6,19 @@ from pydantic import EmailStr
 from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
-from app.core.exceptions import NotFoundError, ExpiredVerificationCodeError
+from app.core.exceptions import ExpiredVerificationCodeError, NotFoundError
 from app.core.security import extract_user_data
 from app.core.settings import settings
 from app.model.user import User
 from app.schema.user_schema import (
     AccountDeactivationPayload,
     ResetPasswordPayload,
+    UpdatePhoneNumber,
     UpdateUserAvatar,
     UpdateUserPayload,
     UserPayload,
-    UserUpdatePassword, UpdatePhoneNumber, UserPhoneVerificationToken, UpdatePhoneVerified,
+    UserPhoneVerificationToken,
+    UserUpdatePassword,
 )
 from app.service.phone_otp_service import PhoneOTPService
 from app.service.reset_password_service import ResetPassword
@@ -42,8 +42,8 @@ msg_prefix = "user"
 @router.post("/", response_class=ORJSONResponse)
 @inject
 async def create_user_handler(
-        payload: UserPayload,
-        service: UserService = Depends(Provide[Container.user_service]),
+    payload: UserPayload,
+    service: UserService = Depends(Provide[Container.user_service]),
 ):
     try:
         found_user = service.get_user_by_email_address(payload.email_address)
@@ -61,8 +61,8 @@ async def create_user_handler(
 @router.get("/", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def get_users(
-        service: UserService = Depends(Provide[Container.user_service]),
-        current_user: User = Depends(get_current_user),
+    service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
 ):
     try:
         users = service.get_list()
@@ -76,10 +76,10 @@ async def get_users(
 @router.put("/{uuid}", response_class=ORJSONResponse)
 @inject
 async def update_user(
-        uuid: str,
-        payload: UpdateUserPayload,
-        service: UserService = Depends(Provide[Container.user_service]),
-        current_user: User = Depends(get_current_user),
+    uuid: str,
+    payload: UpdateUserPayload,
+    service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
 ):
     try:
         user = service.update_user_by_uuid(uuid, payload)
@@ -96,9 +96,9 @@ async def update_user(
 @router.put("/toggle_status/{uuid}", response_class=ORJSONResponse)
 @inject
 async def update_user_status(
-        uuid: str,
-        service: UserService = Depends(Provide[Container.user_service]),
-        current_user: User = Depends(get_current_user),
+    uuid: str,
+    service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
 ):
     try:
         user = service.update_user_status(uuid)
@@ -116,8 +116,8 @@ async def update_user_status(
 @router.get("/{email_address}", response_class=ORJSONResponse)
 @inject
 async def get_user_by_email(
-        email_address: EmailStr,
-        service: UserService = Depends(Provide[Container.user_service]),
+    email_address: EmailStr,
+    service: UserService = Depends(Provide[Container.user_service]),
 ):
     try:
         user = service.get_user_by_email_address(email_address)
@@ -134,10 +134,10 @@ async def get_user_by_email(
 @router.put("/change_password/{user_uuid}", response_class=ORJSONResponse)
 @inject
 async def change_password(
-        user_uuid: str,
-        payload: UserUpdatePassword,
-        service: UserService = Depends(Provide[Container.user_service]),
-        current_user: User = Depends(get_current_user),
+    user_uuid: str,
+    payload: UserUpdatePassword,
+    service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
 ):
     try:
         user = service.change_password(
@@ -159,9 +159,9 @@ async def change_password(
 @router.post("/reset_password/{email_address}", response_class=ORJSONResponse)
 @inject
 async def send_password_link_handler(
-        email_address: str,
-        service: ResetPassword = Depends(Provide[Container.reset_password_service]),
-        user_service: UserService = Depends(Provide[Container.user_service]),
+    email_address: str,
+    service: ResetPassword = Depends(Provide[Container.reset_password_service]),
+    user_service: UserService = Depends(Provide[Container.user_service]),
 ):
     try:
         found_user = user_service.get_user_by_email_address(email_address)
@@ -201,8 +201,8 @@ async def send_password_link_handler(
 @router.post("/update_password", response_class=ORJSONResponse)
 @inject
 async def change_password_handler(
-        payload: ResetPasswordPayload,
-        service: ResetPassword = Depends(Provide[Container.reset_password_service]),
+    payload: ResetPasswordPayload,
+    service: ResetPassword = Depends(Provide[Container.reset_password_service]),
 ):
     try:
         password_update = service.update_password(
@@ -217,9 +217,9 @@ async def change_password_handler(
 @router.put("/avatar/{uuid}", response_class=ORJSONResponse)
 @inject
 async def update_user_avatar_handler(
-        uuid: str,
-        payload: UpdateUserAvatar,
-        service: UserService = Depends(Provide[Container.user_service]),
+    uuid: str,
+    payload: UpdateUserAvatar,
+    service: UserService = Depends(Provide[Container.user_service]),
 ):
     try:
         user = service.update_user_avatar(user_id=uuid, avatar_url=payload.avatar_url)
@@ -232,10 +232,10 @@ async def update_user_avatar_handler(
 @router.put("/deactivate_account/{uuid}", response_class=ORJSONResponse)
 @inject
 async def deactivate_account_handler(
-        uuid: str,
-        payload: AccountDeactivationPayload,
-        service: UserService = Depends(Provide[Container.user_service]),
-        current_user: User = Depends(get_current_user),
+    uuid: str,
+    payload: AccountDeactivationPayload,
+    service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
 ):
     try:
         user = service.deactivate_user_account(uuid, payload)
@@ -254,11 +254,11 @@ async def deactivate_account_handler(
 @router.put("/update_phone/{uuid}", response_class=ORJSONResponse)
 @inject
 async def update_phone_handler(
-        uuid: str,
-        payload: UpdatePhoneNumber,
-        service: UserService = Depends(Provide[Container.user_service]),
-        phone_otp_service: PhoneOTPService = Depends(Provide[Container.phone_otp_service]),
-        current_user: User = Depends(get_current_user),
+    uuid: str,
+    payload: UpdatePhoneNumber,
+    service: UserService = Depends(Provide[Container.user_service]),
+    phone_otp_service: PhoneOTPService = Depends(Provide[Container.phone_otp_service]),
+    current_user: User = Depends(get_current_user),
 ):
     user = service.get_by_uuid(uuid)
 
@@ -294,11 +294,11 @@ async def update_phone_handler(
 @router.post("/phone-verification/{uuid}", response_class=ORJSONResponse)
 @inject
 async def phone_token_verification_handler(
-        uuid: str,
-        payload: UserPhoneVerificationToken,
-        service: UserService = Depends(Provide[Container.user_service]),
-        phone_otp_service: PhoneOTPService = Depends(Provide[Container.phone_otp_service]),
-        current_user: User = Depends(Provide[get_current_user]),
+    uuid: str,
+    payload: UserPhoneVerificationToken,
+    service: UserService = Depends(Provide[Container.user_service]),
+    phone_otp_service: PhoneOTPService = Depends(Provide[Container.phone_otp_service]),
+    current_user: User = Depends(Provide[get_current_user]),
 ):
     user = service.get_by_uuid(uuid)
     if not user:
@@ -308,17 +308,12 @@ async def phone_token_verification_handler(
 
     try:
         phone_otp_service.verify_token(payload.token)
-        msg = msg_prefix + "phone number updated successfully"
+        msg = msg_prefix + " phone number updated successfully"
         return send_info(info=msg)
     except NotFoundError:
-        return send_client_side_error(
-            user_msg=messages.PHONE_OTP_INVALID
-        )
+        return send_client_side_error(user_msg=messages.PHONE_OTP_INVALID)
     except ExpiredVerificationCodeError:
-        return send_client_side_error(
-            user_msg=messages.PHONE_OTP_EXPIRED
-        )
+        return send_client_side_error(user_msg=messages.PHONE_OTP_EXPIRED)
     except Exception as e:
         msg = messages.PHONE_OTP_FAILED
         return send_client_side_error(user_msg=msg, dev_msg=str(e))
-

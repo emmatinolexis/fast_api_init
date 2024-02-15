@@ -1,16 +1,8 @@
-from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
 import phonenumbers
-from pydantic import (
-    BaseModel,
-    EmailStr,
-    Field,
-    constr,
-    ValidationInfo,
-    field_validator,
-)
+from pydantic import BaseModel, EmailStr, Field, ValidationInfo, constr, field_validator
 
 from app.util.enums import AccountType, ActiveStatus, UserRole
 
@@ -116,7 +108,3 @@ class UpdatePhoneNumber(BaseModel):
 
 class UserPhoneVerificationToken(BaseModel):
     token: str = Field(min_length=6, max_length=6)
-
-
-class UpdatePhoneVerified(BaseModel):
-    phone_verified_at: datetime

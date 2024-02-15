@@ -2,8 +2,10 @@ import secrets
 from contextlib import AbstractContextManager
 from datetime import datetime, timedelta
 from typing import Callable
-from sqlalchemy.orm import Session
+
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+
 from app.model.phone_otp_token import PhoneOtpToken
 from app.repository.base_repository import BaseRepository
 
@@ -17,7 +19,11 @@ class PhoneOtpTokenRepository(BaseRepository):
         with self.session_factory() as session:
             while True:
                 token = secrets.token_hex(3).upper()
-                if not session.query(self.model).filter(self.model.token == token).first():
+                if (
+                    not session.query(self.model)
+                    .filter(self.model.token == token)
+                    .first()
+                ):
                     return token
 
     def create_token(self, user_uuid: str) -> PhoneOtpToken:
@@ -26,7 +32,7 @@ class PhoneOtpTokenRepository(BaseRepository):
             query = self.model(
                 token=token,
                 user_uuid=user_uuid,
-                expires_at=datetime.now() + timedelta(hours=2)
+                expires_at=datetime.now() + timedelta(hours=2),
             )
             try:
                 session.add(query)
@@ -40,8 +46,21 @@ class PhoneOtpTokenRepository(BaseRepository):
 
     def get_token(self, token: str) -> PhoneOtpToken | None:
         with self.session_factory() as session:
-            return (
-                session.query(self.model)
-                .filter(self.model.token == token)
-                .first()
+            return session.query(self.model).filter(self.model.token == token).first()
+
+    def delete_by_user_uuid(self, user_id: str):
+        with self.session_factory() as session:
+            tokens = (
+                session.query(self.model).filter(self.model.user_uuid == user_id).all()
             )
+
+            if not tokens:
+                return None
+            try:
+                for token in tokens:
+                    session.delete(token)
+                    session.commit()
+            except IntegrityError as e:
+                raise e
+            except Exception as e:
+                raise e

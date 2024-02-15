@@ -229,4 +229,3 @@ class UserRepository(BaseRepository):
             session.commit()
             session.refresh(user)
             return user
-

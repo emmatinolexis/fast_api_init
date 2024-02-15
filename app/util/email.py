@@ -44,13 +44,13 @@ def get_email_config() -> ConnectionConfig:
 
 
 async def send_email(
-        subject,
-        recipient_name,
-        email,
-        message,
-        url,
-        btn,
-        token="",
+    subject,
+    recipient_name,
+    email,
+    message,
+    url,
+    btn,
+    token="",
 ) -> Dict[str, str]:
     try:
         msg = MessageSchema(
@@ -74,10 +74,10 @@ async def send_email(
 
 
 async def send_otp_email(
-        subject,
-        recipient_name,
-        email,
-        otp,
+    subject,
+    recipient_name,
+    email,
+    otp,
 ):
     try:
         msg = MessageSchema(

@@ -30,13 +30,13 @@ from app.repository import (
     package_item_repository,
     package_repository,
     payment_repository,
+    phone_otp_repository,
     reset_password_repository,
     subscription_payment_repository,
     subscription_repository,
     tracking_event_repository,
     user_organisation_assignment_repository,
     user_repository,
-    phone_otp_repository,
 )
 from app.service import (
     alert_maintenance_type_service,
@@ -59,12 +59,12 @@ from app.service import (
     package_item_service,
     package_service,
     payment_service,
+    phone_otp_service,
     reset_password_service,
     subscription_payment_service,
     subscription_service,
     tracking_event_service,
     user_service,
-    phone_otp_service,
 )
 
 
@@ -199,7 +199,7 @@ class Container(containers.DeclarativeContainer):
     )
     phone_otp_repository = providers.Factory(
         phone_otp_repository.PhoneOtpTokenRepository,
-        session_factory=db.provided.session
+        session_factory=db.provided.session,
     )
     package_item_repository = providers.Factory(
         package_item_repository.PackageItemRepository,
