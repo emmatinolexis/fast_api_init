@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
@@ -100,7 +101,7 @@ class UpdatePhoneNumber(BaseModel):
 
     @field_validator("phone_number")
     @classmethod
-    def validate_phone_number(cls, value:str, info: ValidationInfo) -> str:
+    def validate_phone_number(cls, value: str, info: ValidationInfo) -> str:
         try:
             phone_number = phonenumbers.parse(value, None)
             if not phonenumbers.is_valid_number(phone_number):
@@ -112,3 +113,10 @@ class UpdatePhoneNumber(BaseModel):
         except phonenumbers.NumberParseException as e:
             raise ValueError(f"Invalid phone number: {e}")
 
+
+class UserPhoneVerificationToken(BaseModel):
+    token: str = Field(min_length=6, max_length=6)
+
+
+class UpdatePhoneVerified(BaseModel):
+    phone_verified_at: datetime

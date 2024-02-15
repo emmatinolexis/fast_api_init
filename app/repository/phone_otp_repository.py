@@ -37,3 +37,11 @@ class PhoneOtpTokenRepository(BaseRepository):
             except Exception as e:
                 raise e
             return query
+
+    def get_token(self, token: str) -> PhoneOtpToken | None:
+        with self.session_factory() as session:
+            return (
+                session.query(self.model)
+                .filter(self.model.token == token)
+                .first()
+            )

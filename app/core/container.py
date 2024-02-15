@@ -332,6 +332,7 @@ class Container(containers.DeclarativeContainer):
     phone_otp_service = providers.Factory(
         phone_otp_service.PhoneOTPService,
         phone_otp_repository=phone_otp_repository,
+        user_repository=user_repository,
     )
     package_item_service = providers.Factory(
         package_item_service.PackageItemService,

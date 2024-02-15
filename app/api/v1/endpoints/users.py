@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends
 from fastapi.responses import ORJSONResponse
@@ -6,6 +8,7 @@ from pydantic import EmailStr
 from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
+from app.core.exceptions import NotFoundError, ExpiredVerificationCodeError
 from app.core.security import extract_user_data
 from app.core.settings import settings
 from app.model.user import User
@@ -15,11 +18,11 @@ from app.schema.user_schema import (
     UpdateUserAvatar,
     UpdateUserPayload,
     UserPayload,
-    UserUpdatePassword, UpdatePhoneNumber,
+    UserUpdatePassword, UpdatePhoneNumber, UserPhoneVerificationToken, UpdatePhoneVerified,
 )
+from app.service.phone_otp_service import PhoneOTPService
 from app.service.reset_password_service import ResetPassword
 from app.service.user_service import UserService
-from app.service.phone_otp_service import PhoneOTPService
 from app.util.email import send_email, send_otp_email
 from app.util.utils import (
     allow_admins_only,
@@ -286,3 +289,36 @@ async def update_phone_handler(
     except Exception as e:
         msg = messages.CREATE_FAILED + f"token for user {uuid}"
         return send_internal_server_error(user_msg=msg, error=str(e))
+
+
+@router.post("/phone-verification/{uuid}", response_class=ORJSONResponse)
+@inject
+async def phone_token_verification_handler(
+        uuid: str,
+        payload: UserPhoneVerificationToken,
+        service: UserService = Depends(Provide[Container.user_service]),
+        phone_otp_service: PhoneOTPService = Depends(Provide[Container.phone_otp_service]),
+        current_user: User = Depends(Provide[get_current_user]),
+):
+    user = service.get_by_uuid(uuid)
+    if not user:
+        return send_client_side_error(
+            user_msg=messages.USER_NOT_FOUND + uuid,
+        )
+
+    try:
+        phone_otp_service.verify_token(payload.token)
+        msg = msg_prefix + "phone number updated successfully"
+        return send_info(info=msg)
+    except NotFoundError:
+        return send_client_side_error(
+            user_msg=messages.PHONE_OTP_INVALID
+        )
+    except ExpiredVerificationCodeError:
+        return send_client_side_error(
+            user_msg=messages.PHONE_OTP_EXPIRED
+        )
+    except Exception as e:
+        msg = messages.PHONE_OTP_FAILED
+        return send_client_side_error(user_msg=msg, dev_msg=str(e))
+
