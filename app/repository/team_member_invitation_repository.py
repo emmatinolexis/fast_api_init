@@ -17,6 +17,6 @@ class TeamMemberInvitationRepository(BaseRepository):
     def create_invitation(self, payload: InvitationPayload):
         return self.create(payload)
 
-    def get_invitation_by_email(self, email: EmailStr) -> Invitation | None:
+    def get_invitation_by_email(self, email: EmailStr) -> Invitation:
         with self.session_factory() as session:
             return session.query(self.model).filter(self.model.email == email).first()
