@@ -6,7 +6,6 @@ from pydantic import EmailStr
 from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
-from app.core.exceptions import NotFoundError
 from app.core.exceptions import ExpiredVerificationCodeError, NotFoundError
 from app.core.security import extract_user_data
 from app.core.settings import settings
@@ -22,12 +21,11 @@ from app.schema.user_schema import (
     UserPhoneVerificationToken,
     UserUpdatePassword,
 )
-from app.service.phone_otp_service import PhoneOTPService
 from app.service.invitation_service import InvitationService
+from app.service.phone_otp_service import PhoneOTPService
 from app.service.reset_password_service import ResetPassword
 from app.service.user_service import UserService
-from app.util.email import send_email, send_email_invitation
-from app.util.email import send_email, send_otp_email
+from app.util.email import send_email, send_email_invitation, send_otp_email
 from app.util.enums import AccountType
 from app.util.utils import (
     allow_admins_only,
