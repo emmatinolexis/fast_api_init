@@ -5,7 +5,7 @@ from jose import jwt
 from app.core.exceptions import (
     AlreadyVerifiedError,
     AuthError,
-    ExpriedVerificationCodeError,
+    ExpiredVerificationCodeError,
     NotFoundError,
     NotVerifiedError,
 )
@@ -137,7 +137,7 @@ class AuthService(BaseService):
                     token_data.Token
                 )
 
-                raise ExpriedVerificationCodeError(detail="Verification code expired")
+                raise ExpiredVerificationCodeError(detail="Verification code expired")
         else:
             raise NotFoundError(detail="Verification token not found")
 

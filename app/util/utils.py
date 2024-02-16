@@ -1,3 +1,4 @@
+import secrets
 import uuid
 from typing import Any
 
@@ -11,7 +12,6 @@ from app.core.security import JWTBearer
 from app.util.enums import ActiveStatus
 
 log = get_logger()
-
 
 allow_admins_only = Depends(
     JWTBearer(
@@ -116,3 +116,7 @@ def get_status(status: str):
     }
 
     return status_mapping.get(status, "unknown")
+
+
+def generate_unique_token(size: int):
+    return secrets.token_hex(size).upper()

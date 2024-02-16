@@ -30,6 +30,7 @@ from app.repository import (
     package_item_repository,
     package_repository,
     payment_repository,
+    phone_otp_repository,
     reset_password_repository,
     subscription_payment_repository,
     subscription_repository,
@@ -60,6 +61,7 @@ from app.service import (
     package_item_service,
     package_service,
     payment_service,
+    phone_otp_service,
     reset_password_service,
     subscription_payment_service,
     subscription_service,
@@ -197,6 +199,10 @@ class Container(containers.DeclarativeContainer):
         organisation_contact_repository.OrganisationContactRepository,
         session_factory=db.provided.session,
     )
+    phone_otp_repository = providers.Factory(
+        phone_otp_repository.PhoneOtpTokenRepository,
+        session_factory=db.provided.session,
+    )
     package_item_repository = providers.Factory(
         package_item_repository.PackageItemRepository,
         session_factory=db.provided.session,
@@ -332,6 +338,11 @@ class Container(containers.DeclarativeContainer):
     organisation_contact_service = providers.Factory(
         organisation_contact_service.OrganisationContactService,
         organisation_contact_repository=organisation_contact_repository,
+        user_repository=user_repository,
+    )
+    phone_otp_service = providers.Factory(
+        phone_otp_service.PhoneOTPService,
+        phone_otp_repository=phone_otp_repository,
         user_repository=user_repository,
     )
     package_item_service = providers.Factory(

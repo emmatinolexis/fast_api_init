@@ -38,3 +38,8 @@ CREATE_FAILED = "Failed to create "
 UPDATE_FAILED = "Failed to update "
 DELETE_FAILED = "Failed to delete "
 DELETE_SUCCESS = "Successfully deleted "
+
+PHONE_NUMBER_EXISTS = "Phone number already exists "
+PHONE_OTP_INVALID = "Phone verification token is invalid "
+PHONE_OTP_EXPIRED = "Phone verification token has expired "
+PHONE_OTP_FAILED = "Phone verification failed "

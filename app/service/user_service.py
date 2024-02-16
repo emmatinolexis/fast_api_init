@@ -119,3 +119,11 @@ class UserService(BaseService):
             return user if user else None
         except Exception as e:
             raise e
+
+    def get_user_by_phone_number(self, phone_number: str):
+        try:
+            return self.user_repository.get_user_by_phone_number(phone_number)
+        except NotFoundError as e:
+            raise e
+        except Exception as e:
+            raise e
