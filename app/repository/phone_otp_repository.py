@@ -44,7 +44,7 @@ class PhoneOtpTokenRepository(BaseRepository):
                 raise e
             return query
 
-    def get_token(self, token: str) -> PhoneOtpToken | None:
+    def get_token(self, token: str) -> PhoneOtpToken:
         with self.session_factory() as session:
             return session.query(self.model).filter(self.model.token == token).first()
 
