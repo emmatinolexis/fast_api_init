@@ -1,3 +1,4 @@
+from datetime import timezone, datetime, timedelta
 from uuid import UUID
 from app.core import messages
 
@@ -21,11 +22,9 @@ class UserService(BaseService):
     def __init__(
             self,
             user_repository: UserRepository,
-            business_repository: BusinessProfileRepository,
             invitation_repository: TeamMemberInvitationRepository,
     ):
         self.user_repository = user_repository
-        self.business_repository = business_repository
         self.invitation_repository = invitation_repository
         super().__init__(user_repository)
 
@@ -80,21 +79,29 @@ class UserService(BaseService):
             raise e
 
     def create_team_member_invitation(self, uuid: str, payload: InvitationCreatePayload):
-        business = self.business_repository.get_by_uuid(uuid)
-        if not business:
+        user = self.get_by_uuid(uuid)
+        if not user:
+            raise NotFoundError(detail=messages.USER_NOT_FOUND + f" uuid: {str(uuid)}")
+
+        if not user.business_profile_uuid:
             raise NotFoundError(detail=messages.BUSINESS_PROFILE_NOT_FOUND + str(uuid))
 
-        return self.invitation_repository.create_invitation(
-            payload=InvitationPayload(
-                business_profile_uuid=business.uuid,
-                first_name=payload.first_name,
-                last_name=payload.last_name,
-                email=payload.email,
-                permissions=payload.permissions,
-                status=InvitationStatus.PENDING,
-                expired_at=None,
+        # return user.business_profile_uuid
+
+        try:
+            return self.invitation_repository.create_invitation(
+                payload=InvitationPayload(
+                    business_profile_uuid=str(user.business_profile_uuid),
+                    first_name=payload.first_name,
+                    last_name=payload.last_name,
+                    email=payload.email,
+                    permissions=payload.permissions,
+                    status=InvitationStatus.PENDING,
+                    expired_at=datetime.now() + timedelta(days=3),
+                )
             )
-        )
+        except Exception as e:
+            raise e
 
     def deactivate_user_account(self, uuid: str, payload: AccountDeactivationPayload):
         try:

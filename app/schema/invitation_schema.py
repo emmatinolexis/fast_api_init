@@ -1,6 +1,7 @@
+import uuid
 from datetime import datetime
-from typing import List
-from pydantic import BaseModel, EmailStr, field_validator
+from typing import List, Optional
+from pydantic import BaseModel, EmailStr, field_validator, Field
 
 from app.util.enums import InvitationStatus
 
@@ -31,11 +32,9 @@ class InvitationCreatePayload(BaseModel):
 
 
 class InvitationPayload(InvitationCreatePayload):
-    uuid: str | None
     business_profile_uuid: str
     status: InvitationStatus = InvitationStatus.PENDING
-    created_at: datetime | None
-    expired_at: datetime | None
+    expired_at: datetime
 
     class Config:
         orm_mode = True

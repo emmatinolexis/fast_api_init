@@ -6,6 +6,7 @@ from pydantic import EmailStr
 from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
+from app.core.exceptions import NotFoundError
 from app.core.security import extract_user_data
 from app.core.settings import settings
 from app.model.user import User
@@ -21,7 +22,7 @@ from app.schema.user_schema import (
 from app.service.invitation_service import InvitationService
 from app.service.reset_password_service import ResetPassword
 from app.service.user_service import UserService
-from app.util.email import send_email
+from app.util.email import send_email, send_email_invitation
 from app.util.utils import (
     allow_admins_only,
     send_client_side_error,
@@ -259,8 +260,11 @@ async def create_team_member_invitation(
         current_user: User = Depends(get_current_user),
 ):
     try:
+
         invitation_exists = invitation_service.get_invitation_by_email(payload.email)
 
+        # we don't check if an invitation has expired
+        # if it has, use the resend invitation endpoint
         if invitation_exists:
             return send_client_side_error(
                 user_msg=f"Invitation already exists : {payload.email}",
@@ -268,7 +272,19 @@ async def create_team_member_invitation(
 
         invitation = service.create_team_member_invitation(uuid, payload)
 
+        user = service.get_by_uuid(uuid)
+
+        # send email invite
+        await send_email_invitation(
+            subject=settings.EMAIL_INVITATION_SUBJECT,
+            recipient_name=payload.first_name,
+            email=payload.email,
+            invitee_name=f"{user.first_name} {user.last_name}"
+        )
+
         return send_data(invitation)
+    except NotFoundError as e:
+        return send_client_side_error(e.detail)
     except Exception as e:
         msg = messages.CREATE_FAILED + 'invitation'
-        return send_internal_server_error(user_msg=msg, error=e)
+        return send_internal_server_error(user_msg=msg, error=str(e))

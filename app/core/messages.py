@@ -1,6 +1,6 @@
 # Messages
 
-USER_NOT_FOUND = "No user was found with the given email : "
+USER_NOT_FOUND = "No user was found with the given  : "
 ORGANISATION_CONTACT_NOT_FOUND = (
     "No organisation contact was found with the given uuid : "
 )
