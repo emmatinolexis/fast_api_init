@@ -4,7 +4,11 @@ from pydantic import EmailStr
 
 from app.core.exceptions import NotFoundError
 from app.repository.user_repository import UserRepository
-from app.schema.user_schema import UpdateUserPayload, UserPayload
+from app.schema.user_schema import (
+    AccountDeactivationPayload,
+    UpdateUserPayload,
+    UserPayload,
+)
 from app.service.base_service import BaseService
 
 
@@ -54,5 +58,18 @@ class UserService(BaseService):
                 user_uuid, old_password, new_password, password_confirmation
             )
 
+        except Exception as e:
+            raise e
+
+    def update_user_avatar(self, user_id: str, avatar_url: str):
+        try:
+            return self.user_repository.update_user_avatar(user_id, avatar_url)
+        except Exception as e:
+            raise e
+
+    def deactivate_user_account(self, uuid: str, payload: AccountDeactivationPayload):
+        try:
+            user = self.user_repository.deactivate_account(uuid, payload)
+            return user if user else None
         except Exception as e:
             raise e

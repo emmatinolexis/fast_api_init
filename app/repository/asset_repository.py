@@ -2,13 +2,15 @@ from contextlib import AbstractContextManager
 from datetime import datetime
 from typing import Callable, List, Tuple
 
-from sqlalchemy import desc
+from sqlalchemy import desc, label
 from sqlalchemy.orm import Session, joinedload
 
 from app.model.asset import Asset
 from app.model.device import Device
+from app.model.tracking_event import TrackingEvent
 from app.model.user import User
 from app.repository.base_repository import BaseRepository
+from app.util.utils import get_status
 
 
 class AssetRepository(BaseRepository):
@@ -25,7 +27,7 @@ class AssetRepository(BaseRepository):
 
             query = session.query(self.model).filter(self.model.user_uuid == uuid)
             total_assets = query.count()
-
+            # return query
             if asset_type_uuid is not None:
                 query = query.filter(self.model.asset_type_uuid == asset_type_uuid)
 
@@ -35,11 +37,40 @@ class AssetRepository(BaseRepository):
                 .limit(page_size)
             )
 
-            assets = (
-                query.options(joinedload(Asset.marker_icon))
-                .options(joinedload(Asset.asset_type))
-                .all()
-            )
+            assets = query.options(joinedload(Asset.asset_type)).all()
+            for asset in assets:
+                # check if asset has device imei
+                if asset.device_imei:
+                    # Get device's last known location
+                    last_tracking_event = (
+                        session.query(
+                            label("lat", TrackingEvent.latitude),
+                            label("lng", TrackingEvent.longitude),
+                            TrackingEvent.speed,
+                            TrackingEvent.course,
+                            label("timestamp", TrackingEvent.event_datetime),
+                            label("event_type", get_status(TrackingEvent.event_type)),
+                        )
+                        .filter(TrackingEvent.device_imei == asset.device_imei)
+                        .order_by(desc(TrackingEvent.event_datetime))
+                        .first()
+                    )
+
+                    if last_tracking_event:
+                        # Construct a dictionary with the retrieved fields
+                        last_tracking_event_dict = {
+                            "lat": last_tracking_event.lat,
+                            "lng": last_tracking_event.lng,
+                            "speed": last_tracking_event.speed,
+                            "course": last_tracking_event.course,
+                            "timestamp": last_tracking_event.timestamp,
+                            "event_type": last_tracking_event.event_type,
+                        }
+                        # Add last_tracking_event_dict to asset dictionary
+                        asset.last_tracking_event = last_tracking_event_dict
+                    else:
+                        # Handle case where no result is found
+                        pass
 
             return assets, total_assets
 

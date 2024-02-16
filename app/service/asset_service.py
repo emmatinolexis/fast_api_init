@@ -5,9 +5,8 @@ from app.repository.asset_type_repository import AssetTypeRepository
 from app.repository.driver_repository import DriverRepository
 from app.repository.equipment_repository import EquipmentRepository
 from app.repository.equipment_type_repository import EquipmentTypeRepository
-from app.repository.marker_icon_repository import MarkerIconRepository
 from app.repository.user_repository import UserRepository
-from app.schema.asset_schema import AssetInput, AssetPayload, DriverPayload
+from app.schema.asset_schema import AssetInput, AssetPayload
 from app.service.base_service import BaseService
 
 
@@ -19,7 +18,6 @@ class AssetService(BaseService):
         user_repository: UserRepository,
         equipment_repository: EquipmentRepository,
         equipment_type_repository: EquipmentTypeRepository,
-        marker_icon_repository: MarkerIconRepository,
         driver_repository: DriverRepository,
     ):
         self.asset_repository = asset_repository
@@ -27,7 +25,6 @@ class AssetService(BaseService):
         self.user_repository = user_repository
         self.equipment_repository = equipment_repository
         self.equipment_type_repository = equipment_type_repository
-        self.marker_icon_repository = marker_icon_repository
         self.driver_repository = driver_repository
         super().__init__(asset_repository)
 
@@ -47,23 +44,18 @@ class AssetService(BaseService):
                 raise NotFoundError(
                     detail=messages.EQUIPMENT_NOT_FOUND + str(asset.equipment_uuid)
                 )
-
-            if self.marker_icon_repository.read_by_uuid(asset.marker_icon_uuid) is None:
-                raise NotFoundError(
-                    detail=messages.MARKER_ICON_NOT_FOUND + str(asset.marker_icon_uuid)
-                )
-
-            created_asset = self.asset_repository.create(AssetInput(**asset.dict()))
+            # created_asset = self.asset_repository.create(AssetInput(**asset.dict()))
             if asset.add_driver:
-                driver_data = DriverPayload(
-                    asset_uuid=created_asset.uuid,
-                    first_name=asset.driver_first_name,
-                    last_name=asset.driver_last_name,
-                    phone_number=asset.driver_phone_number,
-                    license_url=asset.driver_license_url,
-                    profile_picture_url=asset.driver_profile_picture_url,
+                if self.driver_repository.read_by_uuid(asset.driver_uuid) is None:
+                    raise NotFoundError(
+                        detail=messages.DRIVER_NOT_FOUND + str(asset.driver_uuid)
+                    )
+                created_asset = self.asset_repository.create(AssetInput(**asset.dict()))
+                self.driver_repository.update_driver_asset(
+                    created_asset.uuid, asset.driver_uuid
                 )
-                self.driver_repository.create(driver_data)
+            else:
+                created_asset = self.asset_repository.create(AssetInput(**asset.dict()))
             return created_asset
         except Exception as e:
             raise e

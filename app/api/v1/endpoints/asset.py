@@ -43,7 +43,7 @@ async def get_asset_by_user_uuid_handler(
     asset_type_uuid: str = None,
     page: int = Query(1, ge=1, description="Page number, default is set to 1"),
     page_size: int = Query(
-        10, ge=1, le=100, description="Items per page, default is 10"
+        10, ge=1, le=1000, description="Items per page, default is 10"
     ),
     service: AssetService = Depends(Provide[Container.asset_service]),
     current_user: User = Depends(get_current_user),

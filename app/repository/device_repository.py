@@ -1,7 +1,7 @@
 from contextlib import AbstractContextManager
 from typing import Callable
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.model.device import Device
 from app.model.user import User
@@ -21,19 +21,21 @@ class DeviceRepository(BaseRepository):
             if not user:
                 raise Exception("User not found")
 
-            if user.account_type == AccountType.BUSINESS:
+            if user.account_type == AccountType.INDIVIDUAL:
                 devices = (
                     session.query(self.model)
                     .filter(self.model.user_uuid == user.uuid)
+                    .options(joinedload(Device.asset))
                     .all()
                 )
 
-            if user.account_type == AccountType.INDIVIDUAL:
+            if user.account_type == AccountType.BUSINESS:
                 devices = (
                     session.query(self.model)
                     .filter(
                         self.model.business_profile_uuid == user.business_profile_uuid
                     )
+                    .options(joinedload(Device.asset))
                     .all()
                 )
 

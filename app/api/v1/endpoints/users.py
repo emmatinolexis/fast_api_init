@@ -10,7 +10,9 @@ from app.core.security import extract_user_data
 from app.core.settings import settings
 from app.model.user import User
 from app.schema.user_schema import (
+    AccountDeactivationPayload,
     ResetPasswordPayload,
+    UpdateUserAvatar,
     UpdateUserPayload,
     UserPayload,
     UserUpdatePassword,
@@ -203,6 +205,43 @@ async def change_password_handler(
             payload.token, payload.new_password, payload.password_confirmation
         )
         return send_data(password_update)
+    except Exception as e:
+        msg = messages.GET_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.put("/avatar/{uuid}", response_class=ORJSONResponse)
+@inject
+async def update_user_avatar_handler(
+    uuid: str,
+    payload: UpdateUserAvatar,
+    service: UserService = Depends(Provide[Container.user_service]),
+):
+    try:
+        user = service.update_user_avatar(user_id=uuid, avatar_url=payload.avatar_url)
+        return send_data(UpdateUserAvatar(avatar_url=user.avatar_url))
+    except Exception as e:
+        msg = messages.GET_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.put("/deactivate_account/{uuid}", response_class=ORJSONResponse)
+@inject
+async def deactivate_account_handler(
+    uuid: str,
+    payload: AccountDeactivationPayload,
+    service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        user = service.deactivate_user_account(uuid, payload)
+
+        if user is None:
+            return send_client_side_error(
+                user_msg=messages.USER_NOT_FOUND + uuid,
+            )
+        status_message = "User account deactivated"
+        return send_info(status_message)
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
