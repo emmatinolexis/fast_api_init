@@ -23,9 +23,8 @@ from app.schema.user_schema import (
 from app.service.phone_otp_service import PhoneOTPService
 from app.service.reset_password_service import ResetPassword
 from app.service.user_service import UserService
-from app.util.email import send_email
-from app.util.enums import AccountType
 from app.util.email import send_email, send_otp_email
+from app.util.enums import AccountType
 from app.util.utils import (
     allow_admins_only,
     send_client_side_error,
