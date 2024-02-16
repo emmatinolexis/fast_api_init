@@ -20,6 +20,7 @@ from app.schema.user_schema import (
 from app.service.reset_password_service import ResetPassword
 from app.service.user_service import UserService
 from app.util.email import send_email
+from app.util.enums import AccountType
 from app.util.utils import (
     allow_admins_only,
     send_client_side_error,
@@ -47,6 +48,17 @@ async def create_user_handler(
             return send_client_side_error(
                 user_msg=f"User already exists : {payload.email_address}",
             )
+
+        # check if business already exist if account type is business
+        if payload.account_type == AccountType.BUSINESS:
+            found_business = service.check_business_exists(
+                payload.business_name, payload.business_email, payload.business_phone
+            )
+            if found_business:
+                return send_client_side_error(
+                    user_msg="Business already exists with the same name, email or phone"
+                )
+
         user = service.create_user(payload)
         return send_data(user)
     except Exception as e:
@@ -129,7 +141,7 @@ async def get_user_by_email(
 
 @router.put("/change_password/{user_uuid}", response_class=ORJSONResponse)
 @inject
-async def change_password(
+async def change_password_handler(
     user_uuid: str,
     payload: UserUpdatePassword,
     service: UserService = Depends(Provide[Container.user_service]),
@@ -196,7 +208,7 @@ async def send_password_link_handler(
 
 @router.post("/update_password", response_class=ORJSONResponse)
 @inject
-async def change_password_handler(
+async def update_password_handler(
     payload: ResetPasswordPayload,
     service: ResetPassword = Depends(Provide[Container.reset_password_service]),
 ):
