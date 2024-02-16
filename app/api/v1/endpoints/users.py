@@ -11,14 +11,18 @@ from app.core.security import extract_user_data
 from app.core.settings import settings
 from app.model.user import User
 from app.schema.invitation_schema import InvitationCreatePayload
-from app.schema.user_schema import (AccountDeactivationPayload,
-                                    ResetPasswordPayload, UpdateUserAvatar,
-                                    UpdateUserPayload, UserPayload,
-                                    UserUpdatePassword)
+from app.schema.user_schema import (
+    AccountDeactivationPayload,
+    ResetPasswordPayload,
+    UpdateUserAvatar,
+    UpdateUserPayload,
+    UserPayload,
+    UserUpdatePassword,
+)
 from app.service.invitation_service import InvitationService
 from app.service.reset_password_service import ResetPassword
 from app.service.user_service import UserService
-from app.util.email import send_email
+from app.util.email import send_email, send_email_invitation
 from app.util.enums import AccountType
 from app.util.utils import (
     allow_admins_only,
@@ -27,9 +31,6 @@ from app.util.utils import (
     send_info,
     send_internal_server_error,
 )
-from app.util.email import send_email, send_email_invitation
-from app.util.utils import (allow_admins_only, send_client_side_error,
-                            send_data, send_info, send_internal_server_error)
 
 router = APIRouter(
     prefix="/users",
