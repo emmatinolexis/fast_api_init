@@ -1,14 +1,14 @@
-import uuid
 from datetime import datetime
-from typing import List, Optional
-from pydantic import BaseModel, EmailStr, field_validator, Field
+from typing import List
+
+from pydantic import BaseModel, EmailStr, field_validator
 
 from app.util.enums import InvitationStatus
 
 
 class Permissions(BaseModel):
-    """Permissions granted for permissible items
-    """
+    """Permissions granted for permissible items"""
+
     assets: List[str]
     users: List[str]
     reports: List[str]
@@ -16,10 +16,12 @@ class Permissions(BaseModel):
 
     @field_validator("*")
     def validate_permissions(cls, attributes):
-        valid_permissions = {'view', 'create', 'update', 'delete'}
+        valid_permissions = {"view", "create", "update", "delete"}
         for permission in attributes:
             if permission not in valid_permissions:
-                raise ValueError(f"Invalid permission {permission}. Must be one of {valid_permissions}")
+                raise ValueError(
+                    f"Invalid permission {permission}. Must be one of {valid_permissions}"
+                )
 
         return attributes
 

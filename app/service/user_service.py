@@ -1,28 +1,26 @@
-from datetime import timezone, datetime, timedelta
+from datetime import datetime, timedelta
 from uuid import UUID
-from app.core import messages
 
 from pydantic import EmailStr
 
+from app.core import messages
 from app.core.exceptions import NotFoundError
+from app.repository.team_member_invitation_repository import \
+    TeamMemberInvitationRepository
 from app.repository.user_repository import UserRepository
-from app.repository.business_profile_repository import BusinessProfileRepository
-from app.repository.team_member_invitation_repository import TeamMemberInvitationRepository
-from app.schema.invitation_schema import InvitationCreatePayload, InvitationPayload
-from app.schema.user_schema import (
-    AccountDeactivationPayload,
-    UpdateUserPayload,
-    UserPayload,
-)
+from app.schema.invitation_schema import (InvitationCreatePayload,
+                                          InvitationPayload)
+from app.schema.user_schema import (AccountDeactivationPayload,
+                                    UpdateUserPayload, UserPayload)
 from app.service.base_service import BaseService
 from app.util.enums import InvitationStatus
 
 
 class UserService(BaseService):
     def __init__(
-            self,
-            user_repository: UserRepository,
-            invitation_repository: TeamMemberInvitationRepository,
+        self,
+        user_repository: UserRepository,
+        invitation_repository: TeamMemberInvitationRepository,
     ):
         self.user_repository = user_repository
         self.invitation_repository = invitation_repository
@@ -58,11 +56,11 @@ class UserService(BaseService):
             raise e
 
     def change_password(
-            self,
-            user_uuid: str,
-            old_password: str,
-            new_password: str,
-            password_confirmation: str,
+        self,
+        user_uuid: str,
+        old_password: str,
+        new_password: str,
+        password_confirmation: str,
     ):
         try:
             return self.user_repository.change_password(
@@ -78,7 +76,9 @@ class UserService(BaseService):
         except Exception as e:
             raise e
 
-    def create_team_member_invitation(self, uuid: str, payload: InvitationCreatePayload):
+    def create_team_member_invitation(
+        self, uuid: str, payload: InvitationCreatePayload
+    ):
         user = self.get_by_uuid(uuid)
         if not user:
             raise NotFoundError(detail=messages.USER_NOT_FOUND + f" uuid: {str(uuid)}")

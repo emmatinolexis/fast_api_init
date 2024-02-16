@@ -9,7 +9,8 @@ from app.core.exceptions import NotFoundError
 from app.model.user import User
 from app.schema.alert_policy_schema import AlertPolicyPayload
 from app.service.alert_policy_service import AlertPolicyService
-from app.util.utils import send_client_side_error, send_data, send_internal_server_error
+from app.util.utils import (send_client_side_error, send_data,
+                            send_internal_server_error)
 
 router = APIRouter(
     prefix="/alert_policies",

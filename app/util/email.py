@@ -1,8 +1,6 @@
 import os
-
 # from jinja2 import Environment, FileSystemLoader
 from pathlib import Path
-
 # import smtplib
 # from email.mime.multipart import MIMEMultipart
 # from email.mime.text import MIMEText
@@ -95,4 +93,3 @@ async def send_email_invitation(
 
     except Exception as e:
         raise Exception(str(e))
-

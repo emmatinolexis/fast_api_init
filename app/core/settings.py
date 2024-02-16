@@ -84,8 +84,7 @@ class Settings(BaseSettings):
     )
 
     EMAIL_INVITATION_SUBJECT: str = os.getenv(
-        "EMAIL_INVITATION_SUBJECT",
-        "MVI Tracking System Admin Invitation"
+        "EMAIL_INVITATION_SUBJECT", "MVI Tracking System Admin Invitation"
     )
 
     RESET_BTN: str = os.getenv("RESET_BTN", "Reset Password")

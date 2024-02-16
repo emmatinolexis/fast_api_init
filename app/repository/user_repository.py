@@ -13,11 +13,8 @@ from app.model.user import User
 from app.repository.base_repository import BaseRepository
 from app.schema.auth_schema import EmailVerification as EmailVerficationSchema
 from app.schema.auth_schema import UserEmailVerification
-from app.schema.user_schema import (
-    AccountDeactivationPayload,
-    UpdateUserPayload,
-    UserPayload,
-)
+from app.schema.user_schema import (AccountDeactivationPayload,
+                                    UpdateUserPayload, UserPayload)
 from app.util.enums import AccountType, ActiveStatus
 from app.util.utils import toggle_status
 

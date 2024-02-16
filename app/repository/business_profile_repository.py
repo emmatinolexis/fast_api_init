@@ -14,8 +14,4 @@ class BusinessProfileRepository(BaseRepository):
 
     def get_by_uuid(self, uuid: str) -> BusinessProfile:
         with self.session_factory() as session:
-            return (
-                session.query(self.model)
-                .filter(self.model.uuid == uuid)
-                .first()
-            )
+            return session.query(self.model).filter(self.model.uuid == uuid).first()

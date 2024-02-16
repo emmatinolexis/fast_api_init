@@ -1,7 +1,7 @@
-from pydantic import EmailStr
 from contextlib import AbstractContextManager
 from typing import Callable
 
+from pydantic import EmailStr
 from sqlalchemy.orm import Session
 
 from app.model.invitation import Invitation
@@ -19,8 +19,4 @@ class TeamMemberInvitationRepository(BaseRepository):
 
     def get_invitation_by_email(self, email: EmailStr) -> Invitation | None:
         with self.session_factory() as session:
-            return (
-                session.query(self.model)
-                .filter(self.model.email == email)
-                .first()
-            )
+            return session.query(self.model).filter(self.model.email == email).first()
