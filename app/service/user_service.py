@@ -39,6 +39,13 @@ class UserService(BaseService):
         except Exception as e:
             raise e
 
+    def check_business_exists(self, name, email, phone):
+        try:
+            business = self.user_repository.check_business_exists(name, email, phone)
+            return business if business else None
+        except Exception as e:
+            raise e
+
     def update_user_status(self, uuid: str):
         try:
             user = self.user_repository.update_user_status(uuid)
