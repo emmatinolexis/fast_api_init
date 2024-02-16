@@ -88,6 +88,10 @@ class Settings(BaseSettings):
         "https://mvitracking-frontend.vercel.app/authentication/set-password/",
     )
 
+    EMAIL_INVITATION_SUBJECT: str = os.getenv(
+        "EMAIL_INVITATION_SUBJECT", "MVI Tracking System Admin Invitation"
+    )
+
     RESET_BTN: str = os.getenv("RESET_BTN", "Reset Password")
     VERIFY_BTN: str = os.getenv("VERIFY_BTN", "Verify Email")
 

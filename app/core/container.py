@@ -34,6 +34,7 @@ from app.repository import (
     reset_password_repository,
     subscription_payment_repository,
     subscription_repository,
+    team_member_invitation_repository,
     tracking_event_repository,
     user_organisation_assignment_repository,
     user_repository,
@@ -53,6 +54,7 @@ from app.service import (
     equipment_service,
     equipment_type_service,
     feature_service,
+    invitation_service,
     marker_icon_service,
     onboarding_service,
     organisation_contact_service,
@@ -212,6 +214,10 @@ class Container(containers.DeclarativeContainer):
         user_organisation_assignment_repository.UserOrganisationAssignmentRepository,
         session_factory=db.provided.session,
     )
+    team_member_invitation_repository = providers.Factory(
+        team_member_invitation_repository.TeamMemberInvitationRepository,
+        session_factory=db.provided.session,
+    )
     tracking_event_repository = providers.Factory(
         tracking_event_repository.TrackingEventRepository,
         session_factory=db.provided.session,
@@ -242,6 +248,7 @@ class Container(containers.DeclarativeContainer):
     user_service = providers.Factory(
         user_service.UserService,
         user_repository=user_repository,
+        invitation_repository=team_member_invitation_repository,
     )
     alert_policy_type_service = providers.Factory(
         alert_policy_type_service.AlertPolicyTypeService,
@@ -307,6 +314,10 @@ class Container(containers.DeclarativeContainer):
     feature_service = providers.Factory(
         feature_service.FeatureService,
         feature_repository=feature_repository,
+    )
+    invitation_service = providers.Factory(
+        invitation_service.InvitationService,
+        invitation_repository=team_member_invitation_repository,
     )
     marker_icon_service = providers.Factory(
         marker_icon_service.MarkerIconService,

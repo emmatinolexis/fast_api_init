@@ -29,3 +29,4 @@ class BusinessProfile(BaseModel):
         secondaryjoin="User.uuid == UserOrganisationAssignment.user_uuid",
         back_populates="business_profile",
     )
+    invitations = relationship("Invitation", back_populates="business_profile")
