@@ -251,7 +251,7 @@ async def deactivate_account_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.put("/update_phone/{uuid}", response_class=ORJSONResponse)
+@router.put("/phone/{uuid}", response_class=ORJSONResponse)
 @inject
 async def update_phone_handler(
     uuid: str,
@@ -269,14 +269,14 @@ async def update_phone_handler(
 
     user_with_phone_number = service.get_user_by_phone_number(payload.phone_number)
 
+    # check if the given phone number is already associated with another user
     if user_with_phone_number and not (user_with_phone_number.uuid == user.uuid):
         return send_client_side_error(
             user_msg=messages.PHONE_NUMBER_EXISTS + payload.phone_number
         )
 
-    service.patch_by_uuid(uuid, payload)
-
     try:
+        service.patch_by_uuid(uuid, payload)
         token = phone_otp_service.create_phone_verification_token(user.uuid)
         await send_otp_email(
             subject=settings.PHONE_OTP_SUBJECT,
@@ -291,7 +291,7 @@ async def update_phone_handler(
         return send_internal_server_error(user_msg=msg, error=str(e))
 
 
-@router.post("/phone-verification/{uuid}", response_class=ORJSONResponse)
+@router.post("/phone_verification/{uuid}", response_class=ORJSONResponse)
 @inject
 async def phone_token_verification_handler(
     uuid: str,

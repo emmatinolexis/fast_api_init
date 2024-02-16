@@ -1,4 +1,3 @@
-import secrets
 from contextlib import AbstractContextManager
 from datetime import datetime, timedelta
 from typing import Callable
@@ -8,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.model.phone_otp_token import PhoneOtpToken
 from app.repository.base_repository import BaseRepository
+from app.util.utils import generate_unique_token
 
 
 class PhoneOtpTokenRepository(BaseRepository):
@@ -18,7 +18,7 @@ class PhoneOtpTokenRepository(BaseRepository):
     def generate_token(self) -> str:
         with self.session_factory() as session:
             while True:
-                token = secrets.token_hex(3).upper()
+                token = generate_unique_token(size=3)
                 if (
                     not session.query(self.model)
                     .filter(self.model.token == token)
