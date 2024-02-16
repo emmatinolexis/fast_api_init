@@ -140,6 +140,14 @@ class BaseRepository:
             session.commit()
             return self.read_by_id(id)
 
+    def update_attr_by_uuid(self, uuid: str, column: str, value):
+        with self.session_factory() as session:
+            session.query(self.model).filter(self.model.uuid == uuid).update(
+                {column: value}
+            )
+            session.commit()
+            return self.read_by_uuid(uuid)
+
     def whole_update(self, id: int, schema):
         with self.session_factory() as session:
             session.query(self.model).filter(self.model.id == id).update(schema.dict())

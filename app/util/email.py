@@ -71,3 +71,27 @@ async def send_email(
 
     except Exception as e:
         raise Exception(str(e))
+
+
+async def send_otp_email(
+    subject,
+    recipient_name,
+    email,
+    otp,
+):
+    try:
+        msg = MessageSchema(
+            subject=subject,
+            recipients=[email],
+            template_body={
+                "recipient_name": recipient_name,
+                "otp": otp,
+            },
+            subtype=MessageType.html,
+        )
+
+        fm = FastMail(config=get_email_config())
+        await fm.send_message(msg, template_name="otp-email-template.html")
+
+    except Exception as e:
+        raise Exception(str(e))
