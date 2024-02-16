@@ -5,7 +5,6 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from app.model.base_model import BaseModel
-from app.model.package_item_assignment import PackageItemAssignment
 
 
 class Package(BaseModel):
@@ -20,4 +19,4 @@ class Package(BaseModel):
     package_name = Column(String(length=50), nullable=False, unique=True, index=True)
     package_price = Column(String(length=50), nullable=False, index=True)
     package_description = Column(String(length=100), nullable=False, index=True)
-    package_item_assignments = relationship(PackageItemAssignment, uselist=True)
+    package_items = relationship("PackageItem", secondary="package_item_assignments")

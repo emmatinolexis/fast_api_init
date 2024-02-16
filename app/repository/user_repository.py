@@ -63,6 +63,19 @@ class UserRepository(BaseRepository):
             session.refresh(user)
             return user
 
+    def check_business_exists(self, name, email, phone):
+        with self.session_factory() as session:
+            business_data = (
+                session.query(BusinessProfile)
+                .filter(
+                    (BusinessProfile.business_name == name)
+                    | (BusinessProfile.business_email == email)
+                    | (BusinessProfile.business_phone == phone)
+                )
+                .first()
+            )
+            return business_data is not None
+
     def get_user_by_phone_number(self, phone_number: str):
         with self.session_factory() as session:
             return (
@@ -94,6 +107,9 @@ class UserRepository(BaseRepository):
             # Compare the old password with the stored hashed password
             if not verify_password(old_password, user.password):
                 raise Exception("Incorrect old password provided")
+
+            if verify_password(new_password, user.password):
+                raise Exception("New password and old password cannot be the same")
 
             # Update the password with the new hashed password
             user.password = hash_user_password(new_password)

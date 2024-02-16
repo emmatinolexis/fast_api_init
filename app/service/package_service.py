@@ -13,13 +13,7 @@ class PackageService(BaseService):
 
     def get_all_packages(self):
         try:
-            db_packages = self.get_list()
-            packages = []
-            for package in db_packages:
-                package_items = self.package_repository.read_all_package_items_by_uuid(
-                    package.uuid
-                )
-                packages.append({"package": package, "package_items": package_items})
+            packages = self.package_repository.get_all_packages()
             return packages
         except Exception as e:
             raise e

@@ -42,8 +42,6 @@ async def create_driver_handler(
     try:
         driver = service.create_driver(payload)
         return send_data(driver)
-    except NotFoundError as e:
-        return send_client_side_error(user_msg=messages.ASSET_NOT_FOUND + str(e.detail))
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)

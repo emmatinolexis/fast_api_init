@@ -56,11 +56,13 @@ class AssetPayload(BaseModel):
     make: Optional[str] = None
     model: Optional[str] = None
     add_driver: bool = False
-    driver_first_name: Optional[str] = None
-    driver_last_name: Optional[str] = None
-    driver_phone_number: Optional[str] = None
-    driver_license_url: Optional[str] = None
-    driver_profile_picture_url: Optional[str] = None
+    driver_uuid: Optional[UUID] = None
+
+    # driver_first_name: Optional[str] = None
+    # driver_last_name: Optional[str] = None
+    # driver_phone_number: Optional[str] = None
+    # driver_license_url: Optional[str] = None
+    # driver_profile_picture_url: Optional[str] = None
 
     class Config:
         orm_model = True
@@ -106,9 +108,9 @@ class AssetLocationFetch(BaseModel):
 
 
 class DriverPayload(BaseModel):
-    asset_uuid: UUID
+    asset_uuid: Optional[UUID] = None
     user_uuid: UUID
-    business_uuid: Optional[str] = None
+    business_uuid: Optional[UUID] = None
     first_name: str
     last_name: str
     phone_number: str
