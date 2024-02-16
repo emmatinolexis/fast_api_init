@@ -139,7 +139,7 @@ async def get_user_by_email(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.put("/change_password/{user_uuid}", response_class=ORJSONResponse)
+@router.put("/password/{user_uuid}", response_class=ORJSONResponse)
 @inject
 async def change_password_handler(
     user_uuid: str,
@@ -164,7 +164,7 @@ async def change_password_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.post("/reset_password/{email_address}", response_class=ORJSONResponse)
+@router.post("/password/{email_address}", response_class=ORJSONResponse)
 @inject
 async def send_password_link_handler(
     email_address: str,
@@ -206,7 +206,7 @@ async def send_password_link_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.post("/update_password", response_class=ORJSONResponse)
+@router.post("/password", response_class=ORJSONResponse)
 @inject
 async def update_password_handler(
     payload: ResetPasswordPayload,
