@@ -1,3 +1,5 @@
+from fastapi import BackgroundTasks
+
 from app.repository.subscription_repository import SubscriptionRepository
 from app.service.base_service import BaseService
 
@@ -12,3 +14,9 @@ class SubscriptionService(BaseService):
             return self.subscription_repository.read_all_subscriptions(page, page_size)
         except Exception as e:
             raise e
+
+    # Background task to create or update subscriptions for today's plan upgrades
+    def subscriptions_upgrade(self, background_tasks: BackgroundTasks):
+        return background_tasks.add_task(
+            self.subscription_repository.subscriptions_today()
+        )

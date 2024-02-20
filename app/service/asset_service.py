@@ -51,9 +51,29 @@ class AssetService(BaseService):
                         detail=messages.DRIVER_NOT_FOUND + str(asset.driver_uuid)
                     )
                 created_asset = self.asset_repository.create(AssetInput(**asset.dict()))
-                self.driver_repository.update_driver_asset(
+
+                updated_driver = self.driver_repository.update_driver_asset(
                     created_asset.uuid, asset.driver_uuid
                 )
+
+                created_asset_data = {
+                    "user_uuid": created_asset.user_uuid,
+                    "asset_type_uuid": created_asset.asset_type_uuid,
+                    "asset_name": created_asset.asset_name,
+                    "vehicle_license_no": created_asset.vehicle_license_no,
+                    "asset_status": created_asset.asset_status,
+                    "equipment_type_uuid": created_asset.equipment_type_uuid,
+                    "device_imei": created_asset.device_imei,
+                    "vin": created_asset.vin,
+                    "marker_color": created_asset.marker_color,
+                    "equipment_uuid": created_asset.equipment_uuid,
+                    "serial_number": created_asset.serial_number,
+                    "make": created_asset.make,
+                    "model": created_asset.model,
+                    "driver": updated_driver,
+                }
+
+                return created_asset_data
             else:
                 created_asset = self.asset_repository.create(AssetInput(**asset.dict()))
             return created_asset

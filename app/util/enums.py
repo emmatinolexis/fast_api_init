@@ -16,7 +16,8 @@ class ActiveStatus(str, Enum):
 
 
 class PaymentTypes(str, Enum):
-    SUBSCRIPTION_PAYMENT = "subscription_payment"
+    SUBSCRIPTION_PAYMENT = ("subscription_payment",)
+    SUBSCRIPTION_UPGRADE_PAYMENT = "subscription_upgrade_payment"
 
 
 class PaymentStatus(str, Enum):

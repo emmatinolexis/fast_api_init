@@ -1,4 +1,5 @@
 from datetime import date
+from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -15,6 +16,20 @@ class SubscriptionPayload(BaseModel):
     user_uuid: UUID
     package_uuid: UUID
     status: ActiveStatus
+
+    class Config:
+        orm_model = True
+
+
+class UpdateUserSubscriptionPayload(BaseModel):
+    business_uuid: Optional[UUID] = None
+    user_uuid: UUID
+    package_uuid: UUID
+    payment_uuid: Optional[UUID] = None
+    subscription_period: SubscriptionPeriod
+    subscription_type: SubscriptionTypes
+    start_date: date
+    end_date: date
 
     class Config:
         orm_model = True
