@@ -31,6 +31,7 @@ from app.repository import (
     package_repository,
     payment_repository,
     phone_otp_repository,
+    plan_upgrade_repository,
     reset_password_repository,
     subscription_payment_repository,
     subscription_repository,
@@ -62,6 +63,7 @@ from app.service import (
     package_service,
     payment_service,
     phone_otp_service,
+    plan_updgrade_service,
     reset_password_service,
     subscription_payment_service,
     subscription_service,
@@ -238,6 +240,10 @@ class Container(containers.DeclarativeContainer):
         reset_password_repository.PasswordResetRepository,
         session_factory=db.provided.session,
     )
+    plan_upgrade_repository = providers.Factory(
+        plan_upgrade_repository.PlanUpgradeRepository,
+        session_factory=db.provided.session,
+    )
 
     # Services
     auth_service = providers.Factory(
@@ -372,4 +378,8 @@ class Container(containers.DeclarativeContainer):
     reset_password_service = providers.Factory(
         reset_password_service.ResetPassword,
         reset_password_repository=reset_password_repository,
+    )
+    plan_upgrade_service = providers.Factory(
+        plan_updgrade_service.PlanUpgradeService,
+        plan_upgrade_repository=plan_upgrade_repository,
     )

@@ -10,6 +10,7 @@ from app.model.device import Device
 from app.model.tracking_event import TrackingEvent
 from app.model.user import User
 from app.repository.base_repository import BaseRepository
+from app.util.enums import AssetStatus
 from app.util.utils import get_status
 
 
@@ -93,6 +94,7 @@ class AssetRepository(BaseRepository):
 
             # update asset with device imei
             asset.device_imei = imei
+            asset.asset_status = AssetStatus.ACTIVE
             session.commit()
             session.refresh(asset)
 
