@@ -38,7 +38,12 @@ class AssetRepository(BaseRepository):
                 .limit(page_size)
             )
 
-            assets = query.options(joinedload(Asset.asset_type)).all()
+            assets = (
+                query.options(joinedload(Asset.asset_type))
+                .options(joinedload(Asset.driver))
+                .options(joinedload(Asset.device))
+                .all()
+            )
             for asset in assets:
                 # check if asset has device imei
                 if asset.device_imei:
@@ -83,6 +88,10 @@ class AssetRepository(BaseRepository):
             # check if imei is valid
             if not device:
                 raise Exception("Imei not found")
+
+            # check if device already assigned
+            if device.device_serial_no:
+                raise Exception("Device already assigned to an asset")
 
             asset = (
                 session.query(self.model).filter(self.model.uuid == asset_uuid).first()

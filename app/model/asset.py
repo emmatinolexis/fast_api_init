@@ -31,7 +31,12 @@ class Asset(BaseModel):
     equipment_uuid = Column(
         UUID(as_uuid=True), ForeignKey("equipments.uuid"), nullable=False
     )
-    device_imei = Column(String(length=100), nullable=True, index=True)
+    device_imei = Column(
+        String(length=100),
+        ForeignKey("devices.device_serial_no"),
+        nullable=True,
+        index=True,
+    )
     vin = Column(String(length=100), nullable=True, index=True)
     serial_number = Column(String(length=100), nullable=True, index=True)
     make = Column(String(length=100), nullable=True, index=True)
@@ -45,3 +50,5 @@ class Asset(BaseModel):
     asset_type = relationship("AssetType", uselist=False)
     equipment_type = relationship("EquipmentType", uselist=False)
     equipment = relationship("Equipment", uselist=False)
+    driver = relationship("Driver", uselist=False, back_populates="asset")
+    device = relationship("Device", uselist=False, back_populates="asset")
