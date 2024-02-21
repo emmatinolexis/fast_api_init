@@ -45,3 +45,4 @@ class Asset(BaseModel):
     asset_type = relationship("AssetType", uselist=False)
     equipment_type = relationship("EquipmentType", uselist=False)
     equipment = relationship("Equipment", uselist=False)
+    driver = relationship("Driver", uselist=False, back_populates="asset")

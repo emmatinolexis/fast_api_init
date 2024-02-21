@@ -2,6 +2,7 @@ import uuid
 
 from sqlalchemy import Column, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 from app.model.base_model import BaseModel
 
@@ -25,3 +26,4 @@ class Driver(BaseModel):
     phone_number = Column(String(length=20), nullable=True, unique=True, index=True)
     license_url = Column(String(length=100), nullable=True, index=True)
     profile_picture_url = Column(String(length=100), nullable=True, index=True)
+    asset = relationship("Asset", uselist=False, back_populates="driver")
