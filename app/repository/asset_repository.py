@@ -90,7 +90,7 @@ class AssetRepository(BaseRepository):
                 raise Exception("Imei not found")
 
             # check if device already assigned
-            if device.device_serial_no:
+            if device.assign_to_asset_status is not None:
                 raise Exception("Device already assigned to an asset")
 
             asset = (
