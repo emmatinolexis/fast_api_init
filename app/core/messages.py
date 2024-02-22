@@ -1,6 +1,6 @@
 # Messages
 
-USER_NOT_FOUND = "No user was found with the given email : "
+USER_NOT_FOUND = "No user was found with the given  : "
 ORGANISATION_CONTACT_NOT_FOUND = (
     "No organisation contact was found with the given uuid : "
 )
@@ -11,6 +11,7 @@ ALERT_POLICY_TYPE_NOT_FOUND = "No alert policy type was found with the given uui
 MARKER_ICON_NOT_FOUND = "No marker icon was found with the given uuid : "
 ASSET_TYPE_NOT_FOUND = "No asset type was found with the given uuid : "
 ASSET_NOT_FOUND = "No asset was found with the given uuid : "
+BUSINESS_PROFILE_NOT_FOUND = "No business profile was found with the given uuid : "
 DEVICE_NOT_FOUND = "No device was found with the given uuid : "
 DEVICE_MANUFACTURER_NOT_FOUND = (
     "No device manufacturer was found with the given uuid : "
@@ -37,3 +38,8 @@ CREATE_FAILED = "Failed to create "
 UPDATE_FAILED = "Failed to update "
 DELETE_FAILED = "Failed to delete "
 DELETE_SUCCESS = "Successfully deleted "
+
+PHONE_NUMBER_EXISTS = "Phone number already exists "
+PHONE_OTP_INVALID = "Phone verification token is invalid "
+PHONE_OTP_EXPIRED = "Phone verification token has expired "
+PHONE_OTP_FAILED = "Phone verification failed "

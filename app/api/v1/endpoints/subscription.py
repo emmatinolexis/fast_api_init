@@ -1,5 +1,5 @@
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, Query
 from fastapi.responses import ORJSONResponse
 
 from app.core import messages
@@ -7,7 +7,8 @@ from app.core.container import Container
 from app.core.dependencies import get_current_user
 from app.core.exceptions import NotFoundError
 from app.model.user import User
-from app.schema.subscription import SubscriptionPayload
+from app.schema.subscription import SubscriptionPayload, UpdateUserSubscriptionPayload
+from app.service.plan_updgrade_service import PlanUpgradeService
 from app.service.subscription_service import SubscriptionService
 from app.util.utils import (
     send_client_side_error,
@@ -83,7 +84,7 @@ async def update_subscription_handler(
 @inject
 async def delete_subscription_by_uuid_handler(
     uuid: str,
-    service: SubscriptionPayload = Depends(Provide[Container.subscription_service]),
+    service: SubscriptionService = Depends(Provide[Container.subscription_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
@@ -95,4 +96,38 @@ async def delete_subscription_by_uuid_handler(
         )
     except Exception as e:
         msg = f"{messages.GET_FAILED} {msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.post("/user", response_class=ORJSONResponse)
+@inject
+async def update_user_subscription_handler(
+    payload: UpdateUserSubscriptionPayload,
+    service: PlanUpgradeService = Depends(Provide[Container.plan_upgrade_service]),
+    # current_user: User = Depends(get_current_user),
+):
+    try:
+        subscription = service.add(payload)
+        return send_data(subscription)
+    except NotFoundError as e:
+        return send_client_side_error(
+            user_msg=messages.SUBSCRIPTION_NOT_FOUND + str(e.detail)
+        )
+    except Exception as e:
+        msg = f"{messages.GET_FAILED} {msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.post("/subscription_upgrade", response_class=ORJSONResponse)
+@inject
+async def subscription_upgrade_handler(
+    background_tasks: BackgroundTasks,
+    service: SubscriptionService = Depends(Provide[Container.subscription_service]),
+):
+    try:
+        service.subscriptions_upgrade(background_tasks)
+        msg = "Subscription upgrade task added to background queue"
+        return send_data(msg)
+    except Exception as e:
+        msg = "Failed to add subscription upgrade task to background queue"
         return send_internal_server_error(user_msg=msg, error=e)

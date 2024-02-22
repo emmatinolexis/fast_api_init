@@ -30,9 +30,12 @@ from app.repository import (
     package_item_repository,
     package_repository,
     payment_repository,
+    phone_otp_repository,
+    plan_upgrade_repository,
     reset_password_repository,
     subscription_payment_repository,
     subscription_repository,
+    team_member_invitation_repository,
     tracking_event_repository,
     user_organisation_assignment_repository,
     user_repository,
@@ -52,12 +55,15 @@ from app.service import (
     equipment_service,
     equipment_type_service,
     feature_service,
+    invitation_service,
     marker_icon_service,
     onboarding_service,
     organisation_contact_service,
     package_item_service,
     package_service,
     payment_service,
+    phone_otp_service,
+    plan_updgrade_service,
     reset_password_service,
     subscription_payment_service,
     subscription_service,
@@ -195,6 +201,10 @@ class Container(containers.DeclarativeContainer):
         organisation_contact_repository.OrganisationContactRepository,
         session_factory=db.provided.session,
     )
+    phone_otp_repository = providers.Factory(
+        phone_otp_repository.PhoneOtpTokenRepository,
+        session_factory=db.provided.session,
+    )
     package_item_repository = providers.Factory(
         package_item_repository.PackageItemRepository,
         session_factory=db.provided.session,
@@ -204,6 +214,10 @@ class Container(containers.DeclarativeContainer):
     )
     user_organisation_assignment_repository = providers.Factory(
         user_organisation_assignment_repository.UserOrganisationAssignmentRepository,
+        session_factory=db.provided.session,
+    )
+    team_member_invitation_repository = providers.Factory(
+        team_member_invitation_repository.TeamMemberInvitationRepository,
         session_factory=db.provided.session,
     )
     tracking_event_repository = providers.Factory(
@@ -226,6 +240,10 @@ class Container(containers.DeclarativeContainer):
         reset_password_repository.PasswordResetRepository,
         session_factory=db.provided.session,
     )
+    plan_upgrade_repository = providers.Factory(
+        plan_upgrade_repository.PlanUpgradeRepository,
+        session_factory=db.provided.session,
+    )
 
     # Services
     auth_service = providers.Factory(
@@ -234,7 +252,9 @@ class Container(containers.DeclarativeContainer):
         email_verification_repository=email_verfication_repository,
     )
     user_service = providers.Factory(
-        user_service.UserService, user_repository=user_repository
+        user_service.UserService,
+        user_repository=user_repository,
+        invitation_repository=team_member_invitation_repository,
     )
     alert_policy_type_service = providers.Factory(
         alert_policy_type_service.AlertPolicyTypeService,
@@ -301,6 +321,10 @@ class Container(containers.DeclarativeContainer):
         feature_service.FeatureService,
         feature_repository=feature_repository,
     )
+    invitation_service = providers.Factory(
+        invitation_service.InvitationService,
+        invitation_repository=team_member_invitation_repository,
+    )
     marker_icon_service = providers.Factory(
         marker_icon_service.MarkerIconService,
         marker_icon_repository=marker_icon_repository,
@@ -320,6 +344,11 @@ class Container(containers.DeclarativeContainer):
     organisation_contact_service = providers.Factory(
         organisation_contact_service.OrganisationContactService,
         organisation_contact_repository=organisation_contact_repository,
+        user_repository=user_repository,
+    )
+    phone_otp_service = providers.Factory(
+        phone_otp_service.PhoneOTPService,
+        phone_otp_repository=phone_otp_repository,
         user_repository=user_repository,
     )
     package_item_service = providers.Factory(
@@ -349,4 +378,8 @@ class Container(containers.DeclarativeContainer):
     reset_password_service = providers.Factory(
         reset_password_service.ResetPassword,
         reset_password_repository=reset_password_repository,
+    )
+    plan_upgrade_service = providers.Factory(
+        plan_updgrade_service.PlanUpgradeService,
+        plan_upgrade_repository=plan_upgrade_repository,
     )

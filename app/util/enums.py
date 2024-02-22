@@ -16,7 +16,8 @@ class ActiveStatus(str, Enum):
 
 
 class PaymentTypes(str, Enum):
-    SUBSCRIPTION_PAYMENT = "subscription_payment"
+    SUBSCRIPTION_PAYMENT = ("subscription_payment",)
+    SUBSCRIPTION_UPGRADE_PAYMENT = "subscription_upgrade_payment"
 
 
 class PaymentStatus(str, Enum):
@@ -78,3 +79,8 @@ class EventStatus(str, Enum):
     IDLING_ALARM = "Idling_Alarm"
     IGNITION_OFF = "Ignition_off"
     TIME_INTERVAL_TRACKING = "Time_Interval_Tracking"
+
+
+class InvitationStatus(str, Enum):
+    PENDING = "Pending"
+    EXPIRED = "Expired"

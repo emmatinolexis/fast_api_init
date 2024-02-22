@@ -1,7 +1,8 @@
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Field, constr
+import phonenumbers
+from pydantic import BaseModel, EmailStr, Field, ValidationInfo, constr, field_validator
 
 from app.util.enums import AccountType, ActiveStatus, UserRole
 
@@ -85,3 +86,25 @@ class AccountDeactivationPayload(BaseModel):
 
 class UpdateUserAvatar(BaseModel):
     avatar_url: str = Field(min_length=3, max_length=200)
+
+
+class UpdatePhoneNumber(BaseModel):
+    phone_number: str = Field(min_length=10, max_length=20)
+
+    @field_validator("phone_number")
+    @classmethod
+    def validate_phone_number(cls, value: str, info: ValidationInfo) -> str:
+        try:
+            phone_number = phonenumbers.parse(value, None)
+            if not phonenumbers.is_valid_number(phone_number):
+                raise ValueError("Invalid phone number format")
+
+            if not phonenumbers.is_possible_number(phone_number):
+                raise ValueError("Invalid phone number")
+            return value
+        except phonenumbers.NumberParseException as e:
+            raise ValueError(f"Invalid phone number: {e}")
+
+
+class UserPhoneVerificationToken(BaseModel):
+    token: str = Field(min_length=6, max_length=6)

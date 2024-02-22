@@ -78,9 +78,18 @@ class Settings(BaseSettings):
         "VERIFY_EMAIL_URL",
         "https://mvitracking-frontend.vercel.app/authentication/email-verification/",
     )
+
+    PHONE_OTP_SUBJECT: str = os.getenv(
+        "PHONE_OTP_SUBJECT", "MVI Tracking Phone Verification"
+    )
+
     RESET_PASSWORD_URL: str = os.getenv(
         "RESET_PASSWORD_URL",
         "https://mvitracking-frontend.vercel.app/authentication/set-password/",
+    )
+
+    EMAIL_INVITATION_SUBJECT: str = os.getenv(
+        "EMAIL_INVITATION_SUBJECT", "MVI Tracking System Admin Invitation"
     )
 
     RESET_BTN: str = os.getenv("RESET_BTN", "Reset Password")

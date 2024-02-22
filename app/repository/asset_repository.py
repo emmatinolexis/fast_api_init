@@ -10,6 +10,7 @@ from app.model.device import Device
 from app.model.tracking_event import TrackingEvent
 from app.model.user import User
 from app.repository.base_repository import BaseRepository
+from app.util.enums import AssetStatus
 from app.util.utils import get_status
 
 
@@ -37,7 +38,12 @@ class AssetRepository(BaseRepository):
                 .limit(page_size)
             )
 
-            assets = query.options(joinedload(Asset.asset_type)).all()
+            assets = (
+                query.options(joinedload(Asset.asset_type))
+                .options(joinedload(Asset.driver))
+                .options(joinedload(Asset.device))
+                .all()
+            )
             for asset in assets:
                 # check if asset has device imei
                 if asset.device_imei:
@@ -83,6 +89,10 @@ class AssetRepository(BaseRepository):
             if not device:
                 raise Exception("Imei not found")
 
+            # check if device already assigned
+            if device.device_serial_no:
+                raise Exception("Device already assigned to an asset")
+
             asset = (
                 session.query(self.model).filter(self.model.uuid == asset_uuid).first()
             )
@@ -93,6 +103,7 @@ class AssetRepository(BaseRepository):
 
             # update asset with device imei
             asset.device_imei = imei
+            asset.asset_status = AssetStatus.ACTIVE
             session.commit()
             session.refresh(asset)
 

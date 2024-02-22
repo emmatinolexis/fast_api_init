@@ -1,0 +1,51 @@
+<html>
+  <head>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body,
+      button {
+        font-family: "Inter", sans-serif;
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          background-color: white !important;
+        }
+
+        .responsive-div {
+          width: 100% !important;
+          height: 100% !important;
+        }
+      }
+    </style>
+  </head>
+  <body
+    class="container"
+    style="
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background-color: #ededed;
+      height: 100vh;
+    "
+  >
+    <div
+      class="responsive-div"
+      style="
+        width: 60%;
+        background-color: white;
+        border-radius: 8px;
+        padding: 20px;
+      "
+    >
+      <p style="font-size: 20px; font-weight: bold">
+        Hello, {{recipient_name}}
+      </p>
+      <p style="font-size: 20px">Your OTP is {{ otp }}</p>
+    </div>
+  </body>
+</html>

@@ -26,8 +26,8 @@ class Asset(BaseModel):
     asset_status: AssetStatus
     equipment_type_uuid: Optional[UUID] = None
     vin_no: Optional[str] = None
-    vehicle_license_no: str
-    marker_color: str
+    vehicle_license_no: Optional[str] = None
+    marker_color: Optional[str] = None
     equipment_uuid: UUID
     serial_number: Optional[str] = None
     make: Optional[str] = None
@@ -45,24 +45,18 @@ class AssetPayload(BaseModel):
     user_uuid: UUID
     asset_type_uuid: UUID
     asset_name: str
-    vehicle_license_no: str
+    vehicle_license_no: Optional[str] = None
     asset_status: AssetStatus
     equipment_type_uuid: Optional[UUID] = None
     device_imei: Optional[str] = None
     vin: Optional[str] = None
-    marker_color: str
+    marker_color: Optional[str] = None
     equipment_uuid: UUID
     serial_number: Optional[str] = None
     make: Optional[str] = None
     model: Optional[str] = None
     add_driver: bool = False
     driver_uuid: Optional[UUID] = None
-
-    # driver_first_name: Optional[str] = None
-    # driver_last_name: Optional[str] = None
-    # driver_phone_number: Optional[str] = None
-    # driver_license_url: Optional[str] = None
-    # driver_profile_picture_url: Optional[str] = None
 
     class Config:
         orm_model = True
@@ -76,8 +70,8 @@ class AssetInput(BaseModel):
     equipment_type_uuid: Optional[UUID] = None
     device_imei: Optional[str] = None
     vin: Optional[str] = None
-    vehicle_license_no: str
-    marker_color: str
+    vehicle_license_no: Optional[str] = None
+    marker_color: Optional[str] = None
     equipment_uuid: UUID
     serial_number: Optional[str] = None
     make: Optional[str] = None
