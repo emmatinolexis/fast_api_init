@@ -7,7 +7,6 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.model.asset import Asset
 from app.model.device import Device
-from app.model.driver import Driver
 from app.model.tracking_event import TrackingEvent
 from app.model.user import User
 from app.repository.base_repository import BaseRepository
@@ -41,21 +40,13 @@ class AssetRepository(BaseRepository):
 
             assets = (
                 query.options(joinedload(Asset.asset_type))
-                # .options(joinedload(Asset.driver))
-                .options(joinedload(Asset.device)).all()
+                .options(joinedload(Asset.driver))
+                .options(joinedload(Asset.device))
+                .all()
             )
 
             # assets = [asset for asset in assets if asset.driver is not None]
             for asset in assets:
-                driver = (
-                    session.query(Driver)
-                    .filter(Driver.asset_uuid == asset.uuid)
-                    .first()
-                )
-                if driver:
-                    asset.driver = driver
-                else:
-                    asset.driver = []
 
                 # check if asset has device imei
                 if asset.device_imei:
