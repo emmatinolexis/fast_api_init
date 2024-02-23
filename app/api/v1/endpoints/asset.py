@@ -52,6 +52,7 @@ async def get_asset_by_user_uuid_handler(
         assets = service.get_assets_by_user_uuid(
             user_uuid, asset_type_uuid, page, page_size
         )
+
         return send_data(assets)
 
     except Exception as e:
