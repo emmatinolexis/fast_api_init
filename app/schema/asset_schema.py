@@ -77,9 +77,6 @@ class AssetInput(BaseModel):
     make: Optional[str] = None
     model: Optional[str] = None
 
-    class Config:
-        orm_model = True
-
 
 class AssignDeviceInputPayload(BaseModel):
     device_imei: str

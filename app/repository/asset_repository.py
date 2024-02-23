@@ -44,7 +44,10 @@ class AssetRepository(BaseRepository):
                 .options(joinedload(Asset.device))
                 .all()
             )
+
+            # assets = [asset for asset in assets if asset.driver is not None]
             for asset in assets:
+
                 # check if asset has device imei
                 if asset.device_imei:
                     # Get device's last known location
@@ -90,7 +93,7 @@ class AssetRepository(BaseRepository):
                 raise Exception("Imei not found")
 
             # check if device already assigned
-            if device.device_serial_no:
+            if device.assign_to_asset_status is not None:
                 raise Exception("Device already assigned to an asset")
 
             asset = (
