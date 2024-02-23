@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -72,14 +72,33 @@ class AlertPolicyAssetAssignment(BaseModel):
 
 class AlertPolicyFetch(BaseModel):
     policy_name: str
-    # alert_policy_type_uuid: UUID
     alert_types: list[str]
     alert_reciepients: list[str]
     alert_assets: list[str]
     geofence_location_name: str
     geofence_type: str
     minimum_idle_time: str
-    # maintenance_alert_policy_type_uuid: Optional[UUID] = None
-    # maintenance_alert_schedule: Optional[MaintenanceAlertSchedule] = None
-    # alert_policy_type: AlertPolicyType
-    # maintenance_alert_type: AlertMaintenanceType
+
+
+class Coordinates(BaseModel):
+    latitude: float
+    longitude: float
+
+
+class GeofenceAlertPolicyPayload(BaseModel):
+    policy_name: str
+    alert_policy_type_uuid: UUID
+    alert_types: list[AlertType]
+    alert_recipients: list[str] = []
+    alert_assets: list[UUID]
+    geofence_location_name: Optional[str] = None
+    geofence_type: Optional[GeofenceType] = None
+    geofence_data: Optional[List[Coordinates]] = []
+
+
+class GeofenceAlertPolicyInput(BaseModel):
+    policy_name: str
+    alert_policy_type_uuid: UUID
+    geofence_location_name: Optional[str] = None
+    geofence_type: Optional[GeofenceType] = None
+    geofence_data: Optional[List[Coordinates]]
