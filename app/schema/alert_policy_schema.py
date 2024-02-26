@@ -93,7 +93,7 @@ class GeofenceAlertPolicyPayload(BaseModel):
     alert_assets: list[UUID]
     geofence_location_name: Optional[str] = None
     geofence_type: Optional[GeofenceType] = None
-    geofence_data: Optional[List[Coordinates]] = []
+    geofence_data: Optional[List[Coordinates]]
 
 
 class GeofenceAlertPolicyInput(BaseModel):

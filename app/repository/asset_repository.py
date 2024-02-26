@@ -47,7 +47,6 @@ class AssetRepository(BaseRepository):
 
             # assets = [asset for asset in assets if asset.driver is not None]
             for asset in assets:
-
                 # check if asset has device imei
                 if asset.device_imei:
                     # Get device's last known location
@@ -127,3 +126,36 @@ class AssetRepository(BaseRepository):
             )
 
             return updated_asset
+
+    def read_by_vin_serial_number_license_no(
+        self, vin: str = None, serial_number: str = None, vehicle_license_no: str = None
+    ):
+        with self.session_factory() as session:
+            if vehicle_license_no:
+                existing_asset = (
+                    session.query(self.model)
+                    .filter(self.model.vehicle_license_no == vehicle_license_no)
+                    .first()
+                )
+                if existing_asset:
+                    raise Exception(
+                        "Asset with the given license number already exists."
+                    )
+            if vin:
+                existing_asset = (
+                    session.query(self.model).filter(self.model.vin == vin).first()
+                )
+                if existing_asset:
+                    raise Exception("Asset with the given VIN already exists.")
+            if serial_number:
+                existing_asset = (
+                    session.query(self.model)
+                    .filter(self.model.serial_number == serial_number)
+                    .first()
+                )
+                if existing_asset:
+                    raise Exception(
+                        "Asset with the given serial number already exists."
+                    )
+            else:
+                pass
