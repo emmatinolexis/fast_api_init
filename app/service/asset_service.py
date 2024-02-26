@@ -30,6 +30,10 @@ class AssetService(BaseService):
 
     def create_asset(self, asset: AssetPayload):
         try:
+            self.asset_repository.read_by_vin_serial_number_license_no(
+                asset.vin, asset.serial_number, asset.vehicle_license_no
+            )
+
             if self.user_repository.read_by_uuid(asset.user_uuid) is None:
                 raise NotFoundError(
                     detail=messages.USER_NOT_FOUND + str(asset.user_uuid)
@@ -44,6 +48,7 @@ class AssetService(BaseService):
                 raise NotFoundError(
                     detail=messages.EQUIPMENT_NOT_FOUND + str(asset.equipment_uuid)
                 )
+
             # created_asset = self.asset_repository.create(AssetInput(**asset.dict()))
             if asset.add_driver:
                 if self.driver_repository.read_by_uuid(asset.driver_uuid) is None:
