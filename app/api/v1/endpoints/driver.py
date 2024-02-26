@@ -71,6 +71,21 @@ async def update_driver_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
+@router.put("/unassign/{driver_uuid}", response_class=ORJSONResponse)
+@inject
+async def unassign_driver_handler(
+    driver_uuid: str,
+    service: DriverService = Depends(Provide[Container.driver_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        driver = service.unassign_driver(driver_uuid)
+        return send_data(driver)
+    except Exception as e:
+        msg = messages.UPDATE_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
 @router.get("/{uuid}", response_class=ORJSONResponse)
 @inject
 async def get_driver_by_uuid_handler(

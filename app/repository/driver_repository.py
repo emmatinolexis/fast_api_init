@@ -34,3 +34,14 @@ class DriverRepository(BaseRepository):
             query = session.query(self.model)
             query = query.filter(self.model.business_uuid == business_uuid).all()
             return query
+
+    def unassign_driver(self, driver_uuid) -> Driver:
+        with self.session_factory() as session:
+            query = session.query(self.model)
+            driver = query.filter(self.model.uuid == driver_uuid).first()
+            if not driver:
+                raise Exception("Driver not found")
+            driver.asset_uuid = None
+            session.commit()
+            session.refresh(driver)
+            return driver
