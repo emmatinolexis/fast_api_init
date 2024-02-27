@@ -1,6 +1,6 @@
 import os
 from functools import lru_cache
-from typing import List
+from typing import Dict, List
 
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
@@ -31,6 +31,20 @@ class Settings(BaseSettings):
     PASSWORD_RESET_TOKEN_EXPIRE_DAYS: int = os.getenv(
         "PASSWORD_RESET_TOKEN_EXPIRE_DAYS", 3
     )
+
+    # paystack
+    PAYSTACK_API_KEY: str = os.getenv("PAYSTACK_API_KEY", "api_key")
+    PAYSTACK_PLAN_URL: str = os.getenv("PAYSTACK_PLAN_URL", "paystack_url")
+    PAYSTACK_SUBSCRIPTION_URL: str = os.getenv(
+        "PAYSTACK_SUBSCRIPTION_URL", "paystack_subscription_url"
+    )
+    PAYSTACK_PAYMENT_URL: str = os.getenv(
+        "PAYSTACK_PAYMENT_URL", "paystack_payment_url"
+    )
+    PAYSTACK_HEADERS: Dict[str, str] = {
+        "Authorization": f"Bearer {PAYSTACK_API_KEY}",
+        "Content-Type": "application/json",
+    }
 
     # database
     DB_USER: str = os.getenv("DB_USER", "mvi_tracking_user")

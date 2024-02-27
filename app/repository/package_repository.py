@@ -1,9 +1,11 @@
 from contextlib import AbstractContextManager
 from typing import Callable
 
+import requests
 from sqlalchemy import exc
 from sqlalchemy.orm import Session, joinedload
 
+from app.core.settings import settings
 from app.model.package import Package
 from app.model.package_item_assignment import PackageItemAssignment
 from app.repository.base_repository import BaseRepository
@@ -23,6 +25,84 @@ class PackageRepository(BaseRepository):
                 .all()
             )
 
+    def create_paystack_package_plan(self, payload):
+        try:
+            data = {
+                "name": payload.name,
+                "amount": payload.amount,
+                "description": payload.description,
+                "interval": "monthly",
+                "send_invoices": True,
+                "send_sms": True,
+                "currency": "GHS",
+                "invoice_limit": 1,
+            }
+
+            post_plan = requests.post(
+                settings.PAYSTACK_PLAN_URL,
+                headers=settings.PAYSTACK_HEADERS,
+                json=data,
+            )
+
+            if post_plan.status_code == 201:
+                # Retrieve the plan data from the response
+                plan = post_plan.json().get("data")
+                package = {
+                    "package_plan_code": plan.get("plan_code"),
+                    "package_name": plan.get("name"),
+                    "package_price": plan.get("amount"),
+                    "package_description": plan.get("description"),
+                }
+                return package
+
+        except Exception as e:
+            raise e
+
+    def get_all_paystack_plans(self):
+        with self.session_factory() as session:
+            try:
+                plans = requests.get(
+                    settings.PAYSTACK_PLAN_URL, headers=settings.PAYSTACK_HEADERS
+                )
+                new_plan = plans.json()["data"]
+                packages = []
+                if plans.status_code == 200:
+                    for plan in new_plan:
+                        package_items = (
+                            session.query(PackageItemAssignment)
+                            .filter(
+                                PackageItemAssignment.paystack_plan_code
+                                == plan["plan_code"]
+                            )
+                            .options(joinedload(PackageItemAssignment.package_item))
+                            .all()
+                        )
+                        package = {
+                            "package_plan_code": plan["plan_code"],
+                            "package_name": plan["name"],
+                            "package_price": plan["amount"],
+                            "package_description": plan["description"],
+                            "package_items": [
+                                item.package_item for item in package_items
+                            ],
+                        }
+                        packages.append(package)
+                    return packages
+            except Exception as e:
+                raise e
+
+    def read_by_plan_code(self, package_plan_code):
+        try:
+            plan = requests.get(
+                settings.PAYSTACK_PLAN_URL + f"/{package_plan_code}",
+                headers=settings.PAYSTACK_HEADERS,
+            )
+            if plan.status_code == 200:
+                return plan.json()["data"]
+            return None
+        except Exception as e:
+            raise e
+
     def assign_package_item(self, data: PackageItemAssignmentPayload):
         with self.session_factory() as session:
             try:
@@ -31,14 +111,16 @@ class PackageRepository(BaseRepository):
                         session.query(PackageItemAssignment)
                         .filter(
                             PackageItemAssignment.package_item_uuid == item,
-                            PackageItemAssignment.package_uuid == data.package_uuid,
+                            PackageItemAssignment.paystack_plan_code
+                            == data.package_plan_code,
                         )
                         .first()
                     )
 
                     if not db_item:
                         query = PackageItemAssignment(
-                            package_item_uuid=item, package_uuid=data.package_uuid
+                            package_item_uuid=item,
+                            paystack_plan_code=data.package_plan_code,
                         )
                         session.add(query)
                         session.commit()
