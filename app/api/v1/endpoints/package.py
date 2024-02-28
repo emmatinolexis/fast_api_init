@@ -8,7 +8,11 @@ from app.core.container import Container
 from app.core.dependencies import get_current_user
 from app.core.exceptions import NotFoundError
 from app.model.user import User
-from app.schema.package_schema import PackageItemAssignmentPayload, PackagePayload
+from app.schema.package_schema import (
+    PackageItemAssignmentPayload,
+    PackagePayload,
+    PaystackPackagePlanPayload,
+)
 from app.service.package_service import PackageService
 from app.util.utils import (
     send_client_side_error,
@@ -31,7 +35,8 @@ async def get_packages_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.get_all_packages())
+        return service.get_all_paystack_plans()
+        # return send_data(service.get_all_paystack_plans())
     except Exception as e:
         msg = f"{messages.GET_FAILED}{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -40,12 +45,12 @@ async def get_packages_handler(
 @router.post("/", response_class=ORJSONResponse)
 @inject
 async def create_package_handler(
-    payload: PackagePayload,
+    payload: PaystackPackagePlanPayload,
     service: PackageService = Depends(Provide[Container.package_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        package = service.add(payload)
+        package = service.create_paystack_package_plan(payload)
         return send_data(package)
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
@@ -126,7 +131,9 @@ async def assign_package_handler(
             user_msg=messages.PACKAGE_NOT_FOUND + str(e.detail)
         )
     except Exception as e:
-        msg = f"Failed to assign package item(s) to package : {payload.package_uuid}"
+        msg = (
+            f"Failed to assign package item(s) to package : {payload.package_plan_code}"
+        )
         return send_internal_server_error(user_msg=msg, error=e)
 
 
