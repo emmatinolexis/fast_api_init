@@ -91,14 +91,51 @@ class PackageRepository(BaseRepository):
             except Exception as e:
                 raise e
 
-    def read_by_plan_code(self, package_plan_code):
+    def read_by_plan_code(self, package_plan_code: str):
+        with self.session_factory() as session:
+            try:
+                plan = requests.get(
+                    settings.PAYSTACK_PLAN_URL + f"/{package_plan_code}",
+                    headers=settings.PAYSTACK_HEADERS,
+                )
+                if plan.status_code == 200:
+                    plan = plan.json()["data"]
+                    package_items = (
+                        session.query(PackageItemAssignment)
+                        .filter(
+                            PackageItemAssignment.paystack_plan_code
+                            == plan["plan_code"]
+                        )
+                        .options(joinedload(PackageItemAssignment.package_item))
+                        .all()
+                    )
+                    package = {
+                        "package_plan_code": plan["plan_code"],
+                        "package_name": plan["name"],
+                        "package_price": plan["amount"],
+                        "package_description": plan["description"],
+                        "package_items": [item.package_item for item in package_items],
+                    }
+                    return package
+                return None
+            except Exception as e:
+                raise e
+
+    def update_paystack_plan(self, plan_code: str, payload):
         try:
-            plan = requests.get(
-                settings.PAYSTACK_PLAN_URL + f"/{package_plan_code}",
+            data = {
+                "name": payload.name,
+                "amount": payload.amount,
+                "description": payload.description,
+            }
+
+            plan = requests.put(
+                settings.PAYSTACK_PLAN_URL + f"/{plan_code}",
                 headers=settings.PAYSTACK_HEADERS,
+                json=data,
             )
             if plan.status_code == 200:
-                return plan.json()["data"]
+                return plan.json()["message"]
             return None
         except Exception as e:
             raise e
@@ -129,13 +166,13 @@ class PackageRepository(BaseRepository):
             except Exception as e:
                 raise e
 
-    def delete_package_item(self, package_uuid: str, package_item_uuid: str):
+    def delete_package_item(self, plan_code: str, package_item_uuid: str):
         with self.session_factory() as session:
             try:
                 db_item = (
                     session.query(PackageItemAssignment)
                     .filter(
-                        PackageItemAssignment.package_uuid == package_uuid,
+                        PackageItemAssignment.paystack_plan_code == plan_code,
                         PackageItemAssignment.package_item_uuid == package_item_uuid,
                     )
                     .first()

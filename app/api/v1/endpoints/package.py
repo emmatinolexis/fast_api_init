@@ -10,7 +10,6 @@ from app.core.exceptions import NotFoundError
 from app.model.user import User
 from app.schema.package_schema import (
     PackageItemAssignmentPayload,
-    PackagePayload,
     PaystackPackagePlanPayload,
 )
 from app.service.package_service import PackageService
@@ -57,35 +56,39 @@ async def create_package_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.put("/{uuid}", response_class=ORJSONResponse)
+@router.put("/{plan_code}", response_class=ORJSONResponse)
 @inject
 async def update_package_handler(
-    uuid: str,
-    payload: PackagePayload,
+    plan_code: str,
+    payload: PaystackPackagePlanPayload,
     service: PackageService = Depends(Provide[Container.package_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        package = service.patch_by_uuid(uuid, payload)
+        package = service.update_paystack_plan(plan_code, payload)
         if package is None:
-            return send_client_side_error(user_msg=messages.PACKAGE_NOT_FOUND + uuid)
-        return send_data(package)
+            return send_client_side_error(
+                user_msg=messages.PACKAGE_NOT_FOUND + plan_code
+            )
+        return send_info(package)
     except Exception as e:
         msg = messages.UPDATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/{uuid}", response_class=ORJSONResponse)
+@router.get("/{plan_code}", response_class=ORJSONResponse)
 @inject
 async def get_package_by_uuid_handler(
-    uuid: str,
+    plan_code: str,
     service: PackageService = Depends(Provide[Container.package_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        package = service.get_by_uuid(uuid)
+        package = service.get_paystack_plan(plan_code)
         if package is None:
-            return send_client_side_error(user_msg=messages.PACKAGE_NOT_FOUND + uuid)
+            return send_client_side_error(
+                user_msg=messages.PACKAGE_NOT_FOUND + plan_code
+            )
         return send_data(package)
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
@@ -138,18 +141,18 @@ async def assign_package_handler(
 
 
 @router.delete(
-    "/package_assignment/{package_uuid}/{package_item_uuid}",
+    "/package_assignment/{plan_code}/{package_item_uuid}",
     response_class=ORJSONResponse,
 )
 @inject
 async def delete_package_item_from_package_handler(
-    package_uuid: str,
+    plan_code: str,
     package_item_uuid: str,
     service: PackageService = Depends(Provide[Container.package_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        package_item = service.delete_package_item(package_uuid, package_item_uuid)
+        package_item = service.delete_package_item(plan_code, package_item_uuid)
         if package_item is None:
             return send_client_side_error(
                 user_msg=messages.PACKAGE_ITEM_NOT_FOUND + package_item_uuid

@@ -21,6 +21,22 @@ class PackageService(BaseService):
         except Exception as e:
             raise e
 
+    def get_paystack_plan(self, plan_code: str):
+        try:
+            package = self.package_repository.read_by_plan_code(plan_code)
+            return package
+        except Exception as e:
+            raise e
+
+    def update_paystack_plan(
+        self, plan_code: str, plan_data: PaystackPackagePlanPayload
+    ):
+        try:
+            package = self.package_repository.update_paystack_plan(plan_code, plan_data)
+            return package
+        except Exception as e:
+            raise e
+
     def create_paystack_package_plan(self, payload: PaystackPackagePlanPayload):
         try:
             package = self.package_repository.create_paystack_package_plan(payload)
@@ -48,13 +64,13 @@ class PackageService(BaseService):
         except Exception as e:
             raise e
 
-    def delete_package_item(self, package_uuid: str, package_item_uuid: str):
+    def delete_package_item(self, plan_code: str, package_item_uuid: str):
         try:
-            if self.package_repository.read_by_uuid(package_uuid) is None:
-                raise NotFoundError(detail=package_uuid)
+            if self.package_repository.read_by_plan_code(plan_code) is None:
+                raise NotFoundError(detail=plan_code)
 
             db_item = self.package_repository.delete_package_item(
-                package_uuid, package_item_uuid
+                plan_code, package_item_uuid
             )
             return db_item
         except Exception as e:
