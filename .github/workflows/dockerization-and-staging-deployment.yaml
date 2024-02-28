@@ -43,6 +43,7 @@ jobs:
           tags: sagemicrosystems/mvi-hub:${{ steps.version_bump.outputs.new_tag }}
     outputs:
       NEW_TAG: ${{ steps.version_bump.outputs.new_tag }}
+      OLD_TAG: ${{ steps.version_bump.outputs.old_tag }}
   deploy-docker-image-on-staging:
     runs-on: ubuntu-latest
     environment: staging
@@ -50,7 +51,9 @@ jobs:
       - build-and-upload-docker-image
     steps:
       - name: Set tag as environment variable
-        run: echo "NEW_TAG=${{ needs.build-and-upload-docker-image.outputs.NEW_TAG }}" >> $GITHUB_ENV
+        run: |
+          echo "NEW_TAG=${{ needs.build-and-upload-docker-image.outputs.NEW_TAG }}" >> $GITHUB_ENV
+          echo "OLD_TAG=${{ needs.build-and-upload-docker-image.outputs.OLD_TAG }}" >> $GITHUB_ENV
       - name: SSH Into AWS And Deploy
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -64,7 +67,7 @@ jobs:
             docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
             docker stop $(docker ps -a -q --filter="name=mvi_staging_api")
             docker rm $(docker ps -a -q --filter="name=mvi_staging_api")
-            docker image rm -f sagemicrosystems/mvi-hub:${{ env.NEW_TAG }}
+            docker image rm -f sagemicrosystems/mvi-hub:${{ env.OLD_TAG }}
             docker run -d --publish 8000:8000 --name mvi_staging_api -e API_VERSION=${{ secrets.API_VERSION }} \
             -e DB_HOST=${{ secrets.DB_HOST }} -e DB_NAME=${{ secrets.DB_NAME }} -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} -e DB_PORT=${{ secrets.DB_PORT }} \
             -e DB_USER=${{ secrets.DB_USER }} -e ENV=staging -e MAIL_SERVER=${{ secrets.MAIL_SERVER }} -e MAIL_USERNAME=${{ secrets.MAIL_USERNAME }} \
