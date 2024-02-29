@@ -65,9 +65,10 @@ class PackageRepository(BaseRepository):
                     settings.PAYSTACK_PLAN_URL, headers=settings.PAYSTACK_HEADERS
                 )
                 new_plan = plans.json()["data"]
+                filtered_plans = [plan for plan in new_plan if not plan["is_deleted"]]
                 packages = []
                 if plans.status_code == 200:
-                    for plan in new_plan:
+                    for plan in filtered_plans:
                         package_items = (
                             session.query(PackageItemAssignment)
                             .filter(
@@ -82,6 +83,7 @@ class PackageRepository(BaseRepository):
                             "package_name": plan["name"],
                             "package_price": plan["amount"],
                             "package_description": plan["description"],
+                            "is_deleted": plan["is_deleted"],
                             "package_items": [
                                 item.package_item for item in package_items
                             ],
@@ -114,6 +116,7 @@ class PackageRepository(BaseRepository):
                         "package_name": plan["name"],
                         "package_price": plan["amount"],
                         "package_description": plan["description"],
+                        "is_deleted": plan["is_deleted"],
                         "package_items": [item.package_item for item in package_items],
                     }
                     return package
@@ -121,7 +124,7 @@ class PackageRepository(BaseRepository):
             except Exception as e:
                 raise e
 
-    def update_paystack_plan(self, plan_code: str, payload):
+    def update_paystack_plan(self, plan_code, payload):
         try:
             data = {
                 "name": payload.name,
@@ -129,13 +132,23 @@ class PackageRepository(BaseRepository):
                 "description": payload.description,
             }
 
-            plan = requests.put(
-                settings.PAYSTACK_PLAN_URL + f"/{plan_code}",
-                headers=settings.PAYSTACK_HEADERS,
-                json=data,
+            get_plan = PackageRepository(self.session_factory).read_by_plan_code(
+                plan_code
             )
-            if plan.status_code == 200:
-                return plan.json()["message"]
+            # return get_plan
+            if get_plan:
+                if get_plan["is_deleted"] is True:
+                    raise Exception("Package deleted, update cannot be done.")
+
+                get_plan_code = get_plan["package_plan_code"]
+
+                plan = requests.put(
+                    settings.PAYSTACK_PLAN_URL + f"/{get_plan_code}",
+                    headers=settings.PAYSTACK_HEADERS,
+                    json=data,
+                )
+
+                return plan.json()
             return None
         except Exception as e:
             raise e

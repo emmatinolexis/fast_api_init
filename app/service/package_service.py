@@ -28,9 +28,7 @@ class PackageService(BaseService):
         except Exception as e:
             raise e
 
-    def update_paystack_plan(
-        self, plan_code: str, plan_data: PaystackPackagePlanPayload
-    ):
+    def update_paystack_plan(self, plan_code, plan_data: PaystackPackagePlanPayload):
         try:
             package = self.package_repository.update_paystack_plan(plan_code, plan_data)
             return package
