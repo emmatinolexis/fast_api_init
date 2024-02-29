@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
@@ -9,11 +11,12 @@ from app.core.exceptions import NotFoundError
 from app.model.user import User
 from app.schema.asset_schema import AssetPayload, AssignDeviceInputPayload
 from app.service.asset_service import AssetService
+from app.service.tracking_event_service import TrackingEventService
 from app.util.utils import (
     send_client_side_error,
     send_data,
     send_info,
-    send_internal_server_error,
+    send_internal_server_error, get_status, get_distance_travelled_by_coordinates,
 )
 
 router = APIRouter(
@@ -125,4 +128,36 @@ async def assign_device_to_asset(
         return send_data(asset)
     except Exception as e:
         msg = messages.UPDATE_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/{asset_uuid}/device/analytics", response_class=ORJSONResponse)
+@inject
+async def get_device_analytics(
+    asset_uuid: str,
+    service: TrackingEventService = Depends(Provide[Container.tracking_event_service]),
+    asset_service: AssetService = Depends(Provide[Container.asset_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        # retrieve device latest tracking event using asset imei
+        asset = asset_service.get_by_uuid(asset_uuid)
+        latest_tracking_event = service.get_latest_tracking_event_by_device_imei(asset.device_imei)
+        coordinates = service.get_distance_travelled_by_device_imei(
+                device_imei=asset.device_imei, date=datetime.now().strftime("%d/%m/%Y"))
+        distance_travelled = get_distance_travelled_by_coordinates(coordinates)
+        data = {
+            "status": get_status(latest_tracking_event.event_type),
+            "current_location": {
+                    "latitude": latest_tracking_event.latitude,
+                    "longitude": latest_tracking_event.longitude,
+                },
+            "current_speed": f"{latest_tracking_event.speed}KPH",
+            "fuel_level": "N/A",
+            "distance_covered_today": f"{distance_travelled} KM",
+            "incidents": "N/A",
+        }
+        return send_data(data)
+    except Exception as e:
+        msg = messages.GET_FAILED + "device analytics"
         return send_internal_server_error(user_msg=msg, error=e)

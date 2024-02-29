@@ -11,8 +11,8 @@ log = get_logger()
 
 class TrackingEventService(BaseService):
     def __init__(
-        self,
-        tracking_event_repository: TrackingEventRepository,
+            self,
+            tracking_event_repository: TrackingEventRepository,
     ):
         self.tracking_event_repository = tracking_event_repository
         super().__init__(tracking_event_repository)
@@ -147,6 +147,36 @@ class TrackingEventService(BaseService):
             )
         except Exception as e:
             raise e
+
+    def get_latest_tracking_event_by_device_imei(self, device_imei: str):
+        try:
+            return self.tracking_event_repository.read_latest_tracking_event_by_device_imei(
+                device_imei
+            )
+        except Exception as e:
+            raise e
+
+    def get_events_by_device_imei_by_date(self, device_imei: str, date: str):
+        try:
+            if not date:
+                date = datetime.now().strftime("%d/%m/%Y")
+            return self.tracking_event_repository.read_all_events_by_device_imei(
+                device_imei, date
+            )
+        except Exception as e:
+            raise e
+
+    def get_distance_travelled_by_device_imei(self, device_imei: str, date: str):
+        events = self.get_events_by_device_imei_by_date(device_imei, date)
+        if events is None:
+            return 0
+
+        coordinates = []
+
+        for event in events:
+            coordinates.append({"latitude": event.latitude, "longitude": event.longitude})
+
+        return coordinates
 
 
 def generateTimeRange(start=None, end=None):

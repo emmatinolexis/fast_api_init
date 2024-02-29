@@ -101,3 +101,4 @@ class AssetService(BaseService):
             return asset
         except Exception as e:
             raise e
+
