@@ -5,7 +5,6 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
 
 from app.core import messages
-from app.core.constants import SPEED_UNIT
 from app.core.container import Container
 from app.core.dependencies import get_current_user
 from app.core.exceptions import NotFoundError
@@ -14,7 +13,6 @@ from app.schema.asset_schema import AssetPayload, AssignDeviceInputPayload
 from app.service.asset_service import AssetService
 from app.service.tracking_event_service import TrackingEventService
 from app.util.utils import (
-    get_status,
     send_client_side_error,
     send_data,
     send_info,
@@ -149,12 +147,12 @@ async def get_device_analytics(
                 user_msg=messages.ASSET_NOT_FOUND + asset_uuid
             )
 
-        data = service.get_device_analytics(asset.device_imei, datetime.now().strftime("%d/%m/%Y"))
+        data = service.get_device_analytics(
+            asset.device_imei, datetime.now().strftime("%d/%m/%Y")
+        )
 
         if data is None:
-            return send_info(
-                info=messages.NO_DATA
-            )
+            return send_info(info=messages.NO_DATA)
 
         return send_data(data)
     except Exception as e:
