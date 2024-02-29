@@ -132,7 +132,6 @@ def get_distance_travelled_by_coordinates(coordinates: List[dict]):
     total_distance = 0.0
     for i in range(len(coordinates) - 1):
         coord1 = (coordinates[i]["latitude"], coordinates[i]["longitude"])
-        coord2 = (coordinates[i+1]["latitude"], coordinates[i+1]["longitude"])
+        coord2 = (coordinates[i + 1]["latitude"], coordinates[i + 1]["longitude"])
         total_distance += geodesic(coord1, coord2).kilometers
     return round(total_distance, 2)
-

@@ -17,9 +17,7 @@ class TrackingEventRepository(BaseRepository):
         self.session_factory = session_factory
         super().__init__(session_factory, TrackingEvent)
 
-    def read_all_events_by_device_imei(
-        self, device_imei: str, date: str
-    ):
+    def read_all_events_by_device_imei(self, device_imei: str, date: str):
         with self.session_factory() as session:
             query = (
                 session.query(self.model)

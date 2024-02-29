@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
 
 from app.core import messages
+from app.core.constants import SPEED_UNIT
 from app.core.container import Container
 from app.core.dependencies import get_current_user
 from app.core.exceptions import NotFoundError
@@ -13,10 +14,12 @@ from app.schema.asset_schema import AssetPayload, AssignDeviceInputPayload
 from app.service.asset_service import AssetService
 from app.service.tracking_event_service import TrackingEventService
 from app.util.utils import (
+    get_distance_travelled_by_coordinates,
+    get_status,
     send_client_side_error,
     send_data,
     send_info,
-    send_internal_server_error, get_status, get_distance_travelled_by_coordinates,
+    send_internal_server_error,
 )
 
 router = APIRouter(
@@ -140,21 +143,31 @@ async def get_device_analytics(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        # retrieve device latest tracking event using asset imei
         asset = asset_service.get_by_uuid(asset_uuid)
-        latest_tracking_event = service.get_latest_tracking_event_by_device_imei(asset.device_imei)
-        coordinates = service.get_distance_travelled_by_device_imei(
-                device_imei=asset.device_imei, date=datetime.now().strftime("%d/%m/%Y"))
-        distance_travelled = get_distance_travelled_by_coordinates(coordinates)
+
+        if asset is None:
+            return send_client_side_error(user_msg=messages.ASSET_NOT_FOUND + asset_uuid)
+
+        latest_tracking_event = service.get_latest_tracking_event_by_device_imei(
+            asset.device_imei
+        )
+
+        if latest_tracking_event is None:
+            return send_info(info=messages.NO_DATA)
+
+        distance_travelled = service.get_distance_travelled_by_device_imei(
+            device_imei=asset.device_imei, date=datetime.now().strftime("%d/%m/%Y")
+        )
+
         data = {
             "status": get_status(latest_tracking_event.event_type),
             "current_location": {
-                    "latitude": latest_tracking_event.latitude,
-                    "longitude": latest_tracking_event.longitude,
-                },
-            "current_speed": f"{latest_tracking_event.speed}KPH",
+                "latitude": latest_tracking_event.latitude,
+                "longitude": latest_tracking_event.longitude,
+            },
+            "current_speed": f"{latest_tracking_event.speed}{SPEED_UNIT}",
             "fuel_level": "N/A",
-            "distance_covered_today": f"{distance_travelled} KM",
+            "distance_covered_today": distance_travelled,
             "incidents": "N/A",
         }
         return send_data(data)

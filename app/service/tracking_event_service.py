@@ -1,18 +1,19 @@
 from datetime import datetime
 from typing import Dict
 
+from app.core.constants import DISTANCE_UNIT
 from app.core.logger import get_logger
 from app.repository.tracking_event_repository import TrackingEventRepository
 from app.service.base_service import BaseService
-from app.util.utils import get_status
+from app.util.utils import get_status, get_distance_travelled_by_coordinates
 
 log = get_logger()
 
 
 class TrackingEventService(BaseService):
     def __init__(
-            self,
-            tracking_event_repository: TrackingEventRepository,
+        self,
+        tracking_event_repository: TrackingEventRepository,
     ):
         self.tracking_event_repository = tracking_event_repository
         super().__init__(tracking_event_repository)
@@ -169,14 +170,18 @@ class TrackingEventService(BaseService):
     def get_distance_travelled_by_device_imei(self, device_imei: str, date: str):
         events = self.get_events_by_device_imei_by_date(device_imei, date)
         if events is None:
-            return 0
+            return f"0 {DISTANCE_UNIT}"
 
         coordinates = []
 
         for event in events:
-            coordinates.append({"latitude": event.latitude, "longitude": event.longitude})
+            coordinates.append(
+                {"latitude": event.latitude, "longitude": event.longitude}
+            )
 
-        return coordinates
+        distance_travelled = get_distance_travelled_by_coordinates(coordinates)
+
+        return f"{distance_travelled} {DISTANCE_UNIT}"
 
 
 def generateTimeRange(start=None, end=None):
