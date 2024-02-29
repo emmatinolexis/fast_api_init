@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Dict
 
-from app.core.constants import DISTANCE_UNIT
+from app.core.constants import DISTANCE_UNIT, SPEED_UNIT
 from app.core.logger import get_logger
 from app.repository.tracking_event_repository import TrackingEventRepository
 from app.service.base_service import BaseService
@@ -182,6 +182,31 @@ class TrackingEventService(BaseService):
         distance_travelled = get_distance_travelled_by_coordinates(coordinates)
 
         return f"{distance_travelled} {DISTANCE_UNIT}"
+
+    def get_device_analytics(self, device_imei: str, date: str):
+        try:
+            latest_tracking_event = self.get_latest_tracking_event_by_device_imei(
+                device_imei
+            )
+
+            if latest_tracking_event is None:
+                return None
+
+            distance_travelled = self.get_distance_travelled_by_device_imei(
+                device_imei, date
+            )
+
+            return {
+                "status": get_status(latest_tracking_event.event_type),
+                "current_location": {
+                    "latitude": latest_tracking_event.latitude,
+                    "longitude": latest_tracking_event.longitude,
+                },
+                "current_speed": f"{latest_tracking_event.speed}{SPEED_UNIT}",
+                "distance_travelled": distance_travelled,
+            }
+        except Exception as e:
+            raise e
 
 
 def generateTimeRange(start=None, end=None):

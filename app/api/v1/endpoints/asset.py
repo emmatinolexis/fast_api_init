@@ -149,28 +149,13 @@ async def get_device_analytics(
                 user_msg=messages.ASSET_NOT_FOUND + asset_uuid
             )
 
-        latest_tracking_event = service.get_latest_tracking_event_by_device_imei(
-            asset.device_imei
-        )
+        data = service.get_device_analytics(asset.device_imei, datetime.now().strftime("%d/%m/%Y"))
 
-        if latest_tracking_event is None:
-            return send_info(info=messages.NO_DATA)
+        if data is None:
+            return send_info(
+                info=messages.NO_DATA
+            )
 
-        distance_travelled = service.get_distance_travelled_by_device_imei(
-            device_imei=asset.device_imei, date=datetime.now().strftime("%d/%m/%Y")
-        )
-
-        data = {
-            "status": get_status(latest_tracking_event.event_type),
-            "current_location": {
-                "latitude": latest_tracking_event.latitude,
-                "longitude": latest_tracking_event.longitude,
-            },
-            "current_speed": f"{latest_tracking_event.speed}{SPEED_UNIT}",
-            "fuel_level": "N/A",
-            "distance_covered_today": distance_travelled,
-            "incidents": "N/A",
-        }
         return send_data(data)
     except Exception as e:
         msg = messages.GET_FAILED + "device analytics"
