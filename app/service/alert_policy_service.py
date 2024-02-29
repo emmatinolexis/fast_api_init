@@ -144,11 +144,11 @@ class AlertPolicyService(BaseService):
 
             created_policy = self.add(alert_policy_data)
 
-            # create alert reciepients
+            # create alert recipients
             for item in alert_policy.alert_reciepients:
                 alert_recipients_data = {
                     "alert_policy_uuid": created_policy.uuid,
-                    "reciepient": item,
+                    "recipient": item,
                 }
                 self.alert_notification_assignment_repository.create(
                     AlertNotificationAssignment(**alert_recipients_data)

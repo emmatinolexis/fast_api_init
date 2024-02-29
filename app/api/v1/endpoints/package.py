@@ -66,7 +66,6 @@ async def update_package_handler(
 ):
     try:
         package = service.update_paystack_plan(plan_code, payload)
-        return package
         if package is None:
             return send_client_side_error(
                 user_msg=messages.PACKAGE_NOT_FOUND + plan_code

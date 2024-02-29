@@ -42,6 +42,7 @@ async def create_alert_policy_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
+        # return payload
         alert_policy = service.create_alert_policy(payload)
         return send_data(alert_policy)
     except NotFoundError as e:
