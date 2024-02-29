@@ -5,7 +5,7 @@ from app.core.constants import DISTANCE_UNIT
 from app.core.logger import get_logger
 from app.repository.tracking_event_repository import TrackingEventRepository
 from app.service.base_service import BaseService
-from app.util.utils import get_status, get_distance_travelled_by_coordinates
+from app.util.utils import get_distance_travelled_by_coordinates, get_status
 
 log = get_logger()
 

@@ -14,7 +14,6 @@ from app.schema.asset_schema import AssetPayload, AssignDeviceInputPayload
 from app.service.asset_service import AssetService
 from app.service.tracking_event_service import TrackingEventService
 from app.util.utils import (
-    get_distance_travelled_by_coordinates,
     get_status,
     send_client_side_error,
     send_data,
@@ -146,7 +145,9 @@ async def get_device_analytics(
         asset = asset_service.get_by_uuid(asset_uuid)
 
         if asset is None:
-            return send_client_side_error(user_msg=messages.ASSET_NOT_FOUND + asset_uuid)
+            return send_client_side_error(
+                user_msg=messages.ASSET_NOT_FOUND + asset_uuid
+            )
 
         latest_tracking_event = service.get_latest_tracking_event_by_device_imei(
             asset.device_imei
