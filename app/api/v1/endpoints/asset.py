@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
@@ -9,6 +11,7 @@ from app.core.exceptions import NotFoundError
 from app.model.user import User
 from app.schema.asset_schema import AssetPayload, AssignDeviceInputPayload
 from app.service.asset_service import AssetService
+from app.service.tracking_event_service import TrackingEventService
 from app.util.utils import (
     send_client_side_error,
     send_data,
@@ -125,4 +128,33 @@ async def assign_device_to_asset(
         return send_data(asset)
     except Exception as e:
         msg = messages.UPDATE_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/{asset_uuid}/device/analytics", response_class=ORJSONResponse)
+@inject
+async def get_device_analytics(
+    asset_uuid: str,
+    service: TrackingEventService = Depends(Provide[Container.tracking_event_service]),
+    asset_service: AssetService = Depends(Provide[Container.asset_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        asset = asset_service.get_by_uuid(asset_uuid)
+
+        if asset is None:
+            return send_client_side_error(
+                user_msg=messages.ASSET_NOT_FOUND + asset_uuid
+            )
+
+        data = service.get_device_analytics(
+            asset.device_imei, datetime.now().strftime("%d/%m/%Y")
+        )
+
+        if data is None:
+            return send_info(info=messages.NO_DATA)
+
+        return send_data(data)
+    except Exception as e:
+        msg = messages.GET_FAILED + "device analytics"
         return send_internal_server_error(user_msg=msg, error=e)

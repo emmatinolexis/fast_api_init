@@ -17,9 +17,7 @@ class TrackingEventRepository(BaseRepository):
         self.session_factory = session_factory
         super().__init__(session_factory, TrackingEvent)
 
-    def read_all_events_by_device_imei(
-        self, device_imei: str, date: str
-    ) -> TrackingEvent:
+    def read_all_events_by_device_imei(self, device_imei: str, date: str):
         with self.session_factory() as session:
             query = (
                 session.query(self.model)
@@ -96,3 +94,13 @@ class TrackingEventRepository(BaseRepository):
                 )
                 unique_entries.add((entry.latitude, entry.longitude, entry.course))
         return formatted_data
+
+    def read_latest_tracking_event_by_device_imei(self, device_imei: str):
+        with self.session_factory() as session:
+            query = (
+                session.query(self.model)
+                .filter(self.model.device_imei == device_imei)
+                .order_by(self.model.event_datetime.desc())
+                .first()
+            )
+            return query
