@@ -39,6 +39,7 @@ from app.repository import (
     tracking_event_repository,
     user_organisation_assignment_repository,
     user_repository,
+    asset_device_request_repository,
 )
 from app.service import (
     alert_maintenance_type_service,
@@ -69,6 +70,7 @@ from app.service import (
     subscription_service,
     tracking_event_service,
     user_service,
+    asset_device_request_service,
 )
 
 
@@ -154,6 +156,10 @@ class Container(containers.DeclarativeContainer):
     )
     asset_repository = providers.Factory(
         asset_repository.AssetRepository, session_factory=db.provided.session
+    )
+    asset_device_request_repository = providers.Factory(
+        asset_device_request_repository.AssetDeviceRequestRepository,
+        session_factory=db.provided.session,
     )
     business_profile_repository = providers.Factory(
         business_profile_repository.BusinessProfileRepository,
@@ -291,6 +297,10 @@ class Container(containers.DeclarativeContainer):
         equipment_type_repository=equipment_type_repository,
         # marker_icon_repository=marker_icon_repository,
         driver_repository=driver_repository,
+    )
+    asset_device_request_service = providers.Factory(
+        asset_device_request_service.AssetDeviceRequestService,
+        asset_device_request_repository=asset_device_request_repository,
     )
     contact_sale_service = providers.Factory(
         contact_sale_service.ContactSaleService,
