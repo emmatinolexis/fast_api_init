@@ -19,3 +19,23 @@ class AssetDeviceRequestService(BaseService):
         self, asset_device_request: CreateAssetDeviceRequestPayload
     ):
         return self.asset_device_request_repository.create(asset_device_request)
+
+    def get_asset_device_requests_by_user_uuid(self, user_uuid: str):
+        requests = self.asset_device_request_repository.get_asset_device_requests_by_user_uuid(
+            user_uuid
+        )
+
+        transformed_requests = []
+
+        for request in requests:
+            transformed_requests.append({
+                "uuid": request.uuid,
+                "asset_type_uuid": request.asset_type_uuid,
+                "number_of_assets": request.number_of_assets,
+                "metrics": request.metrics,
+                "status": request.status,
+                "created_at": request.created_at,
+                "updated_at": request.updated_at,
+            })
+
+        return transformed_requests
