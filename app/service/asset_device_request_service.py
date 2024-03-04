@@ -7,37 +7,38 @@ from app.service.base_service import BaseService
 
 class AssetDeviceRequestService(BaseService):
     def __init__(
-            self,
-            asset_device_request_repository: AssetDeviceRequestRepository,
-            asset_type_repository: AssetTypeRepository,
+        self,
+        asset_device_request_repository: AssetDeviceRequestRepository,
+        asset_type_repository: AssetTypeRepository,
     ):
         self.asset_device_request_repository = asset_device_request_repository
         self.asset_type_repository = asset_type_repository
         super().__init__(asset_device_request_repository)
 
     def get_asset_device_request_by_user_by_asset_type_uuid(
-            self, user_uuid: str, asset_type_uuid: str
+        self, user_uuid: str, asset_type_uuid: str
     ):
         return self.asset_device_request_repository.get_asset_device_request_by_user_by_asset_type_uuid(
             user_uuid, asset_type_uuid
         )
 
-    def create_asset_device_request(
-            self, payload: CreateAssetDeviceRequestPayload
-    ):
+    def create_asset_device_request(self, payload: CreateAssetDeviceRequestPayload):
         # check request already exists for the selected asset type
-        existing_request = (self.
-        get_asset_device_request_by_user_by_asset_type_uuid(
-            user_uuid=str(payload.user_uuid), asset_type_uuid=str(payload.asset_type_uuid)
-        )
+        existing_request = self.get_asset_device_request_by_user_by_asset_type_uuid(
+            user_uuid=str(payload.user_uuid),
+            asset_type_uuid=str(payload.asset_type_uuid),
         )
 
         if existing_request:
             raise Exception(messages.ASSET_DEVICE_REQUEST_ALREADY_EXISTS)
 
-        asset_type = self.asset_type_repository.read_by_uuid(str(payload.asset_type_uuid))
+        asset_type = self.asset_type_repository.read_by_uuid(
+            str(payload.asset_type_uuid)
+        )
         if asset_type is None:
-            raise Exception(messages.ASSET_TYPE_NOT_FOUND + str(payload.asset_type_uuid))
+            raise Exception(
+                messages.ASSET_TYPE_NOT_FOUND + str(payload.asset_type_uuid)
+            )
 
         try:
             return self.asset_device_request_repository.create(payload)

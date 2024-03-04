@@ -174,7 +174,7 @@ async def request_asset_device(
     request_service: AssetDeviceRequestService = Depends(
         Provide[Container.asset_device_request_service]
     ),
-        current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
     try:
         asset_device_request = payload.dict()
