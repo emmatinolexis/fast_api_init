@@ -17,7 +17,6 @@ from app.schema.asset_schema import (
 )
 from app.service.asset_device_request_service import AssetDeviceRequestService
 from app.service.asset_service import AssetService
-from app.service.asset_type_service import AssetTypeService
 from app.service.tracking_event_service import TrackingEventService
 from app.util.utils import (
     send_client_side_error,
@@ -175,39 +174,15 @@ async def request_asset_device(
     request_service: AssetDeviceRequestService = Depends(
         Provide[Container.asset_device_request_service]
     ),
-    asset_type_service: AssetTypeService = Depends(
-        Provide[Container.asset_type_service]
-    ),
-    current_user: User = Depends(get_current_user),
+        current_user: User = Depends(get_current_user),
 ):
     try:
-        # check request already exists for the selected asset type
-        existing_request = (
-            request_service.get_asset_device_request_by_user_by_asset_type_uuid(
-                user_uuid=user_uuid, asset_type_uuid=str(payload.asset_type_uuid)
-            )
-        )
-
-        if existing_request:
-            return send_client_side_error(
-                user_msg=messages.ASSET_DEVICE_REQUEST_ALREADY_EXISTS
-            )
-
-        asset_type = asset_type_service.get_by_uuid(str(payload.asset_type_uuid))
-
-        if asset_type is None:
-            return send_client_side_error(
-                user_msg=messages.ASSET_TYPE_NOT_FOUND + str(payload.asset_type_uuid)
-            )
-
-        # create new request
         asset_device_request = payload.dict()
-        asset_device_request.update(user_uuid=user_uuid)
 
-        (
-            request_service.create_asset_device_request(
-                CreateAssetDeviceRequestPayload(**asset_device_request)
-            )
+        asset_device_request["user_uuid"] = user_uuid
+
+        request_service.create_asset_device_request(
+            CreateAssetDeviceRequestPayload(**asset_device_request)
         )
 
         return send_info(info=messages.ASSET_DEVICE_REQUEST_CREATED)

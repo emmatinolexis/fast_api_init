@@ -301,6 +301,7 @@ class Container(containers.DeclarativeContainer):
     asset_device_request_service = providers.Factory(
         asset_device_request_service.AssetDeviceRequestService,
         asset_device_request_repository=asset_device_request_repository,
+        asset_type_repository=asset_type_repository,
     )
     contact_sale_service = providers.Factory(
         contact_sale_service.ContactSaleService,
