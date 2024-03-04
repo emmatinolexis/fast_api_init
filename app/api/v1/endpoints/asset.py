@@ -13,7 +13,6 @@ from app.schema.asset_schema import (
     AssetDeviceRequest,
     AssetPayload,
     AssignDeviceInputPayload,
-    CreateAssetDeviceRequestPayload,
 )
 from app.service.asset_device_request_service import AssetDeviceRequestService
 from app.service.asset_service import AssetService

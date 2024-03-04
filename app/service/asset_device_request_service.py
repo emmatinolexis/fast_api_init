@@ -1,7 +1,7 @@
 from app.core import messages
 from app.repository.asset_device_request_repository import AssetDeviceRequestRepository
 from app.repository.asset_type_repository import AssetTypeRepository
-from app.schema.asset_schema import CreateAssetDeviceRequestPayload, AssetDeviceRequest
+from app.schema.asset_schema import AssetDeviceRequest, CreateAssetDeviceRequestPayload
 from app.service.base_service import BaseService
 
 
