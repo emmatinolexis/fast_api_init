@@ -127,17 +127,6 @@ class AlertPolicyService(BaseService):
                     + str(alert_policy.alert_policy_type_uuid)
                 )
 
-            # if (
-            #     self.alert_maintenance_type_repository.read_by_uuid(
-            #         alert_policy.maintenance_alert_policy_type_uuid
-            #     )
-            #     is None
-            # ):
-            #     raise NotFoundError(
-            #         detail=messages.ALERT_MAINTENANCE_TYPE_NOT_FOUND
-            #         + str(alert_policy.maintenance_alert_policy_type_uuid)
-            #     )
-
             for item in alert_policy.alert_assets:
                 if self.asset_repository.read_by_uuid(item) is None:
                     raise NotFoundError(detail=messages.ASSET_NOT_FOUND + str(item))

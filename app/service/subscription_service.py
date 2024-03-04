@@ -40,7 +40,6 @@ class SubscriptionService(BaseService):
 
     def create_paystack_subscription(self, payload: PaystackSubscriptionPayload):
         try:
-            # return settings.PAYSTACK_INITIALIZE_SUBSCRIPTION_URL
             payload.start_date = payload.start_date.isoformat()
 
             subscription = requests.post(
