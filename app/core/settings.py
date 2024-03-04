@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     PAYSTACK_SUBSCRIPTION_URL: str = os.getenv(
         "PAYSTACK_SUBSCRIPTION_URL", "paystack_subscription_url"
     )
+    PAYSTACK_INITIALIZE_SUBSCRIPTION_URL: str = os.getenv(
+        "PAYSTACK_INITIALIZE_SUBSCRIPTION_URL", "paystack_initialize_subscription_url"
+    )
     PAYSTACK_PAYMENT_URL: str = os.getenv(
         "PAYSTACK_PAYMENT_URL", "paystack_payment_url"
     )
