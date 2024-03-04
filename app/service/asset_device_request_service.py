@@ -42,7 +42,7 @@ class AssetDeviceRequestService(BaseService):
 
         try:
             return self.asset_device_request_repository.create(payload)
-        except Exception as e:
+        except Exception:
             raise Exception(messages.UPDATE_FAILED + " device request")
 
     def get_asset_device_requests_by_user_uuid(self, user_uuid: str):
