@@ -2,11 +2,14 @@ from contextlib import AbstractContextManager
 from datetime import date
 from typing import Callable, List, Tuple
 
+import requests
 from sqlalchemy import desc
 from sqlalchemy.orm import Session, joinedload
 
+from app.core.settings import settings
 from app.model.business_profile import BusinessProfile
 from app.model.package import Package
+from app.model.package_item_assignment import PackageItemAssignment
 from app.model.plan_upgrade import PlanUpgrade
 from app.model.subscription import Subscription
 from app.model.user import User
@@ -27,6 +30,70 @@ class SubscriptionRepository(BaseRepository):
                 .options(joinedload(Subscription.package))
                 .all()
             )
+
+    def get_paystack_subscription(self, subscription_code: str):
+        with self.session_factory() as session:
+            paystack_subscription = requests.get(
+                settings.PAYSTACK_SUBSCRIPTION_URL + f"/{subscription_code}",
+                headers=settings.PAYSTACK_HEADERS,
+            )
+
+            if paystack_subscription.status_code == 200:
+                subscription = paystack_subscription.json()["data"]
+
+                user_email = subscription["customer"]["email"]
+
+                user = session.query(User).filter_by(email_address=user_email).first()
+                subscription["customer"]["first_name"] = user.first_name
+                subscription["customer"]["last_name"] = user.last_name
+                subscription["customer"]["phone"] = user.phone_number
+
+                plan_code = subscription["plan"]["plan_code"]
+
+                package_items = (
+                    session.query(PackageItemAssignment)
+                    .filter(PackageItemAssignment.paystack_plan_code == plan_code)
+                    .options(joinedload(PackageItemAssignment.package_item))
+                    .all()
+                )
+
+                subscription["package_items"] = package_items
+
+                return subscription
+
+            return paystack_subscription.json()
+
+    def read_all_paystack_subscriptions(self):
+        with self.session_factory() as session:
+            paystack_subscription = requests.get(
+                settings.PAYSTACK_SUBSCRIPTION_URL,
+                headers=settings.PAYSTACK_HEADERS,
+            )
+            if paystack_subscription.status_code == 200:
+                subscriptions = []
+                for subscription in paystack_subscription.json()["data"]:
+                    user_email = subscription["customer"]["email"]
+                    user = (
+                        session.query(User).filter_by(email_address=user_email).first()
+                    )
+                    subscription["customer"]["first_name"] = user.first_name
+                    subscription["customer"]["last_name"] = user.last_name
+                    subscription["customer"]["phone"] = user.phone_number
+
+                    plan_code = subscription["plan"]["plan_code"]
+
+                    package_items = (
+                        session.query(PackageItemAssignment)
+                        .filter(PackageItemAssignment.paystack_plan_code == plan_code)
+                        .options(joinedload(PackageItemAssignment.package_item))
+                        .all()
+                    )
+
+                    subscription["package_items"] = package_items
+                    subscriptions.append(subscription)
+
+                return subscriptions
+            return paystack_subscription.json()
 
     def read_all_subscriptions(
         self, page=1, page_size=10
