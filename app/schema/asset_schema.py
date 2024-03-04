@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, conint
@@ -6,7 +6,7 @@ from pydantic_extra_types.coordinate import Latitude, Longitude
 
 from app.schema.equipment_schema import EquipmentPayload, EquipmentTypePayload
 from app.schema.marker_schema import MarkerIconPayload
-from app.util.enums import ActiveStatus, AssetStatus, AssetDeviceRequestStatus
+from app.util.enums import ActiveStatus, AssetDeviceRequestStatus, AssetStatus
 
 
 class AssetTypePayload(BaseModel):

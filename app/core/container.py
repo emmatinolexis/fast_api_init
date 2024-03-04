@@ -10,6 +10,7 @@ from app.repository import (
     alert_policy_notification_type_assignment_repository,
     alert_policy_repository,
     alert_policy_type_repository,
+    asset_device_request_repository,
     asset_location_repository,
     asset_repository,
     asset_type_repository,
@@ -39,12 +40,12 @@ from app.repository import (
     tracking_event_repository,
     user_organisation_assignment_repository,
     user_repository,
-    asset_device_request_repository,
 )
 from app.service import (
     alert_maintenance_type_service,
     alert_policy_service,
     alert_policy_type_service,
+    asset_device_request_service,
     asset_location_service,
     asset_service,
     asset_type_service,
@@ -70,7 +71,6 @@ from app.service import (
     subscription_service,
     tracking_event_service,
     user_service,
-    asset_device_request_service,
 )
 
 

@@ -9,8 +9,12 @@ from app.core.container import Container
 from app.core.dependencies import get_current_user
 from app.core.exceptions import NotFoundError
 from app.model.user import User
-from app.schema.asset_schema import AssetPayload, AssignDeviceInputPayload, AssetDeviceRequest, \
-    CreateAssetDeviceRequestPayload
+from app.schema.asset_schema import (
+    AssetDeviceRequest,
+    AssetPayload,
+    AssignDeviceInputPayload,
+    CreateAssetDeviceRequestPayload,
+)
 from app.service.asset_device_request_service import AssetDeviceRequestService
 from app.service.asset_service import AssetService
 from app.service.asset_type_service import AssetTypeService
@@ -32,8 +36,8 @@ msg_prefix = "asset"
 @router.get("/", response_class=ORJSONResponse)
 @inject
 async def get_asset_handler(
-        service: AssetService = Depends(Provide[Container.asset_service]),
-        current_user: User = Depends(get_current_user),
+    service: AssetService = Depends(Provide[Container.asset_service]),
+    current_user: User = Depends(get_current_user),
 ):
     try:
         return send_data(service.get_list())
@@ -45,14 +49,14 @@ async def get_asset_handler(
 @router.get("/{user_uuid}", response_class=ORJSONResponse)
 @inject
 async def get_asset_by_user_uuid_handler(
-        user_uuid: str,
-        asset_type_uuid: str = None,
-        page: int = Query(1, ge=1, description="Page number, default is set to 1"),
-        page_size: int = Query(
-            10, ge=1, le=1000, description="Items per page, default is 10"
-        ),
-        service: AssetService = Depends(Provide[Container.asset_service]),
-        current_user: User = Depends(get_current_user),
+    user_uuid: str,
+    asset_type_uuid: str = None,
+    page: int = Query(1, ge=1, description="Page number, default is set to 1"),
+    page_size: int = Query(
+        10, ge=1, le=1000, description="Items per page, default is 10"
+    ),
+    service: AssetService = Depends(Provide[Container.asset_service]),
+    current_user: User = Depends(get_current_user),
 ):
     try:
         assets = service.get_assets_by_user_uuid(
@@ -69,9 +73,9 @@ async def get_asset_by_user_uuid_handler(
 @router.post("/", response_class=ORJSONResponse)
 @inject
 async def create_asset_handler(
-        payload: AssetPayload,
-        service: AssetService = Depends(Provide[Container.asset_service]),
-        current_user: User = Depends(get_current_user),
+    payload: AssetPayload,
+    service: AssetService = Depends(Provide[Container.asset_service]),
+    current_user: User = Depends(get_current_user),
 ):
     try:
         asset = service.create_asset(payload)
@@ -86,10 +90,10 @@ async def create_asset_handler(
 @router.put("/{uuid}", response_class=ORJSONResponse)
 @inject
 async def update_asset_handler(
-        uuid: str,
-        payload: AssetPayload,
-        service: AssetService = Depends(Provide[Container.asset_service]),
-        current_user: User = Depends(get_current_user),
+    uuid: str,
+    payload: AssetPayload,
+    service: AssetService = Depends(Provide[Container.asset_service]),
+    current_user: User = Depends(get_current_user),
 ):
     try:
         asset = service.patch_by_uuid(uuid, payload)
@@ -104,9 +108,9 @@ async def update_asset_handler(
 @router.delete("/{uuid}", response_class=ORJSONResponse)
 @inject
 async def delete_asset_handler(
-        uuid: str,
-        service: AssetService = Depends(Provide[Container.asset_service]),
-        current_user: User = Depends(get_current_user),
+    uuid: str,
+    service: AssetService = Depends(Provide[Container.asset_service]),
+    current_user: User = Depends(get_current_user),
 ):
     try:
         service.remove_by_uuid(uuid)
@@ -121,10 +125,10 @@ async def delete_asset_handler(
 @router.post("/{asset_uuid}", response_class=ORJSONResponse)
 @inject
 async def assign_device_to_asset(
-        asset_uuid: str,
-        payload: AssignDeviceInputPayload,
-        service: AssetService = Depends(Provide[Container.asset_service]),
-        current_user: User = Depends(get_current_user),
+    asset_uuid: str,
+    payload: AssignDeviceInputPayload,
+    service: AssetService = Depends(Provide[Container.asset_service]),
+    current_user: User = Depends(get_current_user),
 ):
     try:
         asset = service.assign_device_imei(asset_uuid, payload.device_imei)
@@ -137,10 +141,10 @@ async def assign_device_to_asset(
 @router.get("/{asset_uuid}/device/analytics", response_class=ORJSONResponse)
 @inject
 async def get_device_analytics(
-        asset_uuid: str,
-        service: TrackingEventService = Depends(Provide[Container.tracking_event_service]),
-        asset_service: AssetService = Depends(Provide[Container.asset_service]),
-        current_user: User = Depends(get_current_user),
+    asset_uuid: str,
+    service: TrackingEventService = Depends(Provide[Container.tracking_event_service]),
+    asset_service: AssetService = Depends(Provide[Container.asset_service]),
+    current_user: User = Depends(get_current_user),
 ):
     try:
         asset = asset_service.get_by_uuid(asset_uuid)
@@ -166,35 +170,44 @@ async def get_device_analytics(
 @router.post("/device/request/{user_uuid}", response_class=ORJSONResponse)
 @inject
 async def request_asset_device(
-        user_uuid: str,
-        payload: AssetDeviceRequest,
-        request_service: AssetDeviceRequestService = Depends(Provide[Container.asset_device_request_service]),
-        asset_type_service: AssetTypeService = Depends(Provide[Container.asset_type_service]),
-        current_user: User = Depends(get_current_user),
+    user_uuid: str,
+    payload: AssetDeviceRequest,
+    request_service: AssetDeviceRequestService = Depends(
+        Provide[Container.asset_device_request_service]
+    ),
+    asset_type_service: AssetTypeService = Depends(
+        Provide[Container.asset_type_service]
+    ),
+    current_user: User = Depends(get_current_user),
 ):
     try:
         # check request already exists for the selected asset
-        existing_request = (request_service.
-        get_asset_device_request_by_user_by_asset_type_uuid(
-            user_uuid=user_uuid,
-            asset_type_uuid=str(payload.asset_type_uuid))
+        existing_request = (
+            request_service.get_asset_device_request_by_user_by_asset_type_uuid(
+                user_uuid=user_uuid, asset_type_uuid=str(payload.asset_type_uuid)
+            )
         )
 
         if existing_request:
-            return send_client_side_error(user_msg=messages.ASSET_DEVICE_REQUEST_ALREADY_EXISTS)
+            return send_client_side_error(
+                user_msg=messages.ASSET_DEVICE_REQUEST_ALREADY_EXISTS
+            )
 
         asset_type = asset_type_service.get_by_uuid(str(payload.asset_type_uuid))
 
         if asset_type is None:
-            return send_client_side_error(user_msg=messages.ASSET_TYPE_NOT_FOUND + str(payload.asset_type_uuid))
+            return send_client_side_error(
+                user_msg=messages.ASSET_TYPE_NOT_FOUND + str(payload.asset_type_uuid)
+            )
 
         # create new request
         asset_device_request = payload.dict()
         asset_device_request.update(user_uuid=user_uuid)
 
-        (request_service
-        .create_asset_device_request(
-            CreateAssetDeviceRequestPayload(**asset_device_request))
+        (
+            request_service.create_asset_device_request(
+                CreateAssetDeviceRequestPayload(**asset_device_request)
+            )
         )
 
         return send_info(info=messages.ASSET_DEVICE_REQUEST_CREATED)

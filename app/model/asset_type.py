@@ -22,4 +22,6 @@ class AssetType(BaseModel):
     icon_url = Column(String(length=100), nullable=False, default="", index=True)
     status = Column(Enum(ActiveStatus), nullable=False, default="ACTIVE", index=True)
 
-    asset_device_requests = relationship("AssetDeviceRequest", back_populates="asset_type", uselist=True)
+    asset_device_requests = relationship(
+        "AssetDeviceRequest", back_populates="asset_type", uselist=True
+    )

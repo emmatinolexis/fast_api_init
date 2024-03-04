@@ -1,8 +1,7 @@
 import uuid
 
-from sqlalchemy import Column, ForeignKey, String, ARRAY, Integer
+from sqlalchemy import ARRAY, Column, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
-
 from sqlalchemy.orm import relationship
 
 from app.model.asset_type import AssetType
@@ -27,7 +26,9 @@ class AssetDeviceRequest(BaseModel):
     )
     number_of_assets = Column(Integer, nullable=False, index=False)
     metrics = Column(ARRAY(String), nullable=False, index=False)
-    status = Column(String, nullable=False, index=True, default=AssetDeviceRequestStatus.PENDING)
+    status = Column(
+        String, nullable=False, index=True, default=AssetDeviceRequestStatus.PENDING
+    )
 
     asset_type = relationship("AssetType", back_populates="asset_device_requests")
     user = relationship("User", back_populates="asset_device_requests")
