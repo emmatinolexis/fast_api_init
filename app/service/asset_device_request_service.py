@@ -1,7 +1,7 @@
 from app.core import messages
 from app.repository.asset_device_request_repository import AssetDeviceRequestRepository
 from app.repository.asset_type_repository import AssetTypeRepository
-from app.schema.asset_schema import CreateAssetDeviceRequestPayload
+from app.schema.asset_schema import CreateAssetDeviceRequestPayload, AssetDeviceRequest
 from app.service.base_service import BaseService
 
 
@@ -22,10 +22,10 @@ class AssetDeviceRequestService(BaseService):
             user_uuid, asset_type_uuid
         )
 
-    def create_asset_device_request(self, payload: CreateAssetDeviceRequestPayload):
+    def create_asset_device_request(self, user_uuid: str, payload: AssetDeviceRequest):
         # check request already exists for the selected asset type
         existing_request = self.get_asset_device_request_by_user_by_asset_type_uuid(
-            user_uuid=str(payload.user_uuid),
+            user_uuid=str(user_uuid),
             asset_type_uuid=str(payload.asset_type_uuid),
         )
 
@@ -35,12 +35,19 @@ class AssetDeviceRequestService(BaseService):
         asset_type = self.asset_type_repository.read_by_uuid(
             str(payload.asset_type_uuid)
         )
+
         if asset_type is None:
             raise Exception(
                 messages.ASSET_TYPE_NOT_FOUND + str(payload.asset_type_uuid)
             )
 
         try:
+            payload = CreateAssetDeviceRequestPayload(
+                user_uuid=user_uuid,
+                asset_type_uuid=payload.asset_type_uuid,
+                number_of_assets=payload.number_of_assets,
+                metrics=payload.metrics,
+            )
             return self.asset_device_request_repository.create(payload)
         except Exception:
             raise Exception(messages.UPDATE_FAILED + " device request")

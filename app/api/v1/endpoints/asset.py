@@ -177,12 +177,8 @@ async def request_asset_device(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        asset_device_request = payload.dict()
-
-        asset_device_request["user_uuid"] = user_uuid
-
         request_service.create_asset_device_request(
-            CreateAssetDeviceRequestPayload(**asset_device_request)
+            user_uuid=user_uuid, payload=payload
         )
 
         return send_info(info=messages.ASSET_DEVICE_REQUEST_CREATED)

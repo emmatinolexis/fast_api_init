@@ -121,5 +121,5 @@ class AssetDeviceRequest(BaseModel):
 
 
 class CreateAssetDeviceRequestPayload(AssetDeviceRequest):
-    user_uuid: UUID
+    user_uuid: str
     status: AssetDeviceRequestStatus = AssetDeviceRequestStatus.PENDING
