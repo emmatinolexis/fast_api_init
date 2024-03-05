@@ -84,3 +84,8 @@ class EventStatus(str, Enum):
 class InvitationStatus(str, Enum):
     PENDING = "Pending"
     EXPIRED = "Expired"
+
+
+class AssetDeviceRequestStatus(str, Enum):
+    PENDING = "Pending"
+    PROCESSING = "Processing"

@@ -9,7 +9,12 @@ from app.core.container import Container
 from app.core.dependencies import get_current_user
 from app.core.exceptions import NotFoundError
 from app.model.user import User
-from app.schema.asset_schema import AssetPayload, AssignDeviceInputPayload
+from app.schema.asset_schema import (
+    AssetDeviceRequest,
+    AssetPayload,
+    AssignDeviceInputPayload,
+)
+from app.service.asset_device_request_service import AssetDeviceRequestService
 from app.service.asset_service import AssetService
 from app.service.tracking_event_service import TrackingEventService
 from app.util.utils import (
@@ -157,4 +162,43 @@ async def get_device_analytics(
         return send_data(data)
     except Exception as e:
         msg = messages.GET_FAILED + "device analytics"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.post("/device/requests/{user_uuid}", response_class=ORJSONResponse)
+@inject
+async def request_asset_device(
+    user_uuid: str,
+    payload: AssetDeviceRequest,
+    request_service: AssetDeviceRequestService = Depends(
+        Provide[Container.asset_device_request_service]
+    ),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        request_service.create_asset_device_request(
+            user_uuid=user_uuid, payload=payload
+        )
+
+        return send_info(info=messages.ASSET_DEVICE_REQUEST_CREATED)
+    except Exception as e:
+        msg = messages.UPDATE_FAILED + f"{msg_prefix} device request"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/device/requests/{user_uuid}", response_class=ORJSONResponse)
+@inject
+async def get_asset_device_requests(
+    user_uuid: str,
+    request_service: AssetDeviceRequestService = Depends(
+        Provide[Container.asset_device_request_service]
+    ),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        requests = request_service.get_asset_device_requests_by_user_uuid(user_uuid)
+
+        return send_data(requests)
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix} device requests"
         return send_internal_server_error(user_msg=msg, error=e)
