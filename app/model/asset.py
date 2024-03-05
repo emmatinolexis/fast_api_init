@@ -1,12 +1,41 @@
 import uuid
 
-from sqlalchemy import Column, Enum, ForeignKey, String
+from sqlalchemy import Column, Enum, ForeignKey, String, Table
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from app.model.asset_type import AssetType
-from app.model.base_model import BaseModel
+from app.model.base_model import BaseModel, Base
 from app.util.enums import AssetStatus
+
+
+class DeviceRequestAssetAssignment(BaseModel):
+    __tablename__ = 'device_request_asset_assignments'
+
+    uuid = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        unique=True,
+        nullable=False,
+    )
+
+    device_request_uuid = Column(
+        UUID(as_uuid=True),
+        ForeignKey('asset_device_requests.uuid'),
+        nullable=False,
+        index=True,
+    )
+
+    asset_uuid = Column(
+        UUID(as_uuid=True),
+        ForeignKey('assets.uuid'),
+        nullable=False,
+        index=True,
+    )
+
+    asset_device_request = relationship("AssetDeviceRequest", backref="device_request_asset_assignments")
+    asset = relationship("Asset", backref="device_request_asset_assignments")
 
 
 class Asset(BaseModel):
@@ -54,3 +83,7 @@ class Asset(BaseModel):
     equipment = relationship("Equipment", uselist=False)
     driver = relationship("Driver", uselist=False, back_populates="asset")
     device = relationship("Device", uselist=False, back_populates="asset")
+    device_request = relationship(
+        "AssetDeviceRequest",
+        secondary="device_request_asset_assignments"
+    )
