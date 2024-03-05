@@ -21,15 +21,8 @@ class SubscriptionPayload(BaseModel):
 class PaystackSubscriptionPayload(BaseModel):
     plan: str
     email: EmailStr
-    company: Optional[str]
-    subscription_period: SubscriptionPeriod
-    start_date: date
     amount: int
-    # status: ActiveStatus
-    # email: str
-    # amount: int
-    # plan: str
-    # callback_url: str
+    callback_url: Optional[str]
 
     class Config:
         orm_model = True
