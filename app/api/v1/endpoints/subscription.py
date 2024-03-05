@@ -30,6 +30,20 @@ async def paystack_subscriptions_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
+@router.get("/toggle_status/{subscription_code}", response_class=ORJSONResponse)
+@inject
+async def toggle_subscription_status_handler(
+    subscription_code: str,
+    service: SubscriptionService = Depends(Provide[Container.subscription_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        return send_data(service.toggle_subscription_status(subscription_code))
+    except Exception as e:
+        msg = f"{messages.GET_FAILED} {msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
 @router.get("/{subscription_code}", response_class=ORJSONResponse)
 @inject
 async def paystack_subscription_handler(
