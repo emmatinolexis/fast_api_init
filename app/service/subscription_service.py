@@ -18,6 +18,42 @@ class SubscriptionService(BaseService):
         except Exception as e:
             raise e
 
+    def toggle_subscription_status(self, subscription_code):
+        try:
+            # Retrieve subscription details
+            paystack_subscription = requests.get(
+                settings.PAYSTACK_SUBSCRIPTION_URL + f"/{subscription_code}",
+                headers=settings.PAYSTACK_HEADERS,
+            )
+
+            paystack_subscription.raise_for_status()  # Raise an error for non-200 responses
+
+            subscription = paystack_subscription.json()
+            subscription_status = subscription["data"]["status"]
+            update_data = {
+                "code": subscription_code,
+                "token": subscription["data"]["email_token"],
+            }
+            # Toggle subscription status
+            if subscription_status == "active":
+                updated_subscription = requests.post(
+                    settings.PAYSTACK_SUBSCRIPTION_URL + "/disable",
+                    headers=settings.PAYSTACK_HEADERS,
+                    json=update_data,
+                )
+
+            else:
+                updated_subscription = requests.post(
+                    settings.PAYSTACK_SUBSCRIPTION_URL + "/enable",
+                    headers=settings.PAYSTACK_HEADERS,
+                    json=update_data,
+                )
+
+            return updated_subscription.json()
+
+        except Exception as e:
+            raise e
+
     def get_all_paystack_subscriptions(self):
         try:
             return self.subscription_repository.read_all_paystack_subscriptions()
@@ -32,7 +68,6 @@ class SubscriptionService(BaseService):
         except Exception as e:
             raise e
 
-    # Background task to create or update subscriptions for today's plan upgrades
     def subscriptions_upgrade(self, background_tasks: BackgroundTasks):
         return background_tasks.add_task(
             self.subscription_repository.subscriptions_today()
@@ -40,8 +75,6 @@ class SubscriptionService(BaseService):
 
     def create_paystack_subscription(self, payload: PaystackSubscriptionPayload):
         try:
-            payload.start_date = payload.start_date.isoformat()
-
             subscription = requests.post(
                 settings.PAYSTACK_INITIALIZE_SUBSCRIPTION_URL,
                 headers=settings.PAYSTACK_HEADERS,
