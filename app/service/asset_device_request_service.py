@@ -7,9 +7,9 @@ from app.service.base_service import BaseService
 
 class AssetDeviceRequestService(BaseService):
     def __init__(
-            self,
-            asset_device_request_repository: AssetDeviceRequestRepository,
-            asset_repository: AssetRepository,
+        self,
+        asset_device_request_repository: AssetDeviceRequestRepository,
+        asset_repository: AssetRepository,
     ):
         self.asset_device_request_repository = asset_device_request_repository
         self.asset_repository = asset_repository
@@ -25,7 +25,9 @@ class AssetDeviceRequestService(BaseService):
 
             # check if the request already exists for the selected asset
             asset_exists_in_a_previous_request = any(
-                asset_uuid == asset["uuid"] for request in existing_requests for asset in request["assets"]
+                asset_uuid == asset["uuid"]
+                for request in existing_requests
+                for asset in request["assets"]
             )
 
             if asset_exists_in_a_previous_request or not asset_exists:
@@ -44,7 +46,9 @@ class AssetDeviceRequestService(BaseService):
                 asset_uuids=payload.asset_uuids,
                 metrics=payload.metrics,
             )
-            return self.asset_device_request_repository.create_asset_device_request(payload)
+            return self.asset_device_request_repository.create_asset_device_request(
+                payload
+            )
         except Exception:
             raise Exception(messages.CREATE_FAILED + " device request")
 

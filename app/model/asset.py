@@ -1,16 +1,16 @@
 import uuid
 
-from sqlalchemy import Column, Enum, ForeignKey, String, Table
+from sqlalchemy import Column, Enum, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from app.model.asset_type import AssetType
-from app.model.base_model import BaseModel, Base
+from app.model.base_model import BaseModel
 from app.util.enums import AssetStatus
 
 
 class DeviceRequestAssetAssignment(BaseModel):
-    __tablename__ = 'device_request_asset_assignments'
+    __tablename__ = "device_request_asset_assignments"
 
     uuid = Column(
         UUID(as_uuid=True),
@@ -22,19 +22,21 @@ class DeviceRequestAssetAssignment(BaseModel):
 
     device_request_uuid = Column(
         UUID(as_uuid=True),
-        ForeignKey('asset_device_requests.uuid'),
+        ForeignKey("asset_device_requests.uuid"),
         nullable=False,
         index=True,
     )
 
     asset_uuid = Column(
         UUID(as_uuid=True),
-        ForeignKey('assets.uuid'),
+        ForeignKey("assets.uuid"),
         nullable=False,
         index=True,
     )
 
-    asset_device_request = relationship("AssetDeviceRequest", backref="device_request_asset_assignments")
+    asset_device_request = relationship(
+        "AssetDeviceRequest", backref="device_request_asset_assignments"
+    )
     asset = relationship("Asset", backref="device_request_asset_assignments")
 
 
@@ -84,6 +86,5 @@ class Asset(BaseModel):
     driver = relationship("Driver", uselist=False, back_populates="asset")
     device = relationship("Device", uselist=False, back_populates="asset")
     device_request = relationship(
-        "AssetDeviceRequest",
-        secondary="device_request_asset_assignments"
+        "AssetDeviceRequest", secondary="device_request_asset_assignments"
     )

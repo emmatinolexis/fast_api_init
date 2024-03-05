@@ -15,7 +15,7 @@ class AssetDeviceRequestRepository(BaseRepository):
         super().__init__(session_factory, AssetDeviceRequest)
 
     def get_asset_device_request_by_user_by_asset_type_uuid(
-            self, user_uuid: str, asset_type_uuid: str
+        self, user_uuid: str, asset_type_uuid: str
     ):
         with self.session_factory() as session:
             return (
@@ -28,12 +28,12 @@ class AssetDeviceRequestRepository(BaseRepository):
             )
 
     def create_asset_device_request(
-            self, asset_device_request: CreateAssetDeviceRequestPayload
+        self, asset_device_request: CreateAssetDeviceRequestPayload
     ):
         device_request = AssetDeviceRequest(
             user_uuid=asset_device_request.user_uuid,
             metrics=asset_device_request.metrics,
-            status=asset_device_request.status
+            status=asset_device_request.status,
         )
 
         # return asset_device_request.asset_uuids
@@ -45,7 +45,11 @@ class AssetDeviceRequestRepository(BaseRepository):
                 session.refresh(device_request)
 
                 # Fetch Asset objects corresponding to the provided UUIDs
-                assets = session.query(Asset).filter(Asset.uuid.in_(asset_device_request.asset_uuids)).all()
+                assets = (
+                    session.query(Asset)
+                    .filter(Asset.uuid.in_(asset_device_request.asset_uuids))
+                    .all()
+                )
                 # Append the fetched Asset objects to device_request.assets
                 device_request.assets.extend(assets)
 
