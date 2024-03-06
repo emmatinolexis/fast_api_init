@@ -2,7 +2,6 @@ import uuid
 
 from sqlalchemy import Column, Enum, String
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
 
 from app.model.base_model import BaseModel
 from app.util.enums import ActiveStatus
@@ -21,7 +20,3 @@ class AssetType(BaseModel):
     description = Column(String(length=100), nullable=True, default="", index=True)
     icon_url = Column(String(length=100), nullable=False, default="", index=True)
     status = Column(Enum(ActiveStatus), nullable=False, default="ACTIVE", index=True)
-
-    asset_device_requests = relationship(
-        "AssetDeviceRequest", back_populates="asset_type", uselist=True
-    )

@@ -1,7 +1,7 @@
 from typing import List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, conint
+from pydantic import BaseModel
 from pydantic_extra_types.coordinate import Latitude, Longitude
 
 from app.schema.equipment_schema import EquipmentPayload, EquipmentTypePayload
@@ -115,8 +115,7 @@ class AlertMaintenanceTypePayload(BaseModel):
 
 
 class AssetDeviceRequest(BaseModel):
-    asset_type_uuid: UUID
-    number_of_assets: conint(ge=1)
+    asset_uuids: List[UUID]
     metrics: List[str]
 
 

@@ -182,13 +182,13 @@ async def request_asset_device(
 
         return send_info(info=messages.ASSET_DEVICE_REQUEST_CREATED)
     except Exception as e:
-        msg = messages.UPDATE_FAILED + f"{msg_prefix} device request"
+        msg = messages.CREATE_FAILED + f"{msg_prefix} device request"
         return send_internal_server_error(user_msg=msg, error=e)
 
 
 @router.get("/device/requests/{user_uuid}", response_class=ORJSONResponse)
 @inject
-async def get_asset_device_requests(
+async def get_asset_device_requests_by_user(
     user_uuid: str,
     request_service: AssetDeviceRequestService = Depends(
         Provide[Container.asset_device_request_service]
@@ -197,6 +197,23 @@ async def get_asset_device_requests(
 ):
     try:
         requests = request_service.get_asset_device_requests_by_user_uuid(user_uuid)
+
+        return send_data(requests)
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix} device requests"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/device/requests", response_class=ORJSONResponse)
+@inject
+async def get_asset_device_requests(
+    request_service: AssetDeviceRequestService = Depends(
+        Provide[Container.asset_device_request_service]
+    ),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        requests = request_service.get_asset_device_requests()
 
         return send_data(requests)
     except Exception as e:
