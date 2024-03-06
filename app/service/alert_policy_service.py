@@ -55,55 +55,19 @@ class AlertPolicyService(BaseService):
 
     def get_all_alert_policies(self):
         try:
-            db_alert_policies = self.get_list()
-
-            alert_policies = []
-            for alert in db_alert_policies:
-                alert_recipients = (
-                    self.alert_notification_assignment_repository.read_all_by_uuid(
-                        alert.uuid
-                    )
-                )
-
-                recipients = [row.recipient for row in alert_recipients]
-
-                alert_notification_types = self.alert_policy_notification_type_assignment_repository.read_all_by_uuid(
-                    alert.uuid
-                )
-                alert_notification_types = [
-                    row.alert_notification_type for row in alert_notification_types
-                ]
-
-                alert_assets = (
-                    self.alert_policy_asset_assignment_repository.read_all_by_uuid(
-                        alert.uuid
-                    )
-                )
-                alert_assets = [row.asset_name for row in alert_assets]
-
-                alert_policy_type_name = self.alert_policy_repository.read_by_uuid(
-                    alert.uuid
-                ).alert_policy_type.name
-
-                alert_data = {
-                    "policy_name": alert.policy_name,
-                    "geofence_location_name": alert.geofence_location_name,
-                    "geofence_type": alert.geofence_type,
-                    "minimum_idle_time": alert.minimum_idle_time,
-                    "maintenance_alert_schedule": alert.maintenance_alert_schedule,
-                    "alert_policy_type": alert_policy_type_name,
-                    "maintenance_alert_type": alert.maintenance_alert_type.name,
-                    "alert_reciepients": recipients,
-                    "alert_notification_types": alert_notification_types,
-                    "alert_assets": alert_assets,
-                }
-
-                alert_policies.append({"alert_policy": alert_data})
-            return alert_policies
+            return self.alert_policy_repository.read_all_alert_policies()
         except Exception as e:
             raise e
 
-    def create_alert_policy(self, alert_policy: AlertPolicyPayload):
+    def get_all_alert_policies_by_user(self, user_uuid: str):
+        try:
+            return self.alert_policy_repository.read_all_alert_policies_by_user(
+                user_uuid
+            )
+        except Exception as e:
+            raise e
+
+    def create_alert_policy(self, alert_policy: AlertPolicyPayload, user_uuid: str):
         try:
             # create policy
             alert_policy_data = AlertPolicyInput(
@@ -114,6 +78,7 @@ class AlertPolicyService(BaseService):
                 minimum_idle_time=alert_policy.minimum_idle_time,
                 maintenance_alert_type_uuid=alert_policy.maintenance_alert_policy_type_uuid,
                 maintenance_alert_schedule=alert_policy.maintenance_alert_schedule,
+                user_uuid=user_uuid,
             )
 
             if (
@@ -167,7 +132,9 @@ class AlertPolicyService(BaseService):
         except Exception as e:
             raise e
 
-    def create_geofence_alert_policy(self, alert_policy: GeofenceAlertPolicyPayload):
+    def create_geofence_alert_policy(
+        self, alert_policy: GeofenceAlertPolicyPayload, user_uuid
+    ):
         try:
             geofence_data_wkt = []
 
@@ -185,6 +152,7 @@ class AlertPolicyService(BaseService):
                 geofence_location_name=alert_policy.geofence_location_name,
                 geofence_type=alert_policy.geofence_type,
                 geofence_data=geofence_data_wkt,
+                user_uuid=user_uuid,
             )
 
             if (
