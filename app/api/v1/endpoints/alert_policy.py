@@ -34,6 +34,20 @@ async def get_alert_policies_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
+@router.get("/{user_uuid}", response_class=ORJSONResponse)
+@inject
+async def get_alert_policies_by_user_handler(
+    user_uuid: str,
+    service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        return send_data(service.get_all_alert_policies_by_user(user_uuid))
+    except Exception as e:
+        msg = messages.GET_FAILED + "alert policies"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
 @router.post("/", response_class=ORJSONResponse)
 @inject
 async def create_alert_policy_handler(
@@ -42,8 +56,7 @@ async def create_alert_policy_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        # return payload
-        alert_policy = service.create_alert_policy(payload)
+        alert_policy = service.create_alert_policy(payload, current_user.uuid)
         return send_data(alert_policy)
     except NotFoundError as e:
         return send_client_side_error(user_msg=e.detail)
@@ -60,7 +73,7 @@ async def create_geofence_alert_policy_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        alert_policy = service.create_geofence_alert_policy(payload)
+        alert_policy = service.create_geofence_alert_policy(payload, current_user.uuid)
         return send_data(alert_policy)
     except NotFoundError as e:
         return send_client_side_error(user_msg=e.detail)

@@ -24,6 +24,7 @@ class AlertPolicy(BaseModel):
     geofence_location_name = Column(String(length=100), nullable=True, index=True)
     geofence_type = Column(String(length=100), nullable=True, index=True)
     geofence_data = Column(JSON, nullable=True)
+    user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
     policy_name = Column(String(length=100), nullable=False, index=True)
     minimum_idle_time = Column(String(length=100), nullable=True, index=True)
     maintenance_alert_schedule = Column(String(length=100), nullable=True, index=True)
@@ -32,3 +33,4 @@ class AlertPolicy(BaseModel):
     )
     alert_policy_type = relationship("AlertPolicyType", uselist=False, lazy="subquery")
     maintenance_alert_type = relationship("AlertMaintenanceType", lazy="subquery")
+    assets = relationship("Asset", secondary="alert_policy_asset_assignments")

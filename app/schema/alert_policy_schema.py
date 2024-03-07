@@ -48,6 +48,7 @@ class AlertPolicyInput(BaseModel):
     minimum_idle_time: Optional[str] = None
     maintenance_alert_type_uuid: Optional[UUID] = None
     maintenance_alert_schedule: Optional[MaintenanceAlertSchedule] = None
+    user_uuid: UUID
 
 
 class AlertPolicyNotification(BaseModel):
@@ -102,3 +103,4 @@ class GeofenceAlertPolicyInput(BaseModel):
     geofence_location_name: Optional[str] = None
     geofence_type: Optional[GeofenceType] = None
     geofence_data: Optional[List[Coordinates]]
+    user_uuid: UUID
