@@ -45,6 +45,7 @@ platformdirs==3.10.0
 psycopg==3.1.12
 psycopg-binary==3.1.12
 psycopg2-binary==2.9.9
+prometheus-fastapi-instrumentator==6.1.0
 pyasn1==0.5.0
 pycodestyle==2.11.1
 pycparser==2.21
