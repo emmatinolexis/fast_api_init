@@ -1,10 +1,11 @@
 import uuid
 
-from sqlalchemy import JSON, Column, ForeignKey, String
+from sqlalchemy import JSON, Column, Enum, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from app.model.base_model import BaseModel
+from app.util.enums import GeofenceShapeType, GeofenceType
 
 
 class AlertPolicy(BaseModel):
@@ -22,8 +23,10 @@ class AlertPolicy(BaseModel):
         nullable=False,
     )
     geofence_location_name = Column(String(length=100), nullable=True, index=True)
-    geofence_type = Column(String(length=100), nullable=True, index=True)
-    geofence_data = Column(JSON, nullable=True)
+    geofence_type = Column(Enum(GeofenceType), nullable=True, index=True)
+    geofence_shape_type = Column(Enum(GeofenceShapeType), nullable=True)
+    circle_geofence_data = Column(JSON, nullable=True)
+    geofence_coordinate_data = Column(JSON, nullable=True)
     user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
     policy_name = Column(String(length=100), nullable=False, index=True)
     minimum_idle_time = Column(String(length=100), nullable=True, index=True)
