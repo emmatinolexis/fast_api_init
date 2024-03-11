@@ -32,6 +32,9 @@ class UserService(BaseService):
     def create_user(self, payload: UserPayload):
         return self.user_repository.create_user(payload)
 
+    def get_account_users(self, user_uuid: str):
+        return self.user_repository.get_account_users(user_uuid)
+
     def update_user_by_uuid(self, uuid: str, payload: UpdateUserPayload):
         try:
             # check uuid is valid
@@ -47,6 +50,13 @@ class UserService(BaseService):
     def get_user_by_email_address(self, email: EmailStr):
         try:
             user = self.user_repository.get_user_by_email_address(email)
+            return user if user else None
+        except Exception as e:
+            raise e
+
+    def get_user_by_uuid(self, user_uuid: str):
+        try:
+            user = self.user_repository.get_user_by_uuid(user_uuid)
             return user if user else None
         except Exception as e:
             raise e
