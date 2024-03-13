@@ -1,10 +1,11 @@
 import secrets
 import uuid
-from typing import Any
+from typing import Any, List
 
 from fastapi import Depends
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import ORJSONResponse
+from geopy.distance import geodesic
 
 from app.core.constants import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE
 from app.core.logger import get_logger
@@ -120,3 +121,17 @@ def get_status(status: str):
 
 def generate_unique_token(size: int):
     return secrets.token_hex(size).upper()
+
+
+def get_distance_travelled_by_coordinates(coordinates: List[dict]):
+    """
+    Calculate the total distance traveled given sets of coordinates
+    :param coordinates: List of dictionaries where each dictionary contains "latitude" and "longitude"
+    :return: Total distance traveled as float
+    """
+    total_distance = 0.0
+    for i in range(len(coordinates) - 1):
+        coord1 = (coordinates[i]["latitude"], coordinates[i]["longitude"])
+        coord2 = (coordinates[i + 1]["latitude"], coordinates[i + 1]["longitude"])
+        total_distance += geodesic(coord1, coord2).kilometers
+    return round(total_distance, 2)

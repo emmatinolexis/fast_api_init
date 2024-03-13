@@ -11,3 +11,7 @@ ALLOWED_EVENT_TYPES = [
     "Time_Interval_Tracking_Stopped",
     "Time_Interval_Tracking_Idling",
 ]
+
+# DEVICE UNITS
+SPEED_UNIT = "KPH"
+DISTANCE_UNIT = "KM"

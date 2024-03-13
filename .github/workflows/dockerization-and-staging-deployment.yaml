@@ -69,6 +69,7 @@ jobs:
             docker rm $(docker ps -a -q --filter="name=mvi_staging_api")
             docker image rm -f sagemicrosystems/mvi-hub:${{ env.OLD_TAG }}
             docker run -d --publish 8000:8000 --name mvi_staging_api -e API_VERSION=${{ secrets.API_VERSION }} \
+            -e PAYSTACK_API_KEY=${{ secrets.PAYSTACK_API_KEY }} -e PAYSTACK_PLAN_URL=${{ secrets.PAYSTACK_PLAN_URL }} -e PAYSTACK_SUBSCRIPTION_URL=${{ secrets.PAYSTACK_SUBSCRIPTION_URL }} -e DB_POPAYSTACK_PAYMENT_URLRT=${{ secrets.PAYSTACK_PAYMENT_URL }} \
             -e DB_HOST=${{ secrets.DB_HOST }} -e DB_NAME=${{ secrets.DB_NAME }} -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} -e DB_PORT=${{ secrets.DB_PORT }} \
             -e DB_USER=${{ secrets.DB_USER }} -e ENV=staging -e MAIL_SERVER=${{ secrets.MAIL_SERVER }} -e MAIL_USERNAME=${{ secrets.MAIL_USERNAME }} \
             -e MQTT_HOST=${{ secrets.MQTT_HOST }} -e MQTT_PORT=${{ secrets.MQTT_PORT }} -e MQTT_TOPIC=${{ secrets.MQTT_TOPIC }} -e MQTT_USER=${{ secrets.MQTT_USER }} \

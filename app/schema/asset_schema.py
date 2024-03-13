@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -6,7 +6,7 @@ from pydantic_extra_types.coordinate import Latitude, Longitude
 
 from app.schema.equipment_schema import EquipmentPayload, EquipmentTypePayload
 from app.schema.marker_schema import MarkerIconPayload
-from app.util.enums import ActiveStatus, AssetStatus
+from app.util.enums import ActiveStatus, AssetDeviceRequestStatus, AssetStatus
 
 
 class AssetTypePayload(BaseModel):
@@ -112,3 +112,13 @@ class DriverPayload(BaseModel):
 class AlertMaintenanceTypePayload(BaseModel):
     name: str
     status: ActiveStatus
+
+
+class AssetDeviceRequest(BaseModel):
+    asset_uuids: List[UUID]
+    metrics: List[str]
+
+
+class CreateAssetDeviceRequestPayload(AssetDeviceRequest):
+    user_uuid: str
+    status: AssetDeviceRequestStatus = AssetDeviceRequestStatus.PENDING
