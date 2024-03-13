@@ -25,7 +25,6 @@ class AlertPolicy(BaseModel):
     geofence_location_name = Column(String(length=100), nullable=True, index=True)
     geofence_type = Column(Enum(GeofenceType), nullable=True, index=True)
     geofence_shape_type = Column(Enum(GeofenceShapeType), nullable=True)
-    circle_geofence_data = Column(JSON, nullable=True)
     geofence_coordinate_data = Column(JSON, nullable=True)
     user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
     policy_name = Column(String(length=100), nullable=False, index=True)
