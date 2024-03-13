@@ -83,7 +83,7 @@ class TrackingEventService(BaseService):
             if device_events is None:
                 return {}
 
-            response = {}
+            response = []
 
             for device_imei, events in device_events.items():
                 device_response = {
@@ -131,7 +131,7 @@ class TrackingEventService(BaseService):
                         }
                     )
 
-                response[device_imei] = device_response
+                response.append(device_response)
 
             return response
 
