@@ -76,7 +76,7 @@ async def create_geofence_alert_policy_handler(
         alert_policy = service.create_geofence_alert_policy(payload, current_user.uuid)
         return send_data(alert_policy)
     except NotFoundError as e:
-        return send_client_side_error(user_msg=e.detail)
+        return send_client_side_error(user_msg=str(e))
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
-        return send_internal_server_error(user_msg=msg, error=e)
+        return send_internal_server_error(user_msg=msg, error=str(e))

@@ -46,6 +46,12 @@ class GeofenceType(str, Enum):
     ZONE_ENTRY = "zone_entry"
 
 
+class GeofenceShapeType(str, Enum):
+    CIRCULAR = "circular"
+    POLYGON = "polygon"
+    RECTANGLE = "rectangle"
+
+
 class AlertType(str, Enum):
     SMS = "sms"
     EMAIL = "email"

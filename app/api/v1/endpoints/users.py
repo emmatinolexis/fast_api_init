@@ -150,6 +150,7 @@ async def get_user_by_email(
 async def user_account(
     user_uuid: str,
     service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
 ):
     try:
         user = service.get_user_by_uuid(user_uuid)

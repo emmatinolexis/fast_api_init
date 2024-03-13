@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from app.util.enums import (
     ActiveStatus,
     AlertType,
+    GeofenceShapeType,
     GeofenceType,
     MaintenanceAlertSchedule,
 )
@@ -31,10 +32,8 @@ class AlertPolicyPayload(BaseModel):
     policy_name: str
     alert_policy_type_uuid: UUID
     alert_types: list[AlertType]
-    alert_reciepients: list[str] = []
+    alert_recipients: list[str] = []
     alert_assets: list[UUID]
-    geofence_location_name: Optional[str] = None
-    geofence_type: Optional[GeofenceType] = None
     minimum_idle_time: Optional[str] = None
     maintenance_alert_policy_type_uuid: Optional[UUID] = None
     maintenance_alert_schedule: Optional[MaintenanceAlertSchedule] = None
@@ -86,6 +85,11 @@ class Coordinates(BaseModel):
     longitude: float
 
 
+class CircleGeofence(BaseModel):
+    radius: float
+    center_point: Coordinates
+
+
 class GeofenceAlertPolicyPayload(BaseModel):
     policy_name: str
     alert_policy_type_uuid: UUID
@@ -93,8 +97,10 @@ class GeofenceAlertPolicyPayload(BaseModel):
     alert_recipients: list[str] = []
     alert_assets: list[UUID]
     geofence_location_name: Optional[str] = None
-    geofence_type: Optional[GeofenceType] = None
-    geofence_data: Optional[List[Coordinates]]
+    geofence_type: GeofenceType
+    geofence_shape_type: GeofenceShapeType
+    geofence_coordinate_data: Optional[list[Coordinates]] = None
+    circle_geofence_data: Optional[CircleGeofence] = None
 
 
 class GeofenceAlertPolicyInput(BaseModel):
@@ -102,5 +108,6 @@ class GeofenceAlertPolicyInput(BaseModel):
     alert_policy_type_uuid: UUID
     geofence_location_name: Optional[str] = None
     geofence_type: Optional[GeofenceType] = None
-    geofence_data: Optional[List[Coordinates]]
+    geofence_coordinate_data: Union[List[Coordinates], CircleGeofence]
+    geofence_shape_type: GeofenceShapeType
     user_uuid: UUID
