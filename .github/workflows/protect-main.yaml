@@ -9,7 +9,7 @@ jobs:
     steps:
       - name: protect main branch
         run: |
-          if [[ "${{ github.head_ref }}" != "staging-pr" ]];
+          if [[ "${{ github.event.pull_request.head.ref }}" != "staging-pr" ]];
           then
             echo "::error ::Only staging-pr may be used to create pull requests into main"
             exit 1

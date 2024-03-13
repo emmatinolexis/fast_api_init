@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Dict
 
 from app.core.constants import DISTANCE_UNIT, SPEED_UNIT
 from app.core.logger import get_logger
@@ -72,7 +71,7 @@ class TrackingEventService(BaseService):
         except Exception as e:
             raise e
 
-    def get_events_by_user(self, user_uuid: str, date: str) -> Dict[str, dict]:
+    def get_events_by_user(self, user_uuid: str, date: str):
         try:
             if not date:
                 date = datetime.now().strftime("%d/%m/%Y")
@@ -84,7 +83,7 @@ class TrackingEventService(BaseService):
             if device_events is None:
                 return {}
 
-            response = {}
+            response = []
 
             for device_imei, events in device_events.items():
                 device_response = {
@@ -132,7 +131,7 @@ class TrackingEventService(BaseService):
                         }
                     )
 
-                response[device_imei] = device_response
+                response.append(device_response)
 
             return response
 
