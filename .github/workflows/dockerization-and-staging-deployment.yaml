@@ -86,7 +86,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: staging
     needs:
-      - build-and-upload-docker-images
+      - build-and-upload-docker-image
     steps:
       - name: Set tag as environment variable
         run: |
