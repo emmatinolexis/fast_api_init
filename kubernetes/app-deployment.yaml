@@ -1,0 +1,131 @@
+apiVersion: apps/v1 
+kind: Deployment
+metadata:
+  name: mvi-tracking-app
+  namespace: dev
+  labels: 
+     app: mvi-tracking-app
+
+spec:
+  replicas: 1 
+  selector:
+    matchLabels:
+      app: mvi-tracking-app
+
+  template:
+    metadata:
+      labels:
+        app: mvi-tracking-app
+    spec:
+      serviceAccountName: dev-sa
+      containers:
+      - name: mvi-tracking-app
+        env:
+        - name: ENV
+          value: staging
+        - name: API_VERSION
+          valueFrom:
+            secretKeyRef:
+              name: mvi-tracking
+              key: api_version
+        - name: PAYSTACK_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: mvi-tracking
+              key: paystack_api_key
+        - name: PAYSTACK_PLAN_URL
+          valueFrom:
+            secretKeyRef:
+              name: mvi-tracking
+              key: paystack_plan_url
+        - name: PAYSTACK_SUBSCRIPTION_URL
+          valueFrom:
+            secretKeyRef:
+              name: mvi-tracking
+              key: paystack_subscription_url
+        - name: PAYSTACK_PAYMENT_URL
+          valueFrom:
+            secretKeyRef:
+              name: mvi-tracking
+              key: paystack_payment_url
+        - name: DB_HOST
+          valueFrom:
+            secretKeyRef:
+              name: mvi-tracking
+              key: db_host
+        - name: DB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: mvi-tracking
+              key: db_name
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mvi-tracking
+              key: db_password
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: mvi-tracking
+              key: db_user
+        - name: MAIL_SERVER
+          valueFrom:
+            secretKeyRef:
+              name: mvi-tracking
+              key: mail_server
+        - name: MAIL_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: mvi-tracking
+              key: mail_username
+        - name: MQTT_HOST
+          valueFrom:
+            secretKeyRef:
+              name: mvi-tracking
+              key: mqtt_host
+        - name: MQTT_PORT
+          valueFrom:
+            secretKeyRef:
+              name: mvi-tracking
+              key: mqtt_port
+        - name: MQTT_TOPIC
+          valueFrom:
+            secretKeyRef:
+              name: mvi-tracking
+              key: mqtt_topic
+        - name: MQTT_USER
+          valueFrom:
+            secretKeyRef:
+              name: mvi-tracking
+              key: mqtt_user
+        - name: MQTT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mvi-tracking
+              key: mqtt_password
+        - name: MAIL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mvi-tracking
+              key: mail_password
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: mvi-tracking
+              key: secret_key
+        - name: GRAYLOG_HOST
+          valueFrom:
+            secretKeyRef:
+              name: mvi-tracking
+              key: graylog_host
+        image: DOCKER_IMAGE
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+      imagePullSecrets:
+        - name: docker-secret
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
