@@ -90,7 +90,7 @@ jobs:
     steps:
       - name: Set tag as environment variable
         run: |
-          echo "NEW_TAG=${{ needs.build-and-upload-docker-images.outputs.NEW_TAG }}" >> $GITHUB_ENV
+          echo "NEW_TAG=${{ needs.build-and-upload-docker-image.outputs.NEW_TAG }}" >> $GITHUB_ENV
       - name: Checkout
         uses: actions/checkout@v3
       - name: Configure AWS credentials
@@ -148,6 +148,6 @@ jobs:
         if: ${{ always() }} # Use always to ensure that the notification is also send on failure of former steps
         uses: SimonScholz/google-chat-action@main
         with:
-          webhookUrl: ${{ secrets.GOOGLE_CHAT_WEBHOOK }}
+          webhookUrl: ${{ secrets.GOOGLE_WEBHOOK_URL }}
           jobStatus: '${{ job.status }}'
           title: "MVI API Hub Deployment to EKS"
