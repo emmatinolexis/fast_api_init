@@ -29,6 +29,7 @@ class AlertPolicy(BaseModel):
     user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
     policy_name = Column(String(length=100), nullable=False, index=True)
     minimum_idle_time = Column(String(length=100), nullable=True, index=True)
+    maximum_speed_limit = Column(String(length=100), nullable=True)
     maintenance_alert_schedule = Column(String(length=100), nullable=True, index=True)
     maintenance_alert_type_uuid = Column(
         UUID(as_uuid=True), ForeignKey("alert_maintenance_types.uuid"), nullable=True

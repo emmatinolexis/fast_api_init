@@ -1,3 +1,4 @@
+import math
 import secrets
 import uuid
 from typing import Any, List
@@ -135,3 +136,109 @@ def get_distance_travelled_by_coordinates(coordinates: List[dict]):
         coord2 = (coordinates[i + 1]["latitude"], coordinates[i + 1]["longitude"])
         total_distance += geodesic(coord1, coord2).kilometers
     return round(total_distance, 2)
+
+
+def generate_polygon_geofence_coordinates(polygon_points: List[dict], num_points: int):
+    """
+    Generate coordinates for a geofence based on the boundary points of a polygon.
+
+    Args:
+    - polygon_points: list of dictionaries representing the boundary points of the polygon
+    - num_points: number of points to generate along each edge of the polygon
+
+    Returns:
+    - list of tuples representing the coordinates of the geofence
+    """
+    if len(polygon_points) < 3:
+        raise ValueError("A polygon must have at least 3 points.")
+
+    geofence_coordinates = []
+    for i in range(len(polygon_points)):
+        start_point = polygon_points[i]
+        end_point = polygon_points[(i + 1) % len(polygon_points)]
+
+        # Extract latitude and longitude from dictionary
+        start_lat, start_lon = start_point["latitude"], start_point["longitude"]
+        end_lat, end_lon = end_point["latitude"], end_point["longitude"]
+
+        lat_increment = (end_lat - start_lat) / num_points
+        lon_increment = (end_lon - start_lon) / num_points
+        for j in range(num_points):
+            lat = start_lat + j * lat_increment
+            lon = start_lon + j * lon_increment
+            geofence_coordinates.append((lat, lon))
+
+    # Add the first point again to close the geofence
+    geofence_coordinates.append(geofence_coordinates[0])
+
+    return geofence_coordinates
+
+
+def generate_circle_geofence_coordinates(center: dict, radius: float, num_points: int):
+    """
+    Generate coordinates for a geofence representing a circle.
+
+    Args:
+    - center: tuple representing the center point of the circle (latitude, longitude)
+    - radius: radius of the circle in meters
+    - num_points: number of points to generate along the circumference of the circle
+
+    Returns:
+    - list of tuples representing the coordinates of the geofence
+    """
+
+    lat_center, lon_center = center["latitude"], center["longitude"]
+
+    geofence_coordinates = []
+    for i in range(num_points):
+        angle = 2 * math.pi * i / num_points
+        lat = lat_center + radius / 111300 * math.sin(
+            angle
+        )  # 1 degree latitude = 111.3 km
+        lon = lon_center + radius / (
+            111300 * math.cos(lat_center * (math.pi / 180))
+        ) * math.cos(
+            angle
+        )  # 1 degree longitude = 111.3 km * cos(latitude)
+        geofence_coordinates.append((lat, lon))
+
+    # Add the first point again to close the geofence
+    geofence_coordinates.append(geofence_coordinates[0])
+
+    return geofence_coordinates
+
+
+def check_violated_geofence(asset_coordinates, geofence_coordinates, geofence_type):
+    """
+    Check which geofences are violated by the given set of car points.
+
+    Args:
+    - asset_coordinates: list of tuples representing the points from the car (latitude, longitude)
+    - geofence_coordinates: list of tuples representing the coordinates of the geofence
+    - geofence_type: string indicating the type of geofence ('zone_exit' or 'zone_entry')
+
+    Returns:
+    - list of tuples representing the coordinates of violated geofences
+    """
+    violated_geofences = []
+    for point in asset_coordinates:
+        # Check if the point is inside or outside the geofence based on geofence_type
+        inside = False
+        for i in range(len(geofence_coordinates) - 1):
+            p1 = geofence_coordinates[i]
+            p2 = geofence_coordinates[i + 1]
+            if ((p1[1] > point[1]) != (p2[1] > point[1])) and (
+                point[0]
+                < (p2[0] - p1[0]) * (point[1] - p1[1]) / (p2[1] - p1[1]) + p1[0]
+            ):
+                inside = not inside
+
+        if geofence_type == "zone_entry" and inside:
+            # violated_geofences.append(point)
+            violated_geofences.append(point)
+
+        elif geofence_type == "zone_exit" and not inside:
+            # violated_geofences.append(point)
+            violated_geofences.append(point)
+
+    return violated_geofences

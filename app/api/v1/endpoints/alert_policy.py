@@ -12,6 +12,7 @@ from app.schema.alert_policy_schema import (
     GeofenceAlertPolicyPayload,
 )
 from app.service.alert_policy_service import AlertPolicyService
+from app.util.email import send_alert_policy_violation_email
 from app.util.utils import send_client_side_error, send_data, send_internal_server_error
 
 router = APIRouter(
@@ -77,6 +78,32 @@ async def create_geofence_alert_policy_handler(
         return send_data(alert_policy)
     except NotFoundError as e:
         return send_client_side_error(user_msg=str(e))
+    except Exception as e:
+        msg = messages.CREATE_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=str(e))
+
+
+@router.get("/geofence/check", response_class=ORJSONResponse)
+@inject
+async def check_geofence_violation_handler(
+    service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
+):
+    try:
+        response_data = service.check_geofence_violation()
+        # return response_data
+        for violation in response_data.get("violations", []):
+            recipient_name = violation.get("user").first_name
+            email = violation.get("user").email_address
+            asset_name = violation.get("asset").asset_name
+            policy_name = violation.get("alert_policy").policy_name
+
+            # Send email for each violation
+            await send_alert_policy_violation_email(
+                "Alert Policy Violation", recipient_name, email, asset_name, policy_name
+            )
+
+        return response_data
+
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=str(e))
