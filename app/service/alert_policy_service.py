@@ -1,5 +1,3 @@
-from app.core import messages
-from app.core.exceptions import NotFoundError
 from app.repository.alert_maintenance_type_repository import (
     AlertMaintenanceTypeRepository,
 )
@@ -68,6 +66,12 @@ class AlertPolicyService(BaseService):
         except Exception as e:
             raise e
 
+    def check_geofence_violation(self):
+        try:
+            return self.alert_policy_repository.check_geofence_violation()
+        except Exception as e:
+            raise e
+
     def create_alert_policy(self, alert_policy: AlertPolicyPayload, user_uuid: str):
         try:
             self.validate_alert_policy(alert_policy)
@@ -79,6 +83,7 @@ class AlertPolicyService(BaseService):
                 minimum_idle_time=alert_policy.minimum_idle_time,
                 maintenance_alert_type_uuid=alert_policy.maintenance_alert_policy_type_uuid,
                 maintenance_alert_schedule=alert_policy.maintenance_alert_schedule,
+                maximum_speed_limit=alert_policy.maximum_speed_limit,
                 user_uuid=user_uuid,
             )
 
@@ -102,6 +107,7 @@ class AlertPolicyService(BaseService):
     ):
         try:
             self.validate_alert_policy(alert_policy)
+
             created_policy = self.create_alert_geofence_policy(alert_policy, user_uuid)
             self.assign_alert_recipients(alert_policy, created_policy)
             self.assign_alert_types(alert_policy, created_policy)
@@ -117,13 +123,13 @@ class AlertPolicyService(BaseService):
             )
             is None
         ):
-            raise NotFoundError(
-                detail=messages.ALERT_POLICY_TYPE_NOT_FOUND
-                + str(alert_policy.alert_policy_type_uuid)
-            )
+            raise Exception("Alert policy type not found")
         for item in alert_policy.alert_assets:
             if self.asset_repository.read_by_uuid(item) is None:
-                raise NotFoundError(detail=messages.ASSET_NOT_FOUND + str(item))
+                msg = f"Asset: {item} not found"
+                raise Exception(msg)
+
+                # raise NotFoundError(detail=messages.ASSET_NOT_FOUND + str(item))
 
     def create_alert_geofence_policy(self, alert_policy, user_uuid):
         if alert_policy.geofence_shape_type == GeofenceShapeType.CIRCULAR:

@@ -35,6 +35,7 @@ class AlertPolicyPayload(BaseModel):
     alert_recipients: list[str] = []
     alert_assets: list[UUID]
     minimum_idle_time: Optional[str] = None
+    maximum_speed_limit: Optional[str] = None
     maintenance_alert_policy_type_uuid: Optional[UUID] = None
     maintenance_alert_schedule: Optional[MaintenanceAlertSchedule] = None
 
@@ -45,6 +46,7 @@ class AlertPolicyInput(BaseModel):
     geofence_location_name: Optional[str] = None
     geofence_type: Optional[GeofenceType] = None
     minimum_idle_time: Optional[str] = None
+    maximum_speed_limit: Optional[str] = None
     maintenance_alert_type_uuid: Optional[UUID] = None
     maintenance_alert_schedule: Optional[MaintenanceAlertSchedule] = None
     user_uuid: UUID
@@ -96,6 +98,7 @@ class GeofenceAlertPolicyPayload(BaseModel):
     alert_types: list[AlertType]
     alert_recipients: list[str] = []
     alert_assets: list[UUID]
+    maximum_speed_limit: Optional[str] = None
     geofence_location_name: Optional[str] = None
     geofence_type: GeofenceType
     geofence_shape_type: GeofenceShapeType

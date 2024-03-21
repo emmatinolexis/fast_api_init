@@ -119,3 +119,28 @@ async def send_otp_email(
 
     except Exception as e:
         raise Exception(str(e))
+
+
+async def send_alert_policy_violation_email(
+    subject,
+    recipient_name,
+    email,
+    asset_name,
+    policy_name,
+):
+    try:
+        msg = MessageSchema(
+            subject=subject,
+            recipients=[email],
+            template_body={
+                "recipient_name": recipient_name,
+                "asset_name": asset_name,
+                "policy_name": policy_name,
+            },
+            subtype=MessageType.html,
+        )
+
+        fm = FastMail(config=get_email_config())
+        await fm.send_message(msg, template_name="alert-violation-template.html")
+    except Exception as e:
+        raise Exception(str(e))
