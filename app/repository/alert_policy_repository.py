@@ -8,13 +8,13 @@ from sqlalchemy.orm import Session, joinedload
 from app.model.alert_policy import AlertPolicy
 from app.model.alert_policy_violations import AlertPolicyViolation
 from app.model.tracking_event import TrackingEvent
-from app.model.user import User
 from app.repository.base_repository import BaseRepository
 from app.util.enums import GeofenceShapeType, GeofenceTypeUuid
 from app.util.utils import (
     check_violated_geofence,
     generate_circle_geofence_coordinates,
     generate_polygon_geofence_coordinates,
+    toggle_status,
 )
 
 
@@ -34,6 +34,20 @@ class AlertPolicyRepository(BaseRepository):
             )
             return alerts
 
+    def toggle_alert_status(self, alert_uuid):
+        with self.session_factory() as session:
+            alert = (
+                session.query(self.model).filter(self.model.uuid == alert_uuid).first()
+            )
+            if not alert:
+                raise Exception("Alert not found")
+
+            alert.status = toggle_status(alert.status)
+            session.commit()
+            session.refresh(alert)
+
+            return alert
+
     def read_all_alert_policies_by_user(self, user_uuid: str):
         with self.session_factory() as session:
             alerts = (
@@ -41,6 +55,7 @@ class AlertPolicyRepository(BaseRepository):
                 .filter(self.model.user_uuid == user_uuid)
                 .options(joinedload(AlertPolicy.alert_policy_type))
                 .options(joinedload(AlertPolicy.assets))
+                .options(joinedload(AlertPolicy.alert_notification_types))
                 .options(joinedload(AlertPolicy.maintenance_alert_type))
                 .all()
             )
@@ -58,18 +73,13 @@ class AlertPolicyRepository(BaseRepository):
                     == GeofenceTypeUuid.GEOFENCE_ALERT_POLICY
                 )
                 .options(joinedload(AlertPolicy.assets))
+                .options(joinedload(AlertPolicy.alert_recipients))
                 .all()
             )
 
             for alert_policy in alert_policies:
                 # return alert_policy
                 geofence_violation_data = alert_policy.geofence_coordinate_data
-
-                user = (
-                    session.query(User)
-                    .filter(User.uuid == alert_policy.user_uuid)
-                    .first()
-                )
 
                 # Generate geofence points based on shape type
                 if alert_policy.geofence_shape_type == GeofenceShapeType.CIRCULAR:
@@ -85,6 +95,9 @@ class AlertPolicyRepository(BaseRepository):
 
                 # Get all assets for the current alert policy
                 geofence_assets = alert_policy.assets
+
+                # Get all alert recipient
+                alert_recipients = alert_policy.alert_recipients
 
                 # Get the current date
                 today_date = date.today()
@@ -122,7 +135,7 @@ class AlertPolicyRepository(BaseRepository):
                             "asset": geofence_asset,
                             "violated_points": violated_asset_coordinates,
                             "alert_policy": alert_policy,
-                            "user": user,
+                            "alert_recipients": alert_recipients,
                         }
                     )
 

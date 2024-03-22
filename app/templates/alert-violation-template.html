@@ -1,51 +1,127 @@
+<!DOCTYPE html>
 <html>
   <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap"
       rel="stylesheet"
     />
     <style>
-      body,
+      body {
+        background-color: #ededed;
+        height: 100vh;
+        font-family: "Inter";
+      }
+
       button {
         font-family: "Inter", sans-serif;
       }
 
-      @media (max-width: 768px) {
-        .container {
-          background-color: white !important;
-        }
+      .container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        width: 100%;
+      }
 
+      .responsive-div {
+        width: auto;
+        height: auto;
+        background-color: white;
+        border-radius: 8px;
+        padding: 25px;
+      }
+      #image {
+        width: 200px;
+        height: 120px;
+      }
+      h1 {
+        font-size: 20px;
+        font-weight: bold;
+      }
+      #sub_message {
+        font-size: 18px;
+      }
+      #verifyButton {
+        background: #00458d;
+        color: white;
+        font-size: 17px;
+        padding: 15px 20px;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        margin: 20px 0;
+      }
+      #p {
+        font-size: 13;
+      }
+
+      @media only screen and (max-width: 768px) {
         .responsive-div {
-          width: 100% !important;
-          height: 100% !important;
+          padding: 10px;
+          text-align: center;
         }
+        #image {
+          width: 100px;
+          height: 70px;
+        }
+        h1 {
+          text-align: center;
+          font-size: 17px;
+          font-weight: 900;
+        }
+        #sub_message {
+          font-size: 15px;
+          text-align: center;
+        }
+        #verifyButton {
+        background: #00458d;
+        color: white;
+        font-size: 14px;
+        padding: 10px 13px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        margin: 10px auto;
+
+      }
+      #p {
+        font-size: 10;
+      }
       }
     </style>
   </head>
-  <body
-    class="container"
-    style="
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      background-color: #ededed;
-      height: 100vh;
-    "
-  >
-    <div
-      class="responsive-div"
-      style="
-        width: 60%;
-        background-color: white;
-        border-radius: 8px;
-        padding: 20px;
-      "
-    >
-      <p style="font-size: 20px; font-weight: bold">
-        Hello, {{recipient_name}}
-      </p>
-      <p style="font-size: 20px">Your Asset {{ asset_name }} has violated your alert policy {{policy_name}} click on the <a target="_blank" href="https://mvitracking-frontend.vercel.app/dashboard/alert-policies/alerts">link</a> to view</p>
+  <body>
+    <div class="container">
+      <div class="responsive-div">
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 25px;
+          "
+        >
+          <img
+            id="image"
+            src="https://i.imgur.com/GEvKmxh.png"
+            alt="MV Tracking Logo"
+          />
+        </div>
+        <h1>Hello {{recipient_name}},</h1>
+        <p id="sub_message">
+          This email notification is to inform you that the vehicle, {{ asset_name }} has violated {{policy_name}}.
+        </p>
+        <a target="_blank" href="https://mvitracking-frontend.vercel.app/dashboard/alert-policies/alerts">
+          <button id="verifyButton" >View details</button>
+        </a>
+        <p id="p">
+          For further assistance, please contact MVI Tracking support at
+          [Support Phone Number] or [Support Email Address].
+        </p>
+      </div>
     </div>
   </body>
 </html>

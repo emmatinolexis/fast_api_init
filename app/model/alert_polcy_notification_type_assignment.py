@@ -2,6 +2,7 @@ import uuid
 
 from sqlalchemy import Column, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 from app.model.base_model import BaseModel
 
@@ -19,3 +20,6 @@ class AlertPolicyNotificationTypeAssignment(BaseModel):
         UUID(as_uuid=True), ForeignKey("alert_policies.uuid"), nullable=False
     )
     alert_notification_type = Column(String(length=100), nullable=False, index=True)
+    alert_policy = relationship(
+        "AlertPolicy", back_populates="alert_notification_types"
+    )
