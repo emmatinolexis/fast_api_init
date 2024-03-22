@@ -30,6 +30,7 @@ class AlertPolicy(BaseModel):
     policy_name = Column(String(length=100), nullable=False, index=True)
     minimum_idle_time = Column(String(length=100), nullable=True, index=True)
     maximum_speed_limit = Column(String(length=100), nullable=True)
+    status = Column(String(length=20), nullable=False)
     maintenance_alert_schedule = Column(String(length=100), nullable=True, index=True)
     maintenance_alert_type_uuid = Column(
         UUID(as_uuid=True), ForeignKey("alert_maintenance_types.uuid"), nullable=True
@@ -37,3 +38,9 @@ class AlertPolicy(BaseModel):
     alert_policy_type = relationship("AlertPolicyType", uselist=False, lazy="subquery")
     maintenance_alert_type = relationship("AlertMaintenanceType", lazy="subquery")
     assets = relationship("Asset", secondary="alert_policy_asset_assignments")
+    alert_recipients = relationship(
+        "AlertNotificationAssignment", back_populates="alert_policy"
+    )
+    alert_notification_types = relationship(
+        "AlertPolicyNotificationTypeAssignment", back_populates="alert_policy"
+    )

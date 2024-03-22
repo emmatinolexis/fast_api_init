@@ -23,7 +23,7 @@ from app.schema.alert_policy_schema import (
     GeofenceAlertPolicyPayload,
 )
 from app.service.base_service import BaseService
-from app.util.enums import GeofenceShapeType
+from app.util.enums import ActiveStatus, GeofenceShapeType
 
 
 class AlertPolicyService(BaseService):
@@ -66,6 +66,12 @@ class AlertPolicyService(BaseService):
         except Exception as e:
             raise e
 
+    def toggle_alert_status(self, alert_uuid: str):
+        try:
+            return self.alert_policy_repository.toggle_alert_status(alert_uuid)
+        except Exception as e:
+            raise e
+
     def check_geofence_violation(self):
         try:
             return self.alert_policy_repository.check_geofence_violation()
@@ -85,6 +91,7 @@ class AlertPolicyService(BaseService):
                 maintenance_alert_schedule=alert_policy.maintenance_alert_schedule,
                 maximum_speed_limit=alert_policy.maximum_speed_limit,
                 user_uuid=user_uuid,
+                status=ActiveStatus.ACTIVE,
             )
 
             created_policy = self.add(alert_policy_data)
@@ -107,7 +114,6 @@ class AlertPolicyService(BaseService):
     ):
         try:
             self.validate_alert_policy(alert_policy)
-
             created_policy = self.create_alert_geofence_policy(alert_policy, user_uuid)
             self.assign_alert_recipients(alert_policy, created_policy)
             self.assign_alert_types(alert_policy, created_policy)
@@ -141,6 +147,7 @@ class AlertPolicyService(BaseService):
                 geofence_coordinate_data=alert_policy.circle_geofence_data,
                 geofence_shape_type=alert_policy.geofence_shape_type,
                 user_uuid=user_uuid,
+                status=ActiveStatus.ACTIVE,
             )
         else:
             geofence_data_wkt = self.create_geofence_data_wkt(alert_policy)
@@ -153,6 +160,7 @@ class AlertPolicyService(BaseService):
                 geofence_coordinate_data=geofence_data_wkt,
                 geofence_shape_type=alert_policy.geofence_shape_type,
                 user_uuid=user_uuid,
+                status=ActiveStatus.ACTIVE,
             )
         return self.add(alert_policy_data)
 
