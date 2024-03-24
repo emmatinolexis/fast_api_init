@@ -118,6 +118,11 @@ spec:
             secretKeyRef:
               name: mvi-tracking
               key: graylog_host
+        - name: ECHO_PARROT_HOST
+          valueFrom:
+            secretKeyRef:
+              name: mvi-tracking
+              key: echo_parrot_host
         image: DOCKER_IMAGE
         imagePullPolicy: Always
         ports:
