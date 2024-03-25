@@ -35,7 +35,7 @@ class AppCreator:
         else:
             get_logger().error("Failed to connect to the PostgreSQL database")
 
-        # set mqtt
+        # set mqtt service
         self.mqtt_service = self.container.mqtt_service()
         self.mqtt_client = self.mqtt_service.connect_mqtt()
         self.mqtt_service.subscribe(self.mqtt_client)

@@ -127,6 +127,7 @@ jobs:
           MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
           GRAYLOG_HOST: ${{ secrets.GRAYLOG_HOST }}
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          ECHO_PARROT_HOST: ${{ secrets.ECHO_PARROT_HOST }}
       - name: Set docker image in k8s manifests
         env:
           DOCKER_REGISTRY: ${{ secrets.DOCKERHUB_USERNAME }}       
