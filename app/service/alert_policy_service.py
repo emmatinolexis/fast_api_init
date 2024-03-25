@@ -66,6 +66,14 @@ class AlertPolicyService(BaseService):
         except Exception as e:
             raise e
 
+    def get_all_alert_violations_by_user(self, user_uuid: str):
+        try:
+            return self.alert_policy_repository.read_all_alert_violations_by_user(
+                user_uuid
+            )
+        except Exception as e:
+            raise e
+
     def toggle_alert_status(self, alert_uuid: str):
         try:
             return self.alert_policy_repository.toggle_alert_status(alert_uuid)

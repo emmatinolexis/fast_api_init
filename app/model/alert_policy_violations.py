@@ -6,6 +6,7 @@ from sqlalchemy.orm import relationship
 
 from app.model.alert_policy import AlertPolicy
 from app.model.asset import Asset
+from app.model.user import User
 from app.model.base_model import BaseModel
 
 
@@ -22,7 +23,10 @@ class AlertPolicyViolation(BaseModel):
         UUID(as_uuid=True), ForeignKey(AlertPolicy.uuid), nullable=False
     )
     asset_uuid = Column(UUID(as_uuid=True), ForeignKey(Asset.uuid), nullable=False)
+    user_uuid = Column(UUID(as_uuid=True), ForeignKey(User.uuid), nullable=False)
     violation_coordinates = Column(JSON, nullable=False)
     status = Column(String(length=20), nullable=False)
     asset = relationship("Asset")
     alert_policy = relationship("AlertPolicy")
+    user = relationship("User")
+

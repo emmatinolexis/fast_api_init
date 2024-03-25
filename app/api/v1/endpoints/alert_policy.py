@@ -49,6 +49,19 @@ async def get_alert_policies_by_user_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
+@router.get("/alert_violations/{user_uuid}", response_class=ORJSONResponse)
+@inject
+async def get_alert_violations_by_user_handler(
+    user_uuid: str,
+    service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        return send_data(service.get_all_alert_violations_by_user(user_uuid))
+    except Exception as e:
+        msg = messages.GET_FAILED + "alert policies"
+        return send_internal_server_error(user_msg=msg, error=e)
+
 @router.post("/", response_class=ORJSONResponse)
 @inject
 async def create_alert_policy_handler(

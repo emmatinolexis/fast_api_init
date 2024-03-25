@@ -8,8 +8,9 @@ from sqlalchemy.orm import Session, joinedload
 from app.model.alert_policy import AlertPolicy
 from app.model.alert_policy_violations import AlertPolicyViolation
 from app.model.tracking_event import TrackingEvent
+
 from app.repository.base_repository import BaseRepository
-from app.util.enums import GeofenceShapeType, GeofenceTypeUuid
+from app.util.enums import GeofenceShapeType, GeofenceTypeUuid, ActiveStatus
 from app.util.utils import (
     check_violated_geofence,
     generate_circle_geofence_coordinates,
@@ -61,21 +62,37 @@ class AlertPolicyRepository(BaseRepository):
             )
             return alerts
 
+    def read_all_alert_violations_by_user(self, user_uuid: str):
+        with self.session_factory() as session:
+            alerts = (
+                session.query(AlertPolicyViolation)
+                .filter(self.model.user_uuid == user_uuid)
+                .options(joinedload(AlertPolicyViolation.alert_policy))
+                .options(joinedload(AlertPolicyViolation.asset))
+                .all()
+            )
+            # return alerts
+
     def check_geofence_violation(self):
         with self.session_factory() as session:
             violations = []
 
-            # get all geofence alert policies
+            # get all active geofence alert policies
             alert_policies = (
                 session.query(AlertPolicy)
                 .filter(
                     AlertPolicy.alert_policy_type_uuid
                     == GeofenceTypeUuid.GEOFENCE_ALERT_POLICY
                 )
+                .filter(
+                    AlertPolicy.status == ActiveStatus.ACTIVE
+                )
                 .options(joinedload(AlertPolicy.assets))
                 .options(joinedload(AlertPolicy.alert_recipients))
                 .all()
             )
+
+            # return alert_policies
 
             for alert_policy in alert_policies:
                 # return alert_policy
@@ -128,7 +145,6 @@ class AlertPolicyRepository(BaseRepository):
                     violated_asset_coordinates = check_violated_geofence(
                         asset_coordinates, geofence_points, alert_policy.geofence_type
                     )
-                    # return user
 
                     violations.append(
                         {
@@ -139,13 +155,15 @@ class AlertPolicyRepository(BaseRepository):
                         }
                     )
 
-                    # return violations
                     # # If violation occurs, create AlertPolicyViolation instance and persist it
+                    # return violated_asset_coordinates
                     if violated_asset_coordinates:
+                        # return violated_asset_coordinates
                         violation = AlertPolicyViolation(
                             alert_policy_uuid=alert_policy.uuid,
                             asset_uuid=geofence_asset.uuid,
                             violation_coordinates=violated_asset_coordinates,
+                            user_uuid=alert_policy.user_uuid
                         )
                         session.add(violation)
         session.commit()
