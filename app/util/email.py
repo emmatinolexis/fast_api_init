@@ -31,7 +31,7 @@ async def send_email_verification(
     url,
     btn,
     token="",
-    email_purpose=EmailPurpose.VERIFICATION,
+    email_purpose=EmailPurpose.EMAIL_VERIFICATION,
 ):
     try:
         response = await send_email(
@@ -86,7 +86,7 @@ async def send_otp_email(
 ):
     try:
         response = await send_email(
-            email_purpose=EmailPurpose.OTP,
+            email_purpose=EmailPurpose.EMAIL_OTP,
             email_body={
                 "recipient_name": recipient_name,
                 "otp": otp,
