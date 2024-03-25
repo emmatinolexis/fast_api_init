@@ -122,7 +122,7 @@ class Container(containers.DeclarativeContainer):
         sender_id=settings.SMS_SENDER_ID,
         sender_app=settings.SMS_SENDER_APP,
         sender_email=settings.SENDER_EMAIL,
-        sender_name=settings.EMAIL_SENDER_NAME,
+        sender_name=settings.SENDER_NAME,
     )
 
     # Repositories
