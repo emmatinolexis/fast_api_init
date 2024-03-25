@@ -7,6 +7,12 @@ on:
     branches:
       - 'main'
 
+env:
+  DOCKER_HUB_APP_REPOSITORY: mvi-hub
+  EKS_CLUSTER_NAME: sage-uat
+  AWS_REGION: eu-central-1
+  EKS_NAMESPACE: dev
+
 jobs:
   build-and-upload-docker-image:
     runs-on: ubuntu-latest
@@ -44,6 +50,7 @@ jobs:
     outputs:
       NEW_TAG: ${{ steps.version_bump.outputs.new_tag }}
       OLD_TAG: ${{ steps.version_bump.outputs.old_tag }}
+  
   deploy-docker-image-on-staging:
     runs-on: ubuntu-latest
     environment: staging
@@ -69,8 +76,79 @@ jobs:
             docker rm $(docker ps -a -q --filter="name=mvi_staging_api")
             docker image rm -f sagemicrosystems/mvi-hub:${{ env.OLD_TAG }}
             docker run -d --publish 8000:8000 --name mvi_staging_api -e API_VERSION=${{ secrets.API_VERSION }} \
-            -e PAYSTACK_API_KEY=${{ secrets.PAYSTACK_API_KEY }} -e PAYSTACK_PLAN_URL=${{ secrets.PAYSTACK_PLAN_URL }} -e PAYSTACK_SUBSCRIPTION_URL=${{ secrets.PAYSTACK_SUBSCRIPTION_URL }} -e DB_POPAYSTACK_PAYMENT_URLRT=${{ secrets.PAYSTACK_PAYMENT_URL }} \
+            -e PAYSTACK_API_KEY=${{ secrets.PAYSTACK_API_KEY }} -e PAYSTACK_PLAN_URL=${{ secrets.PAYSTACK_PLAN_URL }} -e PAYSTACK_SUBSCRIPTION_URL=${{ secrets.PAYSTACK_SUBSCRIPTION_URL }} -e PAYSTACK_PAYMENT_URL=${{ secrets.PAYSTACK_PAYMENT_URL }} \
             -e DB_HOST=${{ secrets.DB_HOST }} -e DB_NAME=${{ secrets.DB_NAME }} -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} -e DB_PORT=${{ secrets.DB_PORT }} \
             -e DB_USER=${{ secrets.DB_USER }} -e ENV=staging -e MAIL_SERVER=${{ secrets.MAIL_SERVER }} -e MAIL_USERNAME=${{ secrets.MAIL_USERNAME }} \
             -e MQTT_HOST=${{ secrets.MQTT_HOST }} -e MQTT_PORT=${{ secrets.MQTT_PORT }} -e MQTT_TOPIC=${{ secrets.MQTT_TOPIC }} -e MQTT_USER=${{ secrets.MQTT_USER }} \
             -e MQTT_PASSWORD=${{ secrets.MQTT_PASSWORD }} -e MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }} -e SECRET_KEY=${{ secrets.SECRET_KEY }} -e GRAYLOG_HOST=${{ secrets.GRAYLOG_HOST }} -e GRAYLOG_PORT=${{ secrets.GRAYLOG_PORT }} sagemicrosystems/mvi-hub:${{ env.NEW_TAG }}
+  
+  deploy-k8s-staging:
+    runs-on: ubuntu-latest
+    environment: staging
+    needs:
+      - build-and-upload-docker-image
+    steps:
+      - name: Set tag as environment variable
+        run: |
+          echo "NEW_TAG=${{ needs.build-and-upload-docker-image.outputs.NEW_TAG }}" >> $GITHUB_ENV
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{env.AWS_REGION}}
+      - name: Update kube config
+        run: aws eks update-kubeconfig --name $EKS_CLUSTER_NAME --region $AWS_REGION
+      - name: Inject secrets
+        uses: cschleiden/replace-tokens@v1
+        with:
+          files: '["kubernetes/*.yaml"]'
+          tokenPrefix: __ # optional, default is #{
+          tokenSuffix: __ # optional, default is }#
+        env:
+          API_VERSION: ${{ secrets.API_VERSION }}
+          PAYSTACK_API_KEY: ${{ secrets.PAYSTACK_API_KEY }}
+          PAYSTACK_PLAN_URL: ${{ secrets.PAYSTACK_PLAN_URL }}
+          PAYSTACK_SUBSCRIPTION_URL: ${{ secrets.PAYSTACK_SUBSCRIPTION_URL }}
+          PAYSTACK_PAYMENT_URL: ${{ secrets.PAYSTACK_PAYMENT_URL }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_USER: ${{ secrets.DB_USER }}
+          MAIL_SERVER: ${{ secrets.MAIL_SERVER }}
+          MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
+          MQTT_HOST: ${{ secrets.MQTT_HOST }}
+          MQTT_PORT: ${{ secrets.MQTT_PORT }}
+          MQTT_TOPIC: ${{ secrets.MQTT_TOPIC }}
+          MQTT_USER: ${{ secrets.MQTT_USER }}
+          MQTT_PASSWORD: ${{ secrets.MQTT_PASSWORD }}
+          MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+          GRAYLOG_HOST: ${{ secrets.GRAYLOG_HOST }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          ECHO_PARROT_HOST: ${{ secrets.ECHO_PARROT_HOST }}
+      - name: Set docker image in k8s manifests
+        env:
+          DOCKER_REGISTRY: ${{ secrets.DOCKERHUB_USERNAME }}       
+          IMAGE_TAG: ${{ env.NEW_TAG }}
+        run: |
+          sed -i.bak "s|DOCKER_IMAGE|$DOCKER_REGISTRY/$DOCKER_HUB_APP_REPOSITORY:$IMAGE_TAG|g" kubernetes/app-deployment.yaml
+      - name: Deploy to EKS
+        uses: Azure/k8s-deploy@v1
+        with:
+          namespace: ${{env.EKS_NAMESPACE}}
+          manifests: |
+            kubernetes/secrets.yaml
+            kubernetes/app-deployment.yaml
+            kubernetes/app-service.yaml
+      - name: Update deployment status
+        run: |
+          echo "Deployment to EKS successful"
+      - name: Notify on Google Chat
+        if: ${{ always() }} # Use always to ensure that the notification is also send on failure of former steps
+        uses: SimonScholz/google-chat-action@main
+        with:
+          webhookUrl: ${{ secrets.GOOGLE_CHAT_WEBHOOK_URL }}
+          jobStatus: '${{ job.status }}'
+          title: "MVI API Hub Deployment to EKS"

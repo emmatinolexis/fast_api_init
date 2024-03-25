@@ -1,5 +1,6 @@
 from dependency_injector import containers, providers
 
+from app.client.echo_parrot import EchoParrot
 from app.client.mqtt_service import MQTTService
 from app.core.database import Database
 from app.core.settings import settings
@@ -113,6 +114,15 @@ class Container(containers.DeclarativeContainer):
         password=settings.MQTT_PASSWORD,
         topic=settings.MQTT_TOPIC,
         session_factory=db.provided.session,
+    )
+    echo_parrot = providers.Factory(
+        EchoParrot,
+        host=settings.ECHO_PARROT_HOST,
+        port=settings.ECHO_PARROT_PORT,
+        sender_id=settings.SMS_SENDER_ID,
+        sender_app=settings.SMS_SENDER_APP,
+        sender_email=settings.SENDER_EMAIL,
+        sender_name=settings.SENDER_NAME,
     )
 
     # Repositories
@@ -348,7 +358,7 @@ class Container(containers.DeclarativeContainer):
         feature_repository=feature_repository,
         onboarding_repository=onboarding_repository,
         onboarding_feature_assignment_repository=onboarding_feature_assignment_repository,
-        onboarding_asset_type_assignment_repository=onboarding_asset_type_assignment_repository
+        onboarding_asset_type_assignment_repository=onboarding_asset_type_assignment_repository,
         # business_profile_repository=business_profile_repository,
         # user_organisation_assignment_repository=user_organisation_assignment_repository,
     )

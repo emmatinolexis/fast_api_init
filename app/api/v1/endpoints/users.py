@@ -25,8 +25,12 @@ from app.service.invitation_service import InvitationService
 from app.service.phone_otp_service import PhoneOTPService
 from app.service.reset_password_service import ResetPassword
 from app.service.user_service import UserService
-from app.util.email import send_email, send_email_invitation, send_otp_email
-from app.util.enums import AccountType
+from app.util.email import (
+    send_email_invitation,
+    send_email_verification,
+    send_otp_email,
+)
+from app.util.enums import AccountType, EmailPurpose
 from app.util.utils import (
     allow_admins_only,
     send_client_side_error,
@@ -205,14 +209,14 @@ async def send_password_link_handler(
         if reset_password_token:
             try:
                 # send verification email
-                await send_email(
-                    subject=settings.PASSWORD_RESET_MAIL_SUBJECT,
+                await send_email_verification(
                     recipient_name=found_user.first_name,
                     email=email_address,
                     message=settings.PASSWORD_RESET_MAIL_VERIFICATION_MESSAGE,
                     url=settings.RESET_PASSWORD_URL,
                     btn=settings.RESET_BTN,
                     token=reset_password_token,
+                    email_purpose=EmailPurpose.PASSWORD_RESET,
                 )
             except Exception as e:
                 return send_internal_server_error(
@@ -309,7 +313,6 @@ async def create_team_member_invitation(
 
         # send email invite
         await send_email_invitation(
-            subject=settings.EMAIL_INVITATION_SUBJECT,
             recipient_name=payload.first_name,
             email=payload.email,
             invitee_name=f"{user.first_name} {user.last_name}",
@@ -351,7 +354,6 @@ async def update_phone_handler(
         service.patch_by_uuid(uuid, payload)
         token = phone_otp_service.create_phone_verification_token(user.uuid)
         await send_otp_email(
-            subject=settings.PHONE_OTP_SUBJECT,
             recipient_name=user.first_name,
             email=user.email_address,
             otp=token,

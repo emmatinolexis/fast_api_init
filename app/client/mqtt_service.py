@@ -97,17 +97,17 @@ class MQTTService:
 
                     log.info(f"Event saved to database: {event_received}")
                     MSG_RECEIVED_TOTAL.labels(
-                        device_type=event.get("device_type"), success=True
+                        device_type=event.device_type, success=True
                     ).inc()
                 except IntegrityError as e:
                     log.error(f"Integrity Error: {e}")
                     MSG_RECEIVED_TOTAL.labels(
-                        device_type=event.get("device_type"), success=False
+                        device_type=event.device_type, success=False
                     ).inc()
                 except Exception as e:
                     log.error(f"Exception: {e}")
                     MSG_RECEIVED_TOTAL.labels(
-                        device_type=event.get("device_type"), success=False
+                        device_type=event.device_type, success=False
                     ).inc()
 
         try:

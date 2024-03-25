@@ -102,3 +102,11 @@ class InvitationStatus(str, Enum):
 class AssetDeviceRequestStatus(str, Enum):
     PENDING = "Pending"
     PROCESSING = "Processing"
+
+
+class EmailPurpose(str, Enum):
+    EMAIL_VERIFICATION = "Verify_Token"
+    EMAIL_OTP = "OTP"
+    ALERT_VIOLATION = "Alert_Violation"
+    INVITATION = "Invitation"
+    PASSWORD_RESET = "Password_Reset"

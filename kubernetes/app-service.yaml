@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mvi-tracking-app
+  namespace: dev
+  labels:
+    app: mvi-tracking-app 
+spec:
+  type: LoadBalancer
+  selector:
+    app: mvi-tracking-app 
+  ports:
+    - port: 80
+      targetPort: 8000
