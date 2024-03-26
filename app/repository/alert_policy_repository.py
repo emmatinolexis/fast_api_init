@@ -3,7 +3,7 @@ from contextlib import AbstractContextManager
 from datetime import date
 from typing import Callable
 
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, sessionmaker
 
 from app.model.alert_policy import AlertPolicy
 from app.model.alert_policy_violations import AlertPolicyViolation
@@ -156,16 +156,16 @@ class AlertPolicyRepository(BaseRepository):
                     )
 
                     # # If violation occurs, create AlertPolicyViolation instance and persist it
-                    # return violated_asset_coordinates
                     if violated_asset_coordinates:
-                        # return violated_asset_coordinates
                         violation = AlertPolicyViolation(
                             alert_policy_uuid=alert_policy.uuid,
                             asset_uuid=geofence_asset.uuid,
                             violation_coordinates=violated_asset_coordinates,
-                            user_uuid=alert_policy.user_uuid
+                            user_uuid=alert_policy.user_uuid,
+                            status=ActiveStatus.ACTIVE
                         )
                         session.add(violation)
+
         session.commit()
 
         logging.info("Alert Notifications Sent")

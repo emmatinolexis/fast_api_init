@@ -114,7 +114,6 @@ async def check_geofence_violation_handler(
 
                     # Send email for each violation
                     await send_alert_policy_violation_email(
-                        "Alert Policy Violation",
                         recipient_name,
                         email,
                         asset_name,

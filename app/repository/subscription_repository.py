@@ -79,6 +79,7 @@ class SubscriptionRepository(BaseRepository):
                     subscription["customer"]["first_name"] = user.first_name
                     subscription["customer"]["last_name"] = user.last_name
                     subscription["customer"]["phone"] = user.phone_number
+                    subscription["customer"]["user_uuid"] = user.uuid
 
                     plan_code = subscription["plan"]["plan_code"]
 
