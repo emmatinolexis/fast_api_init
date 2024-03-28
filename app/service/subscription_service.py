@@ -68,6 +68,14 @@ class SubscriptionService(BaseService):
         except Exception as e:
             raise e
 
+    def get_paystack_subscription_by_email(self, email):
+        try:
+            return self.subscription_repository.get_paystack_subscription_by_email(
+                email
+            )
+        except Exception as e:
+            raise e
+
     def subscriptions_upgrade(self, background_tasks: BackgroundTasks):
         return background_tasks.add_task(
             self.subscription_repository.subscriptions_today()
@@ -75,11 +83,6 @@ class SubscriptionService(BaseService):
 
     def create_paystack_subscription(self, payload: PaystackSubscriptionPayload):
         try:
-            subscription = requests.post(
-                settings.PAYSTACK_INITIALIZE_SUBSCRIPTION_URL,
-                headers=settings.PAYSTACK_HEADERS,
-                json=payload.dict(),
-            )
-            return subscription.json()
+            return self.subscription_repository.create_paystack_subscription(payload)
         except Exception as e:
             raise e

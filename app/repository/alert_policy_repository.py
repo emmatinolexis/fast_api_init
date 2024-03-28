@@ -3,14 +3,13 @@ from contextlib import AbstractContextManager
 from datetime import date
 from typing import Callable
 
-from sqlalchemy.orm import Session, joinedload, sessionmaker
+from sqlalchemy.orm import Session, joinedload
 
 from app.model.alert_policy import AlertPolicy
 from app.model.alert_policy_violations import AlertPolicyViolation
 from app.model.tracking_event import TrackingEvent
-
 from app.repository.base_repository import BaseRepository
-from app.util.enums import GeofenceShapeType, GeofenceTypeUuid, ActiveStatus
+from app.util.enums import ActiveStatus, GeofenceShapeType, GeofenceTypeUuid
 from app.util.utils import (
     check_violated_geofence,
     generate_circle_geofence_coordinates,
@@ -71,7 +70,7 @@ class AlertPolicyRepository(BaseRepository):
                 .options(joinedload(AlertPolicyViolation.asset))
                 .all()
             )
-            # return alerts
+            return alerts
 
     def check_geofence_violation(self):
         with self.session_factory() as session:
@@ -84,9 +83,7 @@ class AlertPolicyRepository(BaseRepository):
                     AlertPolicy.alert_policy_type_uuid
                     == GeofenceTypeUuid.GEOFENCE_ALERT_POLICY
                 )
-                .filter(
-                    AlertPolicy.status == ActiveStatus.ACTIVE
-                )
+                .filter(AlertPolicy.status == ActiveStatus.ACTIVE)
                 .options(joinedload(AlertPolicy.assets))
                 .options(joinedload(AlertPolicy.alert_recipients))
                 .all()
@@ -162,7 +159,7 @@ class AlertPolicyRepository(BaseRepository):
                             asset_uuid=geofence_asset.uuid,
                             violation_coordinates=violated_asset_coordinates,
                             user_uuid=alert_policy.user_uuid,
-                            status=ActiveStatus.ACTIVE
+                            status=ActiveStatus.ACTIVE,
                         )
                         session.add(violation)
 

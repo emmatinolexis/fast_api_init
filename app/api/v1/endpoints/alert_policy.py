@@ -62,6 +62,7 @@ async def get_alert_violations_by_user_handler(
         msg = messages.GET_FAILED + "alert policies"
         return send_internal_server_error(user_msg=msg, error=e)
 
+
 @router.post("/", response_class=ORJSONResponse)
 @inject
 async def create_alert_policy_handler(

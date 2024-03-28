@@ -6,8 +6,8 @@ from sqlalchemy.orm import relationship
 
 from app.model.alert_policy import AlertPolicy
 from app.model.asset import Asset
-from app.model.user import User
 from app.model.base_model import BaseModel
+from app.model.user import User
 
 
 class AlertPolicyViolation(BaseModel):
@@ -29,4 +29,3 @@ class AlertPolicyViolation(BaseModel):
     asset = relationship("Asset")
     alert_policy = relationship("AlertPolicy")
     user = relationship("User")
-
