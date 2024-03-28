@@ -1,6 +1,6 @@
 from structlog import get_logger
 
-from app.core import container
+from app.core.container import Container
 from app.util.enums import EmailPurpose
 
 log = get_logger()
@@ -12,7 +12,7 @@ async def send_email(
     email,
 ):
     try:
-        echo_parrot = container.echo_parrot()
+        echo_parrot = Container().echo_parrot()
         response = await echo_parrot.echo_email(
             recipient_email=email,
             email_purpose=email_purpose,

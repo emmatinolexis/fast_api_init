@@ -1,4 +1,4 @@
-from app.core import container
+from app.core.container import Container
 from app.core.logger import get_logger
 
 log = get_logger()
@@ -9,7 +9,7 @@ async def send_sms(
     message: str,
 ):
     try:
-        echo_parrot = container.echo_parrot()
+        echo_parrot = Container().echo_parrot()
         response = await echo_parrot.echo_sms(
             recipient=recipient,
             message=message,
