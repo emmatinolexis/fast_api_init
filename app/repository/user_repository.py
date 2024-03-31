@@ -199,6 +199,8 @@ class UserRepository(BaseRepository):
                 .first()
             )
 
+            # assign the free plan for the user
+
             if user.account_type == AccountType.BUSINESS:
                 try:
                     business_data = (

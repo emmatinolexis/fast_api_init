@@ -41,6 +41,7 @@ from app.repository import (
     tracking_event_repository,
     user_organisation_assignment_repository,
     user_repository,
+    user_subscription_repository,
 )
 from app.service import (
     alert_maintenance_type_service,
@@ -72,6 +73,7 @@ from app.service import (
     subscription_service,
     tracking_event_service,
     user_service,
+    user_subscription_service,
 )
 
 
@@ -260,12 +262,18 @@ class Container(containers.DeclarativeContainer):
         plan_upgrade_repository.PlanUpgradeRepository,
         session_factory=db.provided.session,
     )
+    user_subscription_repository = providers.Factory(
+        user_subscription_repository.UserSubscriptionRepository,
+        session_factory=db.provided.session,
+    )
 
     # Services
     auth_service = providers.Factory(
         auth_service.AuthService,
         user_repository=user_repository,
         email_verification_repository=email_verfication_repository,
+        user_subscription_repository=user_subscription_repository,
+        subscription_repository=subscription_repository,
     )
     user_service = providers.Factory(
         user_service.UserService,
@@ -403,4 +411,8 @@ class Container(containers.DeclarativeContainer):
     plan_upgrade_service = providers.Factory(
         plan_updgrade_service.PlanUpgradeService,
         plan_upgrade_repository=plan_upgrade_repository,
+    )
+    user_subscription_service = providers.Factory(
+        user_subscription_service.UserSubscriptionService,
+        user_subscription_repository=user_subscription_repository,
     )
