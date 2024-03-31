@@ -11,7 +11,7 @@ env:
   DOCKER_HUB_APP_REPOSITORY: mvi-hub
   EKS_CLUSTER_NAME: sage-uat
   AWS_REGION: eu-central-1
-  EKS_NAMESPACE: dev
+  EKS_NAMESPACE: apps
 
 jobs:
   build-and-upload-docker-image:

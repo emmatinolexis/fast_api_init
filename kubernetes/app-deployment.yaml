@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mvi-tracking-app
-  namespace: dev
+  namespace: apps
   labels: 
      app: mvi-tracking-app
 
@@ -17,7 +17,7 @@ spec:
       labels:
         app: mvi-tracking-app
     spec:
-      serviceAccountName: dev-sa
+      serviceAccountName: apps-sa
       containers:
       - name: mvi-tracking-app
         env:
