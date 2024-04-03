@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.model.alert_policy import AlertPolicy
 from app.model.alert_policy_violations import AlertPolicyViolation
+from app.model.asset import Asset
 from app.model.tracking_event import TrackingEvent
 from app.repository.base_repository import BaseRepository
 from app.util.enums import ActiveStatus, GeofenceShapeType, GeofenceTypeUuid
@@ -67,9 +68,13 @@ class AlertPolicyRepository(BaseRepository):
                 session.query(AlertPolicyViolation)
                 .filter(self.model.user_uuid == user_uuid)
                 .options(joinedload(AlertPolicyViolation.alert_policy))
-                .options(joinedload(AlertPolicyViolation.asset))
+                .options(
+                    joinedload(AlertPolicyViolation.asset).joinedload(Asset.driver)
+                )
+                .options(joinedload(AlertPolicyViolation.user))
                 .all()
             )
+
             return alerts
 
     def check_geofence_violation(self):

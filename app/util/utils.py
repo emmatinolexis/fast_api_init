@@ -1,7 +1,7 @@
 import math
 import secrets
 import uuid
-from typing import Any, List
+from typing import Any, List, Union
 
 from fastapi import Depends
 from fastapi.encoders import jsonable_encoder
@@ -124,17 +124,28 @@ def generate_unique_token(size: int):
     return secrets.token_hex(size).upper()
 
 
-def get_distance_travelled_by_coordinates(coordinates: List[dict]):
+def get_distance_travelled_by_coordinates(coordinates: Union[List[dict], List[tuple]]):
     """
     Calculate the total distance traveled given sets of coordinates
-    :param coordinates: List of dictionaries where each dictionary contains "latitude" and "longitude"
+    :param coordinates: List of dictionaries or list of tuples where each dictionary contains "latitude" and "longitude"
     :return: Total distance traveled as float
     """
     total_distance = 0.0
-    for i in range(len(coordinates) - 1):
-        coord1 = (coordinates[i]["latitude"], coordinates[i]["longitude"])
-        coord2 = (coordinates[i + 1]["latitude"], coordinates[i + 1]["longitude"])
-        total_distance += geodesic(coord1, coord2).kilometers
+    if isinstance(coordinates[0], dict):
+        for i in range(len(coordinates) - 1):
+            coord1 = (coordinates[i]["latitude"], coordinates[i]["longitude"])
+            coord2 = (coordinates[i + 1]["latitude"], coordinates[i + 1]["longitude"])
+            total_distance += geodesic(coord1, coord2).kilometers
+    elif isinstance(coordinates[0], tuple):
+        for i in range(len(coordinates) - 1):
+            coord1 = coordinates[i]
+            coord2 = coordinates[i + 1]
+            total_distance += geodesic(coord1, coord2).kilometers
+    else:
+        raise ValueError(
+            "Invalid coordinates format. Must be a list of dictionaries or a list of tuples."
+        )
+
     return round(total_distance, 2)
 
 
