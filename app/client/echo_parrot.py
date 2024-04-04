@@ -1,6 +1,9 @@
 import httpx
 
+from app.core.logger import get_logger
 from app.util.enums import EmailPurpose
+
+log = get_logger()
 
 
 class EchoParrot:
@@ -14,8 +17,10 @@ class EchoParrot:
 
     # echo sms message via echo parrot to recipient
     async def echo_sms(self, message, recipient):
+        url = f"http://{self.host}:{self.port}/api/v1/sms/"
+        log.info(f"Sending SMS to {recipient} via Echo Parrot {url}")
         response = httpx.post(
-            f"http://{self.host}:{self.port}/api/v1/sms",
+            url,
             data={
                 "message": message,
                 "recipient": recipient,
@@ -29,16 +34,20 @@ class EchoParrot:
     async def echo_email(
         self, recipient_email, email_purpose: EmailPurpose, email_body
     ):
+        url = f"http://{self.host}:{self.port}/api/v1/email/"
+        log.info(f"Sending email to {recipient_email} via Echo Parrot {url}")
+        data = {
+            "recipient_email": recipient_email,
+            "sender_email": self.sender_email,
+            "sender_name": self.sender_name,
+            "email_purpose": email_purpose.value,
+            "body": email_body,
+            "sender_app": self.sender_app,
+        }
+        log.info(f"Email data: {data}")
         response = httpx.post(
-            f"http://{self.host}:{self.port}/api/v1/email",
-            data={
-                "recipient_email": recipient_email,
-                "sender_email": self.sender_email,
-                "sender_name": self.sender_name,
-                "email_purpose": email_purpose,
-                "body": email_body,
-                "sender_app": self.sender_app,
-            },
+            url,
+            data=data,
             headers={"Content-Type": "application/json"},
         )
         return response.json()

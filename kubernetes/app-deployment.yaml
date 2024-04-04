@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mvi-tracking-app
-  namespace: dev
+  namespace: apps
   labels: 
      app: mvi-tracking-app
 
@@ -17,7 +17,7 @@ spec:
       labels:
         app: mvi-tracking-app
     spec:
-      serviceAccountName: dev-sa
+      serviceAccountName: apps-sa
       containers:
       - name: mvi-tracking-app
         env:
@@ -48,6 +48,11 @@ spec:
             secretKeyRef:
               name: mvi-tracking
               key: paystack_payment_url
+        - name: PAYSTACK_INITIALIZE_SUBSCRIPTION_URL
+          valueFrom:
+            secretKeyRef:
+              name: mvi-tracking
+              key: paystack_initilize_subscription_url
         - name: DB_HOST
           valueFrom:
             secretKeyRef:
