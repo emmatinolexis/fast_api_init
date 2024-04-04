@@ -36,16 +36,18 @@ class EchoParrot:
     ):
         url = f"http://{self.host}:{self.port}/api/v1/email/"
         log.info(f"Sending email to {recipient_email} via Echo Parrot {url}")
+        data = {
+            "recipient_email": recipient_email,
+            "sender_email": self.sender_email,
+            "sender_name": self.sender_name,
+            "email_purpose": email_purpose,
+            "body": email_body,
+            "sender_app": self.sender_app,
+        }
+        log.info(f"Email data: {data}")
         response = httpx.post(
             url,
-            data={
-                "recipient_email": recipient_email,
-                "sender_email": self.sender_email,
-                "sender_name": self.sender_name,
-                "email_purpose": email_purpose,
-                "body": email_body,
-                "sender_app": self.sender_app,
-            },
+            data=data,
             headers={"Content-Type": "application/json"},
         )
         return response.json()
