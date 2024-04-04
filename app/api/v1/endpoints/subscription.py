@@ -96,7 +96,6 @@ async def paystack_subscription_webhook_handler(
     service: UserSubscriptionService = Depends(
         Provide[Container.user_subscription_service]
     ),
-    current_user: User = Depends(get_current_user),
 ):
     try:
         subscription = service.create_user_subscription(paystack_payload)
