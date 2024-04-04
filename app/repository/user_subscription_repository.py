@@ -27,67 +27,75 @@ class UserSubscriptionRepository(BaseRepository):
 
     def create_user_subscription(self, payload):
         with self.session_factory() as session:
-            user_email = payload["data"]["customer"]["email"]
-            subscription_code = payload["data"]["subscription_code"]
+            event_type = payload["event"]
+            logging.info(payload)
 
-            user = session.query(User).filter(User.email_address == user_email).first()
+            if event_type == "subscription.create":
+                user_email = payload["data"]["customer"]["email"]
+                subscription_code = payload["data"]["subscription_code"]
 
-            if user is None:
-                raise Exception("User not found")
-
-            # check if user already has plan
-            existing_subscription = (
-                session.query(UserSubscription)
-                .filter(UserSubscription.user_email == user_email)
-                .first()
-            )
-
-            if existing_subscription:
-                if existing_subscription.subscription_code == subscription_code:
-                    raise Exception("You have already subscribed to this plan")
-
-                # get paystack existing plan
-                paystack_existing_subscription = requests.get(
-                    settings.PAYSTACK_SUBSCRIPTION_URL
-                    + f"/{existing_subscription.subscription_code}",
-                    headers=settings.PAYSTACK_HEADERS,
+                user = (
+                    session.query(User).filter(User.email_address == user_email).first()
                 )
 
-                paystack_existing_subscription_code = (
-                    paystack_existing_subscription.json()["data"]["subscription_code"]
-                )
-                paystack_existing_subscription_token = (
-                    paystack_existing_subscription.json()["data"]["email_token"]
-                )
+                if user is None:
+                    raise Exception("User not found")
 
-                # deactivate existing package from autorenewal
-                paystack_subscription = requests.post(
-                    settings.PAYSTACK_SUBSCRIPTION_URL + "/disable",
-                    headers=settings.PAYSTACK_HEADERS,
-                    json={
-                        "code": paystack_existing_subscription_code,
-                        "token": paystack_existing_subscription_token,
-                    },
+                # check if user already has plan
+                existing_subscription = (
+                    session.query(UserSubscription)
+                    .filter(UserSubscription.user_email == user_email)
+                    .first()
                 )
 
-                paystack_subscription.raise_for_status()
+                if existing_subscription:
+                    if existing_subscription.subscription_code == subscription_code:
+                        raise Exception("You have already subscribed to this plan")
 
-                # update existing user plan with new plan code
-                existing_subscription.subscription_code = subscription_code
-                session.commit()
-                session.refresh(existing_subscription)
+                    # get paystack existing plan
+                    paystack_existing_subscription = requests.get(
+                        settings.PAYSTACK_SUBSCRIPTION_URL
+                        + f"/{existing_subscription.subscription_code}",
+                        headers=settings.PAYSTACK_HEADERS,
+                    )
 
-                logging.info("Subscription updated successfully")
+                    paystack_existing_subscription_code = (
+                        paystack_existing_subscription.json()["data"][
+                            "subscription_code"
+                        ]
+                    )
+                    paystack_existing_subscription_token = (
+                        paystack_existing_subscription.json()["data"]["email_token"]
+                    )
 
-                return "Subscription updated successfully"
-            else:
-                user_subscription = UserSubscription(
-                    user_email=user_email, subscription_code=subscription_code
-                )
+                    # deactivate existing package from autorenewal
+                    paystack_subscription = requests.post(
+                        settings.PAYSTACK_SUBSCRIPTION_URL + "/disable",
+                        headers=settings.PAYSTACK_HEADERS,
+                        json={
+                            "code": paystack_existing_subscription_code,
+                            "token": paystack_existing_subscription_token,
+                        },
+                    )
 
-                session.add(user_subscription)
-                session.commit()
+                    paystack_subscription.raise_for_status()
 
-                logging.info("Subscription created successfully")
+                    # update existing user plan with new plan code
+                    existing_subscription.subscription_code = subscription_code
+                    session.commit()
+                    session.refresh(existing_subscription)
 
-                return "Subscription created successfully"
+                    logging.info("Subscription updated successfully")
+
+                    return "Subscription updated successfully"
+                else:
+                    user_subscription = UserSubscription(
+                        user_email=user_email, subscription_code=subscription_code
+                    )
+
+                    session.add(user_subscription)
+                    session.commit()
+
+                    logging.info("Subscription created successfully")
+
+                    return "Subscription created successfully"
