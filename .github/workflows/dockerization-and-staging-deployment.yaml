@@ -78,7 +78,7 @@ jobs:
             docker run -d --publish 8000:8000 --name mvi_staging_api -e API_VERSION=${{ secrets.API_VERSION }} \
             -e PAYSTACK_API_KEY=${{ secrets.PAYSTACK_API_KEY }} -e PAYSTACK_PLAN_URL=${{ secrets.PAYSTACK_PLAN_URL }} -e PAYSTACK_SUBSCRIPTION_URL=${{ secrets.PAYSTACK_SUBSCRIPTION_URL }} -e PAYSTACK_PAYMENT_URL=${{ secrets.PAYSTACK_PAYMENT_URL }} \
             -e PAYSTACK_INITIALIZE_SUBSCRIPTION_URL=${{ secrets.PAYSTACK_INITIALIZE_SUBSCRIPTION_URL }} -e DB_HOST=${{ secrets.DB_HOST }} -e DB_NAME=${{ secrets.DB_NAME }} -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} -e DB_PORT=${{ secrets.DB_PORT }} \
-            -e DB_USER=${{ secrets.DB_USER }} -e ENV=staging -e MAIL_SERVER=${{ secrets.MAIL_SERVER }} -e MAIL_USERNAME=${{ secrets.MAIL_USERNAME }} \
+            -e ECHO_PARROT_HOST=${{ secrets.ECHO_PARROT_HOST }} -e DB_USER=${{ secrets.DB_USER }} -e ENV=staging -e MAIL_SERVER=${{ secrets.MAIL_SERVER }} -e MAIL_USERNAME=${{ secrets.MAIL_USERNAME }} \
             -e MQTT_HOST=${{ secrets.MQTT_HOST }} -e MQTT_PORT=${{ secrets.MQTT_PORT }} -e MQTT_TOPIC=${{ secrets.MQTT_TOPIC }} -e MQTT_USER=${{ secrets.MQTT_USER }} \
             -e MQTT_PASSWORD=${{ secrets.MQTT_PASSWORD }} -e MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }} -e SECRET_KEY=${{ secrets.SECRET_KEY }} -e GRAYLOG_HOST=${{ secrets.GRAYLOG_HOST }} -e GRAYLOG_PORT=${{ secrets.GRAYLOG_PORT }} sagemicrosystems/mvi-hub:${{ env.NEW_TAG }}
   
