@@ -1,7 +1,7 @@
 from enum import Enum
 
 from app.core.constants import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE
-
+from typing import List, Dict
 
 class AccountType(str, Enum):
     BUSINESS = "business"
@@ -26,6 +26,10 @@ class FreePlan(str, Enum):
             "item_name": "One User",
         },
     ]
+
+    @classmethod
+    def get_package_items(cls) -> List[Dict[str, str]]:
+        return cls.PACKAGE_ITEMS
 
 
 class ActiveStatus(str, Enum):

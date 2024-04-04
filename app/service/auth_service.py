@@ -16,6 +16,7 @@ from app.core.security import (
     generate_token_for_new_user,
     generate_verification_token,
 )
+from app.core.constants import (FREE_PACKAGE_ITEMS, FREE_PACKAGE)
 from app.core.settings import settings
 from app.repository.email_verification_repository import EmailVerificationRepository
 from app.repository.subscription_repository import SubscriptionRepository
@@ -76,20 +77,21 @@ class AuthService(BaseService):
                 # return user_package
             else:
                 user_package = {
-                    "package_name": FreePlan.PLAN_NAME,
-                    "package_items": FreePlan.PACKAGE_ITEMS,
+                    "package_name": FREE_PACKAGE,
+                    "package_items": FREE_PACKAGE_ITEMS,
                 }
 
             access_token, expiration_datetime = generate_token_for_existing_user(
                 login_info, db_user
             )
+
             log.info("Access token generated successfully")
-            # package  =
+
+            user['package'] = user_package
             login_result = {
                 "access_token": access_token,
                 "expiration": expiration_datetime,
                 "user": user,
-                "plan": user_package,
                 "permission": "",
             }
             return login_result
