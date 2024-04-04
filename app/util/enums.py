@@ -1,7 +1,8 @@
 from enum import Enum
+from typing import Dict, List
 
 from app.core.constants import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE
-from typing import List, Dict
+
 
 class AccountType(str, Enum):
     BUSINESS = "business"

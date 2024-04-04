@@ -2,6 +2,7 @@ from datetime import datetime
 
 from jose import jwt
 
+from app.core.constants import FREE_PACKAGE, FREE_PACKAGE_ITEMS
 from app.core.exceptions import (
     AlreadyVerifiedError,
     AuthError,
@@ -16,7 +17,6 @@ from app.core.security import (
     generate_token_for_new_user,
     generate_verification_token,
 )
-from app.core.constants import (FREE_PACKAGE_ITEMS, FREE_PACKAGE)
 from app.core.settings import settings
 from app.repository.email_verification_repository import EmailVerificationRepository
 from app.repository.subscription_repository import SubscriptionRepository
@@ -25,7 +25,7 @@ from app.repository.user_subscription_repository import UserSubscriptionReposito
 from app.schema.auth_schema import UserEmailVerification, VerifyToken
 from app.schema.user_schema import UserLogin
 from app.service.base_service import BaseService
-from app.util.enums import ActiveStatus, FreePlan
+from app.util.enums import ActiveStatus
 
 log = get_logger()
 
@@ -87,7 +87,8 @@ class AuthService(BaseService):
 
             log.info("Access token generated successfully")
 
-            user['package'] = user_package
+            user["package"] = user_package
+
             login_result = {
                 "access_token": access_token,
                 "expiration": expiration_datetime,
