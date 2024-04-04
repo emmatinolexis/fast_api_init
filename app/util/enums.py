@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Dict, List
 
 from app.core.constants import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE
 
@@ -26,6 +27,10 @@ class FreePlan(str, Enum):
             "item_name": "One User",
         },
     ]
+
+    @classmethod
+    def get_package_items(cls) -> List[Dict[str, str]]:
+        return cls.PACKAGE_ITEMS
 
 
 class ActiveStatus(str, Enum):
