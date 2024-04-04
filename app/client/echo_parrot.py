@@ -40,7 +40,7 @@ class EchoParrot:
             "recipient_email": recipient_email,
             "sender_email": self.sender_email,
             "sender_name": self.sender_name,
-            "email_purpose": email_purpose,
+            "email_purpose": email_purpose.value,
             "body": email_body,
             "sender_app": self.sender_app,
         }
