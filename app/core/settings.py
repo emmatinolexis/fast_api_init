@@ -110,9 +110,7 @@ class Settings(BaseSettings):
     ECHO_PARROT_PORT: int = os.getenv("ECHO_PARROT_PORT", 80)
     SMS_SENDER_ID: str = os.getenv("SMS_SENDER_ID", "MoneyBQ")
     SMS_SENDER_APP: str = os.getenv("SMS_SENDER_APP", "MVI")
-    SENDER_EMAIL: str = os.getenv(
-        "SENDER_EMAIL", "MVI Tracking <info@sagemicrosystems.net>"
-    )
+    SENDER_EMAIL: str = os.getenv("SENDER_EMAIL", "info@sagemicrosystems.net")
     SENDER_NAME: str = os.getenv("SENDER_NAME", "MVI Tracking")
 
     # find query
