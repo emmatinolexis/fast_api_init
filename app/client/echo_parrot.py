@@ -21,7 +21,7 @@ class EchoParrot:
         log.info(f"Sending SMS to {recipient} via Echo Parrot {url}")
         response = httpx.post(
             url,
-            data={
+            json={
                 "message": message,
                 "recipient": recipient,
                 "sender_id": self.sender_id,
