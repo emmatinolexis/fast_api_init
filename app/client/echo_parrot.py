@@ -47,7 +47,7 @@ class EchoParrot:
         log.info(f"Email data: {data}")
         response = httpx.post(
             url,
-            data=data,
+            json=data,
             headers={"Content-Type": "application/json"},
         )
         return response.json()
