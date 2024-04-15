@@ -7,6 +7,7 @@ from requests.exceptions import HTTPError
 from sqlalchemy import desc
 from sqlalchemy.orm import Session, joinedload
 
+from app.core.constants import FREE_PACKAGE, FREE_PACKAGE_ITEMS
 from app.core.settings import settings
 from app.model.business_profile import BusinessProfile
 from app.model.package import Package
@@ -71,8 +72,26 @@ class SubscriptionRepository(BaseRepository):
 
     def get_paystack_subscription_by_email(self, email: str):
         with self.session_factory() as session:
-            user = session.query(UserSubscription).filter(user_email=email).first()
-            subscription = self.get_paystack_subscription(user.subscription_code)
+            user = (
+                session.query(UserSubscription)
+                .filter(UserSubscription.user_email == email)
+                .first()
+            )
+            if user:
+                paystack_subscription = self.get_paystack_subscription(
+                    user.subscription_code
+                )
+                # return paystack_subscription["package_items"]
+                subscription = {
+                    "package_name": paystack_subscription["plan"]["name"],
+                    "package_items": paystack_subscription["package_items"],
+                }
+                return subscription
+            else:
+                subscription = {
+                    "package_name": FREE_PACKAGE,
+                    "package_items": FREE_PACKAGE_ITEMS,
+                }
             return subscription
 
     def create_paystack_subscription(self, payload: PaystackSubscriptionPayload):
@@ -106,13 +125,21 @@ class SubscriptionRepository(BaseRepository):
                 settings.PAYSTACK_SUBSCRIPTION_URL,
                 headers=settings.PAYSTACK_HEADERS,
             )
+
+            # return paystack_subscription.json()
+
             if paystack_subscription.status_code == 200:
                 subscriptions = []
                 for subscription in paystack_subscription.json()["data"]:
                     user_email = subscription["customer"]["email"]
+
                     user = (
                         session.query(User).filter_by(email_address=user_email).first()
                     )
+
+                    if not user:
+                        return f"{user_email} not found"
+
                     subscription["customer"]["first_name"] = user.first_name
                     subscription["customer"]["last_name"] = user.last_name
                     subscription["customer"]["phone"] = user.phone_number

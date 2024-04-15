@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Column, Enum, String
+from sqlalchemy import Column, Enum, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -19,4 +19,7 @@ class PackageItem(BaseModel):
     )
     item_name = Column(String(length=50), nullable=False, index=True)
     status = Column(Enum(ActiveStatus), nullable=False, index=True)
+    type = Column(String(length=50), nullable=True)
+    number_of_users = Column(Integer, nullable=True)
+    number_of_assets = Column(Integer, nullable=True)
     packages = relationship("Package", secondary="package_item_assignments")

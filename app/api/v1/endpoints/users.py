@@ -149,6 +149,23 @@ async def get_user_by_email(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
+@router.get("/{user_uuid}/user", response_class=ORJSONResponse)
+@inject
+async def get_user_by_uuid_handler(
+    user_uuid: str,
+    service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        user = service.get_user_by_uuid(user_uuid)
+        if user is None:
+            return send_client_side_error(user_msg=messages.USER_NOT_FOUND + user_uuid)
+        return send_data(user)
+    except Exception as e:
+        msg = messages.GET_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
 @router.get("/accounts/{user_uuid}", response_class=ORJSONResponse)
 @inject
 async def user_account(
