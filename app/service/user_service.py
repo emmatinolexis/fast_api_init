@@ -4,11 +4,14 @@ from uuid import UUID
 from pydantic import EmailStr
 
 from app.core import messages
+from app.core.constants import FREE_PACKAGE, FREE_PACKAGE_ITEMS
 from app.core.exceptions import NotFoundError
+from app.repository.subscription_repository import SubscriptionRepository
 from app.repository.team_member_invitation_repository import (
     TeamMemberInvitationRepository,
 )
 from app.repository.user_repository import UserRepository
+from app.repository.user_subscription_repository import UserSubscriptionRepository
 from app.schema.invitation_schema import InvitationCreatePayload, InvitationPayload
 from app.schema.user_schema import (
     AccountDeactivationPayload,
@@ -23,10 +26,14 @@ class UserService(BaseService):
     def __init__(
         self,
         user_repository: UserRepository,
+        user_subscription_repository: UserSubscriptionRepository,
         invitation_repository: TeamMemberInvitationRepository,
+        subscription_repository: SubscriptionRepository,
     ):
         self.user_repository = user_repository
         self.invitation_repository = invitation_repository
+        self.user_subscription_repository = user_subscription_repository
+        self.subscription_repository = subscription_repository
         super().__init__(user_repository)
 
     def create_user(self, payload: UserPayload):
@@ -57,7 +64,33 @@ class UserService(BaseService):
     def get_user_by_uuid(self, user_uuid: str):
         try:
             user = self.user_repository.get_user_by_uuid(user_uuid)
+
+            user_plan = self.user_subscription_repository.get_user_subscription(
+                user.get("email_address")
+            )
+
+            if user_plan:
+                paystack_subscription = (
+                    self.subscription_repository.get_paystack_subscription(
+                        user_plan.subscription_code
+                    )
+                )
+
+                user_package = {
+                    "package_name": paystack_subscription["plan"]["name"],
+                    "package_items": paystack_subscription["package_items"],
+                }
+                # return user_package
+            else:
+                user_package = {
+                    "package_name": FREE_PACKAGE,
+                    "package_items": FREE_PACKAGE_ITEMS,
+                }
+
+            user["package"] = user_package
+
             return user if user else None
+
         except Exception as e:
             raise e
 

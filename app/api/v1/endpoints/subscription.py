@@ -59,7 +59,7 @@ async def paystack_subscription_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/{user_email}", response_class=ORJSONResponse)
+@router.get("/user/{user_email}", response_class=ORJSONResponse)
 @inject
 async def paystack_subscription_by_email_handler(
     user_email: str,

@@ -1,4 +1,5 @@
 # USER ROLE CONSTANTS
+
 CUSTOMER_USER_ROLE = "customer"
 ADMIN_USER_ROLE = "admin"
 ALLOWED_EVENT_TYPES = [
@@ -16,19 +17,34 @@ ALLOWED_EVENT_TYPES = [
 SPEED_UNIT = "KPH"
 DISTANCE_UNIT = "KM"
 
-FREE_PACKAGE = "Free Package"
+FREE_PACKAGE = "Free Plan"
 
 FREE_PACKAGE_ITEMS = [
     {
         "uuid": "6de8b328-9ff1-456a-a737-1fd6fef81063",
-        "item_name": "Basic Tracking",
+        "package_item": {
+            "item_name": "1 User(s)",
+            "type": "number_of_user_tracker",
+            "number_of_assets": "",
+            "number_of_users": 1,
+        },
     },
     {
         "uuid": "6ccf4874-678c-4550-9bc7-92b4b04bea37",
-        "item_name": "One Asset",
+        "package_item": {
+            "item_name": "One Asset(s)",
+            "type": "asset_quantity_tracker",
+            "number_of_assets": 1,
+            "number_of_users": "",
+        },
     },
     {
         "uuid": "7e753dc9-8178-4c01-bbd4-883e5689e135",
-        "item_name": "One User",
+        "package_item": {
+            "item_name": "Live Tracking",
+            "type": "",
+            "number_of_assets": "",
+            "number_of_users": "",
+        },
     },
 ]

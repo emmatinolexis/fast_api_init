@@ -39,6 +39,11 @@ class ActiveStatus(str, Enum):
     DEACTIVATED = "deactivated"
 
 
+class PackageItemTrackerType(str, Enum):
+    ASSET_QUANTITY_TRACKER = "asset_quantity_tracker"
+    NUMBER_OF_USER_TRACKER = "number_of_user_tracker"
+
+
 class PaymentTypes(str, Enum):
     SUBSCRIPTION_PAYMENT = ("subscription_payment",)
     SUBSCRIPTION_UPGRADE_PAYMENT = "subscription_upgrade_payment"

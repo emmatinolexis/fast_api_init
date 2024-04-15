@@ -278,6 +278,8 @@ class Container(containers.DeclarativeContainer):
     user_service = providers.Factory(
         user_service.UserService,
         user_repository=user_repository,
+        user_subscription_repository=user_subscription_repository,
+        subscription_repository=subscription_repository,
         invitation_repository=team_member_invitation_repository,
     )
     alert_policy_type_service = providers.Factory(
@@ -315,6 +317,7 @@ class Container(containers.DeclarativeContainer):
         equipment_type_repository=equipment_type_repository,
         # marker_icon_repository=marker_icon_repository,
         driver_repository=driver_repository,
+        subscription_repository=subscription_repository,
     )
     asset_device_request_service = providers.Factory(
         asset_device_request_service.AssetDeviceRequestService,
