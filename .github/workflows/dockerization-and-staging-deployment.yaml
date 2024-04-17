@@ -51,37 +51,6 @@ jobs:
       NEW_TAG: ${{ steps.version_bump.outputs.new_tag }}
       OLD_TAG: ${{ steps.version_bump.outputs.old_tag }}
   
-  deploy-docker-image-on-staging:
-    runs-on: ubuntu-latest
-    environment: staging
-    needs:
-      - build-and-upload-docker-image
-    steps:
-      - name: Set tag as environment variable
-        run: |
-          echo "NEW_TAG=${{ needs.build-and-upload-docker-image.outputs.NEW_TAG }}" >> $GITHUB_ENV
-          echo "OLD_TAG=${{ needs.build-and-upload-docker-image.outputs.OLD_TAG }}" >> $GITHUB_ENV
-      - name: SSH Into AWS And Deploy
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.STAGING_SERVER_IP }}
-          username: ${{ secrets.STAGING_SERVER_USERNAME }}
-          key: ${{ secrets.STAGING_SERVER_SSH_KEY }}
-          password: ""
-          passphrase: ""
-          port: 22
-          script: |
-            docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
-            docker stop $(docker ps -a -q --filter="name=mvi_staging_api")
-            docker rm $(docker ps -a -q --filter="name=mvi_staging_api")
-            docker image rm -f sagemicrosystems/mvi-hub:${{ env.OLD_TAG }}
-            docker run -d --publish 8000:8000 --name mvi_staging_api -e API_VERSION=${{ secrets.API_VERSION }} \
-            -e PAYSTACK_API_KEY=${{ secrets.PAYSTACK_API_KEY }} -e PAYSTACK_PLAN_URL=${{ secrets.PAYSTACK_PLAN_URL }} -e PAYSTACK_SUBSCRIPTION_URL=${{ secrets.PAYSTACK_SUBSCRIPTION_URL }} -e PAYSTACK_PAYMENT_URL=${{ secrets.PAYSTACK_PAYMENT_URL }} \
-            -e PAYSTACK_INITIALIZE_SUBSCRIPTION_URL=${{ secrets.PAYSTACK_INITIALIZE_SUBSCRIPTION_URL }} -e DB_HOST=${{ secrets.DB_HOST }} -e DB_NAME=${{ secrets.DB_NAME }} -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} -e DB_PORT=${{ secrets.DB_PORT }} \
-            -e ECHO_PARROT_HOST=${{ secrets.ECHO_PARROT_HOST }} -e DB_USER=${{ secrets.DB_USER }} -e ENV=staging -e MAIL_SERVER=${{ secrets.MAIL_SERVER }} -e MAIL_USERNAME=${{ secrets.MAIL_USERNAME }} \
-            -e MQTT_HOST=${{ secrets.MQTT_HOST }} -e MQTT_PORT=${{ secrets.MQTT_PORT }} -e MQTT_TOPIC=${{ secrets.MQTT_TOPIC }} -e MQTT_USER=${{ secrets.MQTT_USER }} \
-            -e MQTT_PASSWORD=${{ secrets.MQTT_PASSWORD }} -e MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }} -e SECRET_KEY=${{ secrets.SECRET_KEY }} -e GRAYLOG_HOST=${{ secrets.GRAYLOG_HOST }} -e GRAYLOG_PORT=${{ secrets.GRAYLOG_PORT }} sagemicrosystems/mvi-hub:${{ env.NEW_TAG }}
-  
   deploy-k8s-staging:
     runs-on: ubuntu-latest
     environment: staging
