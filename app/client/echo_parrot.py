@@ -17,7 +17,7 @@ class EchoParrot:
 
     # echo sms message via echo parrot to recipient
     async def echo_sms(self, message, recipient):
-        url = f"http://{self.host}:{self.port}/api/v1/sms/"
+        url = f"http://{self.host}/api/v1/sms/"
         log.info(f"Sending SMS to {recipient} via Echo Parrot {url}")
         response = httpx.post(
             url,
@@ -34,7 +34,7 @@ class EchoParrot:
     async def echo_email(
         self, recipient_email, email_purpose: EmailPurpose, email_body
     ):
-        url = f"http://{self.host}:{self.port}/api/v1/email/"
+        url = f"http://{self.host}/api/v1/email/"
         log.info(f"Sending email to {recipient_email} via Echo Parrot {url}")
         data = {
             "recipient_email": recipient_email,
