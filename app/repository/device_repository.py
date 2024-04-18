@@ -4,6 +4,7 @@ from typing import Callable
 from sqlalchemy.orm import Session, joinedload
 
 from app.model.device import Device
+from app.model.inventory import Inventory
 from app.model.user import User
 from app.repository.base_repository import BaseRepository
 from app.util.enums import AccountType
@@ -13,6 +14,31 @@ class DeviceRepository(BaseRepository):
     def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
         self.session_factory = session_factory
         super().__init__(session_factory, Device)
+
+    def get_all_devices(self):
+        with self.session_factory() as session:
+            try:
+                devices = (
+                    session.query(self.model)
+                    .options(
+                        joinedload(Device.inventory).joinedload(Inventory.manufacturer),
+                        joinedload(Device.inventory).joinedload(Inventory.images),
+                    )
+                    .all()
+                )
+                return devices
+            except Exception as e:
+                session.rollback()
+                raise e
+
+    def create_devices(self, inventory):
+        with self.session_factory() as session:
+            devices = []
+            for _ in range(inventory.quantity):
+                device = Device(device_inventory_uuid=inventory.uuid)
+                devices.append(device)
+            session.add_all(devices)
+            session.commit()
 
     def get_devices_by_user_uuid(self, user_uuid):
         with self.session_factory() as session:

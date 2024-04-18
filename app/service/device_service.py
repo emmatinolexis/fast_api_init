@@ -13,3 +13,10 @@ class DeviceService(BaseService):
             return devices
         except Exception as e:
             raise e
+
+    def get_all_devices(self):
+        try:
+            devices = self.device_repository.get_all_devices()
+            return devices
+        except Exception as e:
+            raise e

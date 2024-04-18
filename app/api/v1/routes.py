@@ -18,6 +18,7 @@ from app.api.v1.endpoints.equipment import router as equipment_router
 from app.api.v1.endpoints.equipment_type import router as equipment_type_router
 from app.api.v1.endpoints.feature import router as feature_router
 from app.api.v1.endpoints.health_check import router as health_check_router
+from app.api.v1.endpoints.inventory import router as inventory_router
 from app.api.v1.endpoints.marker_icon import router as marker_icon_router
 from app.api.v1.endpoints.onboarding import router as onboarding_router
 from app.api.v1.endpoints.organisation_contact import (
@@ -51,6 +52,7 @@ router_list = [
     alert_policy_router,
     driver_router,
     device_router,
+    inventory_router,
     device_manufacturers_router,
     feature_router,
     organisation_contact_router,

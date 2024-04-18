@@ -1,9 +1,9 @@
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.util.enums import ActiveStatus
+from app.util.enums import ActiveStatus, DeviceType
 
 
 class DevicePayload(BaseModel):
@@ -22,7 +22,22 @@ class DevicePayload(BaseModel):
 
 class DeviceManufacturerPayload(BaseModel):
     manufacturer_name: str
-    status: str = ActiveStatus
+    status: ActiveStatus
+
+    class Config:
+        orm_model = True
+
+
+class InventoryPayload(BaseModel):
+    device_name: str
+    description: str
+    device_type: DeviceType
+    quantity: int
+    device_manufacturer_uuid: UUID
+    cost_price: int
+    description: str
+    publish_on_site_status: bool
+    images: List[str]
 
     class Config:
         orm_model = True

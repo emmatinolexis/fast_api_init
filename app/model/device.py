@@ -32,24 +32,29 @@ class Device(BaseModel):
         unique=True,
         nullable=False,
     )
-    device_name = Column(String(length=50), nullable=False, unique=True, index=True)
-    description = Column(String(length=100), nullable=True, index=True)
-    device_serial_no = Column(
-        String(length=100), nullable=False, unique=True, index=True
+    device_inventory_uuid = Column(
+        UUID(as_uuid=True), ForeignKey("inventories.uuid"), nullable=True
     )
+    device_imei = Column(String(length=100), nullable=True, unique=True, index=True)
     assign_to_asset_status = Column(String(length=50), nullable=True, index=True)
     user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=True)
     business_profile_uuid = Column(
         UUID(as_uuid=True), ForeignKey("business_profiles.uuid"), nullable=True
     )
-    image_url = Column(String(length=100), nullable=True)
-    device_manufacturer_uuid = Column(
-        UUID(as_uuid=True), ForeignKey("device_manufacturers.uuid"), nullable=False
+    # Relationship to get the associated inventory with device manufacturer
+    inventory = relationship("Inventory", backref="device")
+
+    # Relationship to get the device manufacturer
+    manufacturer = relationship(
+        "DeviceManufacturer",
+        secondary="inventories",
+        primaryjoin="Device.device_inventory_uuid == Inventory.uuid",
+        secondaryjoin="Inventory.device_manufacturer_uuid == DeviceManufacturer.uuid",
+        backref="devices",
     )
-    device_manufacturer = relationship("DeviceManufacturer", uselist=False)
     asset = relationship(
         "Asset",
         uselist=False,
-        primaryjoin="foreign(Device.device_serial_no) == remote(Asset.device_imei)",
+        primaryjoin="foreign(Device.device_imei) == remote(Asset.device_imei)",
         viewonly=True,
     )
