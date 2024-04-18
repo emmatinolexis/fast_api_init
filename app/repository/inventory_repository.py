@@ -47,16 +47,3 @@ class InventoryRepository(BaseRepository):
             except Exception as e:
                 session.rollback()
                 raise e
-
-    # def create_inventory(self, inventory):
-    #     with self.session_factory() as session:
-    #         query = self.model(**schema.dict())
-    #         try:
-    #             session.add(query)
-    #             session.commit()
-    #             session.refresh(query)
-    #         except IntegrityError as e:
-    #             raise e
-    #         except Exception as e:
-    #             raise e
-    #         return query
