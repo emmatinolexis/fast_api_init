@@ -7,7 +7,7 @@ from app.core.container import Container
 from app.core.dependencies import get_current_user
 from app.core.exceptions import NotFoundError
 from app.model.user import User
-from app.schema.device_schema import DevicePayload
+from app.schema.device_schema import DevicePayload, ImeiAssignPayload
 from app.service.device_service import DeviceService
 from app.util.utils import (
     send_client_side_error,
@@ -120,4 +120,24 @@ async def delete_device_by_uuid_handler(
         )
     except Exception as e:
         msg = messages.DELETE_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.post("/{device_uuid}/assign_imei", response_class=ORJSONResponse)
+@inject
+async def assign_imei_handler(
+    device_uuid: str,
+    payload: ImeiAssignPayload,
+    service: DeviceService = Depends(Provide[Container.device_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        device = service.assign_imei(device_uuid, payload.device_imei)
+        return send_data(device)
+    except NotFoundError as e:
+        return send_client_side_error(
+            user_msg=messages.DEVICE_NOT_FOUND + str(e.detail)
+        )
+    except Exception as e:
+        msg = messages.CREATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)

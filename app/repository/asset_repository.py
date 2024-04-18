@@ -84,12 +84,10 @@ class AssetRepository(BaseRepository):
 
     def assign_device_imei(self, asset_uuid, imei: str) -> Asset:
         with self.session_factory() as session:
-            device = (
-                session.query(Device).filter(Device.device_serial_no == imei).first()
-            )
+            device = session.query(Device).filter(Device.device_imei == imei).first()
             # check if imei is valid
             if not device:
-                raise Exception("Imei not found")
+                raise Exception(f"Device with imei {imei} not found")
 
             # check if device already assigned
             if device.assign_to_asset_status is not None:
@@ -101,7 +99,7 @@ class AssetRepository(BaseRepository):
 
             # check if asset exist
             if not asset:
-                raise Exception("Asset not found")
+                raise Exception(f"Asset with id {asset_uuid} not found")
 
             # update asset with device imei
             asset.device_imei = imei

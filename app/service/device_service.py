@@ -20,3 +20,10 @@ class DeviceService(BaseService):
             return devices
         except Exception as e:
             raise e
+
+    def assign_imei(self, device_uuid: str, imei: str):
+        try:
+            device = self.device_repository.assign_imei(device_uuid, imei)
+            return device
+        except Exception as e:
+            raise e
