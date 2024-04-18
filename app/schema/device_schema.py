@@ -28,6 +28,13 @@ class DeviceManufacturerPayload(BaseModel):
         orm_model = True
 
 
+class ImeiAssignPayload(BaseModel):
+    device_imei: str
+
+    class Config:
+        orm_model = True
+
+
 class InventoryPayload(BaseModel):
     device_name: str
     description: str

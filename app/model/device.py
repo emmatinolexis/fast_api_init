@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Column, Enum, ForeignKey, String
+from sqlalchemy import Boolean, Column, Enum, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -36,7 +36,7 @@ class Device(BaseModel):
         UUID(as_uuid=True), ForeignKey("inventories.uuid"), nullable=True
     )
     device_imei = Column(String(length=100), nullable=True, unique=True, index=True)
-    assign_to_asset_status = Column(String(length=50), nullable=True, index=True)
+    assign_to_asset_status = Column(Boolean, nullable=True, default=False, index=True)
     user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=True)
     business_profile_uuid = Column(
         UUID(as_uuid=True), ForeignKey("business_profiles.uuid"), nullable=True

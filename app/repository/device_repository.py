@@ -66,3 +66,21 @@ class DeviceRepository(BaseRepository):
                 )
 
             return devices
+
+    def assign_imei(self, device_uuid, imei):
+        with self.session_factory() as session:
+            try:
+                device = (
+                    session.query(self.model)
+                    .filter(self.model.uuid == device_uuid)
+                    .first()
+                )
+                if not device:
+                    raise Exception(f"Device not found for the ID: {device_uuid}")
+                device.device_imei = imei
+                session.commit()
+                session.refresh(device)
+                return device
+            except Exception as e:
+                session.rollback()
+                raise e

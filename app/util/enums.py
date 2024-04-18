@@ -10,11 +10,6 @@ class AccountType(str, Enum):
     ADMIN = "admin"
 
 
-class PublishToWebsiteStatus(str, Enum):
-    YES = "yea"
-    NO = "no"
-
-
 class DeviceType(str, Enum):
     TRACKING_DEVICE = "tracking_device"
     DASHCAM = "dashcam"
