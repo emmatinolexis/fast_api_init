@@ -17,6 +17,7 @@ from app.repository import (
     asset_type_repository,
     business_profile_repository,
     contact_sale_repository,
+    device_image_repository,
     device_manufacturer_repository,
     device_repository,
     driver_repository,
@@ -24,6 +25,7 @@ from app.repository import (
     equipment_repository,
     equipment_type_repository,
     feature_repository,
+    inventory_repository,
     marker_icon_repository,
     onboarding_asset_type_assignment_repository,
     onboarding_feature_assignment_repository,
@@ -53,12 +55,14 @@ from app.service import (
     asset_type_service,
     auth_service,
     contact_sale_service,
+    device_image_service,
     device_manufacturer_service,
     device_service,
     driver_service,
     equipment_service,
     equipment_type_service,
     feature_service,
+    inventory_service,
     invitation_service,
     marker_icon_service,
     onboarding_service,
@@ -104,6 +108,7 @@ class Container(containers.DeclarativeContainer):
             "app.api.v1.endpoints.subscription",
             "app.api.v1.endpoints.payment",
             "app.api.v1.endpoints.subscription_payment",
+            "app.api.v1.endpoints.inventory",
         ]
     )
 
@@ -266,6 +271,14 @@ class Container(containers.DeclarativeContainer):
         user_subscription_repository.UserSubscriptionRepository,
         session_factory=db.provided.session,
     )
+    inventory_repository = providers.Factory(
+        inventory_repository.InventoryRepository,
+        session_factory=db.provided.session,
+    )
+    device_image_repository = providers.Factory(
+        device_image_repository.DeviceImageRepository,
+        session_factory=db.provided.session,
+    )
 
     # Services
     auth_service = providers.Factory(
@@ -418,4 +431,15 @@ class Container(containers.DeclarativeContainer):
     user_subscription_service = providers.Factory(
         user_subscription_service.UserSubscriptionService,
         user_subscription_repository=user_subscription_repository,
+    )
+    inventory_service = providers.Factory(
+        inventory_service.InventoryService,
+        inventory_repository=inventory_repository,
+        device_repository=device_repository,
+        device_image_repository=device_image_repository,
+    )
+
+    device_image_service = providers.Factory(
+        device_image_service.DeviceImageService,
+        device_image_repository=device_image_repository,
     )

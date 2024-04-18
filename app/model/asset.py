@@ -66,7 +66,7 @@ class Asset(BaseModel):
     )
     device_imei = Column(
         String(length=100),
-        ForeignKey("devices.device_serial_no"),
+        ForeignKey("devices.device_imei"),
         nullable=True,
         index=True,
     )
