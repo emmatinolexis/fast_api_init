@@ -31,6 +31,30 @@ class DeviceRepository(BaseRepository):
                 session.rollback()
                 raise e
 
+    def get_user_data_by_device_uuid(self, device_imei: str):
+        with self.session_factory() as session:
+            try:
+                device = (
+                    session.query(self.model)
+                    .filter(self.model.device_imei == device_imei)
+                    .options(
+                        joinedload(Device.inventory).joinedload(Inventory.manufacturer),
+                        joinedload(Device.user),
+                    )
+                    .first()
+                )
+                if device:
+                    if device.user_uuid:
+                        return device
+                    else:
+                        raise Exception("There is no user assigned to this device")
+                else:
+                    raise Exception(
+                        f"There is no device with the given imei: {device_imei}"
+                    )
+            except Exception as e:
+                raise e
+
     def create_devices(self, inventory):
         with self.session_factory() as session:
             devices = []
@@ -52,6 +76,7 @@ class DeviceRepository(BaseRepository):
                     session.query(self.model)
                     .filter(self.model.user_uuid == user.uuid)
                     .options(joinedload(Device.asset))
+                    .options(joinedload(Device.inventory).joinedload(Inventory.images))
                     .all()
                 )
 
@@ -62,6 +87,7 @@ class DeviceRepository(BaseRepository):
                         self.model.business_profile_uuid == user.business_profile_uuid
                     )
                     .options(joinedload(Device.asset))
+                    .options(joinedload(Device.inventory).joinedload(Inventory.images))
                     .all()
                 )
 

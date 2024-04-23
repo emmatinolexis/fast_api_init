@@ -30,6 +30,9 @@ from app.repository import (
     onboarding_asset_type_assignment_repository,
     onboarding_feature_assignment_repository,
     onboarding_repository,
+    order_address_assignment_repository,
+    order_device_assignment_repository,
+    order_repository,
     organisation_contact_repository,
     package_item_repository,
     package_repository,
@@ -66,6 +69,9 @@ from app.service import (
     invitation_service,
     marker_icon_service,
     onboarding_service,
+    order_address_assignment_service,
+    order_device_assignment_service,
+    order_service,
     organisation_contact_service,
     package_item_service,
     package_service,
@@ -109,6 +115,7 @@ class Container(containers.DeclarativeContainer):
             "app.api.v1.endpoints.payment",
             "app.api.v1.endpoints.subscription_payment",
             "app.api.v1.endpoints.inventory",
+            "app.api.v1.endpoints.order",
         ]
     )
 
@@ -279,6 +286,18 @@ class Container(containers.DeclarativeContainer):
         device_image_repository.DeviceImageRepository,
         session_factory=db.provided.session,
     )
+    order_repository = providers.Factory(
+        order_repository.OrderRepository,
+        session_factory=db.provided.session,
+    )
+    order_device_assignment_repository = providers.Factory(
+        order_device_assignment_repository.OrderDeviceAssignmentRepository,
+        session_factory=db.provided.session,
+    )
+    order_address_assignment_repository = providers.Factory(
+        order_address_assignment_repository.OrderAddressAssignmentRepository,
+        session_factory=db.provided.session,
+    )
 
     # Services
     auth_service = providers.Factory(
@@ -438,8 +457,21 @@ class Container(containers.DeclarativeContainer):
         device_repository=device_repository,
         device_image_repository=device_image_repository,
     )
-
     device_image_service = providers.Factory(
         device_image_service.DeviceImageService,
         device_image_repository=device_image_repository,
+    )
+    order_service = providers.Factory(
+        order_service.OrderService,
+        order_repository=order_repository,
+        order_device_assignment_repository=order_device_assignment_repository,
+        order_device_assignment_repository_repository=order_address_assignment_repository,
+    )
+    order_device_assignment_service = providers.Factory(
+        order_device_assignment_service.OrderDeviceAssignmentService,
+        order_device_assignment_repository=order_device_assignment_repository,
+    )
+    order_address_assignment_service = providers.Factory(
+        order_address_assignment_service.OrderAddressAssignmentService,
+        order_address_assignment_repository=order_address_assignment_repository,
     )

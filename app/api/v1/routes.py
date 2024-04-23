@@ -21,6 +21,7 @@ from app.api.v1.endpoints.health_check import router as health_check_router
 from app.api.v1.endpoints.inventory import router as inventory_router
 from app.api.v1.endpoints.marker_icon import router as marker_icon_router
 from app.api.v1.endpoints.onboarding import router as onboarding_router
+from app.api.v1.endpoints.order import router as order_router
 from app.api.v1.endpoints.organisation_contact import (
     router as organisation_contact_router,
 )
@@ -61,6 +62,7 @@ router_list = [
     subscription_router,
     payment_router,
     subscription_payment_router,
+    order_router,
 ]
 
 for router in router_list:
