@@ -44,6 +44,9 @@ class Device(BaseModel):
     # Relationship to get the associated inventory with device manufacturer
     inventory = relationship("Inventory", backref="device")
 
+    # Relationship to get the associated inventory with device manufacturer
+    user = relationship("User", backref="device")
+
     # Relationship to get the device manufacturer
     manufacturer = relationship(
         "DeviceManufacturer",
