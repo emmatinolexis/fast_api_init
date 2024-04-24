@@ -16,6 +16,7 @@ from app.api.v1.endpoints.device_manufacturers import (
 from app.api.v1.endpoints.driver import router as driver_router
 from app.api.v1.endpoints.equipment import router as equipment_router
 from app.api.v1.endpoints.equipment_type import router as equipment_type_router
+from app.api.v1.endpoints.external_app import router as external_app_router
 from app.api.v1.endpoints.feature import router as feature_router
 from app.api.v1.endpoints.health_check import router as health_check_router
 from app.api.v1.endpoints.inventory import router as inventory_router
@@ -63,6 +64,7 @@ router_list = [
     payment_router,
     subscription_payment_router,
     order_router,
+    external_app_router,
 ]
 
 for router in router_list:

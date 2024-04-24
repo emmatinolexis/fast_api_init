@@ -24,6 +24,7 @@ from app.repository import (
     email_verification_repository,
     equipment_repository,
     equipment_type_repository,
+    external_app_repository,
     feature_repository,
     inventory_repository,
     marker_icon_repository,
@@ -64,12 +65,12 @@ from app.service import (
     driver_service,
     equipment_service,
     equipment_type_service,
+    external_app_service,
     feature_service,
     inventory_service,
     invitation_service,
     marker_icon_service,
     onboarding_service,
-    order_address_assignment_service,
     order_device_assignment_service,
     order_service,
     organisation_contact_service,
@@ -116,6 +117,7 @@ class Container(containers.DeclarativeContainer):
             "app.api.v1.endpoints.subscription_payment",
             "app.api.v1.endpoints.inventory",
             "app.api.v1.endpoints.order",
+            "app.api.v1.endpoints.external_app",
         ]
     )
 
@@ -298,6 +300,10 @@ class Container(containers.DeclarativeContainer):
         order_address_assignment_repository.OrderAddressAssignmentRepository,
         session_factory=db.provided.session,
     )
+    external_app_repository = providers.Factory(
+        external_app_repository.ExternalAppRepository,
+        session_factory=db.provided.session,
+    )
 
     # Services
     auth_service = providers.Factory(
@@ -471,7 +477,7 @@ class Container(containers.DeclarativeContainer):
         order_device_assignment_service.OrderDeviceAssignmentService,
         order_device_assignment_repository=order_device_assignment_repository,
     )
-    order_address_assignment_service = providers.Factory(
-        order_address_assignment_service.OrderAddressAssignmentService,
-        order_address_assignment_repository=order_address_assignment_repository,
+    external_app_service = providers.Factory(
+        external_app_service.ExternalAppService,
+        external_app_repository=external_app_repository,
     )
