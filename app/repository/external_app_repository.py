@@ -5,7 +5,11 @@ from sqlalchemy.orm import Session
 
 from app.model.external_app import ExternalApp
 from app.repository.base_repository import BaseRepository
-from app.schema.external_app_schema import ExternalAppPayload
+from app.schema.external_app_schema import (
+    ExternalAppGenerateTokenPayload,
+    ExternalAppPayload,
+)
+from app.util.enums import ActiveStatus
 
 
 class ExternalAppRepository(BaseRepository):
@@ -27,4 +31,35 @@ class ExternalAppRepository(BaseRepository):
                 return external_app
             except Exception as e:
                 session.rollback()
+                raise e
+
+    def get_app_service(self, payload: ExternalAppGenerateTokenPayload):
+        with self.session_factory() as session:
+            try:
+                app = (
+                    session.query(self.model)
+                    .filter(self.model.app_id == payload.app_id)
+                    .filter(self.model.secret_key == payload.secret_key)
+                    .first()
+                )
+                if not app:
+                    raise Exception("Invalid app_id or secret_key")
+                if app.status == ActiveStatus.INACTIVE:
+                    raise Exception(
+                        "Your access has been revoked, contact administrator"
+                    )
+                return app
+            except Exception as e:
+                raise e
+
+    def get_app_service_by_secret_key(self, secret_key: str):
+        with self.session_factory() as session:
+            try:
+                app = (
+                    session.query(self.model)
+                    .filter(self.model.secret_key == secret_key)
+                    .first()
+                )
+                return app
+            except Exception as e:
                 raise e

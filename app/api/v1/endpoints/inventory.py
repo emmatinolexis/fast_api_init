@@ -22,7 +22,6 @@ msg_prefix = "inventory"
 @inject
 async def get_all_inventory_handler(
     service: InventoryService = Depends(Provide[Container.inventory_service]),
-    current_user: User = Depends(get_current_user),
 ):
     try:
         return send_data(service.get_all_inventory())

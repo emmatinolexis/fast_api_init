@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Dict, List
 
-from app.core.constants import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE
+from app.core.constants import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE, THIRD_PARTY_APP_ROLE
 
 
 class AccountType(str, Enum):
@@ -118,6 +118,7 @@ class AssetStatus(str, Enum):
 class UserRole(str, Enum):
     CUSTOMER = CUSTOMER_USER_ROLE
     ADMIN = ADMIN_USER_ROLE
+    THIRD_PARTY_APP = THIRD_PARTY_APP_ROLE
 
 
 class EventStatus(str, Enum):
