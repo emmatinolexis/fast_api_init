@@ -2,6 +2,8 @@
 
 CUSTOMER_USER_ROLE = "customer"
 ADMIN_USER_ROLE = "admin"
+THIRD_PARTY_APP_ROLE = "third_party"
+
 ALLOWED_EVENT_TYPES = [
     "Stop_Moving",
     "Start_Moving",

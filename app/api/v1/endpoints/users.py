@@ -343,20 +343,20 @@ async def create_team_member_invitation(
         return send_internal_server_error(user_msg=msg, error=str(e))
 
 
-@router.put("/phone/{uuid}", response_class=ORJSONResponse)
+@router.put("/phone/{user_uuid}", response_class=ORJSONResponse)
 @inject
 async def update_phone_handler(
-    uuid: str,
+    user_uuid: str,
     payload: UpdatePhoneNumber,
     service: UserService = Depends(Provide[Container.user_service]),
     phone_otp_service: PhoneOTPService = Depends(Provide[Container.phone_otp_service]),
     current_user: User = Depends(get_current_user),
 ):
-    user = service.get_by_uuid(uuid)
+    user = service.get_by_uuid(user_uuid)
 
     if user is None:
         return send_client_side_error(
-            user_msg=messages.USER_NOT_FOUND + uuid,
+            user_msg=messages.USER_NOT_FOUND + user_uuid,
         )
 
     user_with_phone_number = service.get_user_by_phone_number(payload.phone_number)
@@ -368,7 +368,7 @@ async def update_phone_handler(
         )
 
     try:
-        service.patch_by_uuid(uuid, payload)
+        service.patch_by_uuid(user_uuid, payload)
         token = phone_otp_service.create_phone_verification_token(user.uuid)
         await send_otp_email(
             recipient_name=user.first_name,
@@ -378,23 +378,23 @@ async def update_phone_handler(
         msg = "Phone number update pending verification"
         return send_info(f"{msg}")
     except Exception as e:
-        msg = messages.CREATE_FAILED + f"token for user {uuid}"
+        msg = messages.CREATE_FAILED + f"token for user {user_uuid}"
         return send_internal_server_error(user_msg=msg, error=str(e))
 
 
-@router.post("/phone_verification/{uuid}", response_class=ORJSONResponse)
+@router.post("/phone_verification/{user_uuid}", response_class=ORJSONResponse)
 @inject
 async def phone_token_verification_handler(
-    uuid: str,
+    user_uuid: str,
     payload: UserPhoneVerificationToken,
     service: UserService = Depends(Provide[Container.user_service]),
     phone_otp_service: PhoneOTPService = Depends(Provide[Container.phone_otp_service]),
     current_user: User = Depends(Provide[get_current_user]),
 ):
-    user = service.get_by_uuid(uuid)
+    user = service.get_by_uuid(user_uuid)
     if not user:
         return send_client_side_error(
-            user_msg=messages.USER_NOT_FOUND + uuid,
+            user_msg=messages.USER_NOT_FOUND + user_uuid,
         )
 
     try:

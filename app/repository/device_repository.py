@@ -45,6 +45,8 @@ class DeviceRepository(BaseRepository):
                 )
                 if device:
                     if device.user_uuid:
+                        if device.user:
+                            del device.user.__dict__["password"]
                         return device
                     else:
                         raise Exception("There is no user assigned to this device")

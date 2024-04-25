@@ -8,7 +8,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import ORJSONResponse
 from geopy.distance import geodesic
 
-from app.core.constants import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE
+from app.core.constants import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE, THIRD_PARTY_APP_ROLE
 from app.core.logger import get_logger
 from app.core.security import JWTBearer
 from app.util.enums import ActiveStatus
@@ -40,6 +40,14 @@ allow_admins_and_customers = Depends(
     )
 )
 
+allow_third_parties_only = Depends(
+    JWTBearer(
+        allowed_roles=[
+            THIRD_PARTY_APP_ROLE,
+        ]
+    )
+)
+
 
 def generate_uuid() -> str:
     return str(uuid.uuid4())
@@ -52,6 +60,10 @@ def send_data(data: Any, status_code: int = 200):
             "data": jsonable_encoder(data),
         },
     )
+
+
+def days_to_minutes(days):
+    return days * 24 * 60
 
 
 def send_data_with_info(data: Any, info: str, status_code: int = 200):

@@ -4,7 +4,7 @@ from fastapi.responses import ORJSONResponse
 
 from app.core import messages
 from app.core.container import Container
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_app_service, get_current_user
 from app.core.exceptions import NotFoundError
 from app.model.user import User
 from app.schema.device_schema import DevicePayload, ImeiAssignPayload
@@ -55,6 +55,7 @@ async def get_all_user_devices(
 async def get_user_by_device_uuid(
     device_imei: str,
     service: DeviceService = Depends(Provide[Container.device_service]),
+    current_app_service: User = Depends(get_current_app_service),
 ):
     try:
         return send_data(service.get_user_data_by_device_uuid(device_imei))
