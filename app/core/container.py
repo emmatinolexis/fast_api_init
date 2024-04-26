@@ -31,9 +31,9 @@ from app.repository import (
     onboarding_asset_type_assignment_repository,
     onboarding_feature_assignment_repository,
     onboarding_repository,
-    order_address_assignment_repository,
     order_device_assignment_repository,
     order_repository,
+    order_shipping_address_repository,
     organisation_contact_repository,
     package_item_repository,
     package_repository,
@@ -73,6 +73,7 @@ from app.service import (
     onboarding_service,
     order_device_assignment_service,
     order_service,
+    order_shipping_address_service,
     organisation_contact_service,
     package_item_service,
     package_service,
@@ -296,8 +297,8 @@ class Container(containers.DeclarativeContainer):
         order_device_assignment_repository.OrderDeviceAssignmentRepository,
         session_factory=db.provided.session,
     )
-    order_address_assignment_repository = providers.Factory(
-        order_address_assignment_repository.OrderAddressAssignmentRepository,
+    order_shipping_address_repository = providers.Factory(
+        order_shipping_address_repository.OrderShippingAddressRepository,
         session_factory=db.provided.session,
     )
     external_app_repository = providers.Factory(
@@ -353,7 +354,6 @@ class Container(containers.DeclarativeContainer):
         user_repository=user_repository,
         equipment_repository=equipment_repository,
         equipment_type_repository=equipment_type_repository,
-        # marker_icon_repository=marker_icon_repository,
         driver_repository=driver_repository,
         subscription_repository=subscription_repository,
     )
@@ -408,8 +408,6 @@ class Container(containers.DeclarativeContainer):
         onboarding_repository=onboarding_repository,
         onboarding_feature_assignment_repository=onboarding_feature_assignment_repository,
         onboarding_asset_type_assignment_repository=onboarding_asset_type_assignment_repository,
-        # business_profile_repository=business_profile_repository,
-        # user_organisation_assignment_repository=user_organisation_assignment_repository,
     )
     organisation_contact_service = providers.Factory(
         organisation_contact_service.OrganisationContactService,
@@ -471,11 +469,15 @@ class Container(containers.DeclarativeContainer):
         order_service.OrderService,
         order_repository=order_repository,
         order_device_assignment_repository=order_device_assignment_repository,
-        order_device_assignment_repository_repository=order_address_assignment_repository,
+        order_shipping_address_repository=order_shipping_address_repository,
     )
     order_device_assignment_service = providers.Factory(
         order_device_assignment_service.OrderDeviceAssignmentService,
         order_device_assignment_repository=order_device_assignment_repository,
+    )
+    order_shipping_address_service = providers.Factory(
+        order_shipping_address_service.OrderShippingAddressService,
+        order_shipping_address_repository=order_shipping_address_repository,
     )
     external_app_service = providers.Factory(
         external_app_service.ExternalAppService,

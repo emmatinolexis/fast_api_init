@@ -17,16 +17,14 @@ class OrderDeviceAssignmentRepository(BaseRepository):
         with self.session_factory() as session:
             try:
                 for device in order_payload.devices:
-                    device_data = {
-                        "device_uuid": device.device_uuid,
-                        "quantity": device.quantity,
-                        "order_uuid": order_uuid,
-                    }
+                    device_data = OrderDeviceAssignment(
+                        device_uuid=device.device_uuid,
+                        quantity=device.quantity,
+                        order_uuid=order_uuid,
+                    )
                     session.add(device_data)
-                    session.commit()
-                    session.refresh(device_data)
-                msg = "Order device created successfully"
-                return msg
+                session.commit()
+                return True
             except Exception as e:
                 session.rollback()
                 raise e

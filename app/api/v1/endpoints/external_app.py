@@ -7,7 +7,10 @@ from app.core.container import Container
 from app.core.dependencies import get_current_user
 from app.core.exceptions import NotFoundError
 from app.model.user import User
-from app.schema.external_app_schema import ExternalAppGenerateTokenPayload
+from app.schema.external_app_schema import (
+    ExternalAppGenerateTokenPayload,
+    ExternalAppPayload,
+)
 from app.service.external_app_service import ExternalAppService
 from app.util.utils import send_client_side_error, send_data, send_internal_server_error
 
@@ -33,13 +36,14 @@ async def get_all_external_app_handler(
 
 @router.post("/", response_class=ORJSONResponse)
 @inject
-async def generate_app_service_token(
-    payload: ExternalAppGenerateTokenPayload,
+async def create_app_service_handler(
+    payload: ExternalAppPayload,
     service: ExternalAppService = Depends(Provide[Container.external_app_service]),
+    current_user: User = Depends(get_current_user),
 ):
     try:
-        token = service.generate_token(payload)
-        return send_data(token)
+        app = service.create_external_app(payload)
+        return send_data(app)
     except NotFoundError as e:
         return send_client_side_error(
             user_msg=messages.DEVICE_NOT_FOUND + str(e.detail)
@@ -49,16 +53,15 @@ async def generate_app_service_token(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.post("/generate_token", response_class=ORJSONResponse)
+@router.post("/generate_third_party_app_otp", response_class=ORJSONResponse)
 @inject
-async def create_app_handler(
+async def generate_app_service_token(
     payload: ExternalAppGenerateTokenPayload,
     service: ExternalAppService = Depends(Provide[Container.external_app_service]),
-    # current_user: User = Depends(get_current_user),
 ):
     try:
-        app = service.generate_token(payload)
-        return send_data(app)
+        token = service.generate_token(payload)
+        return send_data(token)
     except NotFoundError as e:
         return send_client_side_error(
             user_msg=messages.DEVICE_NOT_FOUND + str(e.detail)
