@@ -3,7 +3,7 @@ from typing import Callable
 
 from sqlalchemy.orm import Session, joinedload
 
-from app.model.device import Device
+from app.model.inventory import Inventory
 from app.model.order import Order, OrderDeviceAssignment
 from app.repository.base_repository import BaseRepository
 from app.schema.order_schema import OrderPayload
@@ -35,9 +35,9 @@ class OrderRepository(BaseRepository):
                 orders = (
                     session.query(Order)
                     .options(
-                        joinedload(Order.order_devices)
-                        .joinedload(OrderDeviceAssignment.device)
-                        .joinedload(Device.inventory),
+                        joinedload(Order.order_inventories)
+                        .joinedload(OrderDeviceAssignment.inventory)
+                        .joinedload(Inventory.images),
                         joinedload(Order.order_shipping_address),
                     )
                     .all()

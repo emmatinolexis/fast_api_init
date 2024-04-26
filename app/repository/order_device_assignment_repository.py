@@ -18,7 +18,7 @@ class OrderDeviceAssignmentRepository(BaseRepository):
             try:
                 for device in order_payload.devices:
                     device_data = OrderDeviceAssignment(
-                        device_uuid=device.device_uuid,
+                        inventory_uuid=device.inventory_uuid,
                         quantity=device.quantity,
                         order_uuid=order_uuid,
                     )

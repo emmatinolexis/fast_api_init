@@ -18,7 +18,7 @@ class Order(BaseModel):
     )
     payment_reference_id = Column(String(length=100), nullable=False, index=True)
     total_amount = Column(Integer, nullable=False)
-    order_devices = relationship("OrderDeviceAssignment", back_populates="order")
+    order_inventories = relationship("OrderDeviceAssignment", back_populates="order")
     order_shipping_address = relationship("OrderShippingAddress", uselist=False)
 
 
@@ -32,10 +32,12 @@ class OrderDeviceAssignment(BaseModel):
         nullable=False,
     )
     order_uuid = Column(UUID(as_uuid=True), ForeignKey("orders.uuid"), nullable=False)
-    device_uuid = Column(UUID(as_uuid=True), ForeignKey("devices.uuid"), nullable=False)
+    inventory_uuid = Column(
+        UUID(as_uuid=True), ForeignKey("inventories.uuid"), nullable=False
+    )
     quantity = Column(Integer, nullable=False)
-    order = relationship("Order", back_populates="order_devices")
-    device = relationship("Device")
+    order = relationship("Order", back_populates="order_inventories")
+    inventory = relationship("Inventory")
 
 
 class OrderShippingAddress(BaseModel):
