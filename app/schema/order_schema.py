@@ -5,7 +5,7 @@ from pydantic import BaseModel, EmailStr, constr
 
 
 class Device(BaseModel):
-    device_uuid: UUID
+    inventory_uuid: UUID
     quantity: int
 
 

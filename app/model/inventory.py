@@ -43,4 +43,4 @@ class DeviceImage(BaseModel):
     inventory_uuid = Column(
         UUID(as_uuid=True), ForeignKey("inventories.uuid"), nullable=False
     )
-    image_url = Column(String(length=100), nullable=False, index=True)
+    image_url = Column(String(length=100), nullable=False)
