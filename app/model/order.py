@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Column, ForeignKey, Integer, String
+from sqlalchemy import JSON, Column, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -16,11 +16,10 @@ class Order(BaseModel):
         unique=True,
         nullable=False,
     )
-    payment_reference_id = Column(
-        String(length=100), nullable=False, unique=True, index=True
-    )
-    device_assignments = relationship("OrderDeviceAssignment", back_populates="order")
-    address_assignments = relationship("OrderAddressAssignment", back_populates="order")
+    payment_reference_id = Column(String(length=100), nullable=False, index=True)
+    total_amount = Column(Integer, nullable=False)
+    order_devices = relationship("OrderDeviceAssignment", back_populates="order")
+    order_shipping_address = relationship("OrderShippingAddress", uselist=False)
 
 
 class OrderDeviceAssignment(BaseModel):
@@ -34,13 +33,13 @@ class OrderDeviceAssignment(BaseModel):
     )
     order_uuid = Column(UUID(as_uuid=True), ForeignKey("orders.uuid"), nullable=False)
     device_uuid = Column(UUID(as_uuid=True), ForeignKey("devices.uuid"), nullable=False)
-    quantity = Column(Integer, nullable=False, index=True)
-    order = relationship("Order", back_populates="device_assignments")
+    quantity = Column(Integer, nullable=False)
+    order = relationship("Order", back_populates="order_devices")
     device = relationship("Device")
 
 
-class OrderAddressAssignment(BaseModel):
-    __tablename__ = "order_address_assignments"
+class OrderShippingAddress(BaseModel):
+    __tablename__ = "order_shipping_address"
     uuid = Column(
         UUID(as_uuid=True),
         primary_key=True,
@@ -49,11 +48,11 @@ class OrderAddressAssignment(BaseModel):
         nullable=False,
     )
     order_uuid = Column(UUID(as_uuid=True), ForeignKey("orders.uuid"), nullable=False)
-    country = Column(String(length=50), index=True)
-    first_name = Column(String(length=100), index=True)
-    last_name = Column(String(length=100), index=True)
-    street_name = Column(String(length=100), index=True)
-    post_code = Column(String(length=100), nullable=True, index=True)
-    email = Column(String(length=100), index=True)
-    phone = Column(String(length=100), index=True)
-    order = relationship("Order", back_populates="address_assignments")
+    country = Column(String(length=100))
+    first_name = Column(String(length=100))
+    city = Column(String(length=100))
+    last_name = Column(String(length=100))
+    address = Column(JSON)
+    post_code = Column(String(length=100), nullable=True)
+    email = Column(String(length=100))
+    phone = Column(String(length=100))
