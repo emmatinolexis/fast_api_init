@@ -49,7 +49,7 @@ class OrderService(BaseService):
     def update_order_status_to_ready(self, order_uuid: str):
         try:
             order = self.order_repository.update_order_status(
-                order_uuid, OrderStatus.PROCESSING
+                order_uuid, OrderStatus.READY_FOR_PICKUP
             )
 
             if order:
