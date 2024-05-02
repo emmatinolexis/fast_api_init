@@ -128,6 +128,16 @@ spec:
             secretKeyRef:
               name: mvi-tracking
               key: echo_parrot_host
+        - name: RTD_SEND_ORDER_SIGNATURE
+          valueFrom:
+            secretKeyRef:
+              name: mvi-tracking
+              key: rtd_send_order_signature
+        - name: RTD_BASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: mvi-tracking
+              key: rtd_base_url
         image: DOCKER_IMAGE
         imagePullPolicy: Always
         ports:
