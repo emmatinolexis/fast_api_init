@@ -49,6 +49,16 @@ class Settings(BaseSettings):
         "Content-Type": "application/json",
     }
 
+    RTD_SEND_ORDER_SIGNATURE: str = os.getenv(
+        "RTD_SEND_ORDER_SIGNATURE", "rtd_order_signature"
+    )
+
+    RTD_HEADERS: Dict[str, str] = {
+        "x-signature": RTD_SEND_ORDER_SIGNATURE,
+        "Content-Type": "application/json",
+    }
+    RTD_BASE_URL: str = os.getenv("RTD_BASE_URL", "rtd_base_url")
+
     # database
     DB_USER: str = os.getenv("DB_USER", "mvi_tracking_user")
     DB_PASSWORD: str = os.getenv("DB_PASSWORD", "mvi_tracking_pass")
