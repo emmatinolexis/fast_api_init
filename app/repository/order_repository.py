@@ -7,6 +7,7 @@ from app.model.inventory import Inventory
 from app.model.order import Order, OrderDeviceAssignment
 from app.repository.base_repository import BaseRepository
 from app.schema.order_schema import OrderPayload
+from app.util.enums import OrderStatus
 
 
 class OrderRepository(BaseRepository):
@@ -20,6 +21,7 @@ class OrderRepository(BaseRepository):
                 order_data = Order(
                     payment_reference_id=order_payload.payment_reference,
                     total_amount=order_payload.total_amount,
+                    order_status=OrderStatus.PROCESSING,
                 )
                 session.add(order_data)
                 session.commit()
@@ -43,6 +45,37 @@ class OrderRepository(BaseRepository):
                     .all()
                 )
                 return orders
+            except Exception as e:
+                session.rollback()
+                raise e
+
+    def update_order_status(self, order_uuid: str, status: str):
+        with self.session_factory() as session:
+            try:
+                order_to_update = (
+                    session.query(Order).filter_by(uuid=order_uuid).first()
+                )
+
+                if not order_to_update:
+                    raise Exception("Order not found")
+
+                order_to_update.order_status = status
+                session.commit()
+                session.refresh(order_to_update)
+
+                order = (
+                    session.query(Order)
+                    .filter_by(uuid=order_uuid)
+                    .options(
+                        joinedload(Order.order_inventories)
+                        .joinedload(OrderDeviceAssignment.inventory)
+                        .joinedload(Inventory.images),
+                        joinedload(Order.order_shipping_address),
+                    )
+                    .first()
+                )
+
+                return order
             except Exception as e:
                 session.rollback()
                 raise e

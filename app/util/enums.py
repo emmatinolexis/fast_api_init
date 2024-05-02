@@ -99,6 +99,26 @@ class AlertType(str, Enum):
     VOICE = "voice"
 
 
+class OrderStatusRtd(str, Enum):
+    IN_DELIVERY = "in_delivery"
+    DELIVERED = "delivered"
+
+
+class OrderStatus(str, Enum):
+    PROCESSING = "processing"
+    READY_FOR_PICKUP = "ready_for_pickup"
+    IN_DELIVERY = "in_delivery"
+    DELIVERED = "delivered"
+
+
+class OrderPickUpLocation(str, Enum):
+    name = "MVI Tracking"
+    email = "emmanuel.osabutey@sagemicrosystems.net"
+    phone = "0541557459"
+    lat: float = 5.7229375
+    lng: float = -0.1680625
+
+
 class MaintenanceAlertSchedule(str, Enum):
     THIRTY_DAYS = "30 days"
     SIXTY_DAYS = "60 days"

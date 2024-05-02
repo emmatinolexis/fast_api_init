@@ -3,16 +3,22 @@ from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, constr
 
+from app.util.enums import OrderStatusRtd
+
 
 class Device(BaseModel):
     inventory_uuid: UUID
     quantity: int
 
 
+class OrderStatus(BaseModel):
+    order_status: OrderStatusRtd
+
+
 class Address(BaseModel):
     address_name: str
-    lat: int
-    lng: int
+    lat: float
+    lng: float
 
 
 class ShippingAddress(BaseModel):
