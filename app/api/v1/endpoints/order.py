@@ -45,7 +45,7 @@ async def get_all_orders_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.put("/{order_uuid}/ready_for_pickup", response_class=ORJSONResponse)
+@router.put("/{order_uuid}/status", response_class=ORJSONResponse)
 @inject
 async def update_status_to_ready_for_pick_handler(
     order_uuid: str,
