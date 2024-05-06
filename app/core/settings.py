@@ -49,15 +49,15 @@ class Settings(BaseSettings):
         "Content-Type": "application/json",
     }
 
-    RTD_SEND_ORDER_SIGNATURE: str = os.getenv(
-        "RTD_SEND_ORDER_SIGNATURE", ""
-    )
+    RTD_SEND_ORDER_SIGNATURE: str = os.getenv("RTD_SEND_ORDER_SIGNATURE", "")
 
     RTD_HEADERS: Dict[str, str] = {
         "x-signature": RTD_SEND_ORDER_SIGNATURE,
         "Content-Type": "application/json",
     }
-    RTD_BASE_URL: str = os.getenv("RTD_BASE_URL", "https://rtd-uat.sageinfrastructure.net/api/v1/webhooks/mvi")
+    RTD_BASE_URL: str = os.getenv(
+        "RTD_BASE_URL", "https://rtd-uat.sageinfrastructure.net/api/v1/webhooks/mvi"
+    )
 
     # database
     DB_USER: str = os.getenv("DB_USER", "mvi_tracking_user")

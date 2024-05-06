@@ -49,7 +49,7 @@ class Asset(BaseModel):
         unique=True,
         nullable=False,
     )
-    asset_name = Column(String(length=50), nullable=False, index=True)
+    asset_name = Column(String(length=100), nullable=False, index=True)
     asset_status = Column(Enum(AssetStatus), nullable=False, index=True)
     user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
     vehicle_license_no = Column(

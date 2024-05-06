@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Column, Enum, ForeignKey, String
+from sqlalchemy import JSON, Column, Enum, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -20,6 +20,7 @@ class DeviceManufacturer(BaseModel):
     manufacturer_name = Column(
         String(length=50), nullable=False, unique=True, index=True
     )
+    shutdown_on_command = Column(JSON, nullable=True)
     status = Column(Enum(ActiveStatus), nullable=False, index=True)
 
 
@@ -36,6 +37,9 @@ class Device(BaseModel):
         UUID(as_uuid=True), ForeignKey("inventories.uuid"), nullable=True
     )
     device_imei = Column(String(length=100), nullable=True, unique=True, index=True)
+    sim_phone_number = Column(
+        String(length=100), nullable=True, unique=True, index=True
+    )
     assign_to_asset_status = Column(String(length=50), nullable=True, index=True)
     user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=True)
     business_profile_uuid = Column(
