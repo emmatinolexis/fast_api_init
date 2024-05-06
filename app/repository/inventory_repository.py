@@ -47,3 +47,19 @@ class InventoryRepository(BaseRepository):
             except Exception as e:
                 session.rollback()
                 raise e
+
+    def reduce_inventory_no(self, inventory_uuid: str, quantity: int):
+        with self.session_factory() as session:
+            try:
+                inventory = (
+                    session.query(self.model)
+                    .filter(self.model.uuid == inventory_uuid)
+                    .first()
+                )
+                inventory.quantity = inventory.quantity - quantity
+                session.commit()
+                session.refresh(inventory)
+                return inventory
+            except Exception as e:
+                session.rollback()
+                raise e

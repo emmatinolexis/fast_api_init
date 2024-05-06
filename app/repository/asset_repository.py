@@ -10,6 +10,7 @@ from app.model.device import Device
 from app.model.tracking_event import TrackingEvent
 from app.model.user import User
 from app.repository.base_repository import BaseRepository
+from app.schema.asset_schema import AssignDeviceInputPayload
 from app.util.enums import AssetStatus
 from app.util.utils import get_status
 
@@ -82,12 +83,18 @@ class AssetRepository(BaseRepository):
 
             return assets, total_assets
 
-    def assign_device_imei(self, asset_uuid, imei: str) -> Asset:
+    def assign_device_imei(
+        self, asset_uuid, payload: AssignDeviceInputPayload
+    ) -> Asset:
         with self.session_factory() as session:
-            device = session.query(Device).filter(Device.device_imei == imei).first()
+            device = (
+                session.query(Device)
+                .filter(Device.device_imei == payload.device_imei)
+                .first()
+            )
             # check if imei is valid
             if not device:
-                raise Exception(f"Device with imei {imei} not found")
+                raise Exception(f"Device with imei {payload.device_imei} not found")
 
             # check if device already assigned
             if device.assign_to_asset_status is not None:
@@ -102,7 +109,8 @@ class AssetRepository(BaseRepository):
                 raise Exception(f"Asset with id {asset_uuid} not found")
 
             # update asset with device imei
-            asset.device_imei = imei
+            asset.device_imei = payload.device_imei
+
             asset.asset_status = AssetStatus.ACTIVE
             session.commit()
             session.refresh(asset)
@@ -112,6 +120,7 @@ class AssetRepository(BaseRepository):
 
             device.assign_to_asset_status = datetime.now()
             device.user_uuid = user.uuid
+            device.sim_phone_number = payload.sim_phone_number
 
             if user.business_profile_uuid:
                 device.business_profile_uuid = user.business_profile_uuid

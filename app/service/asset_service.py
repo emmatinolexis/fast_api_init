@@ -8,7 +8,7 @@ from app.repository.equipment_repository import EquipmentRepository
 from app.repository.equipment_type_repository import EquipmentTypeRepository
 from app.repository.subscription_repository import SubscriptionRepository
 from app.repository.user_repository import UserRepository
-from app.schema.asset_schema import AssetInput, AssetPayload
+from app.schema.asset_schema import AssetInput, AssetPayload, AssignDeviceInputPayload
 from app.service.base_service import BaseService
 from app.util.enums import PackageItemTrackerType
 
@@ -173,9 +173,9 @@ class AssetService(BaseService):
         except Exception as e:
             raise e
 
-    def assign_device_imei(self, uuid: str, imei: str):
+    def assign_device_imei(self, uuid: str, payload: AssignDeviceInputPayload):
         try:
-            asset = self.asset_repository.assign_device_imei(uuid, imei)
+            asset = self.asset_repository.assign_device_imei(uuid, payload)
             return asset
         except Exception as e:
             raise e

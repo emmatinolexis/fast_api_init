@@ -80,6 +80,7 @@ class AssetInput(BaseModel):
 
 class AssignDeviceInputPayload(BaseModel):
     device_imei: str
+    sim_phone_number: str
 
     class Config:
         orm_model = True

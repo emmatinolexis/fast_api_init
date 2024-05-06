@@ -129,7 +129,7 @@ async def assign_device_to_asset(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        asset = service.assign_device_imei(asset_uuid, payload.device_imei)
+        asset = service.assign_device_imei(asset_uuid, payload)
         return send_data(asset)
     except Exception as e:
         msg = messages.UPDATE_FAILED + msg_prefix
