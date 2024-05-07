@@ -113,12 +113,12 @@ class DeviceRepository(BaseRepository):
                 session.rollback()
                 raise e
 
-    def get_device_for_engine_shutdown(self, asset_uuid: str):
+    def get_device_for_engine_shutdown(self, device_imei: str):
         with self.session_factory() as session:
             try:
                 device = (
                     session.query(self.model)
-                    .filter(self.model.device_imei == asset_uuid)
+                    .filter(self.model.device_imei == device_imei)
                     .options(
                         joinedload(Device.manufacturer),
                     )

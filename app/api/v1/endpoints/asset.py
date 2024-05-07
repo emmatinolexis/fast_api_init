@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
 
 from app.core import messages
-# from app.core.constants import ENGINE_SHUTDOWN_PASSWORD, ENGINE_SHUTDOWN_USERNAME
+from app.core.constants import ENGINE_SHUTDOWN_PASSWORD, ENGINE_SHUTDOWN_USERNAME
 from app.core.container import Container
 from app.core.dependencies import get_current_user
 from app.core.exceptions import NotFoundError
@@ -232,14 +232,40 @@ async def shutdown_engine_request_handler(
 ):
     try:
         request = asset_service.shutdown_engine(asset_uuid)
-        # shutdown_message = (
-        #     f"{ENGINE_SHUTDOWN_USERNAME} "
-        #     f"{ENGINE_SHUTDOWN_PASSWORD} "
-        #     f"{request.manufacturer.shutdown_on_command.get('queued_shutdown_command')}"
-        # )
-        # await send_sms(f"{request.sim_phone_number}", f"{shutdown_message}")
-        await send_sms("+233541557459", "Test sms from mvi")
-        return send_data(request)
+        if request.manufacturer.shutdown_on_command:
+            shutdown_message = (
+                f"{ENGINE_SHUTDOWN_USERNAME} "
+                f"{ENGINE_SHUTDOWN_PASSWORD} "
+                f"{request.manufacturer.shutdown_on_command.get('queued_shutdown_command')}"
+            )
+            await send_sms(f"{request.sim_phone_number}", f"{shutdown_message}")
+            return send_info("Engine shutdown initiated successfully")
+        msg = f"Device shutdown command not set for {request.manufacturer.manufacturer_name}"
+        return send_internal_server_error(user_msg=msg, error=msg)
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix} device requests"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/{asset_uuid}/on_engine", response_class=ORJSONResponse)
+@inject
+async def on_engine_request_handler(
+    asset_uuid: str,
+    asset_service: AssetService = Depends(Provide[Container.asset_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        request = asset_service.shutdown_engine(asset_uuid)
+        if request.manufacturer.shutdown_on_command:
+            engine_on_message = (
+                f"{ENGINE_SHUTDOWN_USERNAME} "
+                f"{ENGINE_SHUTDOWN_PASSWORD} "
+                f"{request.manufacturer.shutdown_on_command.get('queued_on_command')}"
+            )
+            await send_sms(f"{request.sim_phone_number}", f"{engine_on_message}")
+            return send_info("Engine on initiated successfully")
+        msg = f"Device shutdown command not set for {request.manufacturer.manufacturer_name}"
+        return send_internal_server_error(user_msg=msg, error=msg)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix} device requests"
         return send_internal_server_error(user_msg=msg, error=e)
