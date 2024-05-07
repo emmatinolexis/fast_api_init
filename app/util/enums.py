@@ -101,7 +101,7 @@ class AlertType(str, Enum):
 
 class DriverType(str, Enum):
     RIDER = "rider"
-    DRIVER = "rider"
+    DRIVER = "driver"
 
 
 class OrderStatusRtd(str, Enum):
