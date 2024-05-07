@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
 
 from app.core import messages
+# from app.core.constants import ENGINE_SHUTDOWN_PASSWORD, ENGINE_SHUTDOWN_USERNAME
 from app.core.container import Container
 from app.core.dependencies import get_current_user
 from app.core.exceptions import NotFoundError
@@ -17,6 +18,7 @@ from app.schema.asset_schema import (
 from app.service.asset_device_request_service import AssetDeviceRequestService
 from app.service.asset_service import AssetService
 from app.service.tracking_event_service import TrackingEventService
+from app.util.sms import send_sms
 from app.util.utils import (
     send_client_side_error,
     send_data,
@@ -216,6 +218,28 @@ async def get_asset_device_requests(
         requests = request_service.get_asset_device_requests()
 
         return send_data(requests)
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix} device requests"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/{asset_uuid}/shutdown", response_class=ORJSONResponse)
+@inject
+async def shutdown_engine_request_handler(
+    asset_uuid: str,
+    asset_service: AssetService = Depends(Provide[Container.asset_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        request = asset_service.shutdown_engine(asset_uuid)
+        # shutdown_message = (
+        #     f"{ENGINE_SHUTDOWN_USERNAME} "
+        #     f"{ENGINE_SHUTDOWN_PASSWORD} "
+        #     f"{request.manufacturer.shutdown_on_command.get('queued_shutdown_command')}"
+        # )
+        # await send_sms(f"{request.sim_phone_number}", f"{shutdown_message}")
+        await send_sms("+233541557459", "Test sms from mvi")
+        return send_data(request)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix} device requests"
         return send_internal_server_error(user_msg=msg, error=e)
