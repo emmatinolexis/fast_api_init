@@ -99,6 +99,11 @@ class AlertType(str, Enum):
     VOICE = "voice"
 
 
+class DriverType(str, Enum):
+    RIDER = "rider"
+    DRIVER = "driver"
+
+
 class OrderStatusRtd(str, Enum):
     IN_DELIVERY = "in_delivery"
     DELIVERED = "delivered"

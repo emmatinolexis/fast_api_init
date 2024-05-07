@@ -44,6 +44,10 @@ async def create_driver_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
+        existing_driver = service.get_driver_by_phone_number(payload.phone_number)
+        if existing_driver:
+            msg = f"Driver already exists with phone number {payload.phone_number}"
+            return send_internal_server_error(user_msg=msg, error=msg)
         driver = service.create_driver(payload)
         return send_data(driver)
     except Exception as e:

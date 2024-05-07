@@ -35,6 +35,12 @@ class DriverRepository(BaseRepository):
             query = query.filter(self.model.business_uuid == business_uuid).all()
             return query
 
+    def get_driver_phone_number(self, phone_number: str):
+        with self.session_factory() as session:
+            query = session.query(self.model)
+            driver = query.filter(self.model.phone_number == phone_number).first()
+            return driver
+
     def unassign_driver(self, driver_uuid) -> Driver:
         with self.session_factory() as session:
             query = session.query(self.model)
