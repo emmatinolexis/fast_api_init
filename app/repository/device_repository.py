@@ -112,3 +112,18 @@ class DeviceRepository(BaseRepository):
             except Exception as e:
                 session.rollback()
                 raise e
+
+    def get_device_for_engine_shutdown(self, asset_uuid: str):
+        with self.session_factory() as session:
+            try:
+                device = (
+                    session.query(self.model)
+                    .filter(self.model.device_imei == asset_uuid)
+                    .options(
+                        joinedload(Device.manufacturer),
+                    )
+                    .first()
+                )
+                return device
+            except Exception as e:
+                raise e

@@ -3,6 +3,9 @@
 CUSTOMER_USER_ROLE = "customer"
 ADMIN_USER_ROLE = "admin"
 THIRD_PARTY_APP_ROLE = "third_party"
+ENGINE_SHUTDOWN_USERNAME = "mviad"
+ENGINE_SHUTDOWN_PASSWORD = "mvipa"
+
 
 ALLOWED_EVENT_TYPES = [
     "Stop_Moving",

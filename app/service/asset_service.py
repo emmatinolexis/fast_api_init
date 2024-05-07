@@ -3,6 +3,7 @@ from app.core.constants import FREE_PACKAGE
 from app.core.exceptions import NotFoundError
 from app.repository.asset_repository import AssetRepository
 from app.repository.asset_type_repository import AssetTypeRepository
+from app.repository.device_repository import DeviceRepository
 from app.repository.driver_repository import DriverRepository
 from app.repository.equipment_repository import EquipmentRepository
 from app.repository.equipment_type_repository import EquipmentTypeRepository
@@ -23,6 +24,7 @@ class AssetService(BaseService):
         equipment_type_repository: EquipmentTypeRepository,
         driver_repository: DriverRepository,
         subscription_repository: SubscriptionRepository,
+        device_repository: DeviceRepository,
     ):
         self.asset_repository = asset_repository
         self.asset_type_repository = asset_type_repository
@@ -31,6 +33,7 @@ class AssetService(BaseService):
         self.equipment_type_repository = equipment_type_repository
         self.driver_repository = driver_repository
         self.subscription_repository = subscription_repository
+        self.device_repository = device_repository
         super().__init__(asset_repository)
 
     def create_asset(self, asset: AssetPayload):
@@ -177,5 +180,20 @@ class AssetService(BaseService):
         try:
             asset = self.asset_repository.assign_device_imei(uuid, payload)
             return asset
+        except Exception as e:
+            raise e
+
+    def shutdown_engine(self, asset_uuid: str):
+        try:
+            asset = self.get_by_uuid(asset_uuid)
+            if asset.device_imei:
+                asset_device = self.device_repository.get_device_for_engine_shutdown(
+                    asset.device_imei
+                )
+                return asset_device
+            else:
+                raise Exception(
+                    f"There is no device associated with this asset:{asset.asset_name} "
+                )
         except Exception as e:
             raise e

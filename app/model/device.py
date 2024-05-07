@@ -58,6 +58,7 @@ class Device(BaseModel):
         primaryjoin="Device.device_inventory_uuid == Inventory.uuid",
         secondaryjoin="Inventory.device_manufacturer_uuid == DeviceManufacturer.uuid",
         backref="devices",
+        uselist=False,
     )
     asset = relationship(
         "Asset",
