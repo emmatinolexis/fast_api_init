@@ -88,6 +88,7 @@ class TrackingEventService(BaseService):
             for device_imei, events in device_events.items():
                 device_response = {
                     "device_imei": device_imei,
+                    "asset_name": "",
                     "date": str(date),
                     "events": [],
                 }
@@ -95,6 +96,7 @@ class TrackingEventService(BaseService):
                 current_event = None
 
                 for event in events:
+                    device_response["asset_name"] = event.device.asset.asset_name
                     if current_event is None:
                         current_event = {
                             "status": get_status(event.event_type),
