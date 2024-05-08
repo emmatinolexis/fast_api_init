@@ -1,7 +1,8 @@
 import uuid
 
-from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 from app.model.base_model import Base
 
@@ -17,7 +18,9 @@ class TrackingEvent(Base):
     )
     device_type = Column(String(50), nullable=False, index=True)
     device_uuid = Column(UUID, nullable=False, index=True)
-    device_imei = Column(String(15), nullable=False, index=True)
+    device_imei = Column(
+        String(15), ForeignKey("devices.device_imei"), nullable=False, index=True
+    )
     event_type = Column(String(50), nullable=False, index=True)
     event_description = Column(String(255))
     event_datetime = Column(DateTime, nullable=False)
@@ -39,3 +42,4 @@ class TrackingEvent(Base):
     armed_status = Column(Boolean)
     rfid_login_status = Column(Boolean)
     protocol_version = Column(String(50))
+    device = relationship("Device", back_populates="tracking_events")

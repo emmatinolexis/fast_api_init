@@ -66,3 +66,4 @@ class Device(BaseModel):
         primaryjoin="foreign(Device.device_imei) == remote(Asset.device_imei)",
         viewonly=True,
     )
+    tracking_events = relationship("TrackingEvent", back_populates="device")

@@ -3,10 +3,11 @@ from datetime import datetime
 from typing import Callable, Dict, List
 
 from sqlalchemy import Date, cast
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.core.constants import ALLOWED_EVENT_TYPES
 from app.model.asset import Asset
+from app.model.device import Device
 from app.model.tracking_event import TrackingEvent
 from app.repository.base_repository import BaseRepository
 from app.util.utils import get_status
@@ -56,10 +57,12 @@ class TrackingEventRepository(BaseRepository):
                         == datetime.strptime(date, "%d/%m/%Y"),
                         self.model.event_type.in_(ALLOWED_EVENT_TYPES),
                     )
+                    .options(
+                        joinedload(self.model.device).joinedload(Device.asset),
+                    )
                     .order_by(self.model.event_datetime)
                     .all()
                 )
-
                 # Store the events for each device IMEI in the dictionary
                 events_by_device[device_imei] = query
 
