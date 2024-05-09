@@ -216,8 +216,25 @@ async def get_asset_device_requests(
 ):
     try:
         requests = request_service.get_asset_device_requests()
-
         return send_data(requests)
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix} device requests"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.put("/process-device-request/{request_uuid}", response_class=ORJSONResponse)
+@inject
+async def update_status_request(
+    request_uuid: str,
+    request_service: AssetDeviceRequestService = Depends(
+        Provide[Container.asset_device_request_service]
+    ),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        request_service.update_status(request_uuid)
+        msg = "Status Updated successfully"
+        return send_info(msg)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix} device requests"
         return send_internal_server_error(user_msg=msg, error=e)

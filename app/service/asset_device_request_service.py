@@ -81,6 +81,10 @@ class AssetDeviceRequestService(BaseService):
                 {
                     "uuid": request.uuid,
                     "assets": assets,
+                    "user": {
+                        "customer_name": f"{request.user.first_name} {request.user.last_name}",
+                        "account_type": request.user.account_type,
+                    },
                     "metrics": request.metrics,
                     "status": request.status,
                     "created_at": request.created_at,
@@ -89,6 +93,13 @@ class AssetDeviceRequestService(BaseService):
             )
 
         return transformed_requests
+
+    def update_status(self, request_uuid: str):
+        try:
+            request = self.asset_device_request_repository.update_status(request_uuid)
+            return request
+        except Exception as e:
+            return Exception(e)
 
     def get_asset_device_requests(self):
         requests = self.asset_device_request_repository.get_asset_device_requests()
@@ -115,6 +126,10 @@ class AssetDeviceRequestService(BaseService):
                 {
                     "uuid": request.uuid,
                     "assets": assets,
+                    "user": {
+                        "customer_name": f"{request.user.first_name} {request.user.last_name}",
+                        "account_type": request.user.account_type,
+                    },
                     "metrics": request.metrics,
                     "status": request.status,
                     "created_at": request.created_at,
