@@ -222,7 +222,7 @@ async def get_asset_device_requests(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.put("/device/update/{request_uuid}/status", response_class=ORJSONResponse)
+@router.put("/process-device-request/{request_uuid}", response_class=ORJSONResponse)
 @inject
 async def update_status_request(
     request_uuid: str,
