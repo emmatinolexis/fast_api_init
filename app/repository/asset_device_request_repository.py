@@ -7,6 +7,7 @@ from app.model.asset import Asset
 from app.model.asset_device_request import AssetDeviceRequest
 from app.repository.base_repository import BaseRepository
 from app.schema.asset_schema import CreateAssetDeviceRequestPayload
+from app.util.enums import AssetDeviceRequestStatus
 
 
 class AssetDeviceRequestRepository(BaseRepository):
@@ -27,6 +28,22 @@ class AssetDeviceRequestRepository(BaseRepository):
                 .first()
             )
 
+    def update_status(self, request_uuid: str):
+        with self.session_factory() as session:
+            try:
+                request = (
+                    session.query(self.model)
+                    .filter(self.model.uuid == request_uuid)
+                    .first()
+                )
+                request.status = AssetDeviceRequestStatus.PROCESSING
+                session.commit()
+                session.refresh(request)
+                return request
+            except Exception as e:
+                session.rollback()
+                return Exception(e)
+
     def create_asset_device_request(
         self, asset_device_request: CreateAssetDeviceRequestPayload
     ):
@@ -35,8 +52,6 @@ class AssetDeviceRequestRepository(BaseRepository):
             metrics=asset_device_request.metrics,
             status=asset_device_request.status,
         )
-
-        # return asset_device_request.asset_uuids
 
         with self.session_factory() as session:
             try:
@@ -66,6 +81,7 @@ class AssetDeviceRequestRepository(BaseRepository):
                 session.query(self.model)
                 .filter(self.model.user_uuid == user_uuid)
                 .options(subqueryload(AssetDeviceRequest.assets))
+                .options(subqueryload(self.model.user))
                 .all()
             )
 
@@ -74,5 +90,6 @@ class AssetDeviceRequestRepository(BaseRepository):
             return (
                 session.query(self.model)
                 .options(subqueryload(AssetDeviceRequest.assets))
+                .options(subqueryload(self.model.user))
                 .all()
             )
