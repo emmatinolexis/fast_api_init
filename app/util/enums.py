@@ -99,6 +99,18 @@ class AlertType(str, Enum):
     VOICE = "voice"
 
 
+class ImmobilizerType(str, Enum):
+    OFF = "off"
+    ON = "on"
+
+
+class ImmobilizerReason(str, Enum):
+    STOLEN = "stolen"
+    UNAUTHORIZED = "unauthorized"
+    FAULTY = "faulty"
+    PERSONAL = "personal"
+
+
 class DriverType(str, Enum):
     RIDER = "rider"
     DRIVER = "driver"

@@ -11,6 +11,8 @@ from app.util.enums import (
     AssetDeviceRequestStatus,
     AssetStatus,
     DriverType,
+    ImmobilizerReason,
+    ImmobilizerType,
 )
 
 
@@ -129,3 +131,16 @@ class AssetDeviceRequest(BaseModel):
 class CreateAssetDeviceRequestPayload(AssetDeviceRequest):
     user_uuid: str
     status: AssetDeviceRequestStatus = AssetDeviceRequestStatus.PENDING
+
+
+class ImmobilizerPayload(BaseModel):
+    reason: ImmobilizerReason
+    type: ImmobilizerType
+    user_uuid: UUID
+    asset_uuid: UUID
+
+
+class EngineOnPayload(BaseModel):
+    type: ImmobilizerType
+    user_uuid: UUID
+    asset_uuid: UUID
