@@ -5,7 +5,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from app.model.base_model import BaseModel
-from app.util.enums import DriverType
+from app.util.enums import ActiveStatus, DriverType
 
 
 class Driver(BaseModel):
@@ -30,6 +30,8 @@ class Driver(BaseModel):
     driver_type = Column(Enum(DriverType), nullable=False)
     first_name = Column(String(length=30), nullable=False)
     last_name = Column(String(length=30), nullable=False, index=True)
+    email = Column(String(length=50), nullable=False, index=True, unique=True)
+    status = Column(Enum(ActiveStatus), nullable=False, index=True, unique=True)
     phone_number = Column(String(length=20), nullable=True, unique=True, index=True)
     license_url = Column(String(length=100), nullable=True, index=True)
     profile_picture_url = Column(String(length=100), nullable=True, index=True)

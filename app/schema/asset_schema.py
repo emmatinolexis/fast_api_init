@@ -113,6 +113,8 @@ class DriverPayload(BaseModel):
     first_name: str
     driver_type: DriverType
     last_name: str
+    email: str
+    status: ActiveStatus
     phone_number: str
     license_url: str
     profile_picture_url: str

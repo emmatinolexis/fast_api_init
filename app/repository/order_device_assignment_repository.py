@@ -5,7 +5,6 @@ from sqlalchemy.orm import Session
 
 from app.model.order import OrderDeviceAssignment
 from app.repository.base_repository import BaseRepository
-from app.schema.order_schema import OrderPayload
 
 
 class OrderDeviceAssignmentRepository(BaseRepository):
@@ -13,18 +12,16 @@ class OrderDeviceAssignmentRepository(BaseRepository):
         self.session_factory = session_factory
         super().__init__(session_factory, OrderDeviceAssignment)
 
-    def create_order_devices(self, order_payload: OrderPayload, order_uuid: str):
+    def create_order_device(self, device, order_uuid: str):
         with self.session_factory() as session:
             try:
-                for device in order_payload.devices:
-                    device_data = OrderDeviceAssignment(
-                        inventory_uuid=device.inventory_uuid,
-                        quantity=device.quantity,
-                        order_uuid=order_uuid,
-                    )
-                    session.add(device_data)
+                device_data = OrderDeviceAssignment(
+                    inventory_uuid=device.inventory_uuid,
+                    quantity=device.quantity,
+                    order_uuid=order_uuid,
+                )
+                session.add(device_data)
                 session.commit()
-                return True
             except Exception as e:
                 session.rollback()
                 raise e

@@ -12,11 +12,7 @@ from app.repository.equipment_type_repository import EquipmentTypeRepository
 from app.repository.immobilizer_report_repository import ImmobilizerReportRepository
 from app.repository.subscription_repository import SubscriptionRepository
 from app.repository.user_repository import UserRepository
-from app.schema.asset_schema import (
-    AssetInput,
-    AssetPayload,
-    AssignDeviceInputPayload,
-)
+from app.schema.asset_schema import AssetInput, AssetPayload, AssignDeviceInputPayload
 from app.service.base_service import BaseService
 from app.util.enums import PackageItemTrackerType
 
