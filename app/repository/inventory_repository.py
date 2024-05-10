@@ -1,3 +1,4 @@
+import uuid
 from contextlib import AbstractContextManager
 from typing import Callable
 
@@ -48,7 +49,7 @@ class InventoryRepository(BaseRepository):
                 session.rollback()
                 raise e
 
-    def reduce_inventory_no(self, inventory_uuid: str, quantity: int):
+    def reduce_inventory_no(self, inventory_uuid: uuid, quantity: int):
         with self.session_factory() as session:
             try:
                 inventory = (

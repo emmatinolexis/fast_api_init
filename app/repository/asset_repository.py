@@ -43,6 +43,7 @@ class AssetRepository(BaseRepository):
                 query.options(joinedload(Asset.asset_type))
                 .options(joinedload(Asset.driver))
                 .options(joinedload(Asset.device))
+                .options(joinedload(Asset.equipment))
                 .all()
             )
 

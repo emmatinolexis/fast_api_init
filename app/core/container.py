@@ -478,6 +478,8 @@ class Container(containers.DeclarativeContainer):
         order_repository=order_repository,
         order_device_assignment_repository=order_device_assignment_repository,
         order_shipping_address_repository=order_shipping_address_repository,
+        inventory_repository=inventory_repository,
+        device_repository=device_repository,
     )
     order_device_assignment_service = providers.Factory(
         order_device_assignment_service.OrderDeviceAssignmentService,

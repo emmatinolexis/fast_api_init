@@ -1,6 +1,9 @@
 import requests
 
 from app.core.settings import settings
+
+from app.repository.device_repository import DeviceRepository
+from app.repository.inventory_repository import InventoryRepository
 from app.repository.order_device_assignment_repository import (
     OrderDeviceAssignmentRepository,
 )
@@ -19,19 +22,30 @@ class OrderService(BaseService):
         order_repository: OrderRepository,
         order_device_assignment_repository: OrderDeviceAssignmentRepository,
         order_shipping_address_repository: OrderShippingAddressRepository,
+        device_repository: DeviceRepository,
+        inventory_repository: InventoryRepository,
     ):
         self.order_repository = order_repository
         self.order_device_assignments_repository = order_device_assignment_repository
         self.order_shipping_address_repository = order_shipping_address_repository
+        self.device_repository = device_repository
+        self.inventory_repository = inventory_repository
+
         super().__init__(order_repository)
 
     def create_order(self, order_payload: OrderPayload):
         try:
             order = self.order_repository.create_order(order_payload)
             if order:
-                self.order_device_assignments_repository.create_order_devices(
-                    order_payload, order.uuid
-                )
+                for device in order_payload.devices:
+                    self.order_device_assignments_repository.create_order_device(
+                        device, order.uuid
+                    )
+
+                    self.inventory_repository.reduce_inventory_no(
+                        device.inventory_uuid, device.quantity
+                    )
+
                 self.order_shipping_address_repository.create_order_address(
                     order_payload, order.uuid
                 )
