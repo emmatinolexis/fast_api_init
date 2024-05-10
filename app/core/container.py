@@ -26,6 +26,7 @@ from app.repository import (
     equipment_type_repository,
     external_app_repository,
     feature_repository,
+    immobilizer_report_repository,
     inventory_repository,
     marker_icon_repository,
     onboarding_asset_type_assignment_repository,
@@ -67,6 +68,7 @@ from app.service import (
     equipment_type_service,
     external_app_service,
     feature_service,
+    immobilizer_report_service,
     inventory_service,
     invitation_service,
     marker_icon_service,
@@ -305,6 +307,10 @@ class Container(containers.DeclarativeContainer):
         external_app_repository.ExternalAppRepository,
         session_factory=db.provided.session,
     )
+    immobilizer_report_repository = providers.Factory(
+        immobilizer_report_repository.ImmobilizerReportRepository,
+        session_factory=db.provided.session,
+    )
 
     # Services
     auth_service = providers.Factory(
@@ -357,6 +363,7 @@ class Container(containers.DeclarativeContainer):
         driver_repository=driver_repository,
         subscription_repository=subscription_repository,
         device_repository=device_repository,
+        immobilizer_report_repository=immobilizer_report_repository,
     )
     asset_device_request_service = providers.Factory(
         asset_device_request_service.AssetDeviceRequestService,
@@ -483,4 +490,8 @@ class Container(containers.DeclarativeContainer):
     external_app_service = providers.Factory(
         external_app_service.ExternalAppService,
         external_app_repository=external_app_repository,
+    )
+    immobilizer_report_service = providers.Factory(
+        immobilizer_report_service.ImmobilizerReportService,
+        immobilizer_report_repository=immobilizer_report_repository,
     )

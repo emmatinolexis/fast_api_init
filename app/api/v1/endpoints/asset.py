@@ -14,6 +14,8 @@ from app.schema.asset_schema import (
     AssetDeviceRequest,
     AssetPayload,
     AssignDeviceInputPayload,
+    EngineOnPayload,
+    ImmobilizerPayload,
 )
 from app.service.asset_device_request_service import AssetDeviceRequestService
 from app.service.asset_service import AssetService
@@ -240,49 +242,84 @@ async def update_status_request(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/{asset_uuid}/shutdown", response_class=ORJSONResponse)
+@router.post("/immobilize/off", response_class=ORJSONResponse)
 @inject
 async def shutdown_engine_request_handler(
-    asset_uuid: str,
+    shutdown_payload: ImmobilizerPayload,
     asset_service: AssetService = Depends(Provide[Container.asset_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        request = asset_service.shutdown_engine(asset_uuid)
-        if request.manufacturer.shutdown_on_command:
+        request = asset_service.shutdown_engine(shutdown_payload.asset_uuid)
+        if request.manufacturer.shutdown_on_command and request.sim_phone_number:
             shutdown_message = (
                 f"{ENGINE_SHUTDOWN_USERNAME} "
                 f"{ENGINE_SHUTDOWN_PASSWORD} "
                 f"{request.manufacturer.shutdown_on_command.get('queued_shutdown_command')}"
             )
-            await send_sms(f"{request.sim_phone_number}", f"{shutdown_message}")
-            return send_info("Engine shutdown initiated successfully")
-        msg = f"Device shutdown command not set for {request.manufacturer.manufacturer_name}"
+
+            sms_response = await send_sms(
+                f"{request.sim_phone_number}", f"{shutdown_message}"
+            )
+
+            if sms_response:
+                asset_service.report_immobilizer_activity(shutdown_payload)
+                return send_info("Engine shutdown initiated successfully")
+            else:
+                msg = f"Failed to send SMS to {request.sim_phone_number}"
+                return send_internal_server_error(user_msg=msg, error=msg)
+
+        msg = f"Device shutdown command not set for {request.manufacturer.manufacturer_name} or invalid phone number"
         return send_internal_server_error(user_msg=msg, error=msg)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix} device requests"
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/{asset_uuid}/on_engine", response_class=ORJSONResponse)
+@router.post("/immobilize/on", response_class=ORJSONResponse)
 @inject
 async def on_engine_request_handler(
-    asset_uuid: str,
+    engine_on_payload: EngineOnPayload,
     asset_service: AssetService = Depends(Provide[Container.asset_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        request = asset_service.shutdown_engine(asset_uuid)
-        if request.manufacturer.shutdown_on_command:
+        request = asset_service.shutdown_engine(engine_on_payload.asset_uuid)
+        if request.manufacturer.shutdown_on_command and request.sim_phone_number:
             engine_on_message = (
                 f"{ENGINE_SHUTDOWN_USERNAME} "
                 f"{ENGINE_SHUTDOWN_PASSWORD} "
                 f"{request.manufacturer.shutdown_on_command.get('queued_on_command')}"
             )
-            await send_sms(f"{request.sim_phone_number}", f"{engine_on_message}")
-            return send_info("Engine on initiated successfully")
-        msg = f"Device shutdown command not set for {request.manufacturer.manufacturer_name}"
+
+            sms_response = await send_sms(
+                f"{request.sim_phone_number}", f"{engine_on_message}"
+            )
+
+            if sms_response:
+                asset_service.report_immobilizer_activity(engine_on_payload)
+                return send_info("Engine on initiated successfully")
+            else:
+                msg = f"Failed to send SMS to {request.sim_phone_number}"
+                return send_internal_server_error(user_msg=msg, error=msg)
+
+        msg = f"Device engine on command not set for {request.manufacturer.manufacturer_name} or invalid phone number"
         return send_internal_server_error(user_msg=msg, error=msg)
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix} device requests"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/{asset_uuid}/last_immobilizer_action", response_class=ORJSONResponse)
+@inject
+async def get_last_immobilizer_action(
+    asset_uuid: str,
+    asset_service: AssetService = Depends(Provide[Container.asset_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        action = asset_service.get_last_immobilizer_action(asset_uuid)
+        return send_data(action)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix} device requests"
         return send_internal_server_error(user_msg=msg, error=e)
