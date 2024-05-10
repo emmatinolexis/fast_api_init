@@ -1,7 +1,6 @@
 import requests
 
 from app.core.settings import settings
-
 from app.repository.device_repository import DeviceRepository
 from app.repository.inventory_repository import InventoryRepository
 from app.repository.order_device_assignment_repository import (
