@@ -31,7 +31,7 @@ class Driver(BaseModel):
     first_name = Column(String(length=30), nullable=False)
     last_name = Column(String(length=30), nullable=False, index=True)
     email = Column(String(length=50), nullable=False, index=True, unique=True)
-    status = Column(Enum(ActiveStatus), nullable=False, index=True, unique=True)
+    status = Column(Enum(ActiveStatus), nullable=False)
     phone_number = Column(String(length=20), nullable=True, unique=True, index=True)
     license_url = Column(String(length=100), nullable=True, index=True)
     profile_picture_url = Column(String(length=100), nullable=True, index=True)
