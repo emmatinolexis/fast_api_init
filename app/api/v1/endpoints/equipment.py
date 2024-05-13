@@ -31,7 +31,7 @@ async def get_all_equipments_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.get_list())
+        return send_data(service.get_all_equipments())
     except Exception as e:
         msg = f"{messages.GET_FAILED} {msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
