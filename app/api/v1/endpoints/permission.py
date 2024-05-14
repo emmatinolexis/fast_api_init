@@ -103,7 +103,7 @@ async def get_role_handler(
 ):
     try:
         role = service.get_role(role_uuid)
-        send_data(role)
+        return send_data(role)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
