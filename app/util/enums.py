@@ -116,6 +116,11 @@ class DriverType(str, Enum):
     DRIVER = "driver"
 
 
+class RoleType(str, Enum):
+    CUSTOMER = "customer"
+    ADMIN = "admin"
+
+
 class OrderStatusRtd(str, Enum):
     IN_DELIVERY = "in_delivery"
     DELIVERED = "delivered"

@@ -39,9 +39,12 @@ from app.repository import (
     package_item_repository,
     package_repository,
     payment_repository,
+    permission_repository,
     phone_otp_repository,
     plan_upgrade_repository,
     reset_password_repository,
+    role_permission_assignment_repository,
+    role_repository,
     subscription_payment_repository,
     subscription_repository,
     team_member_invitation_repository,
@@ -80,9 +83,12 @@ from app.service import (
     package_item_service,
     package_service,
     payment_service,
+    permission_service,
     phone_otp_service,
     plan_updgrade_service,
     reset_password_service,
+    role_permission_assignment_service,
+    role_service,
     subscription_payment_service,
     subscription_service,
     tracking_event_service,
@@ -121,6 +127,7 @@ class Container(containers.DeclarativeContainer):
             "app.api.v1.endpoints.inventory",
             "app.api.v1.endpoints.order",
             "app.api.v1.endpoints.external_app",
+            "app.api.v1.endpoints.permission",
         ]
     )
 
@@ -311,6 +318,18 @@ class Container(containers.DeclarativeContainer):
         immobilizer_report_repository.ImmobilizerReportRepository,
         session_factory=db.provided.session,
     )
+    permissions_repository = providers.Factory(
+        permission_repository.PermissionRepository,
+        session_factory=db.provided.session,
+    )
+    role_repository = providers.Factory(
+        role_repository.RoleRepository,
+        session_factory=db.provided.session,
+    )
+    role_permission_assignment_repository = providers.Factory(
+        role_permission_assignment_repository.RolePermissionAssignmentRepository,
+        session_factory=db.provided.session,
+    )
 
     # Services
     auth_service = providers.Factory(
@@ -496,4 +515,17 @@ class Container(containers.DeclarativeContainer):
     immobilizer_report_service = providers.Factory(
         immobilizer_report_service.ImmobilizerReportService,
         immobilizer_report_repository=immobilizer_report_repository,
+    )
+    permission_service = providers.Factory(
+        permission_service.PermissionService,
+        permission_repository=permissions_repository,
+    )
+    role_service = providers.Factory(
+        role_service.RoleService,
+        role_repository=role_repository,
+        role_permission_assignment_repository=role_permission_assignment_repository,
+    )
+    role_permission_assignment_service = providers.Factory(
+        role_permission_assignment_service.RolePermissionAssignmentService,
+        role_permission_assignment_repositoryrepository=role_permission_assignment_repository,
     )
