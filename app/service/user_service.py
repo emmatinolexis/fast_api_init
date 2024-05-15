@@ -12,7 +12,10 @@ from app.repository.team_member_invitation_repository import (
 )
 from app.repository.user_repository import UserRepository
 from app.repository.user_subscription_repository import UserSubscriptionRepository
-from app.schema.invitation_schema import InvitationCreatePayload, InvitationPayload
+from app.schema.invitation_schema import (
+    InvitationCreatePayloadSingle,
+    InvitationPayload,
+)
 from app.schema.user_schema import (
     AccountDeactivationPayload,
     UpdateUserPayload,
@@ -130,7 +133,7 @@ class UserService(BaseService):
             raise e
 
     def create_team_member_invitation(
-        self, uuid: str, payload: InvitationCreatePayload, user: dict
+        self, uuid: str, payload: InvitationCreatePayloadSingle, user: dict
     ):
         if not user.business_profile_uuid:
             raise NotFoundError(detail=messages.BUSINESS_PROFILE_NOT_FOUND + str(uuid))
