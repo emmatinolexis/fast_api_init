@@ -25,3 +25,4 @@ class Invitation(BaseModel):
     expired_at = Column(DateTime(timezone=True), nullable=True)
     status = Column(String(25), nullable=False)
     business_profile = relationship("BusinessProfile", back_populates="invitations")
+    role = relationship("Role")
