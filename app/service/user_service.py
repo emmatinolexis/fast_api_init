@@ -130,25 +130,17 @@ class UserService(BaseService):
             raise e
 
     def create_team_member_invitation(
-        self, uuid: str, payload: InvitationCreatePayload
+        self, uuid: str, payload: InvitationCreatePayload, user: dict
     ):
-        user = self.get_by_uuid(uuid)
-        if not user:
-            raise NotFoundError(detail=messages.USER_NOT_FOUND + f" uuid: {str(uuid)}")
-
         if not user.business_profile_uuid:
             raise NotFoundError(detail=messages.BUSINESS_PROFILE_NOT_FOUND + str(uuid))
-
-        # return user.business_profile_uuid
 
         try:
             return self.invitation_repository.create_invitation(
                 payload=InvitationPayload(
                     business_profile_uuid=str(user.business_profile_uuid),
-                    first_name=payload.first_name,
-                    last_name=payload.last_name,
                     email=payload.email,
-                    permissions=payload.permissions,
+                    role_uuid=payload.role_uuid,
                     status=InvitationStatus.PENDING,
                     expired_at=datetime.now() + timedelta(days=3),
                 )

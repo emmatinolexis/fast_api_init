@@ -174,6 +174,7 @@ class EventStatus(str, Enum):
 class InvitationStatus(str, Enum):
     PENDING = "Pending"
     EXPIRED = "Expired"
+    ACCEPTED = "Accepted"
 
 
 class AssetDeviceRequestStatus(str, Enum):

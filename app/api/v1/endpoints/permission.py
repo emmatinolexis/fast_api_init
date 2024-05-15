@@ -9,6 +9,7 @@ from app.model.user import User
 from app.schema.permission_schema import PermissionPayload, RolePayload
 from app.service.permission_service import PermissionService
 from app.service.role_service import RoleService
+from app.util.enums import RoleType
 from app.util.utils import send_data, send_internal_server_error
 
 router = APIRouter(
@@ -49,11 +50,12 @@ async def create_permission_handler(
 @router.get("/roles", response_class=ORJSONResponse)
 @inject
 async def get_all_roles_handler(
+    role_type: RoleType = None,
     service: RoleService = Depends(Provide[Container.role_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.get_all_roles())
+        return send_data(service.get_all_roles(role_type))
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)

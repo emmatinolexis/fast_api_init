@@ -1,11 +1,10 @@
 import uuid
 
-from sqlalchemy import JSON, Column, DateTime, ForeignKey, String
+from sqlalchemy import Column, DateTime, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from app.model.base_model import BaseModel
-from app.util.enums import InvitationStatus
 
 
 class Invitation(BaseModel):
@@ -21,10 +20,8 @@ class Invitation(BaseModel):
         UUID(as_uuid=True), ForeignKey("business_profiles.uuid")
     )
     email = Column(String, unique=True, nullable=False)
-    first_name = Column(String, nullable=False)
-    last_name = Column(String, nullable=False)
-    permissions = Column(JSON, nullable=False)
+    role_uuid = Column(UUID(as_uuid=True), ForeignKey("roles.uuid"))
     accepted_at = Column(DateTime(timezone=True), nullable=True)
     expired_at = Column(DateTime(timezone=True), nullable=True)
-    status = Column(String(25), nullable=False, default=InvitationStatus.PENDING.value)
+    status = Column(String(25), nullable=False)
     business_profile = relationship("BusinessProfile", back_populates="invitations")

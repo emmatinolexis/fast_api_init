@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import List
+from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, field_validator
 
@@ -27,10 +28,8 @@ class Permissions(BaseModel):
 
 
 class InvitationCreatePayload(BaseModel):
-    first_name: str
-    last_name: str
     email: EmailStr
-    permissions: Permissions
+    role_uuid: UUID
 
 
 class InvitationPayload(InvitationCreatePayload):
