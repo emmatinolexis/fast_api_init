@@ -27,12 +27,16 @@ class Permissions(BaseModel):
         return attributes
 
 
-class InvitationCreatePayload(BaseModel):
+class InvitationCreatePayloadSingle(BaseModel):
     email: EmailStr
     role_uuid: UUID
 
 
-class InvitationPayload(InvitationCreatePayload):
+class InvitationCreatePayload(BaseModel):
+    invitations: List[InvitationCreatePayloadSingle]
+
+
+class InvitationPayload(InvitationCreatePayloadSingle):
     business_profile_uuid: str
     status: InvitationStatus = InvitationStatus.PENDING
     expired_at: datetime

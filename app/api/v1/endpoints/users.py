@@ -10,7 +10,10 @@ from app.core.exceptions import ExpiredVerificationCodeError, NotFoundError
 from app.core.security import extract_user_data
 from app.core.settings import settings
 from app.model.user import User
-from app.schema.invitation_schema import InvitationCreatePayload
+from app.schema.invitation_schema import (
+    InvitationCreatePayload,
+    InvitationCreatePayloadSingle,
+)
 from app.schema.user_schema import (
     AccountDeactivationPayload,
     ResetPasswordPayload,
@@ -303,10 +306,10 @@ async def deactivate_account_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.post("/businesses/invitations/{uuid}", response_class=ORJSONResponse)
+@router.post("/businesses/invitations/{user_uuid}", response_class=ORJSONResponse)
 @inject
 async def create_team_member_invitation(
-    uuid: str,
+    user_uuid: str,
     payload: InvitationCreatePayload,
     service: UserService = Depends(Provide[Container.user_service]),
     invitation_service: InvitationService = Depends(
@@ -315,31 +318,40 @@ async def create_team_member_invitation(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        existing_user = service.get_user_by_email_address(payload.email)
-        if existing_user:
-            msg = "User already exist, "
-            raise NotFoundError(detail=msg + f" email: {payload.email}")
+        for invitation in payload.invitations:
+            existing_user = service.get_user_by_email_address(invitation.email)
+            if existing_user:
+                msg = "User already exist, "
+                raise NotFoundError(detail=msg + f" email: {invitation.email}")
 
-        invitation_exists = invitation_service.get_invitation_by_email(payload.email)
-        if invitation_exists:
-            return send_client_side_error(
-                user_msg=f"Invitation already exists : {payload.email}",
+            invitation_exists = invitation_service.get_invitation_by_email(
+                invitation.email
+            )
+            if invitation_exists:
+                return send_client_side_error(
+                    user_msg=f"Invitation already exists : {invitation.email}",
+                )
+
+            user = service.get_by_uuid(user_uuid)
+            if not user:
+                raise NotFoundError(
+                    detail=messages.USER_NOT_FOUND + f" uuid: {str(user_uuid)}"
+                )
+
+            invitation_payload = InvitationCreatePayloadSingle(
+                email=invitation.email, role_uuid=invitation.role_uuid
             )
 
-        user = service.get_by_uuid(uuid)
-        if not user:
-            raise NotFoundError(detail=messages.USER_NOT_FOUND + f" uuid: {str(uuid)}")
+            service.create_team_member_invitation(user_uuid, invitation_payload, user)
 
-        invitation = service.create_team_member_invitation(uuid, payload, user)
-
-        # send email invite
-        await send_email_invitation(
-            recipient_name="",
-            email=payload.email,
-            invitee_name=f"{user.first_name} {user.last_name}",
-        )
-
-        return send_data(invitation)
+            # send email invite
+            await send_email_invitation(
+                recipient_name="",
+                email=invitation.email,
+                invitee_name=f"{user.first_name} {user.last_name}",
+            )
+        msg = "Invitations sent successfully"
+        return send_info(msg)
     except NotFoundError as e:
         return send_client_side_error(e.detail)
     except Exception as e:
