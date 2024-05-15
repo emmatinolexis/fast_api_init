@@ -18,8 +18,8 @@ class RoleService(BaseService):
         )
         super().__init__(role_repository)
 
-    def get_all_roles(self):
-        return self.role_repository.get_all_roles()
+    def get_all_roles(self, role_type: str = None) -> RolePayload:
+        return self.role_repository.get_all_roles(role_type)
 
     def get_role(self, role_uuid: str):
         try:

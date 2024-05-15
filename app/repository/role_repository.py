@@ -13,8 +13,15 @@ class RoleRepository(BaseRepository):
         self.session_factory = session_factory
         super().__init__(session_factory, Role)
 
-    def get_all_roles(self):
+    def get_all_roles(self, role_type: str = None):
         with self.session_factory() as session:
+            if role_type:
+                return (
+                    session.query(self.model)
+                    .filter_by(role_type=role_type)
+                    .options(joinedload(self.model.permissions))
+                    .all()
+                )
             return (
                 session.query(self.model)
                 .options(joinedload(self.model.permissions))
