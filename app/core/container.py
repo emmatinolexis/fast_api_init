@@ -49,6 +49,7 @@ from app.repository import (
     subscription_repository,
     team_member_invitation_repository,
     theft_incidence_repository,
+    theft_report_repository,
     tracking_event_repository,
     user_organisation_assignment_repository,
     user_repository,
@@ -93,6 +94,7 @@ from app.service import (
     subscription_payment_service,
     subscription_service,
     theft_incidence_service,
+    theft_report_service,
     tracking_event_service,
     user_service,
     user_subscription_service,
@@ -337,6 +339,11 @@ class Container(containers.DeclarativeContainer):
         session_factory=db.provided.session,
     )
 
+    theft_report_repository = providers.Factory(
+        theft_report_repository.TheftReportRepository,
+        session_factory=db.provided.session,
+    )
+
     # Services
     auth_service = providers.Factory(
         auth_service.AuthService,
@@ -390,6 +397,7 @@ class Container(containers.DeclarativeContainer):
         device_repository=device_repository,
         immobilizer_report_repository=immobilizer_report_repository,
         theft_incidence_repository=theft_incidence_repository,
+        theft_report_repository=theft_report_repository,
     )
     asset_device_request_service = providers.Factory(
         asset_device_request_service.AssetDeviceRequestService,
@@ -539,4 +547,8 @@ class Container(containers.DeclarativeContainer):
     theft_incidence_service = providers.Factory(
         theft_incidence_service.TheftIncidenceService,
         theft_incidence_repository=theft_incidence_repository,
+    )
+    theft_report_service = providers.Factory(
+        theft_report_service.TheftReportService,
+        theft_report_repository=theft_report_repository,
     )
