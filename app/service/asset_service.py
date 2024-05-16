@@ -217,6 +217,13 @@ class AssetService(BaseService):
         except Exception as e:
             raise e
 
+    def mark_as_resolved(self, incidence_uuid: str):
+        try:
+            report = self.theft_incidence_repository.mark_as_resolve(incidence_uuid)
+            return report
+        except Exception as e:
+            raise e
+
     def get_last_immobilizer_action(self, asset_uuid: str):
         try:
             action = self.immobilizer_report_repository.get_last_immobilizer_action(

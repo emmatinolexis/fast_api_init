@@ -342,10 +342,25 @@ async def get_all_incidence_handler(
     asset_service: AssetService = Depends(Provide[Container.asset_service]),
     current_user: User = Depends(get_current_user),
 ):
-    # return current_user
     try:
         incidence = asset_service.get_all_theft_incidence()
         return send_data(incidence)
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix} theft incidence"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/theft_incidence/{incident_uuid}/resolve", response_class=ORJSONResponse)
+@inject
+async def mark_incident_as_resolved_handler(
+    incident_uuid: str,
+    asset_service: AssetService = Depends(Provide[Container.asset_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        asset_service.mark_as_resolved(incident_uuid)
+        msg = "Successfully marked as resolved"
+        return send_info(msg)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix} theft incidence"
         return send_internal_server_error(user_msg=msg, error=e)

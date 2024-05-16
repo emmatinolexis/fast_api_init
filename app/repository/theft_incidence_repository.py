@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.core.security import extract_user_data
 from app.model.theft_incidence import TheftIncidence
 from app.repository.base_repository import BaseRepository
+from app.util.enums import IncidentStatus
 
 
 class TheftIncidenceRepository(BaseRepository):
@@ -37,3 +38,11 @@ class TheftIncidenceRepository(BaseRepository):
                 }
                 result.append(incidence_data)
             return result
+
+    def mark_as_resolve(self, incident_uuid: str):
+        with self.session_factory() as session:
+            incidence = session.query(self.model).filter_by(uuid=incident_uuid).first()
+            incidence.status = IncidentStatus.RESOLVED
+            session.commit()
+            session.refresh(incidence)
+            return incidence
