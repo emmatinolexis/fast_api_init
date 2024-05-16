@@ -121,6 +121,15 @@ class RoleType(str, Enum):
     ADMIN = "admin"
 
 
+class IncidentType(str, Enum):
+    THEFT = "theft"
+
+
+class IncidentStatus(str, Enum):
+    RESOLVED = "resolved"
+    UNRESOLVED = "unresolved"
+
+
 class OrderStatusRtd(str, Enum):
     IN_DELIVERY = "in_delivery"
     DELIVERED = "delivered"

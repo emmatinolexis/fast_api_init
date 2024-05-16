@@ -48,5 +48,7 @@ class User(BaseModel):
         "PhoneOtpToken", uselist=False, back_populates="user"
     )
 
+    theft_incidents = relationship("TheftIncidence", back_populates="user")
+
     asset_device_requests = relationship("AssetDeviceRequest", back_populates="user")
     # business_profile_assignments = relationship(UserOrganisationAssignment, back_populates='user')

@@ -11,8 +11,14 @@ from app.repository.equipment_repository import EquipmentRepository
 from app.repository.equipment_type_repository import EquipmentTypeRepository
 from app.repository.immobilizer_report_repository import ImmobilizerReportRepository
 from app.repository.subscription_repository import SubscriptionRepository
+from app.repository.theft_incidence_repository import TheftIncidenceRepository
 from app.repository.user_repository import UserRepository
-from app.schema.asset_schema import AssetInput, AssetPayload, AssignDeviceInputPayload
+from app.schema.asset_schema import (
+    AssetInput,
+    AssetPayload,
+    AssignDeviceInputPayload,
+    TheftIncidencePayload,
+)
 from app.service.base_service import BaseService
 from app.util.enums import PackageItemTrackerType
 
@@ -29,6 +35,7 @@ class AssetService(BaseService):
         subscription_repository: SubscriptionRepository,
         device_repository: DeviceRepository,
         immobilizer_report_repository: ImmobilizerReportRepository,
+        theft_incidence_repository: TheftIncidenceRepository,
     ):
         self.asset_repository = asset_repository
         self.asset_type_repository = asset_type_repository
@@ -39,6 +46,7 @@ class AssetService(BaseService):
         self.subscription_repository = subscription_repository
         self.device_repository = device_repository
         self.immobilizer_report_repository = immobilizer_report_repository
+        self.theft_incidence_repository = theft_incidence_repository
         super().__init__(asset_repository)
 
     def create_asset(self, asset: AssetPayload):
@@ -195,6 +203,20 @@ class AssetService(BaseService):
         except Exception as e:
             raise e
 
+    def report_theft_activity(self, payload: TheftIncidencePayload):
+        try:
+            report = self.theft_incidence_repository.create(payload)
+            return report
+        except Exception as e:
+            raise e
+
+    def get_all_theft_incidence(self):
+        try:
+            report = self.theft_incidence_repository.get_all_incidence()
+            return report
+        except Exception as e:
+            raise e
+
     def get_last_immobilizer_action(self, asset_uuid: str):
         try:
             action = self.immobilizer_report_repository.get_last_immobilizer_action(
@@ -213,7 +235,7 @@ class AssetService(BaseService):
                 )
                 return asset_device
             else:
-                raise Exception(
+                raise NotFoundError(
                     f"There is no device associated with this asset:{asset.asset_name} "
                 )
         except Exception as e:

@@ -16,10 +16,12 @@ from app.schema.asset_schema import (
     AssignDeviceInputPayload,
     EngineOnPayload,
     ImmobilizerPayload,
+    TheftIncidencePayload,
 )
 from app.service.asset_device_request_service import AssetDeviceRequestService
 from app.service.asset_service import AssetService
 from app.service.tracking_event_service import TrackingEventService
+from app.util.enums import ImmobilizerReason, IncidentStatus, IncidentType
 from app.util.sms import send_sms
 from app.util.utils import (
     send_client_side_error,
@@ -264,6 +266,15 @@ async def shutdown_engine_request_handler(
 
             if sms_response:
                 asset_service.report_immobilizer_activity(shutdown_payload)
+                if shutdown_payload.reason == ImmobilizerReason.STOLEN:
+                    incidence_payload = TheftIncidencePayload(
+                        asset_uuid=shutdown_payload.asset_uuid,
+                        user_uuid=current_user.uuid,
+                        incident_type=IncidentType.THEFT,
+                        status=IncidentStatus.UNRESOLVED,
+                    )
+                    asset_service.report_theft_activity(incidence_payload)
+
                 return send_info("Engine shutdown initiated successfully")
             else:
                 msg = f"Failed to send SMS to {request.sim_phone_number}"
@@ -322,4 +333,19 @@ async def get_last_immobilizer_action(
         return send_data(action)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix} device requests"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/immobilizer/theft_incidence", response_class=ORJSONResponse)
+@inject
+async def get_all_incidence_handler(
+    asset_service: AssetService = Depends(Provide[Container.asset_service]),
+    current_user: User = Depends(get_current_user),
+):
+    # return current_user
+    try:
+        incidence = asset_service.get_all_theft_incidence()
+        return send_data(incidence)
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix} theft incidence"
         return send_internal_server_error(user_msg=msg, error=e)

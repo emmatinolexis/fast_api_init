@@ -13,6 +13,8 @@ from app.util.enums import (
     DriverType,
     ImmobilizerReason,
     ImmobilizerType,
+    IncidentStatus,
+    IncidentType,
 )
 
 
@@ -97,6 +99,13 @@ class AssetLocationPayload(BaseModel):
     asset_uuid: UUID
     longitude: Longitude
     latitude: Latitude
+
+
+class TheftIncidencePayload(BaseModel):
+    asset_uuid: UUID
+    user_uuid: UUID
+    incident_type: IncidentType
+    status: IncidentStatus
 
 
 class AssetLocationFetch(BaseModel):
