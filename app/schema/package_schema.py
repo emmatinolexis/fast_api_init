@@ -29,7 +29,7 @@ class PackagePayload(BaseModel):
 
 class PackageItemAssignmentPayload(BaseModel):
     package_item_uuids: List[UUID]
-    package_uuid: UUID
+    package_plan_code: str
 
     class Config:
         orm_model = True
@@ -37,7 +37,16 @@ class PackageItemAssignmentPayload(BaseModel):
 
 class PackageItemAssignmentInput(BaseModel):
     package_uuid: UUID
-    package_item_uuid: UUID
+    package_plan_code: str
+
+    class Config:
+        orm_model = True
+
+
+class PaystackPackagePlanPayload(BaseModel):
+    name: str
+    amount: int
+    description: str
 
     class Config:
         orm_model = True

@@ -2,6 +2,7 @@ import uuid
 
 from sqlalchemy import Column, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 from app.model.base_model import BaseModel
 
@@ -19,3 +20,4 @@ class UserOrganisationAssignment(BaseModel):
     business_profile_uuid = Column(
         UUID(as_uuid=True), ForeignKey("business_profiles.uuid"), nullable=False
     )
+    user = relationship("User", uselist=False)

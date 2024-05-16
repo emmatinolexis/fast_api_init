@@ -1,5 +1,3 @@
-from app.core import messages
-from app.core.exceptions import NotFoundError
 from app.repository.alert_maintenance_type_repository import (
     AlertMaintenanceTypeRepository,
 )
@@ -25,6 +23,7 @@ from app.schema.alert_policy_schema import (
     GeofenceAlertPolicyPayload,
 )
 from app.service.base_service import BaseService
+from app.util.enums import ActiveStatus, GeofenceShapeType
 
 
 class AlertPolicyService(BaseService):
@@ -55,197 +54,161 @@ class AlertPolicyService(BaseService):
 
     def get_all_alert_policies(self):
         try:
-            db_alert_policies = self.get_list()
-
-            alert_policies = []
-            for alert in db_alert_policies:
-                alert_recipients = (
-                    self.alert_notification_assignment_repository.read_all_by_uuid(
-                        alert.uuid
-                    )
-                )
-
-                recipients = [row.recipient for row in alert_recipients]
-
-                alert_notification_types = self.alert_policy_notification_type_assignment_repository.read_all_by_uuid(
-                    alert.uuid
-                )
-                alert_notification_types = [
-                    row.alert_notification_type for row in alert_notification_types
-                ]
-
-                alert_assets = (
-                    self.alert_policy_asset_assignment_repository.read_all_by_uuid(
-                        alert.uuid
-                    )
-                )
-                alert_assets = [row.asset_name for row in alert_assets]
-
-                alert_policy_type_name = self.alert_policy_repository.read_by_uuid(
-                    alert.uuid
-                ).alert_policy_type.name
-
-                alert_data = {
-                    "policy_name": alert.policy_name,
-                    "geofence_location_name": alert.geofence_location_name,
-                    "geofence_type": alert.geofence_type,
-                    "minimum_idle_time": alert.minimum_idle_time,
-                    "maintenance_alert_schedule": alert.maintenance_alert_schedule,
-                    "alert_policy_type": alert_policy_type_name,
-                    "maintenance_alert_type": alert.maintenance_alert_type.name,
-                    "alert_reciepients": recipients,
-                    "alert_notification_types": alert_notification_types,
-                    "alert_assets": alert_assets,
-                }
-
-                alert_policies.append({"alert_policy": alert_data})
-            return alert_policies
+            return self.alert_policy_repository.read_all_alert_policies()
         except Exception as e:
             raise e
 
-    def create_alert_policy(self, alert_policy: AlertPolicyPayload):
+    def get_all_alert_policies_by_user(self, user_uuid: str):
         try:
+            return self.alert_policy_repository.read_all_alert_policies_by_user(
+                user_uuid
+            )
+        except Exception as e:
+            raise e
+
+    def get_all_alert_violations_by_user(self, user_uuid: str):
+        try:
+            return self.alert_policy_repository.read_all_alert_violations_by_user(
+                user_uuid
+            )
+        except Exception as e:
+            raise e
+
+    def toggle_alert_status(self, alert_uuid: str):
+        try:
+            return self.alert_policy_repository.toggle_alert_status(alert_uuid)
+        except Exception as e:
+            raise e
+
+    def check_geofence_violation(self):
+        try:
+            return self.alert_policy_repository.check_geofence_violation()
+        except Exception as e:
+            raise e
+
+    def create_alert_policy(self, alert_policy: AlertPolicyPayload, user_uuid: str):
+        try:
+            self.validate_alert_policy(alert_policy)
+
             # create policy
             alert_policy_data = AlertPolicyInput(
                 policy_name=alert_policy.policy_name,
                 alert_policy_type_uuid=alert_policy.alert_policy_type_uuid,
-                geofence_location_name=alert_policy.geofence_location_name,
-                geofence_type=alert_policy.geofence_type,
                 minimum_idle_time=alert_policy.minimum_idle_time,
                 maintenance_alert_type_uuid=alert_policy.maintenance_alert_policy_type_uuid,
                 maintenance_alert_schedule=alert_policy.maintenance_alert_schedule,
+                maximum_speed_limit=alert_policy.maximum_speed_limit,
+                user_uuid=user_uuid,
+                status=ActiveStatus.ACTIVE,
             )
-
-            if (
-                self.alert_policy_type_repository.read_by_uuid(
-                    alert_policy.alert_policy_type_uuid
-                )
-                is None
-            ):
-                raise NotFoundError(
-                    detail=messages.ALERT_POLICY_TYPE_NOT_FOUND
-                    + str(alert_policy.alert_policy_type_uuid)
-                )
-
-            if (
-                self.alert_maintenance_type_repository.read_by_uuid(
-                    alert_policy.maintenance_alert_policy_type_uuid
-                )
-                is None
-            ):
-                raise NotFoundError(
-                    detail=messages.ALERT_MAINTENANCE_TYPE_NOT_FOUND
-                    + str(alert_policy.maintenance_alert_policy_type_uuid)
-                )
-
-            for item in alert_policy.alert_assets:
-                if self.asset_repository.read_by_uuid(item) is None:
-                    raise NotFoundError(detail=messages.ASSET_NOT_FOUND + str(item))
 
             created_policy = self.add(alert_policy_data)
 
-            # create alert reciepients
-            for item in alert_policy.alert_reciepients:
-                alert_recipients_data = {
-                    "alert_policy_uuid": created_policy.uuid,
-                    "reciepient": item,
-                }
-                self.alert_notification_assignment_repository.create(
-                    AlertNotificationAssignment(**alert_recipients_data)
-                )
+            # create alert recipients
+            self.assign_alert_recipients(alert_policy, created_policy)
 
             # create alert types
-            for item in alert_policy.alert_types:
-                alert_types_data = {
-                    "alert_policy_uuid": created_policy.uuid,
-                    "alert_notification_type": item,
-                }
-                self.alert_policy_notification_type_assignment_repository.create(
-                    AlertPolicyNotificationTypeAssignment(**alert_types_data)
-                )
+            self.assign_alert_types(alert_policy, created_policy)
 
             # create alert assets
-            for item in alert_policy.alert_assets:
-                alert_assets_data = {
-                    "alert_policy_uuid": created_policy.uuid,
-                    "asset_uuid": item,
-                }
-                self.alert_policy_asset_assignment_repository.create(
-                    AlertPolicyAssetAssignment(**alert_assets_data)
-                )
+            self.assign_alert_assets(alert_policy, created_policy)
 
-            return alert_policy_data
+            return created_policy
         except Exception as e:
             raise e
 
-    def create_geofence_alert_policy(self, alert_policy: GeofenceAlertPolicyPayload):
+    def create_geofence_alert_policy(
+        self, alert_policy: GeofenceAlertPolicyPayload, user_uuid
+    ):
         try:
-            geofence_data_wkt = []
+            self.validate_alert_policy(alert_policy)
+            created_policy = self.create_alert_geofence_policy(alert_policy, user_uuid)
+            self.assign_alert_recipients(alert_policy, created_policy)
+            self.assign_alert_types(alert_policy, created_policy)
+            self.assign_alert_assets(alert_policy, created_policy)
+            return created_policy
+        except Exception as e:
+            raise e
 
-            for coordinates in alert_policy.geofence_data:
-                latitude = coordinates.latitude
-                longitude = coordinates.longitude
-                point = {"latitude": latitude, "longitude": longitude}
+    def validate_alert_policy(self, alert_policy):
+        if (
+            self.alert_policy_type_repository.read_by_uuid(
+                alert_policy.alert_policy_type_uuid
+            )
+            is None
+        ):
+            raise Exception("Alert policy type not found")
+        for item in alert_policy.alert_assets:
+            if self.asset_repository.read_by_uuid(item) is None:
+                msg = f"Asset: {item} not found"
+                raise Exception(msg)
 
-                geofence_data_wkt.append(point)
+                # raise NotFoundError(detail=messages.ASSET_NOT_FOUND + str(item))
 
-            # create policy
+    def create_alert_geofence_policy(self, alert_policy, user_uuid):
+        if alert_policy.geofence_shape_type == GeofenceShapeType.CIRCULAR:
             alert_policy_data = GeofenceAlertPolicyInput(
                 policy_name=alert_policy.policy_name,
                 alert_policy_type_uuid=alert_policy.alert_policy_type_uuid,
                 geofence_location_name=alert_policy.geofence_location_name,
                 geofence_type=alert_policy.geofence_type,
-                geofence_data=geofence_data_wkt,
+                geofence_coordinate_data=alert_policy.circle_geofence_data,
+                geofence_shape_type=alert_policy.geofence_shape_type,
+                user_uuid=user_uuid,
+                status=ActiveStatus.ACTIVE,
+            )
+        else:
+            geofence_data_wkt = self.create_geofence_data_wkt(alert_policy)
+
+            alert_policy_data = GeofenceAlertPolicyInput(
+                policy_name=alert_policy.policy_name,
+                alert_policy_type_uuid=alert_policy.alert_policy_type_uuid,
+                geofence_location_name=alert_policy.geofence_location_name,
+                geofence_type=alert_policy.geofence_type,
+                geofence_coordinate_data=geofence_data_wkt,
+                geofence_shape_type=alert_policy.geofence_shape_type,
+                user_uuid=user_uuid,
+                status=ActiveStatus.ACTIVE,
+            )
+        return self.add(alert_policy_data)
+
+    def create_geofence_data_wkt(self, alert_policy):
+        geofence_data_wkt = []
+        if alert_policy.geofence_shape_type is not GeofenceShapeType.CIRCULAR:
+            for coordinates in alert_policy.geofence_coordinate_data:
+                latitude = coordinates.latitude
+                longitude = coordinates.longitude
+                point = {"latitude": latitude, "longitude": longitude}
+
+                geofence_data_wkt.append(point)
+        return geofence_data_wkt
+
+    def assign_alert_recipients(self, alert_policy, created_policy):
+        for item in alert_policy.alert_recipients:
+            alert_recipients_data = {
+                "alert_policy_uuid": created_policy.uuid,
+                "recipient": item,
+            }
+            self.alert_notification_assignment_repository.create(
+                AlertNotificationAssignment(**alert_recipients_data)
             )
 
-            if (
-                self.alert_policy_type_repository.read_by_uuid(
-                    alert_policy.alert_policy_type_uuid
-                )
-                is None
-            ):
-                raise NotFoundError(
-                    detail=messages.ALERT_POLICY_TYPE_NOT_FOUND
-                    + str(alert_policy.alert_policy_type_uuid)
-                )
+    def assign_alert_types(self, alert_policy, created_policy):
+        for item in alert_policy.alert_types:
+            alert_types_data = {
+                "alert_policy_uuid": created_policy.uuid,
+                "alert_notification_type": item,
+            }
+            self.alert_policy_notification_type_assignment_repository.create(
+                AlertPolicyNotificationTypeAssignment(**alert_types_data)
+            )
 
-            # assign assets
-            for item in alert_policy.alert_assets:
-                if self.asset_repository.read_by_uuid(item) is None:
-                    raise NotFoundError(detail=messages.ASSET_NOT_FOUND + str(item))
-
-            created_policy = self.add(alert_policy_data)
-
-            # create alert reciepients
-            for item in alert_policy.alert_recipients:
-                alert_recipients_data = {
-                    "alert_policy_uuid": created_policy.uuid,
-                    "recipient": item,
-                }
-                self.alert_notification_assignment_repository.create(
-                    AlertNotificationAssignment(**alert_recipients_data)
-                )
-
-            # create alert types
-            for item in alert_policy.alert_types:
-                alert_types_data = {
-                    "alert_policy_uuid": created_policy.uuid,
-                    "alert_notification_type": item,
-                }
-                self.alert_policy_notification_type_assignment_repository.create(
-                    AlertPolicyNotificationTypeAssignment(**alert_types_data)
-                )
-
-            # create alert assets
-            for item in alert_policy.alert_assets:
-                alert_assets_data = {
-                    "alert_policy_uuid": created_policy.uuid,
-                    "asset_uuid": item,
-                }
-                self.alert_policy_asset_assignment_repository.create(
-                    AlertPolicyAssetAssignment(**alert_assets_data)
-                )
-
-            return alert_policy_data
-        except Exception as e:
-            raise e
+    def assign_alert_assets(self, alert_policy, created_policy):
+        for item in alert_policy.alert_assets:
+            alert_assets_data = {
+                "alert_policy_uuid": created_policy.uuid,
+                "asset_uuid": item,
+            }
+            self.alert_policy_asset_assignment_repository.create(
+                AlertPolicyAssetAssignment(**alert_assets_data)
+            )

@@ -10,7 +10,10 @@ from app.core.exceptions import ExpiredVerificationCodeError, NotFoundError
 from app.core.security import extract_user_data
 from app.core.settings import settings
 from app.model.user import User
-from app.schema.invitation_schema import InvitationCreatePayload
+from app.schema.invitation_schema import (
+    InvitationCreatePayload,
+    InvitationCreatePayloadSingle,
+)
 from app.schema.user_schema import (
     AccountDeactivationPayload,
     ResetPasswordPayload,
@@ -25,8 +28,12 @@ from app.service.invitation_service import InvitationService
 from app.service.phone_otp_service import PhoneOTPService
 from app.service.reset_password_service import ResetPassword
 from app.service.user_service import UserService
-from app.util.email import send_email, send_email_invitation, send_otp_email
-from app.util.enums import AccountType
+from app.util.email import (
+    send_email_invitation,
+    send_email_verification,
+    send_otp_email,
+)
+from app.util.enums import AccountType, EmailPurpose
 from app.util.utils import (
     allow_admins_only,
     send_client_side_error,
@@ -145,6 +152,40 @@ async def get_user_by_email(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
+@router.get("/{user_uuid}/user", response_class=ORJSONResponse)
+@inject
+async def get_user_by_uuid_handler(
+    user_uuid: str,
+    service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        user = service.get_user_by_uuid(user_uuid)
+        if user is None:
+            return send_client_side_error(user_msg=messages.USER_NOT_FOUND + user_uuid)
+        return send_data(user)
+    except Exception as e:
+        msg = messages.GET_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/accounts/{user_uuid}", response_class=ORJSONResponse)
+@inject
+async def user_account(
+    user_uuid: str,
+    service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        user = service.get_user_by_uuid(user_uuid)
+        if user is None:
+            return send_client_side_error(user_msg=messages.USER_NOT_FOUND + user_uuid)
+        return send_data(service.get_account_users(user_uuid))
+    except Exception as e:
+        msg = messages.GET_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
 @router.put("/password/{user_uuid}", response_class=ORJSONResponse)
 @inject
 async def change_password_handler(
@@ -170,6 +211,46 @@ async def change_password_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
+@router.put("/phone/{uuid}", response_class=ORJSONResponse)
+@inject
+async def update_phone_handler(
+    uuid: str,
+    payload: UpdatePhoneNumber,
+    service: UserService = Depends(Provide[Container.user_service]),
+    phone_otp_service: PhoneOTPService = Depends(Provide[Container.phone_otp_service]),
+    current_user: User = Depends(get_current_user),
+):
+    user = service.get_by_uuid(uuid)
+
+    if user is None:
+        return send_client_side_error(
+            user_msg=messages.USER_NOT_FOUND + uuid,
+        )
+
+    user_with_phone_number = service.get_user_by_phone_number(payload.phone_number)
+
+    # check if the given phone number is already associated with another user
+    if user_with_phone_number and not (user_with_phone_number.uuid == user.uuid):
+        return send_client_side_error(
+            user_msg=messages.PHONE_NUMBER_EXISTS + payload.phone_number
+        )
+
+    try:
+        service.patch_by_uuid(uuid, payload)
+        token = phone_otp_service.create_phone_verification_token(user.uuid)
+        await send_otp_email(
+            subject=settings.PHONE_OTP_SUBJECT,
+            recipient_name=user.first_name,
+            email=user.email_address,
+            otp=token,
+        )
+        msg = "Phone number update pending verification"
+        return send_info(f"{msg}")
+    except Exception as e:
+        msg = messages.CREATE_FAILED + f"token for user {uuid}"
+        return send_internal_server_error(user_msg=msg, error=str(e))
+
+
 @router.post("/password/{email_address}", response_class=ORJSONResponse)
 @inject
 async def send_password_link_handler(
@@ -188,14 +269,14 @@ async def send_password_link_handler(
         if reset_password_token:
             try:
                 # send verification email
-                await send_email(
-                    subject=settings.PASSWORD_RESET_MAIL_SUBJECT,
+                await send_email_verification(
                     recipient_name=found_user.first_name,
                     email=email_address,
                     message=settings.PASSWORD_RESET_MAIL_VERIFICATION_MESSAGE,
                     url=settings.RESET_PASSWORD_URL,
                     btn=settings.RESET_BTN,
                     token=reset_password_token,
+                    email_purpose=EmailPurpose.PASSWORD_RESET,
                 )
             except Exception as e:
                 return send_internal_server_error(
@@ -265,10 +346,10 @@ async def deactivate_account_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.post("/businesses/invitations/{uuid}", response_class=ORJSONResponse)
+@router.post("/businesses/invitations/{user_uuid}", response_class=ORJSONResponse)
 @inject
 async def create_team_member_invitation(
-    uuid: str,
+    user_uuid: str,
     payload: InvitationCreatePayload,
     service: UserService = Depends(Provide[Container.user_service]),
     invitation_service: InvitationService = Depends(
@@ -277,28 +358,40 @@ async def create_team_member_invitation(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        invitation_exists = invitation_service.get_invitation_by_email(payload.email)
+        for invitation in payload.invitations:
+            existing_user = service.get_user_by_email_address(invitation.email)
+            if existing_user:
+                msg = "User already exist, "
+                raise NotFoundError(detail=msg + f" email: {invitation.email}")
 
-        # we don't check if an invitation has expired
-        # if it has, use the resend invitation endpoint
-        if invitation_exists:
-            return send_client_side_error(
-                user_msg=f"Invitation already exists : {payload.email}",
+            invitation_exists = invitation_service.get_invitation_by_email(
+                invitation.email
+            )
+            if invitation_exists:
+                return send_client_side_error(
+                    user_msg=f"Invitation already exists : {invitation.email}",
+                )
+
+            user = service.get_by_uuid(user_uuid)
+            if not user:
+                raise NotFoundError(
+                    detail=messages.USER_NOT_FOUND + f" uuid: {str(user_uuid)}"
+                )
+
+            invitation_payload = InvitationCreatePayloadSingle(
+                email=invitation.email, role_uuid=invitation.role_uuid
             )
 
-        invitation = service.create_team_member_invitation(uuid, payload)
+            service.create_team_member_invitation(user_uuid, invitation_payload, user)
 
-        user = service.get_by_uuid(uuid)
-
-        # send email invite
-        await send_email_invitation(
-            subject=settings.EMAIL_INVITATION_SUBJECT,
-            recipient_name=payload.first_name,
-            email=payload.email,
-            invitee_name=f"{user.first_name} {user.last_name}",
-        )
-
-        return send_data(invitation)
+            # send email invite
+            await send_email_invitation(
+                recipient_name="",
+                email=invitation.email,
+                invitee_name=f"{user.first_name} {user.last_name}",
+            )
+        msg = "Invitations sent successfully"
+        return send_info(msg)
     except NotFoundError as e:
         return send_client_side_error(e.detail)
     except Exception as e:
@@ -306,59 +399,36 @@ async def create_team_member_invitation(
         return send_internal_server_error(user_msg=msg, error=str(e))
 
 
-@router.put("/phone/{uuid}", response_class=ORJSONResponse)
+@router.get("/businesses/invitations/{business_uuid}", response_class=ORJSONResponse)
 @inject
-async def update_phone_handler(
-    uuid: str,
-    payload: UpdatePhoneNumber,
-    service: UserService = Depends(Provide[Container.user_service]),
-    phone_otp_service: PhoneOTPService = Depends(Provide[Container.phone_otp_service]),
+async def get_all_user_invitations_handler(
+    business_uuid: str,
+    invitation_service: InvitationService = Depends(
+        Provide[Container.invitation_service]
+    ),
     current_user: User = Depends(get_current_user),
 ):
-    user = service.get_by_uuid(uuid)
-
-    if user is None:
-        return send_client_side_error(
-            user_msg=messages.USER_NOT_FOUND + uuid,
-        )
-
-    user_with_phone_number = service.get_user_by_phone_number(payload.phone_number)
-
-    # check if the given phone number is already associated with another user
-    if user_with_phone_number and not (user_with_phone_number.uuid == user.uuid):
-        return send_client_side_error(
-            user_msg=messages.PHONE_NUMBER_EXISTS + payload.phone_number
-        )
-
     try:
-        service.patch_by_uuid(uuid, payload)
-        token = phone_otp_service.create_phone_verification_token(user.uuid)
-        await send_otp_email(
-            subject=settings.PHONE_OTP_SUBJECT,
-            recipient_name=user.first_name,
-            email=user.email_address,
-            otp=token,
-        )
-        msg = "Phone number update pending verification"
-        return send_info(f"{msg}")
+        invitations = invitation_service.get_all_user_invites(business_uuid)
+        return send_data(invitations)
     except Exception as e:
-        msg = messages.CREATE_FAILED + f"token for user {uuid}"
-        return send_internal_server_error(user_msg=msg, error=str(e))
+        msg = messages.GET_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.post("/phone_verification/{uuid}", response_class=ORJSONResponse)
+@router.post("/phone_verification/{user_uuid}", response_class=ORJSONResponse)
 @inject
 async def phone_token_verification_handler(
-    uuid: str,
+    user_uuid: str,
     payload: UserPhoneVerificationToken,
     service: UserService = Depends(Provide[Container.user_service]),
     phone_otp_service: PhoneOTPService = Depends(Provide[Container.phone_otp_service]),
     current_user: User = Depends(Provide[get_current_user]),
 ):
-    user = service.get_by_uuid(uuid)
+    user = service.get_by_uuid(user_uuid)
     if not user:
         return send_client_side_error(
-            user_msg=messages.USER_NOT_FOUND + uuid,
+            user_msg=messages.USER_NOT_FOUND + user_uuid,
         )
 
     try:

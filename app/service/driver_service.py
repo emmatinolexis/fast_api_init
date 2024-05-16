@@ -27,6 +27,13 @@ class DriverService(BaseService):
         except Exception as e:
             raise e
 
+    def get_driver_by_phone_number(self, phone_number: str):
+        try:
+            driver = self.driver_repository.get_driver_phone_number(phone_number)
+            return driver
+        except Exception as e:
+            raise e
+
     def get_drivers_by_business_uuid(self, business_uuid: str):
         try:
             driver = self.driver_repository.get_drivers_by_business_uuid(business_uuid)
@@ -40,5 +47,11 @@ class DriverService(BaseService):
                 raise NotFoundError(detail=payload.asset_uuid)
             driver = self.driver_repository.update_by_uuid(uuid, payload)
             return driver
+        except Exception as e:
+            raise e
+
+    def unassign_driver(self, driver_uuid: str):
+        try:
+            return self.driver_repository.unassign_driver(driver_uuid)
         except Exception as e:
             raise e

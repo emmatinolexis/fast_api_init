@@ -1,0 +1,111 @@
+from dependency_injector.wiring import Provide, inject
+from fastapi import APIRouter, Depends
+from fastapi.responses import ORJSONResponse
+
+from app.core import messages
+from app.core.container import Container
+from app.core.dependencies import get_current_user
+from app.model.user import User
+from app.schema.permission_schema import PermissionPayload, RolePayload
+from app.service.permission_service import PermissionService
+from app.service.role_service import RoleService
+from app.util.enums import RoleType
+from app.util.utils import send_data, send_internal_server_error
+
+router = APIRouter(
+    prefix="/permissions",
+    tags=["Roles and permissions"],
+)
+msg_prefix = "permission"
+
+
+@router.get("/", response_class=ORJSONResponse)
+@inject
+async def get_all_permissions_handler(
+    service: PermissionService = Depends(Provide[Container.permission_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        return send_data(service.get_list())
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.post("/", response_class=ORJSONResponse)
+@inject
+async def create_permission_handler(
+    payload: PermissionPayload,
+    service: PermissionService = Depends(Provide[Container.permission_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        permission = service.add(payload)
+        return send_data(permission)
+    except Exception as e:
+        msg = messages.CREATE_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/roles", response_class=ORJSONResponse)
+@inject
+async def get_all_roles_handler(
+    role_type: RoleType = None,
+    service: RoleService = Depends(Provide[Container.role_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        return send_data(service.get_all_roles(role_type))
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.post("/roles", response_class=ORJSONResponse)
+@inject
+async def create_role_handler(
+    payload: RolePayload,
+    service: RoleService = Depends(Provide[Container.role_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        role = service.create_role_permission(payload)
+        return send_data(role)
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.put("/roles/{role_uuid}", response_class=ORJSONResponse)
+@inject
+async def update_role_handler(
+    payload: RolePayload,
+    role_uuid: str,
+    service: RoleService = Depends(Provide[Container.role_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        role = service.get_by_uuid(role_uuid)
+        if role:
+            update_role = service.update_role(payload, role_uuid)
+            return send_data(update_role)
+        msg = "role not found"
+        return send_internal_server_error(user_msg=msg, error=msg)
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/role/{role_uuid}", response_class=ORJSONResponse)
+@inject
+async def get_role_handler(
+    role_uuid: str,
+    service: RoleService = Depends(Provide[Container.role_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        role = service.get_role(role_uuid)
+        return send_data(role)
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)

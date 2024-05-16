@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import List
+from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, field_validator
 
@@ -26,14 +27,16 @@ class Permissions(BaseModel):
         return attributes
 
 
-class InvitationCreatePayload(BaseModel):
-    first_name: str
-    last_name: str
+class InvitationCreatePayloadSingle(BaseModel):
     email: EmailStr
-    permissions: Permissions
+    role_uuid: UUID
 
 
-class InvitationPayload(InvitationCreatePayload):
+class InvitationCreatePayload(BaseModel):
+    invitations: List[InvitationCreatePayloadSingle]
+
+
+class InvitationPayload(InvitationCreatePayloadSingle):
     business_profile_uuid: str
     status: InvitationStatus = InvitationStatus.PENDING
     expired_at: datetime

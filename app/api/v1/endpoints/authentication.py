@@ -10,7 +10,7 @@ from app.core.settings import settings
 from app.schema.auth_schema import UserEmailVerification, VerifyToken
 from app.schema.user_schema import UserLogin
 from app.service.auth_service import AuthService
-from app.util.email import send_email
+from app.util.email import send_email_verification
 from app.util.utils import send_data, send_info, send_internal_server_error
 
 router = APIRouter(
@@ -79,8 +79,7 @@ async def verify_user_email(
         if user and token:
             try:
                 # send verification email
-                await send_email(
-                    subject=settings.MAIL_SUBJECT,
+                await send_email_verification(
                     recipient_name=user.first_name,
                     email=user.email_address,
                     message=settings.MAIL_VERIFICATION_MESSAGE,
@@ -109,4 +108,4 @@ async def login(
     except AuthError as e:
         return send_internal_server_error(user_msg=str(e.detail), error=e)
     except Exception as e:
-        return send_internal_server_error(user_msg="Could not login user", error=e)
+        return send_internal_server_error(user_msg="Invalid Credentials", error=e)

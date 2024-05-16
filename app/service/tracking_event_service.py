@@ -1,10 +1,10 @@
 from datetime import datetime
-from typing import Dict
 
+from app.core.constants import DISTANCE_UNIT, SPEED_UNIT
 from app.core.logger import get_logger
 from app.repository.tracking_event_repository import TrackingEventRepository
 from app.service.base_service import BaseService
-from app.util.utils import get_status
+from app.util.utils import get_distance_travelled_by_coordinates, get_status
 
 log = get_logger()
 
@@ -71,7 +71,7 @@ class TrackingEventService(BaseService):
         except Exception as e:
             raise e
 
-    def get_events_by_user(self, user_uuid: str, date: str) -> Dict[str, dict]:
+    def get_events_by_user(self, user_uuid: str, date: str):
         try:
             if not date:
                 date = datetime.now().strftime("%d/%m/%Y")
@@ -83,11 +83,12 @@ class TrackingEventService(BaseService):
             if device_events is None:
                 return {}
 
-            response = {}
+            response = []
 
             for device_imei, events in device_events.items():
                 device_response = {
                     "device_imei": device_imei,
+                    "asset_name": "",
                     "date": str(date),
                     "events": [],
                 }
@@ -95,6 +96,7 @@ class TrackingEventService(BaseService):
                 current_event = None
 
                 for event in events:
+                    device_response["asset_name"] = event.device.asset.asset_name
                     if current_event is None:
                         current_event = {
                             "status": get_status(event.event_type),
@@ -131,7 +133,7 @@ class TrackingEventService(BaseService):
                         }
                     )
 
-                response[device_imei] = device_response
+                response.append(device_response)
 
             return response
 
@@ -145,6 +147,65 @@ class TrackingEventService(BaseService):
             return self.tracking_event_repository.read_all_route_replay_events_by_device_imei(
                 device_imei, date
             )
+        except Exception as e:
+            raise e
+
+    def get_latest_tracking_event_by_device_imei(self, device_imei: str):
+        try:
+            return self.tracking_event_repository.read_latest_tracking_event_by_device_imei(
+                device_imei
+            )
+        except Exception as e:
+            raise e
+
+    def get_events_by_device_imei_by_date(self, device_imei: str, date: str):
+        try:
+            if not date:
+                date = datetime.now().strftime("%d/%m/%Y")
+            return self.tracking_event_repository.read_all_events_by_device_imei(
+                device_imei, date
+            )
+        except Exception as e:
+            raise e
+
+    def get_distance_travelled_by_device_imei(self, device_imei: str, date: str):
+        events = self.get_events_by_device_imei_by_date(device_imei, date)
+        if events is None:
+            return f"0 {DISTANCE_UNIT}"
+
+        coordinates = []
+
+        for event in events:
+            coordinates.append(
+                {"latitude": event.latitude, "longitude": event.longitude}
+            )
+
+        distance_travelled = get_distance_travelled_by_coordinates(coordinates)
+
+        return f"{distance_travelled} {DISTANCE_UNIT}"
+
+    def get_device_analytics(self, device_imei: str, date: str):
+        try:
+            latest_tracking_event = self.get_latest_tracking_event_by_device_imei(
+                device_imei
+            )
+
+            if latest_tracking_event is None:
+                return None
+
+            distance_travelled = self.get_distance_travelled_by_device_imei(
+                device_imei, date
+            )
+
+            return {
+                "status": get_status(latest_tracking_event.event_type),
+                "current_location": {
+                    "latitude": latest_tracking_event.latitude,
+                    "longitude": latest_tracking_event.longitude,
+                },
+                "current_speed": f"{latest_tracking_event.speed}{SPEED_UNIT}",
+                "distance_travelled": distance_travelled,
+            }
         except Exception as e:
             raise e
 

@@ -2,6 +2,7 @@ import uuid
 
 from sqlalchemy import Column, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 from app.model.base_model import BaseModel
 
@@ -19,3 +20,4 @@ class AlertPolicyAssetAssignment(BaseModel):
     alert_policy_uuid = Column(
         UUID(as_uuid=True), ForeignKey("alert_policies.uuid"), nullable=False
     )
+    asset = relationship("Asset", backref="alert_policy_assignments")

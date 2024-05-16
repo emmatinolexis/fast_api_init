@@ -16,16 +16,20 @@ from app.api.v1.endpoints.device_manufacturers import (
 from app.api.v1.endpoints.driver import router as driver_router
 from app.api.v1.endpoints.equipment import router as equipment_router
 from app.api.v1.endpoints.equipment_type import router as equipment_type_router
+from app.api.v1.endpoints.external_app import router as external_app_router
 from app.api.v1.endpoints.feature import router as feature_router
 from app.api.v1.endpoints.health_check import router as health_check_router
+from app.api.v1.endpoints.inventory import router as inventory_router
 from app.api.v1.endpoints.marker_icon import router as marker_icon_router
 from app.api.v1.endpoints.onboarding import router as onboarding_router
+from app.api.v1.endpoints.order import router as order_router
 from app.api.v1.endpoints.organisation_contact import (
     router as organisation_contact_router,
 )
 from app.api.v1.endpoints.package import router as package_router
 from app.api.v1.endpoints.package_item import router as package_item_router
 from app.api.v1.endpoints.payment import router as payment_router
+from app.api.v1.endpoints.permission import router as permission_router
 from app.api.v1.endpoints.subscription import router as subscription_router
 from app.api.v1.endpoints.subscription_payment import (
     router as subscription_payment_router,
@@ -51,6 +55,7 @@ router_list = [
     alert_policy_router,
     driver_router,
     device_router,
+    inventory_router,
     device_manufacturers_router,
     feature_router,
     organisation_contact_router,
@@ -59,6 +64,9 @@ router_list = [
     subscription_router,
     payment_router,
     subscription_payment_router,
+    order_router,
+    external_app_router,
+    permission_router,
 ]
 
 for router in router_list:

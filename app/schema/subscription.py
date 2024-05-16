@@ -2,7 +2,7 @@ from datetime import date
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 
 from app.util.enums import ActiveStatus, SubscriptionPeriod, SubscriptionTypes
 
@@ -16,6 +16,13 @@ class SubscriptionPayload(BaseModel):
     user_uuid: UUID
     package_uuid: UUID
     status: ActiveStatus
+
+
+class PaystackSubscriptionPayload(BaseModel):
+    plan: str
+    email: EmailStr
+    amount: int
+    callback_url: Optional[str]
 
     class Config:
         orm_model = True

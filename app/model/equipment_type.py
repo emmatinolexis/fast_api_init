@@ -2,6 +2,7 @@ import uuid
 
 from sqlalchemy import Column, Enum, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 from app.model.base_model import BaseModel
 from app.util.enums import ActiveStatus
@@ -23,3 +24,4 @@ class EquipmentType(BaseModel):
     equipment_uuid = Column(
         UUID(as_uuid=True), ForeignKey("equipments.uuid"), nullable=True
     )
+    equipment = relationship("Equipment", uselist=False)

@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Column, ForeignKey
+from sqlalchemy import Column, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -16,8 +16,9 @@ class PackageItemAssignment(BaseModel):
         unique=True,
         nullable=False,
     )
+    paystack_plan_code = Column(String(length=100), nullable=False)
     package_uuid = Column(
-        UUID(as_uuid=True), ForeignKey("packages.uuid"), nullable=False
+        UUID(as_uuid=True), ForeignKey("packages.uuid"), nullable=True
     )
     package_item_uuid = Column(
         UUID(as_uuid=True), ForeignKey("package_items.uuid"), nullable=False

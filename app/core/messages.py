@@ -16,6 +16,8 @@ DEVICE_NOT_FOUND = "No device was found with the given uuid : "
 DEVICE_MANUFACTURER_NOT_FOUND = (
     "No device manufacturer was found with the given uuid : "
 )
+ASSET_DEVICE_REQUEST_ALREADY_EXISTS = "Asset device request already exists"
+ASSET_DEVICE_REQUEST_CREATED = "Asset device request created successfully"
 SUBSCRIPTION_NOT_FOUND = "No subscription was found with the given uuid : "
 SUBSCRIPTION_PAYMENT_NOT_FOUND = (
     "No subscription payment was found with the given uuid : "

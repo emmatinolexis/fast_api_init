@@ -2,15 +2,22 @@ from contextlib import AbstractContextManager
 from datetime import date
 from typing import Callable, List, Tuple
 
+import requests
+from requests.exceptions import HTTPError
 from sqlalchemy import desc
 from sqlalchemy.orm import Session, joinedload
 
+from app.core.constants import FREE_PACKAGE, FREE_PACKAGE_ITEMS
+from app.core.settings import settings
 from app.model.business_profile import BusinessProfile
 from app.model.package import Package
+from app.model.package_item_assignment import PackageItemAssignment
 from app.model.plan_upgrade import PlanUpgrade
 from app.model.subscription import Subscription
 from app.model.user import User
+from app.model.user_subscription import UserSubscription
 from app.repository.base_repository import BaseRepository
+from app.schema.subscription import PaystackSubscriptionPayload
 from app.util.enums import ActiveStatus
 
 
@@ -27,6 +34,131 @@ class SubscriptionRepository(BaseRepository):
                 .options(joinedload(Subscription.package))
                 .all()
             )
+
+    def get_paystack_subscription(self, subscription_code: str):
+        with self.session_factory() as session:
+            paystack_subscription = requests.get(
+                settings.PAYSTACK_SUBSCRIPTION_URL + f"/{subscription_code}",
+                headers=settings.PAYSTACK_HEADERS,
+            )
+
+            paystack_subscription.raise_for_status()
+
+            if paystack_subscription.status_code == 200:
+                subscription = paystack_subscription.json()["data"]
+
+                user_email = subscription["customer"]["email"]
+
+                user = session.query(User).filter_by(email_address=user_email).first()
+                subscription["customer"]["first_name"] = user.first_name
+                subscription["customer"]["last_name"] = user.last_name
+                subscription["customer"]["phone"] = user.phone_number
+                subscription["customer"]["user_uuid"] = user.uuid
+
+                plan_code = subscription["plan"]["plan_code"]
+
+                package_items = (
+                    session.query(PackageItemAssignment)
+                    .filter(PackageItemAssignment.paystack_plan_code == plan_code)
+                    .options(joinedload(PackageItemAssignment.package_item))
+                    .all()
+                )
+
+                subscription["package_items"] = package_items
+
+                return subscription
+
+            return paystack_subscription.json()
+
+    def get_paystack_subscription_by_email(self, email: str):
+        with self.session_factory() as session:
+            user = (
+                session.query(UserSubscription)
+                .filter(UserSubscription.user_email == email)
+                .first()
+            )
+            if user:
+                paystack_subscription = self.get_paystack_subscription(
+                    user.subscription_code
+                )
+                # return paystack_subscription["package_items"]
+                subscription = {
+                    "package_name": paystack_subscription["plan"]["name"],
+                    "package_items": paystack_subscription["package_items"],
+                }
+                return subscription
+            else:
+                subscription = {
+                    "package_name": FREE_PACKAGE,
+                    "package_items": FREE_PACKAGE_ITEMS,
+                }
+            return subscription
+
+    def create_paystack_subscription(self, payload: PaystackSubscriptionPayload):
+        try:
+            # Create Paystack subscription
+            subscription_response = requests.post(
+                settings.PAYSTACK_INITIALIZE_SUBSCRIPTION_URL,
+                headers=settings.PAYSTACK_HEADERS,
+                json=payload.dict(),
+            )
+            subscription_response.raise_for_status()  # Raise exception for HTTP errors
+
+            # If successful, return subscription data
+            subscription_data = subscription_response.json()["data"]
+            return subscription_data
+
+        except HTTPError:
+            # If there's an HTTP error, return the error response from Paystack
+            error_message = subscription_response.json().get(
+                "message", "Unknown HTTP Error"
+            )
+            return f"Error creating subscription: {error_message}"
+
+        except Exception as err:
+            # For any other exceptions, return a generic error message
+            return f"Error creating subscription: {str(err)}"
+
+    def read_all_paystack_subscriptions(self):
+        with self.session_factory() as session:
+            paystack_subscription = requests.get(
+                settings.PAYSTACK_SUBSCRIPTION_URL,
+                headers=settings.PAYSTACK_HEADERS,
+            )
+
+            # return paystack_subscription.json()
+
+            if paystack_subscription.status_code == 200:
+                subscriptions = []
+                for subscription in paystack_subscription.json()["data"]:
+                    user_email = subscription["customer"]["email"]
+
+                    user = (
+                        session.query(User).filter_by(email_address=user_email).first()
+                    )
+
+                    if not user:
+                        return f"{user_email} not found"
+
+                    subscription["customer"]["first_name"] = user.first_name
+                    subscription["customer"]["last_name"] = user.last_name
+                    subscription["customer"]["phone"] = user.phone_number
+                    subscription["customer"]["user_uuid"] = user.uuid
+
+                    plan_code = subscription["plan"]["plan_code"]
+
+                    package_items = (
+                        session.query(PackageItemAssignment)
+                        .filter(PackageItemAssignment.paystack_plan_code == plan_code)
+                        .options(joinedload(PackageItemAssignment.package_item))
+                        .all()
+                    )
+
+                    subscription["package_items"] = package_items
+                    subscriptions.append(subscription)
+
+                return subscriptions
+            return paystack_subscription.json()
 
     def read_all_subscriptions(
         self, page=1, page_size=10

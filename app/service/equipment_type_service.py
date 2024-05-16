@@ -46,10 +46,12 @@ class EquipmentTypeService(BaseService):
                     equipment_uuid
                 )
             )
-
             if equipment_types:
                 return equipment_types
             else:
                 return None
         except Exception as e:
             raise e
+
+    def get_all_equipment_types(self):
+        return self.equipment_type_repository.get_all_equipment_types()

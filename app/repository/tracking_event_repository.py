@@ -3,10 +3,11 @@ from datetime import datetime
 from typing import Callable, Dict, List
 
 from sqlalchemy import Date, cast
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.core.constants import ALLOWED_EVENT_TYPES
 from app.model.asset import Asset
+from app.model.device import Device
 from app.model.tracking_event import TrackingEvent
 from app.repository.base_repository import BaseRepository
 from app.util.utils import get_status
@@ -17,9 +18,7 @@ class TrackingEventRepository(BaseRepository):
         self.session_factory = session_factory
         super().__init__(session_factory, TrackingEvent)
 
-    def read_all_events_by_device_imei(
-        self, device_imei: str, date: str
-    ) -> TrackingEvent:
+    def read_all_events_by_device_imei(self, device_imei: str, date: str):
         with self.session_factory() as session:
             query = (
                 session.query(self.model)
@@ -58,10 +57,12 @@ class TrackingEventRepository(BaseRepository):
                         == datetime.strptime(date, "%d/%m/%Y"),
                         self.model.event_type.in_(ALLOWED_EVENT_TYPES),
                     )
+                    .options(
+                        joinedload(self.model.device).joinedload(Device.asset),
+                    )
                     .order_by(self.model.event_datetime)
                     .all()
                 )
-
                 # Store the events for each device IMEI in the dictionary
                 events_by_device[device_imei] = query
 
@@ -96,3 +97,13 @@ class TrackingEventRepository(BaseRepository):
                 )
                 unique_entries.add((entry.latitude, entry.longitude, entry.course))
         return formatted_data
+
+    def read_latest_tracking_event_by_device_imei(self, device_imei: str):
+        with self.session_factory() as session:
+            query = (
+                session.query(self.model)
+                .filter(self.model.device_imei == device_imei)
+                .order_by(self.model.event_datetime.desc())
+                .first()
+            )
+            return query

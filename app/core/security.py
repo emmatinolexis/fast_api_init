@@ -18,6 +18,7 @@ from app.core.logger import get_logger
 from app.core.settings import settings
 from app.model.user import User
 from app.schema.auth_schema import TokenData
+from app.schema.external_app_schema import AppServiceTokenData
 from app.schema.user_schema import UserLogin
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -46,6 +47,15 @@ def generate_access_token(email: str, role: str) -> (str, str):
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     return create_access_token(
         data={"sub": email, "role": role}, expires_delta=access_token_expires
+    )
+
+
+def generate_access_token_for_third_party_app(
+    secret_key: str, expiry: int, role: str
+) -> (str, str):
+    access_token_expires = timedelta(minutes=expiry)
+    return create_access_token(
+        data={"sub": secret_key, "role": role}, expires_delta=access_token_expires
     )
 
 
@@ -85,6 +95,7 @@ def verify_token(token: str):
         payload = jwt.decode(
             token, settings.SECRET_KEY, algorithms=[settings.AUTH_ALGORITHM]
         )
+
         username: str = payload.get("sub")
         role: str = payload.get("role")
         if username is None:
@@ -93,6 +104,21 @@ def verify_token(token: str):
         return token_data
     except JWTError:
         raise NotVerifiedError(detail="Could not validate credentials")
+
+
+def verify_third_party_token(token: str):
+    try:
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.AUTH_ALGORITHM]
+        )
+        secret_key: str = payload.get("sub")
+        role: str = payload.get("role")
+        if secret_key is None:
+            raise NotVerifiedError(detail="Could not validate app key")
+        token_data = AppServiceTokenData(secret_key=secret_key, role=role)
+        return token_data
+    except JWTError:
+        raise NotVerifiedError(detail="Could not validate app key")
 
 
 def verify_token_frontend(token: str) -> bool:

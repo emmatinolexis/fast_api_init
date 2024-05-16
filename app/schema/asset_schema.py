@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -6,7 +6,16 @@ from pydantic_extra_types.coordinate import Latitude, Longitude
 
 from app.schema.equipment_schema import EquipmentPayload, EquipmentTypePayload
 from app.schema.marker_schema import MarkerIconPayload
-from app.util.enums import ActiveStatus, AssetStatus
+from app.util.enums import (
+    ActiveStatus,
+    AssetDeviceRequestStatus,
+    AssetStatus,
+    DriverType,
+    ImmobilizerReason,
+    ImmobilizerType,
+    IncidentStatus,
+    IncidentType,
+)
 
 
 class AssetTypePayload(BaseModel):
@@ -80,6 +89,7 @@ class AssetInput(BaseModel):
 
 class AssignDeviceInputPayload(BaseModel):
     device_imei: str
+    sim_phone_number: str
 
     class Config:
         orm_model = True
@@ -89,6 +99,13 @@ class AssetLocationPayload(BaseModel):
     asset_uuid: UUID
     longitude: Longitude
     latitude: Latitude
+
+
+class TheftIncidencePayload(BaseModel):
+    asset_uuid: UUID
+    user_uuid: UUID
+    incident_type: IncidentType
+    status: IncidentStatus
 
 
 class AssetLocationFetch(BaseModel):
@@ -103,7 +120,10 @@ class DriverPayload(BaseModel):
     user_uuid: UUID
     business_uuid: Optional[UUID] = None
     first_name: str
+    driver_type: DriverType
     last_name: str
+    email: str
+    status: ActiveStatus
     phone_number: str
     license_url: str
     profile_picture_url: str
@@ -112,3 +132,26 @@ class DriverPayload(BaseModel):
 class AlertMaintenanceTypePayload(BaseModel):
     name: str
     status: ActiveStatus
+
+
+class AssetDeviceRequest(BaseModel):
+    asset_uuids: List[UUID]
+    metrics: List[str]
+
+
+class CreateAssetDeviceRequestPayload(AssetDeviceRequest):
+    user_uuid: str
+    status: AssetDeviceRequestStatus = AssetDeviceRequestStatus.PENDING
+
+
+class ImmobilizerPayload(BaseModel):
+    reason: ImmobilizerReason
+    type: ImmobilizerType
+    user_uuid: UUID
+    asset_uuid: UUID
+
+
+class EngineOnPayload(BaseModel):
+    type: ImmobilizerType
+    user_uuid: UUID
+    asset_uuid: UUID

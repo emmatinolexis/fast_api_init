@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from prometheus_fastapi_instrumentator import Instrumentator
 from starlette.middleware.cors import CORSMiddleware
 
 from app.api.v1.routes import routers as v1_routers
@@ -21,6 +22,9 @@ class AppCreator:
         # set logger
         init_logger(settings.PROJECT_NAME, settings.GRAYLOG_HOST, settings.GRAYLOG_PORT)
 
+        # Initialize prometheus middleware
+        Instrumentator().instrument(self.app).expose(self.app)
+
         # set db and container
         self.container = Container()
         self.db = self.container.db()
@@ -31,7 +35,7 @@ class AppCreator:
         else:
             get_logger().error("Failed to connect to the PostgreSQL database")
 
-        # set mqtt
+        # set mqtt service
         self.mqtt_service = self.container.mqtt_service()
         self.mqtt_client = self.mqtt_service.connect_mqtt()
         self.mqtt_service.subscribe(self.mqtt_client)

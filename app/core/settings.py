@@ -1,6 +1,6 @@
 import os
 from functools import lru_cache
-from typing import List
+from typing import Dict, List
 
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
@@ -32,6 +32,33 @@ class Settings(BaseSettings):
         "PASSWORD_RESET_TOKEN_EXPIRE_DAYS", 3
     )
 
+    # paystack
+    PAYSTACK_API_KEY: str = os.getenv("PAYSTACK_API_KEY", "api_key")
+    PAYSTACK_PLAN_URL: str = os.getenv("PAYSTACK_PLAN_URL", "paystack_url")
+    PAYSTACK_SUBSCRIPTION_URL: str = os.getenv(
+        "PAYSTACK_SUBSCRIPTION_URL", "paystack_subscription_url"
+    )
+    PAYSTACK_INITIALIZE_SUBSCRIPTION_URL: str = os.getenv(
+        "PAYSTACK_INITIALIZE_SUBSCRIPTION_URL", "paystack_initialize_subscription_url"
+    )
+    PAYSTACK_PAYMENT_URL: str = os.getenv(
+        "PAYSTACK_PAYMENT_URL", "paystack_payment_url"
+    )
+    PAYSTACK_HEADERS: Dict[str, str] = {
+        "Authorization": f"Bearer {PAYSTACK_API_KEY}",
+        "Content-Type": "application/json",
+    }
+
+    RTD_SEND_ORDER_SIGNATURE: str = os.getenv("RTD_SEND_ORDER_SIGNATURE", "")
+
+    RTD_HEADERS: Dict[str, str] = {
+        "x-signature": RTD_SEND_ORDER_SIGNATURE,
+        "Content-Type": "application/json",
+    }
+    RTD_BASE_URL: str = os.getenv(
+        "RTD_BASE_URL", "https://rtd-uat.sageinfrastructure.net/api/v1/webhooks/mvi"
+    )
+
     # database
     DB_USER: str = os.getenv("DB_USER", "mvi_tracking_user")
     DB_PASSWORD: str = os.getenv("DB_PASSWORD", "mvi_tracking_pass")
@@ -58,18 +85,7 @@ class Settings(BaseSettings):
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = ["*"]
 
-    # mailing
-    MAIL_SERVER: str = os.getenv("MAIL_SERVER", "live.smtp.mailtrap.io")
-    MAIL_PORT: int = os.getenv("MAIL_PORT", 587)
-    MAIL_USE_TLS: bool = os.getenv("MAIL_USE_TLS", True)
-    MAIL_USE_SSL: bool = os.getenv("MAIL_USE_SSL", False)
-    MAIL_USERNAME: str = os.getenv("MAIL_USERNAME", "")
-    MAIL_PASSWORD: str = os.getenv("MAIL_PASSWORD", "")
-    MAIL_SUBJECT: str = os.getenv("MAIL_SUBJECT", "MVI tracking email verification")
-    PASSWORD_RESET_MAIL_SUBJECT: str = os.getenv(
-        "PASSWORD_RESET_MAIL_SUBJECT", "MVI tracking password reset"
-    )
-
+    # email
     MAIL_VERIFICATION_MESSAGE: str = os.getenv(
         "MAIL_VERIFICATION_MESSAGE",
         "Please use the button link below to verify your account and get started with MVI tracking solutions.",
@@ -79,17 +95,9 @@ class Settings(BaseSettings):
         "https://mvitracking-frontend.vercel.app/authentication/email-verification/",
     )
 
-    PHONE_OTP_SUBJECT: str = os.getenv(
-        "PHONE_OTP_SUBJECT", "MVI Tracking Phone Verification"
-    )
-
     RESET_PASSWORD_URL: str = os.getenv(
         "RESET_PASSWORD_URL",
         "https://mvitracking-frontend.vercel.app/authentication/set-password/",
-    )
-
-    EMAIL_INVITATION_SUBJECT: str = os.getenv(
-        "EMAIL_INVITATION_SUBJECT", "MVI Tracking System Admin Invitation"
     )
 
     RESET_BTN: str = os.getenv("RESET_BTN", "Reset Password")
@@ -106,6 +114,16 @@ class Settings(BaseSettings):
     MQTT_TOPIC: str = os.getenv("MQTT_TOPIC", "tracking/events")
     MQTT_USERNAME: str = os.getenv("MQTT_USERNAME", "admin")
     MQTT_PASSWORD: str = os.getenv("MQTT_PASSWORD", "public")
+
+    # echo parrot
+    ECHO_PARROT_HOST: str = os.getenv("ECHO_PARROT_HOST", "localhost")
+    ECHO_PARROT_PORT: int = os.getenv("ECHO_PARROT_PORT", 80)
+    SMS_SENDER_ID: str = os.getenv("SMS_SENDER_ID", "MoneyBQ")
+    SMS_SENDER_APP: str = os.getenv("SMS_SENDER_APP", "MVI")
+    SENDER_EMAIL: str = os.getenv(
+        "SENDER_EMAIL", "MVI Tracking <info@sagemicrosystems.net>"
+    )
+    SENDER_NAME: str = os.getenv("SENDER_NAME", "MVI Tracking")
 
     # find query
     PAGE: int = 1

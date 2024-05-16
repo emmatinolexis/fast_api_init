@@ -1,5 +1,6 @@
 from dependency_injector import containers, providers
 
+from app.client.echo_parrot import EchoParrot
 from app.client.mqtt_service import MQTTService
 from app.core.database import Database
 from app.core.settings import settings
@@ -10,65 +11,91 @@ from app.repository import (
     alert_policy_notification_type_assignment_repository,
     alert_policy_repository,
     alert_policy_type_repository,
+    asset_device_request_repository,
     asset_location_repository,
     asset_repository,
     asset_type_repository,
     business_profile_repository,
     contact_sale_repository,
+    device_image_repository,
     device_manufacturer_repository,
     device_repository,
     driver_repository,
     email_verification_repository,
     equipment_repository,
     equipment_type_repository,
+    external_app_repository,
     feature_repository,
+    immobilizer_report_repository,
+    inventory_repository,
     marker_icon_repository,
     onboarding_asset_type_assignment_repository,
     onboarding_feature_assignment_repository,
     onboarding_repository,
+    order_device_assignment_repository,
+    order_repository,
+    order_shipping_address_repository,
     organisation_contact_repository,
     package_item_repository,
     package_repository,
     payment_repository,
+    permission_repository,
     phone_otp_repository,
     plan_upgrade_repository,
     reset_password_repository,
+    role_permission_assignment_repository,
+    role_repository,
     subscription_payment_repository,
     subscription_repository,
     team_member_invitation_repository,
+    theft_incidence_repository,
     tracking_event_repository,
     user_organisation_assignment_repository,
     user_repository,
+    user_subscription_repository,
 )
 from app.service import (
     alert_maintenance_type_service,
     alert_policy_service,
     alert_policy_type_service,
+    asset_device_request_service,
     asset_location_service,
     asset_service,
     asset_type_service,
     auth_service,
     contact_sale_service,
+    device_image_service,
     device_manufacturer_service,
     device_service,
     driver_service,
     equipment_service,
     equipment_type_service,
+    external_app_service,
     feature_service,
+    immobilizer_report_service,
+    inventory_service,
     invitation_service,
     marker_icon_service,
     onboarding_service,
+    order_device_assignment_service,
+    order_service,
+    order_shipping_address_service,
     organisation_contact_service,
     package_item_service,
     package_service,
     payment_service,
+    permission_service,
     phone_otp_service,
     plan_updgrade_service,
     reset_password_service,
+    role_permission_assignment_service,
+    role_service,
     subscription_payment_service,
     subscription_service,
+    theft_incidence_service,
     tracking_event_service,
     user_service,
+    user_subscription_service,
 )
 
 
@@ -99,6 +126,10 @@ class Container(containers.DeclarativeContainer):
             "app.api.v1.endpoints.subscription",
             "app.api.v1.endpoints.payment",
             "app.api.v1.endpoints.subscription_payment",
+            "app.api.v1.endpoints.inventory",
+            "app.api.v1.endpoints.order",
+            "app.api.v1.endpoints.external_app",
+            "app.api.v1.endpoints.permission",
         ]
     )
 
@@ -111,6 +142,15 @@ class Container(containers.DeclarativeContainer):
         password=settings.MQTT_PASSWORD,
         topic=settings.MQTT_TOPIC,
         session_factory=db.provided.session,
+    )
+    echo_parrot = providers.Factory(
+        EchoParrot,
+        host=settings.ECHO_PARROT_HOST,
+        port=settings.ECHO_PARROT_PORT,
+        sender_id=settings.SMS_SENDER_ID,
+        sender_app=settings.SMS_SENDER_APP,
+        sender_email=settings.SENDER_EMAIL,
+        sender_name=settings.SENDER_NAME,
     )
 
     # Repositories
@@ -154,6 +194,10 @@ class Container(containers.DeclarativeContainer):
     )
     asset_repository = providers.Factory(
         asset_repository.AssetRepository, session_factory=db.provided.session
+    )
+    asset_device_request_repository = providers.Factory(
+        asset_device_request_repository.AssetDeviceRequestRepository,
+        session_factory=db.provided.session,
     )
     business_profile_repository = providers.Factory(
         business_profile_repository.BusinessProfileRepository,
@@ -244,16 +288,68 @@ class Container(containers.DeclarativeContainer):
         plan_upgrade_repository.PlanUpgradeRepository,
         session_factory=db.provided.session,
     )
+    user_subscription_repository = providers.Factory(
+        user_subscription_repository.UserSubscriptionRepository,
+        session_factory=db.provided.session,
+    )
+    inventory_repository = providers.Factory(
+        inventory_repository.InventoryRepository,
+        session_factory=db.provided.session,
+    )
+    device_image_repository = providers.Factory(
+        device_image_repository.DeviceImageRepository,
+        session_factory=db.provided.session,
+    )
+    order_repository = providers.Factory(
+        order_repository.OrderRepository,
+        session_factory=db.provided.session,
+    )
+    order_device_assignment_repository = providers.Factory(
+        order_device_assignment_repository.OrderDeviceAssignmentRepository,
+        session_factory=db.provided.session,
+    )
+    order_shipping_address_repository = providers.Factory(
+        order_shipping_address_repository.OrderShippingAddressRepository,
+        session_factory=db.provided.session,
+    )
+    external_app_repository = providers.Factory(
+        external_app_repository.ExternalAppRepository,
+        session_factory=db.provided.session,
+    )
+    immobilizer_report_repository = providers.Factory(
+        immobilizer_report_repository.ImmobilizerReportRepository,
+        session_factory=db.provided.session,
+    )
+    permissions_repository = providers.Factory(
+        permission_repository.PermissionRepository,
+        session_factory=db.provided.session,
+    )
+    role_repository = providers.Factory(
+        role_repository.RoleRepository,
+        session_factory=db.provided.session,
+    )
+    role_permission_assignment_repository = providers.Factory(
+        role_permission_assignment_repository.RolePermissionAssignmentRepository,
+        session_factory=db.provided.session,
+    )
+    theft_incidence_repository = providers.Factory(
+        theft_incidence_repository.TheftIncidenceRepository,
+        session_factory=db.provided.session,
+    )
 
     # Services
     auth_service = providers.Factory(
         auth_service.AuthService,
         user_repository=user_repository,
         email_verification_repository=email_verfication_repository,
+        user_subscription_repository=user_subscription_repository,
+        subscription_repository=subscription_repository,
     )
     user_service = providers.Factory(
         user_service.UserService,
         user_repository=user_repository,
+        user_subscription_repository=user_subscription_repository,
+        subscription_repository=subscription_repository,
         invitation_repository=team_member_invitation_repository,
     )
     alert_policy_type_service = providers.Factory(
@@ -289,8 +385,16 @@ class Container(containers.DeclarativeContainer):
         user_repository=user_repository,
         equipment_repository=equipment_repository,
         equipment_type_repository=equipment_type_repository,
-        # marker_icon_repository=marker_icon_repository,
         driver_repository=driver_repository,
+        subscription_repository=subscription_repository,
+        device_repository=device_repository,
+        immobilizer_report_repository=immobilizer_report_repository,
+        theft_incidence_repository=theft_incidence_repository,
+    )
+    asset_device_request_service = providers.Factory(
+        asset_device_request_service.AssetDeviceRequestService,
+        asset_device_request_repository=asset_device_request_repository,
+        asset_repository=asset_repository,
     )
     contact_sale_service = providers.Factory(
         contact_sale_service.ContactSaleService,
@@ -337,9 +441,7 @@ class Container(containers.DeclarativeContainer):
         feature_repository=feature_repository,
         onboarding_repository=onboarding_repository,
         onboarding_feature_assignment_repository=onboarding_feature_assignment_repository,
-        onboarding_asset_type_assignment_repository=onboarding_asset_type_assignment_repository
-        # business_profile_repository=business_profile_repository,
-        # user_organisation_assignment_repository=user_organisation_assignment_repository,
+        onboarding_asset_type_assignment_repository=onboarding_asset_type_assignment_repository,
     )
     organisation_contact_service = providers.Factory(
         organisation_contact_service.OrganisationContactService,
@@ -382,4 +484,59 @@ class Container(containers.DeclarativeContainer):
     plan_upgrade_service = providers.Factory(
         plan_updgrade_service.PlanUpgradeService,
         plan_upgrade_repository=plan_upgrade_repository,
+    )
+    user_subscription_service = providers.Factory(
+        user_subscription_service.UserSubscriptionService,
+        user_subscription_repository=user_subscription_repository,
+    )
+    inventory_service = providers.Factory(
+        inventory_service.InventoryService,
+        inventory_repository=inventory_repository,
+        device_repository=device_repository,
+        device_image_repository=device_image_repository,
+    )
+    device_image_service = providers.Factory(
+        device_image_service.DeviceImageService,
+        device_image_repository=device_image_repository,
+    )
+    order_service = providers.Factory(
+        order_service.OrderService,
+        order_repository=order_repository,
+        order_device_assignment_repository=order_device_assignment_repository,
+        order_shipping_address_repository=order_shipping_address_repository,
+        inventory_repository=inventory_repository,
+        device_repository=device_repository,
+    )
+    order_device_assignment_service = providers.Factory(
+        order_device_assignment_service.OrderDeviceAssignmentService,
+        order_device_assignment_repository=order_device_assignment_repository,
+    )
+    order_shipping_address_service = providers.Factory(
+        order_shipping_address_service.OrderShippingAddressService,
+        order_shipping_address_repository=order_shipping_address_repository,
+    )
+    external_app_service = providers.Factory(
+        external_app_service.ExternalAppService,
+        external_app_repository=external_app_repository,
+    )
+    immobilizer_report_service = providers.Factory(
+        immobilizer_report_service.ImmobilizerReportService,
+        immobilizer_report_repository=immobilizer_report_repository,
+    )
+    permission_service = providers.Factory(
+        permission_service.PermissionService,
+        permission_repository=permissions_repository,
+    )
+    role_service = providers.Factory(
+        role_service.RoleService,
+        role_repository=role_repository,
+        role_permission_assignment_repository=role_permission_assignment_repository,
+    )
+    role_permission_assignment_service = providers.Factory(
+        role_permission_assignment_service.RolePermissionAssignmentService,
+        role_permission_assignment_repositoryrepository=role_permission_assignment_repository,
+    )
+    theft_incidence_service = providers.Factory(
+        theft_incidence_service.TheftIncidenceService,
+        theft_incidence_repository=theft_incidence_repository,
     )

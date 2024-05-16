@@ -7,6 +7,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app.core.logger import get_logger
 from app.model.tracking_event import TrackingEvent
+from app.monitoring.metrics import MSG_RECEIVED_TOTAL
 from app.schema.mqtt_data import MQTTDataPayload
 
 log = get_logger()
@@ -93,11 +94,21 @@ class MQTTService:
                     session.add(query)
                     session.commit()
                     session.refresh(query)
+
+                    log.info(f"Event saved to database: {event_received}")
+                    MSG_RECEIVED_TOTAL.labels(
+                        device_type=event.device_type, success=True
+                    ).inc()
                 except IntegrityError as e:
                     log.error(f"Integrity Error: {e}")
+                    MSG_RECEIVED_TOTAL.labels(
+                        device_type=event.device_type, success=False
+                    ).inc()
                 except Exception as e:
                     log.error(f"Exception: {e}")
-                log.info(f"Event saved to database: {event_received}")
+                    MSG_RECEIVED_TOTAL.labels(
+                        device_type=event.device_type, success=False
+                    ).inc()
 
         try:
             log.info(f"Subscribing to topic: {self.topic}")

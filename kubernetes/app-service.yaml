@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mvi-tracking-app
+  namespace: apps
+  labels:
+    app: mvi-tracking-app 
+spec:
+  selector:
+    app: mvi-tracking-app 
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+      protocol: TCP

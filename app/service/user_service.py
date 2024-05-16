@@ -4,12 +4,18 @@ from uuid import UUID
 from pydantic import EmailStr
 
 from app.core import messages
+from app.core.constants import FREE_PACKAGE, FREE_PACKAGE_ITEMS
 from app.core.exceptions import NotFoundError
+from app.repository.subscription_repository import SubscriptionRepository
 from app.repository.team_member_invitation_repository import (
     TeamMemberInvitationRepository,
 )
 from app.repository.user_repository import UserRepository
-from app.schema.invitation_schema import InvitationCreatePayload, InvitationPayload
+from app.repository.user_subscription_repository import UserSubscriptionRepository
+from app.schema.invitation_schema import (
+    InvitationCreatePayloadSingle,
+    InvitationPayload,
+)
 from app.schema.user_schema import (
     AccountDeactivationPayload,
     UpdateUserPayload,
@@ -23,14 +29,21 @@ class UserService(BaseService):
     def __init__(
         self,
         user_repository: UserRepository,
+        user_subscription_repository: UserSubscriptionRepository,
         invitation_repository: TeamMemberInvitationRepository,
+        subscription_repository: SubscriptionRepository,
     ):
         self.user_repository = user_repository
         self.invitation_repository = invitation_repository
+        self.user_subscription_repository = user_subscription_repository
+        self.subscription_repository = subscription_repository
         super().__init__(user_repository)
 
     def create_user(self, payload: UserPayload):
         return self.user_repository.create_user(payload)
+
+    def get_account_users(self, user_uuid: str):
+        return self.user_repository.get_account_users(user_uuid)
 
     def update_user_by_uuid(self, uuid: str, payload: UpdateUserPayload):
         try:
@@ -48,6 +61,39 @@ class UserService(BaseService):
         try:
             user = self.user_repository.get_user_by_email_address(email)
             return user if user else None
+        except Exception as e:
+            raise e
+
+    def get_user_by_uuid(self, user_uuid: str):
+        try:
+            user = self.user_repository.get_user_by_uuid(user_uuid)
+
+            user_plan = self.user_subscription_repository.get_user_subscription(
+                user.get("email_address")
+            )
+
+            if user_plan:
+                paystack_subscription = (
+                    self.subscription_repository.get_paystack_subscription(
+                        user_plan.subscription_code
+                    )
+                )
+
+                user_package = {
+                    "package_name": paystack_subscription["plan"]["name"],
+                    "package_items": paystack_subscription["package_items"],
+                }
+                # return user_package
+            else:
+                user_package = {
+                    "package_name": FREE_PACKAGE,
+                    "package_items": FREE_PACKAGE_ITEMS,
+                }
+
+            user["package"] = user_package
+
+            return user if user else None
+
         except Exception as e:
             raise e
 
@@ -87,25 +133,17 @@ class UserService(BaseService):
             raise e
 
     def create_team_member_invitation(
-        self, uuid: str, payload: InvitationCreatePayload
+        self, uuid: str, payload: InvitationCreatePayloadSingle, user: dict
     ):
-        user = self.get_by_uuid(uuid)
-        if not user:
-            raise NotFoundError(detail=messages.USER_NOT_FOUND + f" uuid: {str(uuid)}")
-
         if not user.business_profile_uuid:
             raise NotFoundError(detail=messages.BUSINESS_PROFILE_NOT_FOUND + str(uuid))
-
-        # return user.business_profile_uuid
 
         try:
             return self.invitation_repository.create_invitation(
                 payload=InvitationPayload(
                     business_profile_uuid=str(user.business_profile_uuid),
-                    first_name=payload.first_name,
-                    last_name=payload.last_name,
                     email=payload.email,
-                    permissions=payload.permissions,
+                    role_uuid=payload.role_uuid,
                     status=InvitationStatus.PENDING,
                     expired_at=datetime.now() + timedelta(days=3),
                 )

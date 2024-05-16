@@ -44,6 +44,10 @@ async def create_driver_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
+        existing_driver = service.get_driver_by_phone_number(payload.phone_number)
+        if existing_driver:
+            msg = f"Driver already exists with phone number {payload.phone_number}"
+            return send_internal_server_error(user_msg=msg, error=msg)
         driver = service.create_driver(payload)
         return send_data(driver)
     except Exception as e:
@@ -66,6 +70,21 @@ async def update_driver_handler(
         return send_data(driver)
     except NotFoundError as e:
         return send_client_side_error(user_msg=messages.ASSET_NOT_FOUND + str(e.detail))
+    except Exception as e:
+        msg = messages.UPDATE_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.put("/unassign/{driver_uuid}", response_class=ORJSONResponse)
+@inject
+async def unassign_driver_handler(
+    driver_uuid: str,
+    service: DriverService = Depends(Provide[Container.driver_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        driver = service.unassign_driver(driver_uuid)
+        return send_data(driver)
     except Exception as e:
         msg = messages.UPDATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)

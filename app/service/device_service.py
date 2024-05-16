@@ -13,3 +13,24 @@ class DeviceService(BaseService):
             return devices
         except Exception as e:
             raise e
+
+    def get_user_data_by_device_uuid(self, device_imei: str):
+        try:
+            device = self.device_repository.get_user_data_by_device_uuid(device_imei)
+            return device
+        except Exception as e:
+            raise e
+
+    def get_all_devices(self):
+        try:
+            devices = self.device_repository.get_all_devices()
+            return devices
+        except Exception as e:
+            raise e
+
+    def assign_imei(self, device_uuid: str, imei: str):
+        try:
+            device = self.device_repository.assign_imei(device_uuid, imei)
+            return device
+        except Exception as e:
+            raise e

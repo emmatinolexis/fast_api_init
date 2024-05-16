@@ -5,11 +5,12 @@ from typing import Callable
 from pydantic import EmailStr
 from sqlalchemy.orm import Session, joinedload
 
-from app.core.security import hash_user_password, verify_password
+from app.core.security import extract_user_data, hash_user_password, verify_password
 from app.core.settings import settings
 from app.model.business_profile import BusinessProfile
 from app.model.email_verification import EmailVerification
 from app.model.user import User
+from app.model.user_organisation_assignment import UserOrganisationAssignment
 from app.repository.base_repository import BaseRepository
 from app.schema.auth_schema import EmailVerification as EmailVerficationSchema
 from app.schema.auth_schema import UserEmailVerification
@@ -65,6 +66,14 @@ class UserRepository(BaseRepository):
             session.commit()
             session.refresh(user)
             return user
+
+    def get_user_by_uuid(self, user_uuid: str):
+        with self.session_factory() as session:
+            user = (
+                session.query(self.model).filter(self.model.uuid == user_uuid).first()
+            )
+            user_data = extract_user_data(user)
+            return user_data
 
     def check_business_exists(self, name, email, phone):
         with self.session_factory() as session:
@@ -131,6 +140,45 @@ class UserRepository(BaseRepository):
             session.refresh(user)
             return user
 
+    def get_account_users(self, user_uuid):
+        with self.session_factory() as session:
+            user = self.get_user_by_uuid(user_uuid)
+            users_data = []
+            if user.get("account_type") == AccountType.BUSINESS:
+                business_profile = user.get("business_profile")
+                account_users = (
+                    session.query(UserOrganisationAssignment)
+                    .filter(
+                        UserOrganisationAssignment.business_profile_uuid
+                        == business_profile.uuid
+                    )
+                    .options(joinedload(UserOrganisationAssignment.user))
+                    .all()
+                )
+                for assignment in account_users:
+                    user_data = {
+                        "uuid": assignment.user.uuid,
+                        "first_name": assignment.user.first_name,
+                        "last_name": assignment.user.last_name,
+                        "email_address": assignment.user.email_address,
+                        "phone_number": assignment.user.phone_number,
+                    }
+                    users_data.append(user_data)
+                return users_data
+            account_users = (
+                session.query(self.model).filter(self.model.uuid == user_uuid).all()
+            )
+            for user in account_users:
+                user_data = {
+                    "uuid": user.uuid,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "email_address": user.email_address,
+                    "phone_number": user.phone_number,
+                }
+                users_data.append(user_data)
+            return users_data
+
     def create_user(self, user: UserPayload):
         with self.session_factory() as session:
             db_user = self.model(
@@ -150,6 +198,8 @@ class UserRepository(BaseRepository):
                 .filter(self.model.email_address == db_user.email_address)
                 .first()
             )
+
+            # assign the free plan for the user
 
             if user.account_type == AccountType.BUSINESS:
                 try:

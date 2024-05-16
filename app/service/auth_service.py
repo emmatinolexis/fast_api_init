@@ -2,6 +2,7 @@ from datetime import datetime
 
 from jose import jwt
 
+from app.core.constants import FREE_PACKAGE, FREE_PACKAGE_ITEMS
 from app.core.exceptions import (
     AlreadyVerifiedError,
     AuthError,
@@ -18,7 +19,9 @@ from app.core.security import (
 )
 from app.core.settings import settings
 from app.repository.email_verification_repository import EmailVerificationRepository
+from app.repository.subscription_repository import SubscriptionRepository
 from app.repository.user_repository import UserRepository
+from app.repository.user_subscription_repository import UserSubscriptionRepository
 from app.schema.auth_schema import UserEmailVerification, VerifyToken
 from app.schema.user_schema import UserLogin
 from app.service.base_service import BaseService
@@ -32,9 +35,13 @@ class AuthService(BaseService):
         self,
         user_repository: UserRepository,
         email_verification_repository: EmailVerificationRepository,
+        user_subscription_repository: UserSubscriptionRepository,
+        subscription_repository: SubscriptionRepository,
     ):
         self.user_repository = user_repository
         self.email_verification_repository = email_verification_repository
+        self.user_subscription_repository = user_subscription_repository
+        self.subscription_repository = subscription_repository
         super().__init__(user_repository)
 
     def login(self, login_info: UserLogin):
@@ -52,11 +59,36 @@ class AuthService(BaseService):
 
             user = extract_user_data(db_user)
 
-            # return user
+            user_plan = self.user_subscription_repository.get_user_subscription(
+                user.get("email_address")
+            )
+
+            if user_plan:
+                paystack_subscription = (
+                    self.subscription_repository.get_paystack_subscription(
+                        user_plan.subscription_code
+                    )
+                )
+
+                user_package = {
+                    "package_name": paystack_subscription["plan"]["name"],
+                    "package_items": paystack_subscription["package_items"],
+                }
+                # return user_package
+            else:
+                user_package = {
+                    "package_name": FREE_PACKAGE,
+                    "package_items": FREE_PACKAGE_ITEMS,
+                }
+
             access_token, expiration_datetime = generate_token_for_existing_user(
                 login_info, db_user
             )
+
             log.info("Access token generated successfully")
+
+            user["package"] = user_package
+
             login_result = {
                 "access_token": access_token,
                 "expiration": expiration_datetime,
