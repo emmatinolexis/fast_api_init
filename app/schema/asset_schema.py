@@ -108,6 +108,13 @@ class TheftIncidencePayload(BaseModel):
     status: IncidentStatus
 
 
+class TheftReportPayload(BaseModel):
+    title: str
+    report_details: str
+    theft_incident_uuid: UUID
+    user_uuid: UUID
+
+
 class AssetLocationFetch(BaseModel):
     asset_uuid: UUID
     longitude: str

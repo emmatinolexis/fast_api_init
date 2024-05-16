@@ -12,12 +12,14 @@ from app.repository.equipment_type_repository import EquipmentTypeRepository
 from app.repository.immobilizer_report_repository import ImmobilizerReportRepository
 from app.repository.subscription_repository import SubscriptionRepository
 from app.repository.theft_incidence_repository import TheftIncidenceRepository
+from app.repository.theft_report_repository import TheftReportRepository
 from app.repository.user_repository import UserRepository
 from app.schema.asset_schema import (
     AssetInput,
     AssetPayload,
     AssignDeviceInputPayload,
     TheftIncidencePayload,
+    TheftReportPayload,
 )
 from app.service.base_service import BaseService
 from app.util.enums import PackageItemTrackerType
@@ -36,6 +38,7 @@ class AssetService(BaseService):
         device_repository: DeviceRepository,
         immobilizer_report_repository: ImmobilizerReportRepository,
         theft_incidence_repository: TheftIncidenceRepository,
+        theft_report_repository: TheftReportRepository,
     ):
         self.asset_repository = asset_repository
         self.asset_type_repository = asset_type_repository
@@ -47,6 +50,7 @@ class AssetService(BaseService):
         self.device_repository = device_repository
         self.immobilizer_report_repository = immobilizer_report_repository
         self.theft_incidence_repository = theft_incidence_repository
+        self.theft_report_repository = theft_report_repository
         super().__init__(asset_repository)
 
     def create_asset(self, asset: AssetPayload):
@@ -210,6 +214,13 @@ class AssetService(BaseService):
         except Exception as e:
             raise e
 
+    def create_initial_incident_report(self, payload: TheftReportPayload):
+        try:
+            report = self.theft_report_repository.create(payload)
+            return report
+        except Exception as e:
+            raise e
+
     def get_all_theft_incidence(self):
         try:
             report = self.theft_incidence_repository.get_all_incidence()
@@ -220,6 +231,13 @@ class AssetService(BaseService):
     def mark_as_resolved(self, incidence_uuid: str):
         try:
             report = self.theft_incidence_repository.mark_as_resolve(incidence_uuid)
+            return report
+        except Exception as e:
+            raise e
+
+    def get_incident_reports(self, incidence_uuid: str):
+        try:
+            report = self.theft_report_repository.get_incident_reports(incidence_uuid)
             return report
         except Exception as e:
             raise e

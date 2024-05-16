@@ -17,9 +17,11 @@ from app.schema.asset_schema import (
     EngineOnPayload,
     ImmobilizerPayload,
     TheftIncidencePayload,
+    TheftReportPayload,
 )
 from app.service.asset_device_request_service import AssetDeviceRequestService
 from app.service.asset_service import AssetService
+from app.service.theft_report_service import TheftReportService
 from app.service.tracking_event_service import TrackingEventService
 from app.util.enums import ImmobilizerReason, IncidentStatus, IncidentType
 from app.util.sms import send_sms
@@ -267,13 +269,26 @@ async def shutdown_engine_request_handler(
             if sms_response:
                 asset_service.report_immobilizer_activity(shutdown_payload)
                 if shutdown_payload.reason == ImmobilizerReason.STOLEN:
-                    incidence_payload = TheftIncidencePayload(
+                    incident_payload = TheftIncidencePayload(
                         asset_uuid=shutdown_payload.asset_uuid,
                         user_uuid=current_user.uuid,
                         incident_type=IncidentType.THEFT,
                         status=IncidentStatus.UNRESOLVED,
                     )
-                    asset_service.report_theft_activity(incidence_payload)
+                    theft_incident = asset_service.report_theft_activity(
+                        incident_payload
+                    )
+
+                    incident_report_payload = TheftReportPayload(
+                        title=f"{current_user.first_name} {current_user.last_name} reported an incidence",
+                        report_details=f"Asset theft incident reported for {request.asset.asset_name}",
+                        user_uuid=current_user.uuid,
+                        theft_incident_uuid=theft_incident.uuid,
+                    )
+
+                    asset_service.create_initial_incident_report(
+                        incident_report_payload
+                    )
 
                 return send_info("Engine shutdown initiated successfully")
             else:
@@ -363,4 +378,36 @@ async def mark_incident_as_resolved_handler(
         return send_info(msg)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix} theft incidence"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/theft_reports/{incident_uuid}", response_class=ORJSONResponse)
+@inject
+async def get_incident_reports_handler(
+    incident_uuid: str,
+    asset_service: AssetService = Depends(Provide[Container.asset_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        reports = asset_service.get_incident_reports(incident_uuid)
+        return send_data(reports)
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix} theft incidence"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.post("/theft_reports/create", response_class=ORJSONResponse)
+@inject
+async def create_theft_report_handler(
+    payload: TheftReportPayload,
+    theft_report_service: TheftReportService = Depends(
+        Provide[Container.theft_report_service]
+    ),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        reports = theft_report_service.add(payload)
+        return send_data(reports)
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix} theft report"
         return send_internal_server_error(user_msg=msg, error=e)

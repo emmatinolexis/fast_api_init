@@ -120,6 +120,9 @@ class DeviceRepository(BaseRepository):
                     session.query(self.model)
                     .filter(self.model.device_imei == device_imei)
                     .options(
+                        joinedload(Device.asset),
+                    )
+                    .options(
                         joinedload(Device.manufacturer),
                     )
                     .first()
