@@ -8,9 +8,11 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import ORJSONResponse
 from geopy.distance import geodesic
 
+from app.client.s3_client import S3Client
 from app.core.constants import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE, THIRD_PARTY_APP_ROLE
 from app.core.logger import get_logger
 from app.core.security import JWTBearer
+from app.core.settings import settings
 from app.util.enums import ActiveStatus
 
 log = get_logger()
@@ -219,7 +221,7 @@ def generate_circle_geofence_coordinates(center: dict, radius: float, num_points
             angle
         )  # 1 degree latitude = 111.3 km
         lon = lon_center + radius / (
-            111300 * math.cos(lat_center * (math.pi / 180))
+                111300 * math.cos(lat_center * (math.pi / 180))
         ) * math.cos(
             angle
         )  # 1 degree longitude = 111.3 km * cos(latitude)
@@ -251,8 +253,8 @@ def check_violated_geofence(asset_coordinates, geofence_coordinates, geofence_ty
             p1 = geofence_coordinates[i]
             p2 = geofence_coordinates[i + 1]
             if ((p1[1] > point[1]) != (p2[1] > point[1])) and (
-                point[0]
-                < (p2[0] - p1[0]) * (point[1] - p1[1]) / (p2[1] - p1[1]) + p1[0]
+                    point[0]
+                    < (p2[0] - p1[0]) * (point[1] - p1[1]) / (p2[1] - p1[1]) + p1[0]
             ):
                 inside = not inside
 
@@ -265,3 +267,12 @@ def check_violated_geofence(asset_coordinates, geofence_coordinates, geofence_ty
             violated_geofences.append(point)
 
     return violated_geofences
+
+
+async def upload_to_s3(file_name: str, file_content: bytes, content_type: str) -> str:
+    s3_client = S3Client(
+        aws_access_key=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_key=settings.AWS_SECRET_ACCESS_KEY,
+        bucket_name=settings.S3_BUCKET,
+    )
+    return await s3_client.upload_file(file_name, file_content, content_type)

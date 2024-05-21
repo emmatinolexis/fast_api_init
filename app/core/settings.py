@@ -108,6 +108,12 @@ class Settings(BaseSettings):
         "Please use the button link below to reset your password",
     )
 
+    # aws
+    S3_BUCKET: str = os.getenv("S3_BUCKET", "")
+    AWS_ACCESS_KEY_ID: str = os.getenv("AWS_ACCESS_KEY_ID", "aws_access_key_id")
+    AWS_SECRET_ACCESS_KEY: str = os.getenv("AWS_SECRET_ACCESS_KEY", "aws_secret_access_key")
+    AWS_REGION: str = os.getenv("AWS_REGION", "us-east-2")
+
     # mqtt
     MQTT_HOST: str = os.getenv("MQTT_HOST", "3.98.106.16")
     MQTT_PORT: int = os.getenv("MQTT_PORT", 1883)

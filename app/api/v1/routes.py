@@ -36,11 +36,13 @@ from app.api.v1.endpoints.subscription_payment import (
 )
 from app.api.v1.endpoints.tracking import router as tracking_router
 from app.api.v1.endpoints.users import router as users_router
+from app.api.v1.endpoints.upload import router as upload_router
 
 routers = APIRouter()
 router_list = [
     health_check_router,
     auth_router,
+    upload_router,
     users_router,
     package_item_router,
     package_router,
