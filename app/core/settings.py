@@ -111,7 +111,9 @@ class Settings(BaseSettings):
     # aws
     S3_BUCKET: str = os.getenv("S3_BUCKET", "")
     AWS_ACCESS_KEY_ID: str = os.getenv("AWS_ACCESS_KEY_ID", "aws_access_key_id")
-    AWS_SECRET_ACCESS_KEY: str = os.getenv("AWS_SECRET_ACCESS_KEY", "aws_secret_access_key")
+    AWS_SECRET_ACCESS_KEY: str = os.getenv(
+        "AWS_SECRET_ACCESS_KEY", "aws_secret_access_key"
+    )
     AWS_REGION: str = os.getenv("AWS_REGION", "us-east-2")
 
     # mqtt

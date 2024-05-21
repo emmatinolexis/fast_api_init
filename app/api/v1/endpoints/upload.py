@@ -18,8 +18,8 @@ msg_prefix = "uploads"
 
 @router.post("/", response_class=ORJSONResponse)
 async def file_upload_handler(
-        payload: FileUploadPayload,
-        current_user: User = Depends(get_current_user),
+    payload: FileUploadPayload,
+    current_user: User = Depends(get_current_user),
 ):
     try:
         content_types = {
@@ -36,7 +36,7 @@ async def file_upload_handler(
         url = await upload_to_s3(
             file_name=uuid.uuid4().hex + "." + payload.file_format,
             file_content=file_content,
-            content_type=content_type
+            content_type=content_type,
         )
 
         return {

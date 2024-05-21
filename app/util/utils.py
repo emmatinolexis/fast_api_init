@@ -221,7 +221,7 @@ def generate_circle_geofence_coordinates(center: dict, radius: float, num_points
             angle
         )  # 1 degree latitude = 111.3 km
         lon = lon_center + radius / (
-                111300 * math.cos(lat_center * (math.pi / 180))
+            111300 * math.cos(lat_center * (math.pi / 180))
         ) * math.cos(
             angle
         )  # 1 degree longitude = 111.3 km * cos(latitude)
@@ -253,8 +253,8 @@ def check_violated_geofence(asset_coordinates, geofence_coordinates, geofence_ty
             p1 = geofence_coordinates[i]
             p2 = geofence_coordinates[i + 1]
             if ((p1[1] > point[1]) != (p2[1] > point[1])) and (
-                    point[0]
-                    < (p2[0] - p1[0]) * (point[1] - p1[1]) / (p2[1] - p1[1]) + p1[0]
+                point[0]
+                < (p2[0] - p1[0]) * (point[1] - p1[1]) / (p2[1] - p1[1]) + p1[0]
             ):
                 inside = not inside
 
