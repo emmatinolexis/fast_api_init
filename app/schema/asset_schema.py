@@ -115,6 +115,30 @@ class TheftReportPayload(BaseModel):
     user_uuid: UUID
 
 
+class VehicleModelPayload(BaseModel):
+    value: str
+    title: str
+
+
+class VehicleMakeInput(BaseModel):
+    name: str
+
+
+class VehicleModelInput(BaseModel):
+    name: str
+    vehicle_make_uuid: UUID
+
+
+class VehicleMake(BaseModel):
+    value: str
+    title: str
+    models: List[VehicleModelPayload]
+
+
+class VehicleMakePayload(BaseModel):
+    vehicle_makes: List[VehicleMake]
+
+
 class AssetLocationFetch(BaseModel):
     asset_uuid: UUID
     longitude: str
