@@ -54,6 +54,8 @@ from app.repository import (
     user_organisation_assignment_repository,
     user_repository,
     user_subscription_repository,
+    vehicle_make_repository,
+    vehicle_model_repository,
 )
 from app.service import (
     alert_maintenance_type_service,
@@ -98,6 +100,8 @@ from app.service import (
     tracking_event_service,
     user_service,
     user_subscription_service,
+    vehicle_make_service,
+    vehicle_model_service,
 )
 
 
@@ -132,6 +136,7 @@ class Container(containers.DeclarativeContainer):
             "app.api.v1.endpoints.order",
             "app.api.v1.endpoints.external_app",
             "app.api.v1.endpoints.permission",
+            "app.api.v1.endpoints.vehicle_make",
         ]
     )
 
@@ -344,6 +349,15 @@ class Container(containers.DeclarativeContainer):
         session_factory=db.provided.session,
     )
 
+    vehicle_model_repository = providers.Factory(
+        vehicle_model_repository.VehicleModelRepository,
+        session_factory=db.provided.session,
+    )
+    vehicle_make_repository = providers.Factory(
+        vehicle_make_repository.VehicleMakeRepository,
+        session_factory=db.provided.session,
+    )
+
     # Services
     auth_service = providers.Factory(
         auth_service.AuthService,
@@ -551,4 +565,13 @@ class Container(containers.DeclarativeContainer):
     theft_report_service = providers.Factory(
         theft_report_service.TheftReportService,
         theft_report_repository=theft_report_repository,
+    )
+    vehicle_model_service = providers.Factory(
+        vehicle_model_service.VehicleModelService,
+        vehicle_model_repository=vehicle_model_repository,
+    )
+    vehicle_make_service = providers.Factory(
+        vehicle_make_service.VehicleMakeService,
+        vehicle_make_repository=vehicle_make_repository,
+        vehicle_model_repository=vehicle_model_repository,
     )
