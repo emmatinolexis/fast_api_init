@@ -47,6 +47,6 @@ class VehicleMakeService(BaseService):
                                     vehicle_make_uuid=created_make.uuid,
                                 )
                                 self.vehicle_model_repository.create(model_data)
-            return
+            return True
         except Exception as e:
             raise e
