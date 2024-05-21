@@ -50,6 +50,8 @@ from app.repository import (
     team_member_invitation_repository,
     theft_incidence_repository,
     theft_report_repository,
+    third_party_app_repository,
+    third_party_app_user_repository,
     tracking_event_repository,
     user_organisation_assignment_repository,
     user_repository,
@@ -97,6 +99,8 @@ from app.service import (
     subscription_service,
     theft_incidence_service,
     theft_report_service,
+    third_party_app_service,
+    third_party_app_user_service,
     tracking_event_service,
     user_service,
     user_subscription_service,
@@ -137,6 +141,7 @@ class Container(containers.DeclarativeContainer):
             "app.api.v1.endpoints.external_app",
             "app.api.v1.endpoints.permission",
             "app.api.v1.endpoints.vehicle_make",
+            "app.api.v1.endpoints.third_party_app",
         ]
     )
 
@@ -357,6 +362,14 @@ class Container(containers.DeclarativeContainer):
         vehicle_make_repository.VehicleMakeRepository,
         session_factory=db.provided.session,
     )
+    third_party_app_repository = providers.Factory(
+        third_party_app_repository.ThirdPartyAppRepository,
+        session_factory=db.provided.session,
+    )
+    third_party_app_user_repository = providers.Factory(
+        third_party_app_user_repository.ThirdPartAppUserRepository,
+        session_factory=db.provided.session,
+    )
 
     # Services
     auth_service = providers.Factory(
@@ -574,4 +587,12 @@ class Container(containers.DeclarativeContainer):
         vehicle_make_service.VehicleMakeService,
         vehicle_make_repository=vehicle_make_repository,
         vehicle_model_repository=vehicle_model_repository,
+    )
+    third_party_app_service = providers.Factory(
+        third_party_app_service.ThirdPartyAppService,
+        third_party_app_repository=third_party_app_repository,
+    )
+    third_party_app_user_service = providers.Factory(
+        third_party_app_user_service.ThirdPartyAppUserService,
+        third_party_app_user_repository=third_party_app_user_repository,
     )
