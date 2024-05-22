@@ -12,10 +12,7 @@ from app.schema.third_party_app_schema import (
 )
 from app.service.third_party_app_service import ThirdPartyAppService
 from app.service.third_party_app_user_service import ThirdPartyAppUserService
-from app.util.utils import (
-    send_data,
-    send_internal_server_error,
-)
+from app.util.utils import send_data, send_internal_server_error
 
 router = APIRouter(
     prefix="/third_party_app",
