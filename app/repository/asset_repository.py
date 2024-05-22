@@ -11,7 +11,7 @@ from app.model.tracking_event import TrackingEvent
 from app.model.user import User
 from app.repository.base_repository import BaseRepository
 from app.schema.asset_schema import AssignDeviceInputPayload
-from app.util.enums import AssetStatus
+from app.util.enums import AssetCreators, AssetStatus
 from app.util.utils import get_status
 
 
@@ -81,6 +81,38 @@ class AssetRepository(BaseRepository):
                     else:
                         # Handle case where no result is found
                         pass
+
+            return assets, total_assets
+
+    def read_all_third_party_assets(
+        self, asset_type_uuid: str = None, page=1, page_size=10
+    ):
+        with self.session_factory() as session:
+            # Calculate the offset based on the page and per_page values
+            offset = (page - 1) * page_size
+
+            query = session.query(self.model).filter(
+                self.model.created_by == AssetCreators.DVLA
+            )
+            total_assets = query.count()
+            # return query
+            if asset_type_uuid is not None:
+                query = query.filter(self.model.asset_type_uuid == asset_type_uuid)
+
+            query = (
+                query.order_by(desc(self.model.created_at))
+                .offset(offset)
+                .limit(page_size)
+            )
+
+            assets = (
+                query.options(joinedload(Asset.asset_type))
+                .options(joinedload(Asset.driver))
+                .options(joinedload(Asset.device))
+                .options(joinedload(Asset.equipment))
+                .options(joinedload(Asset.vehicle_owner))
+                .all()
+            )
 
             return assets, total_assets
 

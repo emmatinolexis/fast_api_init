@@ -58,6 +58,7 @@ from app.repository import (
     user_subscription_repository,
     vehicle_make_repository,
     vehicle_model_repository,
+    vehicle_owner_repository,
 )
 from app.service import (
     alert_maintenance_type_service,
@@ -106,6 +107,7 @@ from app.service import (
     user_subscription_service,
     vehicle_make_service,
     vehicle_model_service,
+    vehicle_owner_service,
 )
 
 
@@ -370,6 +372,10 @@ class Container(containers.DeclarativeContainer):
         third_party_app_user_repository.ThirdPartAppUserRepository,
         session_factory=db.provided.session,
     )
+    vehicle_owner_repository = providers.Factory(
+        vehicle_owner_repository.VehicleOwnerRepository,
+        session_factory=db.provided.session,
+    )
 
     # Services
     auth_service = providers.Factory(
@@ -425,6 +431,7 @@ class Container(containers.DeclarativeContainer):
         immobilizer_report_repository=immobilizer_report_repository,
         theft_incidence_repository=theft_incidence_repository,
         theft_report_repository=theft_report_repository,
+        vehicle_owner_repository=vehicle_owner_repository,
     )
     asset_device_request_service = providers.Factory(
         asset_device_request_service.AssetDeviceRequestService,
@@ -595,4 +602,8 @@ class Container(containers.DeclarativeContainer):
     third_party_app_user_service = providers.Factory(
         third_party_app_user_service.ThirdPartyAppUserService,
         third_party_app_user_repository=third_party_app_user_repository,
+    )
+    vehicle_owner_service = providers.Factory(
+        vehicle_owner_service.VehicleOwnerService,
+        vehicle_owner_repository=vehicle_owner_repository,
     )
