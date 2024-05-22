@@ -14,15 +14,19 @@ from app.repository.subscription_repository import SubscriptionRepository
 from app.repository.theft_incidence_repository import TheftIncidenceRepository
 from app.repository.theft_report_repository import TheftReportRepository
 from app.repository.user_repository import UserRepository
+from app.repository.vehicle_owner_repository import VehicleOwnerRepository
 from app.schema.asset_schema import (
     AssetInput,
     AssetPayload,
     AssignDeviceInputPayload,
     TheftIncidencePayload,
     TheftReportPayload,
+    ThirdPartyAssetInput,
+    ThirdPartyAssetPayload,
+    VehicleOwnerInput,
 )
 from app.service.base_service import BaseService
-from app.util.enums import PackageItemTrackerType
+from app.util.enums import AssetCreators, AssetStatus, PackageItemTrackerType
 
 
 class AssetService(BaseService):
@@ -39,6 +43,7 @@ class AssetService(BaseService):
         immobilizer_report_repository: ImmobilizerReportRepository,
         theft_incidence_repository: TheftIncidenceRepository,
         theft_report_repository: TheftReportRepository,
+        vehicle_owner_repository: VehicleOwnerRepository,
     ):
         self.asset_repository = asset_repository
         self.asset_type_repository = asset_type_repository
@@ -51,6 +56,7 @@ class AssetService(BaseService):
         self.immobilizer_report_repository = immobilizer_report_repository
         self.theft_incidence_repository = theft_incidence_repository
         self.theft_report_repository = theft_report_repository
+        self.vehicle_owner_repository = vehicle_owner_repository
         super().__init__(asset_repository)
 
     def create_asset(self, asset: AssetPayload):
@@ -73,6 +79,24 @@ class AssetService(BaseService):
                 created_asset = self.create_asset_with_driver(asset)
             else:
                 created_asset = self.create_asset_without_driver(asset)
+
+            return created_asset
+
+        except Exception as e:
+            raise e
+
+    def create_third_party_asset(self, asset: ThirdPartyAssetPayload):
+        try:
+            self.asset_repository.read_by_vin_serial_number_license_no(
+                vehicle_license_no=asset.vehicle_license_no, vin=asset.vin
+            )
+
+            if self.equipment_repository.read_by_uuid(asset.equipment_uuid) is None:
+                raise NotFoundError(
+                    detail=messages.EQUIPMENT_NOT_FOUND + str(asset.equipment_uuid)
+                )
+
+            created_asset = self.create_asset_with_vehicle_owner(asset)
 
             return created_asset
 
@@ -179,6 +203,45 @@ class AssetService(BaseService):
         }
         return created_asset_data
 
+    def create_asset_with_vehicle_owner(self, asset):
+        vehicle_owner_data = VehicleOwnerInput(
+            first_name=asset.first_name,
+            last_name=asset.last_name,
+            phone_number=asset.phone_number,
+            email_address=asset.email_address,
+            residential_address=asset.residential_address,
+        )
+        created_vehicle_owner = self.vehicle_owner_repository.create(vehicle_owner_data)
+        if created_vehicle_owner:
+            asset_data = ThirdPartyAssetInput(
+                asset_type_uuid="fb1e96de-d79d-463b-b6c7-aeab8235d676",
+                asset_status=AssetStatus.PENDING_INSTALLATION,
+                usage_type=asset.usage_type,
+                created_by=AssetCreators.DVLA,
+                vin=asset.vin,
+                vehicle_license_no=asset.vehicle_license_no,
+                equipment_uuid=asset.equipment_uuid,
+                make=asset.make,
+                model=asset.model,
+                image_url=asset.image_url,
+                vehicle_owner_uuid=created_vehicle_owner.uuid,
+            )
+
+            created_asset = self.asset_repository.create(asset_data)
+
+            created_asset_data = {
+                "usage_type": created_asset.usage_type,
+                "vehicle_license_no": created_asset.vehicle_license_no,
+                "asset_status": created_asset.asset_status,
+                "vin": created_asset.vin,
+                "equipment_uuid": created_asset.equipment_uuid,
+                "make": created_asset.make,
+                "model": created_asset.model,
+                "image_url": created_asset.image_url,
+                "vehicle_owner": created_vehicle_owner,
+            }
+            return created_asset_data
+
     def create_asset_without_driver(self, asset):
         created_asset = self.asset_repository.create(AssetInput(**asset.dict()))
         return created_asset
@@ -189,6 +252,14 @@ class AssetService(BaseService):
         try:
             return self.asset_repository.read_all_assets_by_uuid(
                 uuid, asset_type_uuid, page, page_size
+            )
+        except Exception as e:
+            raise e
+
+    def get_third_party_assets(self, asset_type_uuid: str = None, page=1, page_size=10):
+        try:
+            return self.asset_repository.read_all_third_party_assets(
+                asset_type_uuid, page, page_size
             )
         except Exception as e:
             raise e

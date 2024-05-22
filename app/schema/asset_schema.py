@@ -1,15 +1,17 @@
 from typing import List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from pydantic_extra_types.coordinate import Latitude, Longitude
 
 from app.schema.equipment_schema import EquipmentPayload, EquipmentTypePayload
 from app.schema.marker_schema import MarkerIconPayload
 from app.util.enums import (
     ActiveStatus,
+    AssetCreators,
     AssetDeviceRequestStatus,
     AssetStatus,
+    AssetUsageType,
     DriverType,
     ImmobilizerReason,
     ImmobilizerType,
@@ -69,6 +71,43 @@ class AssetPayload(BaseModel):
 
     class Config:
         orm_model = True
+
+
+class ThirdPartyAssetPayload(BaseModel):
+    usage_type: AssetUsageType
+    vin: str
+    vehicle_license_no: Optional[str] = None
+    equipment_uuid: UUID
+    make: Optional[str] = None
+    model: Optional[str] = None
+    image_url: str
+    first_name: str
+    last_name: str
+    phone_number: str
+    email_address: EmailStr
+    residential_address: str
+
+
+class ThirdPartyAssetInput(BaseModel):
+    asset_type_uuid: UUID
+    asset_status: AssetStatus
+    usage_type: AssetUsageType
+    created_by: AssetCreators
+    vin: str
+    vehicle_license_no: Optional[str] = None
+    equipment_uuid: UUID
+    make: Optional[str] = None
+    model: Optional[str] = None
+    image_url: str
+    vehicle_owner_uuid: UUID
+
+
+class VehicleOwnerInput(BaseModel):
+    first_name: str
+    last_name: str
+    phone_number: str
+    email_address: str
+    residential_address: str
 
 
 class AssetInput(BaseModel):

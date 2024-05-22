@@ -18,6 +18,7 @@ from app.schema.asset_schema import (
     ImmobilizerPayload,
     TheftIncidencePayload,
     TheftReportPayload,
+    ThirdPartyAssetPayload,
 )
 from app.service.asset_device_request_service import AssetDeviceRequestService
 from app.service.asset_service import AssetService
@@ -34,7 +35,7 @@ from app.util.utils import (
 
 router = APIRouter(
     prefix="/assets",
-    tags=["assets"],
+    tags=["Assets"],
 )
 msg_prefix = "asset"
 
@@ -85,6 +86,44 @@ async def create_asset_handler(
 ):
     try:
         asset = service.create_asset(payload)
+        return send_data(asset)
+    except NotFoundError as e:
+        return send_client_side_error(str(e.detail))
+    except Exception as e:
+        msg = messages.CREATE_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/third_party_asset/assets", response_class=ORJSONResponse)
+@inject
+async def get_third_party_assets_handler(
+    asset_type_uuid: str = None,
+    page: int = Query(1, ge=1, description="Page number, default is set to 1"),
+    page_size: int = Query(
+        10, ge=1, le=1000, description="Items per page, default is 10"
+    ),
+    service: AssetService = Depends(Provide[Container.asset_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        assets = service.get_third_party_assets(asset_type_uuid, page, page_size)
+
+        return send_data(assets)
+
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.post("/third_party_asset", response_class=ORJSONResponse)
+@inject
+async def create_third_party_asset_handler(
+    payload: ThirdPartyAssetPayload,
+    service: AssetService = Depends(Provide[Container.asset_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        asset = service.create_third_party_asset(payload)
         return send_data(asset)
     except NotFoundError as e:
         return send_client_side_error(str(e.detail))

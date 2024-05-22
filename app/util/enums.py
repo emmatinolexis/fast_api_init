@@ -166,6 +166,16 @@ class AssetStatus(str, Enum):
     OFFLINE = "offline"
 
 
+class AssetCreators(str, Enum):
+    USER = "user"
+    DVLA = "dvla"
+
+
+class AssetUsageType(str, Enum):
+    INDIVIDUAL = "individual"
+    COMMERCIAL = "commercial"
+
+
 class UserRole(str, Enum):
     CUSTOMER = CUSTOMER_USER_ROLE
     ADMIN = ADMIN_USER_ROLE
