@@ -35,7 +35,7 @@ from app.util.utils import (
 
 router = APIRouter(
     prefix="/assets",
-    tags=["assets"],
+    tags=["Assets"],
 )
 msg_prefix = "asset"
 
