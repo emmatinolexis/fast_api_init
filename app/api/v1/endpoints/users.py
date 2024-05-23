@@ -24,6 +24,7 @@ from app.schema.user_schema import (
     UserPhoneVerificationToken,
     UserUpdatePassword,
 )
+from app.service.business_profile_service import BusinessProfileService
 from app.service.invitation_service import InvitationService
 from app.service.phone_otp_service import PhoneOTPService
 from app.service.reset_password_service import ResetPassword
@@ -169,18 +170,22 @@ async def get_user_by_uuid_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/accounts/{user_uuid}", response_class=ORJSONResponse)
+@router.get("/accounts/{business_uuid}", response_class=ORJSONResponse)
 @inject
 async def user_account(
-    user_uuid: str,
+    business_uuid: str,
     service: UserService = Depends(Provide[Container.user_service]),
+    business_service: BusinessProfileService = Depends(
+        Provide[Container.business_profile_service]
+    ),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        user = service.get_user_by_uuid(user_uuid)
-        if user is None:
-            return send_client_side_error(user_msg=messages.USER_NOT_FOUND + user_uuid)
-        return send_data(service.get_account_users(user_uuid))
+        business = business_service.get_by_uuid(business_uuid)
+        if business is None:
+            msg = f"{messages.BUSINESS_PROFILE_NOT_FOUND}{business_uuid}"
+            return send_internal_server_error(user_msg=msg, error=msg)
+        return send_data(service.get_account_users(business_uuid))
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)

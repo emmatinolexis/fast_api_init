@@ -69,6 +69,7 @@ from app.service import (
     asset_service,
     asset_type_service,
     auth_service,
+    business_profile_service,
     contact_sale_service,
     device_image_service,
     device_manufacturer_service,
@@ -606,4 +607,8 @@ class Container(containers.DeclarativeContainer):
     vehicle_owner_service = providers.Factory(
         vehicle_owner_service.VehicleOwnerService,
         vehicle_owner_repository=vehicle_owner_repository,
+    )
+    business_profile_service = providers.Factory(
+        business_profile_service.BusinessProfileService,
+        business_profile_repository=business_profile_repository,
     )
