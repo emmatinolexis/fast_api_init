@@ -10,7 +10,6 @@ from app.core.settings import settings
 from app.model.business_profile import BusinessProfile
 from app.model.email_verification import EmailVerification
 from app.model.user import User
-from app.model.user_organisation_assignment import UserOrganisationAssignment
 from app.repository.base_repository import BaseRepository
 from app.schema.auth_schema import EmailVerification as EmailVerficationSchema
 from app.schema.auth_schema import UserEmailVerification
@@ -140,34 +139,12 @@ class UserRepository(BaseRepository):
             session.refresh(user)
             return user
 
-    def get_account_users(self, user_uuid):
+    def get_account_users(self, business_uuid: str):
         with self.session_factory() as session:
-            user = self.get_user_by_uuid(user_uuid)
-            users_data = []
-            if user.get("account_type") == AccountType.BUSINESS:
-                business_profile = user.get("business_profile")
-                account_users = (
-                    session.query(UserOrganisationAssignment)
-                    .filter(
-                        UserOrganisationAssignment.business_profile_uuid
-                        == business_profile.uuid
-                    )
-                    .options(joinedload(UserOrganisationAssignment.user))
-                    .all()
-                )
-                for assignment in account_users:
-                    user_data = {
-                        "uuid": assignment.user.uuid,
-                        "first_name": assignment.user.first_name,
-                        "last_name": assignment.user.last_name,
-                        "email_address": assignment.user.email_address,
-                        "phone_number": assignment.user.phone_number,
-                    }
-                    users_data.append(user_data)
-                return users_data
-            account_users = (
-                session.query(self.model).filter(self.model.uuid == user_uuid).all()
+            account_users = session.query(self.model).filter(
+                self.model.business_profile_uuid == business_uuid
             )
+            users_data = []
             for user in account_users:
                 user_data = {
                     "uuid": user.uuid,
@@ -177,6 +154,7 @@ class UserRepository(BaseRepository):
                     "phone_number": user.phone_number,
                 }
                 users_data.append(user_data)
+
             return users_data
 
     def create_user(self, user: UserPayload):
@@ -193,27 +171,9 @@ class UserRepository(BaseRepository):
 
             session.add(db_user)
             session.commit()
-            created_user = (
-                session.query(self.model)
-                .filter(self.model.email_address == db_user.email_address)
-                .first()
-            )
-
-            # assign the free plan for the user
 
             if user.account_type == AccountType.BUSINESS:
                 try:
-                    business_data = (
-                        session.query(BusinessProfile)
-                        .filter(
-                            (BusinessProfile.business_name == user.business_name)
-                            | (BusinessProfile.business_email == user.business_email)
-                        )
-                        .first()
-                    )
-                    if business_data is not None:
-                        raise Exception("Business already exists")
-
                     business_data = BusinessProfile(
                         business_name=user.business_name,
                         business_email=user.business_email,
@@ -221,6 +181,18 @@ class UserRepository(BaseRepository):
                     )
 
                     session.add(business_data)
+                    session.commit()
+                    session.refresh(business_data)
+
+                    # update users with business profile
+                    created_user = (
+                        session.query(self.model)
+                        .filter(self.model.email_address == db_user.email_address)
+                        .first()
+                    )
+                    created_user.business_profile_uuid = business_data.uuid
+                    session.commit()
+                    session.refresh(created_user)
 
                     returned_user = {
                         "first_name": db_user.first_name,
@@ -240,6 +212,11 @@ class UserRepository(BaseRepository):
                     session.rollback()  # rollback user creation
                     raise e
             else:
+                created_user = (
+                    session.query(self.model)
+                    .filter(self.model.email_address == db_user.email_address)
+                    .first()
+                )
                 returned_user = {
                     "first_name": db_user.first_name,
                     "last_name": db_user.last_name,

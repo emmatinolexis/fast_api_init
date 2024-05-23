@@ -42,8 +42,8 @@ class UserService(BaseService):
     def create_user(self, payload: UserPayload):
         return self.user_repository.create_user(payload)
 
-    def get_account_users(self, user_uuid: str):
-        return self.user_repository.get_account_users(user_uuid)
+    def get_account_users(self, business_uuid: str):
+        return self.user_repository.get_account_users(business_uuid)
 
     def update_user_by_uuid(self, uuid: str, payload: UpdateUserPayload):
         try:
