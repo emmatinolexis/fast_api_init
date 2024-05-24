@@ -265,3 +265,11 @@ def check_violated_geofence(asset_coordinates, geofence_coordinates, geofence_ty
             violated_geofences.append(point)
 
     return violated_geofences
+
+
+def calculate_average_speed(speeds: List[float]) -> float:
+    if not speeds:
+        raise ValueError("The list of speeds cannot be empty.")
+
+    average_speed = sum(speeds) / len(speeds)
+    return round(average_speed, 2)
