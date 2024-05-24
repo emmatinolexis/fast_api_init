@@ -207,3 +207,10 @@ class EmailPurpose(str, Enum):
     ALERT_VIOLATION = "Alert_Violation"
     INVITATION = "Invitation"
     PASSWORD_RESET = "Password_Reset"
+
+
+class FileFormat(str, Enum):
+    PDF = "pdf"
+    PNG = "png"
+    JPEG = "jpeg"
+    JPG = "jpg"

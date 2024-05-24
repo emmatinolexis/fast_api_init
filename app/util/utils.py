@@ -8,10 +8,12 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import ORJSONResponse
 from geopy.distance import geodesic
 
+from app.client.s3_client import S3Client
 from app.core.constants import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE, THIRD_PARTY_APP_ROLE
 from app.core.logger import get_logger
 from app.core.security import JWTBearer
-from app.util.enums import ActiveStatus
+from app.core.settings import settings
+from app.util.enums import ActiveStatus, FileFormat
 
 log = get_logger()
 
@@ -273,3 +275,24 @@ def calculate_average_speed(speeds: List[float]) -> float:
 
     average_speed = sum(speeds) / len(speeds)
     return round(average_speed, 2)
+
+
+def get_content_type(file_format: FileFormat) -> str:
+    content_types = {
+        "jpg": "image/jpeg",
+        "jpeg": "image/jpeg",
+        "png": "image/png",
+        "pdf": "application/pdf",
+    }
+    content_type = content_types.get(file_format.value)
+    return content_type
+
+
+async def upload_to_s3(file_name: str, file_content: bytes, content_type: str) -> str:
+    s3_client = S3Client(
+        aws_access_key=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_key=settings.AWS_SECRET_ACCESS_KEY,
+        bucket_name=settings.S3_BUCKET,
+    )
+    return await s3_client.upload_file(file_name, file_content, content_type)
+
