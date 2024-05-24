@@ -73,7 +73,7 @@ async def get_route_replay_tracking_details_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/over_speeding/{asset_uuid}/speed", response_class=ORJSONResponse)
+@router.get("/over_speeding/{asset_uuid}", response_class=ORJSONResponse)
 @inject
 async def get_over_speeding_stats_handler(
     asset_uuid: str,
