@@ -209,6 +209,16 @@ class TrackingEventService(BaseService):
         except Exception as e:
             raise e
 
+    def get_asset_average_speed(
+        self, device_imei: str, date_from: datetime, date_to: datetime
+    ):
+        try:
+            return self.tracking_event_repository.read_asset_average_speed(
+                device_imei, date_from, date_to
+            )
+        except Exception as e:
+            raise e
+
 
 def generateTimeRange(start=None, end=None):
     start = start.strftime("%H:%M") if start else "0"

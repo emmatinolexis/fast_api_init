@@ -10,7 +10,7 @@ from app.model.asset import Asset
 from app.model.device import Device
 from app.model.tracking_event import TrackingEvent
 from app.repository.base_repository import BaseRepository
-from app.util.utils import get_status
+from app.util.utils import calculate_average_speed, get_status
 
 
 class TrackingEventRepository(BaseRepository):
@@ -107,3 +107,33 @@ class TrackingEventRepository(BaseRepository):
                 .first()
             )
             return query
+
+    def read_asset_average_speed(
+        self, device_imei: str, date_from: datetime, date_to: datetime
+    ):
+        with self.session_factory() as session:
+            query = (
+                session.query(self.model)
+                .filter(self.model.device_imei == device_imei)
+                .filter(self.model.event_datetime >= date_from)
+                .filter(self.model.event_datetime <= date_to)
+                .all()
+            )
+
+            if not query:
+                raise ValueError("No events found for the specified criteria.")
+
+            event_data = [
+                (event.speed, event.latitude, event.longitude, event.event_datetime)
+                for event in query
+                if event.speed is not None
+            ]
+            speeds = [event[0] for event in event_data]
+
+            if not speeds:
+                raise ValueError(
+                    "No valid speed data available for the specified criteria."
+                )
+
+            average_speed = calculate_average_speed(speeds)
+            return event_data, average_speed

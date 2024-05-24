@@ -269,6 +269,14 @@ def check_violated_geofence(asset_coordinates, geofence_coordinates, geofence_ty
     return violated_geofences
 
 
+def calculate_average_speed(speeds: List[float]) -> float:
+    if not speeds:
+        raise ValueError("The list of speeds cannot be empty.")
+
+    average_speed = sum(speeds) / len(speeds)
+    return round(average_speed, 2)
+
+
 def get_content_type(file_format: FileFormat) -> str:
     content_types = {
         "jpg": "image/jpeg",
@@ -287,3 +295,4 @@ async def upload_to_s3(file_name: str, file_content: bytes, content_type: str) -
         bucket_name=settings.S3_BUCKET,
     )
     return await s3_client.upload_file(file_name, file_content, content_type)
+
