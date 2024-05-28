@@ -94,6 +94,27 @@ async def create_asset_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
+@router.get("/stolen/assets", response_class=ORJSONResponse)
+@inject
+async def get_stolen_assets_handler(
+    asset_type_uuid: str = None,
+    page: int = Query(1, ge=1, description="Page number, default is set to 1"),
+    page_size: int = Query(
+        10, ge=1, le=1000, description="Items per page, default is 10"
+    ),
+    service: AssetService = Depends(Provide[Container.asset_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        assets = service.get_third_stolen_assets(asset_type_uuid, page, page_size)
+
+        return send_data(assets)
+
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
 @router.get("/third_party_asset/assets", response_class=ORJSONResponse)
 @inject
 async def get_third_party_assets_handler(

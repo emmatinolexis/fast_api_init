@@ -256,6 +256,16 @@ class AssetService(BaseService):
         except Exception as e:
             raise e
 
+    def get_third_stolen_assets(
+        self, asset_type_uuid: str = None, page=1, page_size=10
+    ):
+        try:
+            return self.asset_repository.read_all_stolen_assets(
+                asset_type_uuid, page, page_size
+            )
+        except Exception as e:
+            raise e
+
     def get_third_party_assets(self, asset_type_uuid: str = None, page=1, page_size=10):
         try:
             return self.asset_repository.read_all_third_party_assets(
