@@ -124,11 +124,17 @@ class TrackingEventRepository(BaseRepository):
                 raise ValueError("No events found for the specified criteria.")
 
             event_data = [
-                (event.speed, event.latitude, event.longitude, event.event_datetime)
+                {
+                    "speed": event.speed,
+                    "latitude": event.latitude,
+                    "longitude": event.longitude,
+                    "event_datetime": event.event_datetime,
+                }
                 for event in query
                 if event.speed is not None
             ]
-            speeds = [event[0] for event in event_data]
+
+            speeds = [event["speed"] for event in event_data]
 
             if not speeds:
                 raise ValueError(
