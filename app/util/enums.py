@@ -7,7 +7,9 @@ from app.core.constants import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE, THIRD_PARTY_
 class AccountType(str, Enum):
     BUSINESS = "business"
     INDIVIDUAL = "individual"
-    ADMIN = "admin"
+    ADMIN = ("admin",)
+    POLICE = ("police",)
+    DVLA = "dvla"
 
 
 class DeviceType(str, Enum):
@@ -42,6 +44,16 @@ class ActiveStatus(str, Enum):
     ACTIVE = "active"
     INACTIVE = "inactive"
     DEACTIVATED = "deactivated"
+
+
+class FineStatus(str, Enum):
+    PAID = "paid"
+    PENDING_PAYMENT = "pending_payment"
+    PAYMENT_OVERDUE = "payment_overdue"
+
+
+class FineType(str, Enum):
+    OVER_SPEEDING = "over_speeding"
 
 
 class PackageItemTrackerType(str, Enum):

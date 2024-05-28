@@ -36,7 +36,7 @@ class ThirdPartyAppUser(BaseModel):
     email = Column(String(length=50), nullable=False)
     password = Column(String(length=100), nullable=False)
     third_party_app_uuid = Column(
-        UUID(as_uuid=True), ForeignKey("third_party_apps.uuid"), nullable=False
+        UUID(as_uuid=True), ForeignKey("third_party_apps.uuid"), nullable=True
     )
     status = Column(Enum(ActiveStatus), default=ActiveStatus.ACTIVE, nullable=False)
     third_party_app = relationship("ThirdPartyApp", uselist=False)
