@@ -328,6 +328,9 @@ async def shutdown_engine_request_handler(
                     asset_service.create_initial_incident_report(
                         incident_report_payload
                     )
+                    asset_service.update_asset_stolen_status_to_true(
+                        shutdown_payload.asset_uuid
+                    )
 
                 return send_info("Engine shutdown initiated successfully")
             else:
@@ -412,7 +415,8 @@ async def mark_incident_as_resolved_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        asset_service.mark_as_resolved(incident_uuid)
+        incident = asset_service.mark_as_resolved(incident_uuid)
+        asset_service.update_asset_stolen_status_to_false(incident.asset_uuid)
         msg = "Successfully marked as resolved"
         return send_info(msg)
     except Exception as e:

@@ -285,6 +285,24 @@ class AssetService(BaseService):
         except Exception as e:
             raise e
 
+    def update_asset_stolen_status_to_true(self, asset_uuid: str):
+        try:
+            report = self.asset_repository.update_asset_stolen_status_to_true(
+                asset_uuid
+            )
+            return report
+        except Exception as e:
+            raise e
+
+    def update_asset_stolen_status_to_false(self, asset_uuid: str):
+        try:
+            report = self.asset_repository.update_asset_stolen_status_to_false(
+                asset_uuid
+            )
+            return report
+        except Exception as e:
+            raise e
+
     def create_initial_incident_report(self, payload: TheftReportPayload):
         try:
             report = self.theft_report_repository.create(payload)
@@ -301,8 +319,8 @@ class AssetService(BaseService):
 
     def mark_as_resolved(self, incidence_uuid: str):
         try:
-            report = self.theft_incidence_repository.mark_as_resolve(incidence_uuid)
-            return report
+            incident = self.theft_incidence_repository.mark_as_resolve(incidence_uuid)
+            return incident
         except Exception as e:
             raise e
 

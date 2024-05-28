@@ -11,7 +11,7 @@ from app.model.tracking_event import TrackingEvent
 from app.model.user import User
 from app.repository.base_repository import BaseRepository
 from app.schema.asset_schema import AssignDeviceInputPayload
-from app.util.enums import AssetCreators, AssetStatus
+from app.util.enums import AssetStatus
 from app.util.utils import get_status
 
 
@@ -47,7 +47,6 @@ class AssetRepository(BaseRepository):
                 .all()
             )
 
-            # assets = [asset for asset in assets if asset.driver is not None]
             for asset in assets:
                 # check if asset has device imei
                 if asset.device_imei:
@@ -92,7 +91,7 @@ class AssetRepository(BaseRepository):
             offset = (page - 1) * page_size
 
             query = session.query(self.model).filter(
-                self.model.created_by == AssetCreators.DVLA
+                self.model.asset_stolen_status.is_(True)
             )
             total_assets = query.count()
             # return query
@@ -113,6 +112,40 @@ class AssetRepository(BaseRepository):
                 .options(joinedload(Asset.vehicle_owner))
                 .all()
             )
+
+            for asset in assets:
+                # check if asset has device imei
+                if asset.device_imei:
+                    # Get device's last known location
+                    last_tracking_event = (
+                        session.query(
+                            label("lat", TrackingEvent.latitude),
+                            label("lng", TrackingEvent.longitude),
+                            TrackingEvent.speed,
+                            TrackingEvent.course,
+                            label("timestamp", TrackingEvent.event_datetime),
+                            label("event_type", get_status(TrackingEvent.event_type)),
+                        )
+                        .filter(TrackingEvent.device_imei == asset.device_imei)
+                        .order_by(desc(TrackingEvent.event_datetime))
+                        .first()
+                    )
+
+                    if last_tracking_event:
+                        # Construct a dictionary with the retrieved fields
+                        last_tracking_event_dict = {
+                            "lat": last_tracking_event.lat,
+                            "lng": last_tracking_event.lng,
+                            "speed": last_tracking_event.speed,
+                            "course": last_tracking_event.course,
+                            "timestamp": last_tracking_event.timestamp,
+                            "event_type": last_tracking_event.event_type,
+                        }
+                        # Add last_tracking_event_dict to asset dictionary
+                        asset.last_tracking_event = last_tracking_event_dict
+                    else:
+                        # Handle case where no result is found
+                        pass
 
             return assets, total_assets
 
@@ -199,3 +232,21 @@ class AssetRepository(BaseRepository):
                     )
             else:
                 pass
+
+    def update_asset_stolen_status_to_true(self, asset_uuid: str):
+        with self.session_factory() as session:
+            asset = (
+                session.query(self.model).filter(self.model.uuid == asset_uuid).first()
+            )
+            asset.asset_stolen_status = True
+            session.commit()
+            session.refresh(asset)
+
+    def update_asset_stolen_status_to_false(self, asset_uuid: str):
+        with self.session_factory() as session:
+            asset = (
+                session.query(self.model).filter(self.model.uuid == asset_uuid).first()
+            )
+            asset.asset_stolen_status = False
+            session.commit()
+            session.refresh(asset)
