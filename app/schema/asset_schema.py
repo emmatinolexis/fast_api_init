@@ -34,6 +34,7 @@ class Asset(BaseModel):
     user_uuid: UUID
     asset_type_uuid: UUID
     asset_name: str
+    image_url: Optional[str] = None
     asset_status: AssetStatus
     equipment_type_uuid: Optional[UUID] = None
     vin_no: Optional[str] = None
@@ -56,6 +57,7 @@ class AssetPayload(BaseModel):
     user_uuid: UUID
     asset_type_uuid: UUID
     asset_name: str
+    image_url: Optional[str] = None
     vehicle_license_no: Optional[str] = None
     asset_status: AssetStatus
     equipment_type_uuid: Optional[UUID] = None
@@ -115,6 +117,7 @@ class AssetInput(BaseModel):
     asset_type_uuid: UUID
     asset_name: str
     asset_status: AssetStatus
+    image_url: Optional[str] = None
     equipment_type_uuid: Optional[UUID] = None
     device_imei: Optional[str] = None
     vin: Optional[str] = None
