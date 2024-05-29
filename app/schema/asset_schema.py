@@ -1,8 +1,8 @@
 from typing import List, Optional
+from uuid import UUID
 
 from pydantic import BaseModel, EmailStr
 from pydantic_extra_types.coordinate import Latitude, Longitude
-from uuid import UUID
 
 from app.schema.equipment_schema import EquipmentPayload, EquipmentTypePayload
 from app.schema.marker_schema import MarkerIconPayload
