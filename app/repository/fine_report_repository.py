@@ -22,7 +22,7 @@ class FineReportRepository(BaseRepository):
             fine = (
                 session.query(self.model)
                 .filter(self.model.uuid == uuid)
-                .options(joinedload(self.model.assets))
+                .options(joinedload(self.model.asset))
                 .first()
             )
             return fine

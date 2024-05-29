@@ -19,6 +19,7 @@ class FineReportPayload(BaseModel):
     speed: str
     speed_time: datetime
     speed_location: LocationPayload
+    fine_amount: str
 
     class Config:
         orm_model = True

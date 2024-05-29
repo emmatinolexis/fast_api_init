@@ -47,7 +47,7 @@ async def create_fine_report_handler(
 
 @router.put("/{uuid}", response_class=ORJSONResponse)
 @inject
-async def update_feature_handler(
+async def update_fine_report_handler(
     uuid: str,
     payload: FineReportPayload,
     service: FineReportService = Depends(Provide[Container.fine_report_service]),
@@ -67,7 +67,7 @@ async def update_feature_handler(
 
 @router.get("/{uuid}", response_class=ORJSONResponse)
 @inject
-async def get_feature_by_uuid_handler(
+async def get_fine_report_by_uuid_handler(
     uuid: str,
     service: FineReportService = Depends(Provide[Container.fine_report_service]),
     current_user: User = Depends(get_current_user),
