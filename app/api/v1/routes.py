@@ -18,6 +18,7 @@ from app.api.v1.endpoints.equipment import router as equipment_router
 from app.api.v1.endpoints.equipment_type import router as equipment_type_router
 from app.api.v1.endpoints.external_app import router as external_app_router
 from app.api.v1.endpoints.feature import router as feature_router
+from app.api.v1.endpoints.fine_report import router as fine_report_router
 from app.api.v1.endpoints.health_check import router as health_check_router
 from app.api.v1.endpoints.inventory import router as inventory_router
 from app.api.v1.endpoints.marker_icon import router as marker_icon_router
@@ -73,6 +74,7 @@ router_list = [
     permission_router,
     vehicle_make_router,
     third_party_router,
+    fine_report_router,
 ]
 
 for router in router_list:

@@ -47,8 +47,8 @@ class ActiveStatus(str, Enum):
 
 
 class FineStatus(str, Enum):
-    PAID = "paid"
     PENDING_PAYMENT = "pending_payment"
+    PAID = "paid"
     PAYMENT_OVERDUE = "payment_overdue"
 
 
