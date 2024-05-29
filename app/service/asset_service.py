@@ -189,6 +189,7 @@ class AssetService(BaseService):
             "user_uuid": created_asset.user_uuid,
             "asset_type_uuid": created_asset.asset_type_uuid,
             "asset_name": created_asset.asset_name,
+            "image_url": created_asset.image_url,
             "vehicle_license_no": created_asset.vehicle_license_no,
             "asset_status": created_asset.asset_status,
             "equipment_type_uuid": created_asset.equipment_type_uuid,

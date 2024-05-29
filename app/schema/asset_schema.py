@@ -1,8 +1,8 @@
 from typing import List, Optional
-from uuid import UUID
 
 from pydantic import BaseModel, EmailStr
 from pydantic_extra_types.coordinate import Latitude, Longitude
+from uuid import UUID
 
 from app.schema.equipment_schema import EquipmentPayload, EquipmentTypePayload
 from app.schema.marker_schema import MarkerIconPayload
@@ -56,6 +56,7 @@ class AssetPayload(BaseModel):
     user_uuid: UUID
     asset_type_uuid: UUID
     asset_name: str
+    image_url: str
     vehicle_license_no: Optional[str] = None
     asset_status: AssetStatus
     equipment_type_uuid: Optional[UUID] = None
