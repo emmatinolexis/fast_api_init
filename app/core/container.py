@@ -26,6 +26,7 @@ from app.repository import (
     equipment_type_repository,
     external_app_repository,
     feature_repository,
+    fine_report_repository,
     immobilizer_report_repository,
     inventory_repository,
     marker_icon_repository,
@@ -79,6 +80,7 @@ from app.service import (
     equipment_type_service,
     external_app_service,
     feature_service,
+    fine_report_service,
     immobilizer_report_service,
     inventory_service,
     invitation_service,
@@ -145,6 +147,7 @@ class Container(containers.DeclarativeContainer):
             "app.api.v1.endpoints.permission",
             "app.api.v1.endpoints.vehicle_make",
             "app.api.v1.endpoints.third_party_app",
+            "app.api.v1.endpoints.fine_report",
         ]
     )
 
@@ -375,6 +378,10 @@ class Container(containers.DeclarativeContainer):
     )
     vehicle_owner_repository = providers.Factory(
         vehicle_owner_repository.VehicleOwnerRepository,
+        session_factory=db.provided.session,
+    )
+    fine_report_repository = providers.Factory(
+        fine_report_repository.FineReportRepository,
         session_factory=db.provided.session,
     )
 
@@ -611,4 +618,8 @@ class Container(containers.DeclarativeContainer):
     business_profile_service = providers.Factory(
         business_profile_service.BusinessProfileService,
         business_profile_repository=business_profile_repository,
+    )
+    fine_report_service = providers.Factory(
+        fine_report_service.FineReportService,
+        fine_report_repository=fine_report_repository,
     )
