@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import Dict, List
+from uuid import UUID
 
 from app.core.constants import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE, THIRD_PARTY_APP_ROLE
 
@@ -54,6 +55,10 @@ class FineStatus(str, Enum):
 
 class FineType(str, Enum):
     OVER_SPEEDING = "over_speeding"
+
+
+class CustomerRoles(str, Enum):
+    ADMIN = UUID("7d720dbf-f90f-462d-ada2-8fbf0bfba56b")
 
 
 class PackageItemTrackerType(str, Enum):

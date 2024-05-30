@@ -38,9 +38,11 @@ class User(BaseModel):
     business_profile_uuid = Column(
         UUID(as_uuid=True), ForeignKey("business_profiles.uuid"), nullable=True
     )
+    user_role_uuid = Column(UUID(as_uuid=True), ForeignKey("roles.uuid"), nullable=True)
     business_profile = relationship(
         "BusinessProfile", uselist=False, back_populates="users"
     )
+    user_role = relationship("Role", uselist=False)
     user_verification = relationship(
         "EmailVerification", uselist=False, back_populates="user"
     )
