@@ -9,6 +9,7 @@ from app.core.security import extract_user_data, hash_user_password, verify_pass
 from app.core.settings import settings
 from app.model.business_profile import BusinessProfile
 from app.model.email_verification import EmailVerification
+from app.model.role import Role
 from app.model.user import User
 from app.repository.base_repository import BaseRepository
 from app.schema.auth_schema import EmailVerification as EmailVerficationSchema
@@ -18,7 +19,7 @@ from app.schema.user_schema import (
     UpdateUserPayload,
     UserPayload,
 )
-from app.util.enums import AccountType, ActiveStatus
+from app.util.enums import AccountType, ActiveStatus, CustomerRoles
 from app.util.utils import toggle_status
 
 
@@ -55,6 +56,7 @@ class UserRepository(BaseRepository):
                 session.query(self.model)
                 .filter(self.model.email_address == email)
                 .options(joinedload(User.business_profile))
+                .options(joinedload(User.user_role).joinedload(Role.permissions))
                 .first()
             )
 
@@ -166,6 +168,9 @@ class UserRepository(BaseRepository):
                 password=hash_user_password(user.password),
                 account_type=user.account_type,
                 role=user.role,
+                user_role_uuid=CustomerRoles.ADMIN
+                if not user.invite_status
+                else user.user_role_uuid,
                 status=user.status,
             )
 

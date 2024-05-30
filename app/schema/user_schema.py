@@ -17,6 +17,8 @@ class UserPayload(BaseModel):
     business_email: Optional[str] = None
     business_phone: Optional[str] = None
     role: Optional[UserRole] = UserRole.CUSTOMER
+    user_role_uuid: Optional[UUID] = None
+    invite_status: Optional[bool] = None
     status: ActiveStatus = ActiveStatus.ACTIVE
 
     class Config:
