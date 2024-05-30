@@ -394,7 +394,7 @@ async def create_team_member_invitation(
                 recipient_name="",
                 email=invitation.email,
                 invitee_name=f"{user.first_name} {user.last_name}",
-                business_profile_uuid=invitation.business_profile_uuid,
+                business_profile_uuid=user.business_profile_uuid,
                 role=invitation.role_uuid,
             )
         msg = "Invitations sent successfully"
