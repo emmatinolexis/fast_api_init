@@ -71,7 +71,11 @@ class UserRepository(BaseRepository):
     def get_user_by_uuid(self, user_uuid: str):
         with self.session_factory() as session:
             user = (
-                session.query(self.model).filter(self.model.uuid == user_uuid).first()
+                session.query(self.model)
+                .filter(self.model.uuid == user_uuid)
+                .options(joinedload(User.business_profile))
+                .options(joinedload(User.user_role).joinedload(Role.permissions))
+                .first()
             )
             user_data = extract_user_data(user)
             return user_data
