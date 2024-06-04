@@ -6,18 +6,10 @@ from pydantic_extra_types.coordinate import Latitude, Longitude
 
 from app.schema.equipment_schema import EquipmentPayload, EquipmentTypePayload
 from app.schema.marker_schema import MarkerIconPayload
-from app.util.enums import (
-    ActiveStatus,
-    AssetCreators,
-    AssetDeviceRequestStatus,
-    AssetStatus,
-    AssetUsageType,
-    DriverType,
-    ImmobilizerReason,
-    ImmobilizerType,
-    IncidentStatus,
-    IncidentType,
-)
+from app.util.enums import (ActiveStatus, AssetCreators,
+                            AssetDeviceRequestStatus, AssetStatus,
+                            AssetUsageType, DriverType, ImmobilizerReason,
+                            ImmobilizerType, IncidentStatus, IncidentType)
 
 
 class AssetTypePayload(BaseModel):

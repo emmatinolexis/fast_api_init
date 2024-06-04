@@ -8,14 +8,10 @@ from app.core.dependencies import get_current_user
 from app.core.exceptions import NotFoundError
 from app.model.user import User
 from app.schema.asset_schema import AlertMaintenanceTypePayload
-from app.service.alert_maintenance_type_service import AlertMaintenanceTypeService
-from app.util.utils import (
-    allow_admins_only,
-    send_client_side_error,
-    send_data,
-    send_info,
-    send_internal_server_error,
-)
+from app.service.alert_maintenance_type_service import \
+    AlertMaintenanceTypeService
+from app.util.utils import (allow_admins_only, send_client_side_error,
+                            send_data, send_info, send_internal_server_error)
 
 router = APIRouter(
     prefix="/alert_maintenance_types",

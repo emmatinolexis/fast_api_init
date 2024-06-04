@@ -1,6 +1,5 @@
-from app.repository.alert_maintenance_type_repository import (
-    AlertMaintenanceTypeRepository,
-)
+from app.repository.alert_maintenance_type_repository import \
+    AlertMaintenanceTypeRepository
 from app.service.base_service import BaseService
 
 

@@ -64,7 +64,12 @@ class TrackingEventRepository(BaseRepository):
                     .all()
                 )
                 # Store the events for each device IMEI in the dictionary
-                events_by_device[device_imei] = query
+                events_by_device[device_imei] = {
+                    "events": query,
+                    "asset": asset
+                }
+                # events_by_device[device_imei] = query
+                # events_by_device[asset] = asset
 
             return events_by_device
 

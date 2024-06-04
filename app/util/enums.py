@@ -2,7 +2,8 @@ from enum import Enum
 from typing import Dict, List
 from uuid import UUID
 
-from app.core.constants import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE, THIRD_PARTY_APP_ROLE
+from app.core.constants import (ADMIN_USER_ROLE, CUSTOMER_USER_ROLE,
+                                THIRD_PARTY_APP_ROLE)
 
 
 class AccountType(str, Enum):

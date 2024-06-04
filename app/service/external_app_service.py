@@ -1,9 +1,7 @@
 from app.core.security import generate_access_token_for_third_party_app
 from app.repository.external_app_repository import ExternalAppRepository
-from app.schema.external_app_schema import (
-    ExternalAppGenerateTokenPayload,
-    ExternalAppPayload,
-)
+from app.schema.external_app_schema import (ExternalAppGenerateTokenPayload,
+                                            ExternalAppPayload)
 from app.service.base_service import BaseService
 from app.util.enums import UserRole
 from app.util.utils import days_to_minutes

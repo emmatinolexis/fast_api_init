@@ -9,13 +9,8 @@ from app.core.exceptions import NotFoundError
 from app.model.user import User
 from app.schema.equipment_schema import EquipmentPayload
 from app.service.equipment_service import EquipmentService
-from app.util.utils import (
-    allow_admins_only,
-    send_client_side_error,
-    send_data,
-    send_info,
-    send_internal_server_error,
-)
+from app.util.utils import (allow_admins_only, send_client_side_error,
+                            send_data, send_info, send_internal_server_error)
 
 router = APIRouter(
     prefix="/equipments",

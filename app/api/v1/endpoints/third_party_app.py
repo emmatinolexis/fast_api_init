@@ -6,10 +6,8 @@ from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
 from app.model.user import User
-from app.schema.third_party_app_schema import (
-    ThirdPartyAppPayload,
-    ThirdPartyAppUserPayload,
-)
+from app.schema.third_party_app_schema import (ThirdPartyAppPayload,
+                                               ThirdPartyAppUserPayload)
 from app.service.third_party_app_service import ThirdPartyAppService
 from app.service.third_party_app_user_service import ThirdPartyAppUserService
 from app.util.utils import send_data, send_internal_server_error
