@@ -9,22 +9,18 @@ from app.repository.device_repository import DeviceRepository
 from app.repository.driver_repository import DriverRepository
 from app.repository.equipment_repository import EquipmentRepository
 from app.repository.equipment_type_repository import EquipmentTypeRepository
-from app.repository.immobilizer_report_repository import ImmobilizerReportRepository
+from app.repository.immobilizer_report_repository import \
+    ImmobilizerReportRepository
 from app.repository.subscription_repository import SubscriptionRepository
 from app.repository.theft_incidence_repository import TheftIncidenceRepository
 from app.repository.theft_report_repository import TheftReportRepository
 from app.repository.user_repository import UserRepository
 from app.repository.vehicle_owner_repository import VehicleOwnerRepository
-from app.schema.asset_schema import (
-    AssetInput,
-    AssetPayload,
-    AssignDeviceInputPayload,
-    TheftIncidencePayload,
-    TheftReportPayload,
-    ThirdPartyAssetInput,
-    ThirdPartyAssetPayload,
-    VehicleOwnerInput,
-)
+from app.schema.asset_schema import (AssetInput, AssetPayload,
+                                     AssignDeviceInputPayload,
+                                     TheftIncidencePayload, TheftReportPayload,
+                                     ThirdPartyAssetInput,
+                                     ThirdPartyAssetPayload, VehicleOwnerInput)
 from app.service.base_service import BaseService
 from app.util.enums import AssetCreators, AssetStatus, PackageItemTrackerType
 

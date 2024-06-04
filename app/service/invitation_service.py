@@ -1,8 +1,7 @@
 from pydantic import EmailStr
 
-from app.repository.team_member_invitation_repository import (
-    TeamMemberInvitationRepository,
-)
+from app.repository.team_member_invitation_repository import \
+    TeamMemberInvitationRepository
 from app.schema.invitation_schema import InvitationPayload
 from app.service.base_service import BaseService
 

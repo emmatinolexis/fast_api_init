@@ -3,13 +3,11 @@ import requests
 from app.core.settings import settings
 from app.repository.device_repository import DeviceRepository
 from app.repository.inventory_repository import InventoryRepository
-from app.repository.order_device_assignment_repository import (
-    OrderDeviceAssignmentRepository,
-)
+from app.repository.order_device_assignment_repository import \
+    OrderDeviceAssignmentRepository
 from app.repository.order_repository import OrderRepository
-from app.repository.order_shipping_address_repository import (
-    OrderShippingAddressRepository,
-)
+from app.repository.order_shipping_address_repository import \
+    OrderShippingAddressRepository
 from app.schema.order_schema import OrderPayload
 from app.service.base_service import BaseService
 from app.util.enums import OrderPickUpLocation, OrderStatus

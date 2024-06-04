@@ -8,17 +8,11 @@ from app.core.container import Container
 from app.core.dependencies import get_current_user
 from app.core.exceptions import NotFoundError
 from app.model.user import User
-from app.schema.package_schema import (
-    PackageItemAssignmentPayload,
-    PaystackPackagePlanPayload,
-)
+from app.schema.package_schema import (PackageItemAssignmentPayload,
+                                       PaystackPackagePlanPayload)
 from app.service.package_service import PackageService
-from app.util.utils import (
-    send_client_side_error,
-    send_data,
-    send_info,
-    send_internal_server_error,
-)
+from app.util.utils import (send_client_side_error, send_data, send_info,
+                            send_internal_server_error)
 
 router = APIRouter(
     prefix="/packages",

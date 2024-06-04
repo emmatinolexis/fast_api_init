@@ -1,4 +1,5 @@
-from app.repository.alert_policy_type_repository import AlertPolicyTypeRepository
+from app.repository.alert_policy_type_repository import \
+    AlertPolicyTypeRepository
 from app.service.base_service import BaseService
 
 

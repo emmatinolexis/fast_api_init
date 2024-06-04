@@ -1,27 +1,19 @@
-from app.repository.alert_maintenance_type_repository import (
-    AlertMaintenanceTypeRepository,
-)
-from app.repository.alert_notification_assignment_repository import (
-    AlertNotificationAssignmentRepository,
-)
-from app.repository.alert_policy_asset_assignment_repository import (
-    AlertPolicyAssetAssignmentRepository,
-)
-from app.repository.alert_policy_notification_type_assignment_repository import (
-    AlertPolicyNotificationTypeAssignmentRepository,
-)
+from app.repository.alert_maintenance_type_repository import \
+    AlertMaintenanceTypeRepository
+from app.repository.alert_notification_assignment_repository import \
+    AlertNotificationAssignmentRepository
+from app.repository.alert_policy_asset_assignment_repository import \
+    AlertPolicyAssetAssignmentRepository
+from app.repository.alert_policy_notification_type_assignment_repository import \
+    AlertPolicyNotificationTypeAssignmentRepository
 from app.repository.alert_policy_repository import AlertPolicyRepository
-from app.repository.alert_policy_type_repository import AlertPolicyTypeRepository
+from app.repository.alert_policy_type_repository import \
+    AlertPolicyTypeRepository
 from app.repository.asset_repository import AssetRepository
 from app.schema.alert_policy_schema import (
-    AlertNotificationAssignment,
-    AlertPolicyAssetAssignment,
-    AlertPolicyInput,
-    AlertPolicyNotificationTypeAssignment,
-    AlertPolicyPayload,
-    GeofenceAlertPolicyInput,
-    GeofenceAlertPolicyPayload,
-)
+    AlertNotificationAssignment, AlertPolicyAssetAssignment, AlertPolicyInput,
+    AlertPolicyNotificationTypeAssignment, AlertPolicyPayload,
+    GeofenceAlertPolicyInput, GeofenceAlertPolicyPayload)
 from app.service.base_service import BaseService
 from app.util.enums import ActiveStatus, GeofenceShapeType
 

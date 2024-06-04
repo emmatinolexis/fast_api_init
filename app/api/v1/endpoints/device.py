@@ -9,12 +9,8 @@ from app.core.exceptions import NotFoundError
 from app.model.user import User
 from app.schema.device_schema import DevicePayload, ImeiAssignPayload
 from app.service.device_service import DeviceService
-from app.util.utils import (
-    send_client_side_error,
-    send_data,
-    send_info,
-    send_internal_server_error,
-)
+from app.util.utils import (send_client_side_error, send_data, send_info,
+                            send_internal_server_error)
 
 router = APIRouter(
     prefix="/devices",

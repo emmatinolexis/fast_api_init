@@ -1,4 +1,5 @@
-from app.repository.immobilizer_report_repository import ImmobilizerReportRepository
+from app.repository.immobilizer_report_repository import \
+    ImmobilizerReportRepository
 from app.service.base_service import BaseService
 
 
