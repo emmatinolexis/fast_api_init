@@ -86,7 +86,6 @@ class TrackingEventService(BaseService):
             response = []
 
             for device_imei, data in device_events.items():
-
                 events = data["events"]
                 asset = data["asset"]
 

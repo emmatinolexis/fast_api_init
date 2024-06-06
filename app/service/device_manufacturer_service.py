@@ -1,5 +1,4 @@
-from app.repository.device_manufacturer_repository import \
-    DeviceManufacturerRepository
+from app.repository.device_manufacturer_repository import DeviceManufacturerRepository
 from app.service.base_service import BaseService
 
 

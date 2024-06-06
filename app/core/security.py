@@ -5,8 +5,11 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Union
 
 from fastapi import HTTPException, Request, status
-from fastapi.security import (HTTPAuthorizationCredentials, HTTPBearer,
-                              OAuth2PasswordBearer)
+from fastapi.security import (
+    HTTPAuthorizationCredentials,
+    HTTPBearer,
+    OAuth2PasswordBearer,
+)
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 

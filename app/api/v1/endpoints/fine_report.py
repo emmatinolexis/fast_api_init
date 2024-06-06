@@ -8,8 +8,7 @@ from app.core.dependencies import get_current_user
 from app.model.user import User
 from app.schema.fine_report_schema import FineReportPayload
 from app.service.fine_report_service import FineReportService
-from app.util.utils import (send_client_side_error, send_data,
-                            send_internal_server_error)
+from app.util.utils import send_client_side_error, send_data, send_internal_server_error
 
 router = APIRouter(
     prefix="/fine_reports",
