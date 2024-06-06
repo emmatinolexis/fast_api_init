@@ -11,10 +11,12 @@ from app.model.asset import Asset
 from app.model.tracking_event import TrackingEvent
 from app.repository.base_repository import BaseRepository
 from app.util.enums import ActiveStatus, GeofenceShapeType, GeofenceTypeUuid
-from app.util.utils import (check_violated_geofence,
-                            generate_circle_geofence_coordinates,
-                            generate_polygon_geofence_coordinates,
-                            toggle_status)
+from app.util.utils import (
+    check_violated_geofence,
+    generate_circle_geofence_coordinates,
+    generate_polygon_geofence_coordinates,
+    toggle_status,
+)
 
 
 class AlertPolicyRepository(BaseRepository):

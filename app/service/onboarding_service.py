@@ -2,19 +2,23 @@ from app.core import messages
 from app.core.exceptions import NotFoundError
 from app.repository.asset_type_repository import AssetTypeRepository
 from app.repository.feature_repository import FeatureRepository
-from app.repository.onboarding_asset_type_assignment_repository import \
-    OnboardingAssetTypeAssignmentRepository
-from app.repository.onboarding_feature_assignment_repository import \
-    OnboardingFeatureAssignmentRepository
+from app.repository.onboarding_asset_type_assignment_repository import (
+    OnboardingAssetTypeAssignmentRepository,
+)
+from app.repository.onboarding_feature_assignment_repository import (
+    OnboardingFeatureAssignmentRepository,
+)
 from app.repository.onboarding_repository import OnboardingRepository
 from app.repository.package_repository import PackageRepository
 from app.repository.user_repository import UserRepository
-from app.schema.onboarding_schema import (BusinessOnboardingPayload,
-                                          OnboardingAssetTypeAssignment,
-                                          OnboardingBusinessInput,
-                                          OnboardingFeatureAssignment,
-                                          OnboardingIndividualInput,
-                                          OnboardingPayload)
+from app.schema.onboarding_schema import (
+    BusinessOnboardingPayload,
+    OnboardingAssetTypeAssignment,
+    OnboardingBusinessInput,
+    OnboardingFeatureAssignment,
+    OnboardingIndividualInput,
+    OnboardingPayload,
+)
 from app.service.base_service import BaseService
 from app.util.enums import AccountType
 

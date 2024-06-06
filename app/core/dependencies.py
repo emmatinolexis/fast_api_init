@@ -11,8 +11,7 @@ from app.model.external_app import ExternalApp
 from app.model.user import User
 from app.service.external_app_service import ExternalAppService
 from app.service.user_service import UserService
-from app.util.utils import (ADMIN_USER_ROLE, CUSTOMER_USER_ROLE,
-                            THIRD_PARTY_APP_ROLE)
+from app.util.utils import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE, THIRD_PARTY_APP_ROLE
 
 log = get_logger()
 

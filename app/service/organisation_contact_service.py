@@ -1,6 +1,5 @@
 from app.core.exceptions import NotFoundError
-from app.repository.organisation_contact_repository import \
-    OrganisationContactRepository
+from app.repository.organisation_contact_repository import OrganisationContactRepository
 from app.repository.user_repository import UserRepository
 from app.schema.onboarding_schema import OrganisationContactPayload
 from app.service.base_service import BaseService

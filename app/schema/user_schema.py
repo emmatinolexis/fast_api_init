@@ -2,8 +2,7 @@ from typing import Optional
 from uuid import UUID
 
 import phonenumbers
-from pydantic import (BaseModel, EmailStr, Field, ValidationInfo, constr,
-                      field_validator)
+from pydantic import BaseModel, EmailStr, Field, ValidationInfo, constr, field_validator
 
 from app.util.enums import AccountType, ActiveStatus, UserRole
 

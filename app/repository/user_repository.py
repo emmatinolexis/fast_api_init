@@ -5,8 +5,7 @@ from typing import Callable
 from pydantic import EmailStr
 from sqlalchemy.orm import Session, joinedload
 
-from app.core.security import (extract_user_data, hash_user_password,
-                               verify_password)
+from app.core.security import extract_user_data, hash_user_password, verify_password
 from app.core.settings import settings
 from app.model.business_profile import BusinessProfile
 from app.model.email_verification import EmailVerification
@@ -15,8 +14,11 @@ from app.model.user import User
 from app.repository.base_repository import BaseRepository
 from app.schema.auth_schema import EmailVerification as EmailVerficationSchema
 from app.schema.auth_schema import UserEmailVerification
-from app.schema.user_schema import (AccountDeactivationPayload,
-                                    UpdateUserPayload, UserPayload)
+from app.schema.user_schema import (
+    AccountDeactivationPayload,
+    UpdateUserPayload,
+    UserPayload,
+)
 from app.util.enums import AccountType, ActiveStatus, CustomerRoles
 from app.util.utils import toggle_status
 
@@ -145,8 +147,10 @@ class UserRepository(BaseRepository):
 
     def get_account_users(self, business_uuid: str):
         with self.session_factory() as session:
-            account_users = session.query(self.model).filter(
-                self.model.business_profile_uuid == business_uuid
+            account_users = (
+                session.query(self.model)
+                .filter(self.model.business_profile_uuid == business_uuid)
+                .options(joinedload(User.user_role))
             )
             users_data = []
             for user in account_users:
@@ -156,6 +160,10 @@ class UserRepository(BaseRepository):
                     "last_name": user.last_name,
                     "email_address": user.email_address,
                     "phone_number": user.phone_number,
+                    "image_url": user.avatar_url,
+                    "status": user.status,
+                    "role": user.user_role,
+                    "created_at": user.created_at,
                 }
                 users_data.append(user_data)
 

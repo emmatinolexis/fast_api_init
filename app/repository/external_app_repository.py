@@ -5,8 +5,10 @@ from sqlalchemy.orm import Session
 
 from app.model.external_app import ExternalApp
 from app.repository.base_repository import BaseRepository
-from app.schema.external_app_schema import (ExternalAppGenerateTokenPayload,
-                                            ExternalAppPayload)
+from app.schema.external_app_schema import (
+    ExternalAppGenerateTokenPayload,
+    ExternalAppPayload,
+)
 from app.util.enums import ActiveStatus
 
 

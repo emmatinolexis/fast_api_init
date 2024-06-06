@@ -1,7 +1,10 @@
 from app.repository.vehicle_make_repository import VehicleMakeRepository
 from app.repository.vehicle_model_repository import VehicleModelRepository
-from app.schema.asset_schema import (VehicleMakeInput, VehicleMakePayload,
-                                     VehicleModelInput)
+from app.schema.asset_schema import (
+    VehicleMakeInput,
+    VehicleMakePayload,
+    VehicleModelInput,
+)
 from app.service.base_service import BaseService
 
 
