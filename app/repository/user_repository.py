@@ -178,6 +178,9 @@ class UserRepository(BaseRepository):
                 password=hash_user_password(user.password),
                 account_type=user.account_type,
                 role=user.role,
+                business_profile_uuid=user.business_profile_uuid
+                if user.invite_status
+                else None,
                 user_role_uuid=CustomerRoles.ADMIN
                 if not user.invite_status
                 else user.user_role_uuid,
@@ -187,7 +190,7 @@ class UserRepository(BaseRepository):
             session.add(db_user)
             session.commit()
 
-            if user.account_type == AccountType.BUSINESS:
+            if user.account_type == AccountType.BUSINESS and not user.invite_status:
                 try:
                     business_data = BusinessProfile(
                         business_name=user.business_name,
