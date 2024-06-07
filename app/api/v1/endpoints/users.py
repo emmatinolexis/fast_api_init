@@ -374,7 +374,7 @@ async def create_team_member_invitation(
             )
             if invitation_exists:
                 return send_client_side_error(
-                    user_msg=f"Invitation already exists : {invitation.email}",
+                    user_msg=f"Invitation already exists for : {invitation.email}",
                 )
 
             user = service.get_by_uuid(user_uuid)
