@@ -178,7 +178,7 @@ class UserRepository(BaseRepository):
                 password=hash_user_password(user.password),
                 account_type=user.account_type,
                 role=user.role,
-                business_profile_uuid=user.business_uuid
+                business_profile_uuid=user.business_profile_uuid
                 if user.invite_status
                 else None,
                 user_role_uuid=CustomerRoles.ADMIN
