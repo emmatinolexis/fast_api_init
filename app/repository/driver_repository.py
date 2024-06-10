@@ -1,6 +1,7 @@
 from contextlib import AbstractContextManager
 from typing import Callable
 
+from sqlalchemy import desc, func
 from sqlalchemy.orm import Session
 
 from app.model.driver import Driver
@@ -12,10 +13,17 @@ class DriverRepository(BaseRepository):
         self.session_factory = session_factory
         super().__init__(session_factory, Driver)
 
-    def get_drivers_by_user_uuid(self, user_uuid):
+    def get_drivers_by_user_uuid(self, user_uuid, page=1, page_size=10):
         with self.session_factory() as session:
+            offset = (page - 1) * page_size
             query = session.query(self.model)
-            query = query.filter(self.model.user_uuid == user_uuid).all()
+            query = (
+                query.filter(self.model.user_uuid == user_uuid)
+                .order_by(desc(self.model.created_at))
+                .offset(offset)
+                .limit(page_size)
+                .all()
+            )
             return query
 
     def update_driver_asset(self, asset_uuid, driver_uuid):
@@ -29,11 +37,37 @@ class DriverRepository(BaseRepository):
 
             return driver
 
-    def get_drivers_by_business_uuid(self, business_uuid):
+    def get_drivers_by_business_uuid(self, business_uuid, page=1, page_size=10):
         with self.session_factory() as session:
-            query = session.query(self.model)
-            query = query.filter(self.model.business_uuid == business_uuid).all()
-            return query
+            offset = (page - 1) * page_size
+
+            # Query to get the total count of drivers
+            total_drivers = (
+                session.query(func.count(self.model.id))
+                .filter(self.model.business_uuid == business_uuid)
+                .scalar()
+            )
+
+            # Calculate total pages
+            total_pages = (total_drivers + page_size - 1) // page_size
+
+            # Fetch paginated results
+            drivers = (
+                session.query(self.model)
+                .filter(self.model.business_uuid == business_uuid)
+                .order_by(desc(self.model.created_at))
+                .offset(offset)
+                .limit(page_size)
+                .all()
+            )
+
+            return {
+                "drivers": drivers,
+                "total_drivers": total_drivers,
+                "total_pages": total_pages,
+                "current_page": page,
+                "page_size": page_size,
+            }
 
     def get_driver_phone_number(self, phone_number: str):
         with self.session_factory() as session:

@@ -1,5 +1,5 @@
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
 from pydantic import EmailStr
 
@@ -178,6 +178,10 @@ async def user_account(
     business_service: BusinessProfileService = Depends(
         Provide[Container.business_profile_service]
     ),
+    page: int = Query(1, ge=1, description="Page number, default is set to 1"),
+    page_size: int = Query(
+        10, ge=1, le=1000, description="Items per page, default is 10"
+    ),
     current_user: User = Depends(get_current_user),
 ):
     try:
@@ -185,7 +189,7 @@ async def user_account(
         if business is None:
             msg = f"{messages.BUSINESS_PROFILE_NOT_FOUND}{business_uuid}"
             return send_internal_server_error(user_msg=msg, error=msg)
-        return send_data(service.get_account_users(business_uuid))
+        return send_data(service.get_account_users(business_uuid, page, page_size))
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
@@ -413,10 +417,16 @@ async def get_all_user_invitations_handler(
     invitation_service: InvitationService = Depends(
         Provide[Container.invitation_service]
     ),
+    page: int = Query(1, ge=1, description="Page number, default is set to 1"),
+    page_size: int = Query(
+        10, ge=1, le=1000, description="Items per page, default is 10"
+    ),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        invitations = invitation_service.get_all_user_invites(business_uuid)
+        invitations = invitation_service.get_all_user_invites(
+            business_uuid, page, page_size
+        )
         return send_data(invitations)
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix

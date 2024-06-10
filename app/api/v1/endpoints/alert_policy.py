@@ -1,5 +1,5 @@
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
 
 from app.core import messages
@@ -26,10 +26,14 @@ msg_prefix = "alert policy"
 @inject
 async def get_alert_policies_handler(
     service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
+    page: int = Query(1, ge=1, description="Page number, default is set to 1"),
+    page_size: int = Query(
+        10, ge=1, le=1000, description="Items per page, default is 10"
+    ),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.get_all_alert_policies())
+        return send_data(service.get_all_alert_policies(page, page_size))
     except Exception as e:
         msg = messages.GET_FAILED + "alert policies"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -40,10 +44,16 @@ async def get_alert_policies_handler(
 async def get_alert_policies_by_user_handler(
     user_uuid: str,
     service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
+    page: int = Query(1, ge=1, description="Page number, default is set to 1"),
+    page_size: int = Query(
+        10, ge=1, le=1000, description="Items per page, default is 10"
+    ),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.get_all_alert_policies_by_user(user_uuid))
+        return send_data(
+            service.get_all_alert_policies_by_user(user_uuid, page, page_size)
+        )
     except Exception as e:
         msg = messages.GET_FAILED + "alert policies"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -54,10 +64,16 @@ async def get_alert_policies_by_user_handler(
 async def get_alert_violations_by_user_handler(
     user_uuid: str,
     service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
+    page: int = Query(1, ge=1, description="Page number, default is set to 1"),
+    page_size: int = Query(
+        10, ge=1, le=1000, description="Items per page, default is 10"
+    ),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.get_all_alert_violations_by_user(user_uuid))
+        return send_data(
+            service.get_all_alert_violations_by_user(user_uuid, page, page_size)
+        )
     except Exception as e:
         msg = messages.GET_FAILED + "alert policies"
         return send_internal_server_error(user_msg=msg, error=e)

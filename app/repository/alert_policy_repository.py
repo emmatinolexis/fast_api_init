@@ -3,6 +3,7 @@ from contextlib import AbstractContextManager
 from datetime import date
 from typing import Callable
 
+from sqlalchemy import desc, func
 from sqlalchemy.orm import Session, joinedload
 
 from app.model.alert_policy import AlertPolicy
@@ -24,10 +25,14 @@ class AlertPolicyRepository(BaseRepository):
         self.session_factory = session_factory
         super().__init__(session_factory, AlertPolicy)
 
-    def read_all_alert_policies(self):
+    def read_all_alert_policies(self, page, page_size):
         with self.session_factory() as session:
+            offset = (page - 1) * page_size
             alerts = (
                 session.query(self.model)
+                .order_by(desc(self.model.created_at))
+                .offset(offset)
+                .limit(page_size)
                 .options(joinedload(AlertPolicy.alert_policy_type))
                 .options(joinedload(AlertPolicy.assets))
                 .options(joinedload(AlertPolicy.maintenance_alert_type))
@@ -49,24 +54,63 @@ class AlertPolicyRepository(BaseRepository):
 
             return alert
 
-    def read_all_alert_policies_by_user(self, user_uuid: str):
+    def read_all_alert_policies_by_user(self, user_uuid: str, page=1, page_size=10):
         with self.session_factory() as session:
+            offset = (page - 1) * page_size
+
+            # Query to get the total count of alert policies
+            total_alert_policies = (
+                session.query(func.count(self.model.id))
+                .filter(self.model.user_uuid == user_uuid)
+                .scalar()
+            )
+
+            # Calculate total pages
+            total_pages = (total_alert_policies + page_size - 1) // page_size
+
+            # Fetch paginated results
             alerts = (
                 session.query(self.model)
                 .filter(self.model.user_uuid == user_uuid)
-                .options(joinedload(AlertPolicy.alert_policy_type))
-                .options(joinedload(AlertPolicy.assets))
-                .options(joinedload(AlertPolicy.alert_notification_types))
-                .options(joinedload(AlertPolicy.maintenance_alert_type))
+                .order_by(desc(self.model.created_at))
+                .offset(offset)
+                .limit(page_size)
+                .options(joinedload(self.model.alert_policy_type))
+                .options(joinedload(self.model.assets))
+                .options(joinedload(self.model.alert_notification_types))
+                .options(joinedload(self.model.maintenance_alert_type))
                 .all()
             )
-            return alerts
 
-    def read_all_alert_violations_by_user(self, user_uuid: str):
+            return {
+                "alerts": alerts,
+                "total_alert_policies": total_alert_policies,
+                "total_pages": total_pages,
+                "current_page": page,
+                "page_size": page_size,
+            }
+
+    def read_all_alert_violations_by_user(self, user_uuid: str, page=1, page_size=10):
         with self.session_factory() as session:
+            offset = (page - 1) * page_size
+
+            # Query to get the total count of alert violations
+            total_alerts = (
+                session.query(func.count(AlertPolicyViolation.id))
+                .filter(AlertPolicyViolation.user_uuid == user_uuid)
+                .scalar()
+            )
+
+            # Calculate total pages
+            total_pages = (total_alerts + page_size - 1) // page_size
+
+            # Fetch paginated results
             alerts = (
                 session.query(AlertPolicyViolation)
-                .filter(self.model.user_uuid == user_uuid)
+                .filter(AlertPolicyViolation.user_uuid == user_uuid)
+                .order_by(desc(AlertPolicyViolation.created_at))
+                .offset(offset)
+                .limit(page_size)
                 .options(joinedload(AlertPolicyViolation.alert_policy))
                 .options(
                     joinedload(AlertPolicyViolation.asset).joinedload(Asset.driver)
@@ -75,7 +119,13 @@ class AlertPolicyRepository(BaseRepository):
                 .all()
             )
 
-            return alerts
+            return {
+                "alerts": alerts,
+                "total_alerts": total_alerts,
+                "total_pages": total_pages,
+                "current_page": page,
+                "page_size": page_size,
+            }
 
     def check_geofence_violation(self):
         with self.session_factory() as session:
