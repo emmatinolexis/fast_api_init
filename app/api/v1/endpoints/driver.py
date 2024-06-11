@@ -1,5 +1,5 @@
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
 
 from app.core import messages
@@ -112,10 +112,14 @@ async def get_driver_by_uuid_handler(
 async def get_drivers_by_user_uuid_handler(
     user_uuid: str,
     service: DriverService = Depends(Provide[Container.driver_service]),
+    page: int = Query(1, ge=1, description="Page number, default is set to 1"),
+    page_size: int = Query(
+        10, ge=1, le=1000, description="Items per page, default is 10"
+    ),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        driver = service.get_drivers_by_user_uuid(user_uuid)
+        driver = service.get_drivers_by_user_uuid(user_uuid, page, page_size)
         if driver is None:
             return send_client_side_error(
                 user_msg=messages.DRIVER_NOT_FOUND + user_uuid
@@ -131,10 +135,14 @@ async def get_drivers_by_user_uuid_handler(
 async def get_drivers_by_business_uuid_handler(
     business_uuid: str,
     service: DriverService = Depends(Provide[Container.driver_service]),
+    page: int = Query(1, ge=1, description="Page number, default is set to 1"),
+    page_size: int = Query(
+        10, ge=1, le=1000, description="Items per page, default is 10"
+    ),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        drivers = service.get_drivers_by_business_uuid(business_uuid)
+        drivers = service.get_drivers_by_business_uuid(business_uuid, page, page_size)
         if drivers is None:
             return send_client_side_error(
                 user_msg=messages.DRIVER_NOT_FOUND + business_uuid

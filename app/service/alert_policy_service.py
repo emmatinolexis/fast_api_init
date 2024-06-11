@@ -52,24 +52,24 @@ class AlertPolicyService(BaseService):
         self.asset_repository = asset_repository
         super().__init__(alert_policy_repository)
 
-    def get_all_alert_policies(self):
+    def get_all_alert_policies(self, page=1, page_size=10):
         try:
-            return self.alert_policy_repository.read_all_alert_policies()
+            return self.alert_policy_repository.read_all_alert_policies(page, page_size)
         except Exception as e:
             raise e
 
-    def get_all_alert_policies_by_user(self, user_uuid: str):
+    def get_all_alert_policies_by_user(self, user_uuid: str, page=1, page_size=10):
         try:
             return self.alert_policy_repository.read_all_alert_policies_by_user(
-                user_uuid
+                user_uuid, page, page_size
             )
         except Exception as e:
             raise e
 
-    def get_all_alert_violations_by_user(self, user_uuid: str):
+    def get_all_alert_violations_by_user(self, user_uuid: str, page=1, page_size=10):
         try:
             return self.alert_policy_repository.read_all_alert_violations_by_user(
-                user_uuid
+                user_uuid, page, page_size
             )
         except Exception as e:
             raise e

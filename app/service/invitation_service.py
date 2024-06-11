@@ -18,5 +18,7 @@ class InvitationService(BaseService):
     def get_invitation_by_email(self, email: EmailStr):
         return self.invitation_repository.get_invitation_by_email(email)
 
-    def get_all_user_invites(self, business_uuid: str):
-        return self.invitation_repository.get_user_invitations(business_uuid)
+    def get_all_user_invites(self, business_uuid: str, page=1, page_size=10):
+        return self.invitation_repository.get_user_invitations(
+            business_uuid, page, page_size
+        )
