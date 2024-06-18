@@ -187,6 +187,7 @@ class AssetService(BaseService):
         )
         created_asset_data = {
             "user_uuid": created_asset.user_uuid,
+            "business_profile_uuid": created_asset.business_profile_uuid,
             "asset_type_uuid": created_asset.asset_type_uuid,
             "asset_name": created_asset.asset_name,
             "image_url": created_asset.image_url,
@@ -248,11 +249,27 @@ class AssetService(BaseService):
         return created_asset
 
     def get_assets_by_user_uuid(
-        self, uuid: str, asset_type_uuid: str = None, page=1, page_size=10
+        self, user_uuid: str, asset_type_uuid: str = None, page=1, page_size=10
     ):
         try:
             return self.asset_repository.read_all_assets_by_uuid(
-                uuid, asset_type_uuid, page, page_size
+                user_uuid=user_uuid,
+                asset_type_uuid=asset_type_uuid,
+                page=page,
+                page_size=page_size,
+            )
+        except Exception as e:
+            raise e
+
+    def get_assets_by_business_uuid(
+        self, business_uuid: str, asset_type_uuid: str = None, page=1, page_size=10
+    ):
+        try:
+            return self.asset_repository.read_all_assets_by_uuid(
+                business_uuid=business_uuid,
+                asset_type_uuid=asset_type_uuid,
+                page=page,
+                page_size=page_size,
             )
         except Exception as e:
             raise e

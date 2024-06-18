@@ -67,7 +67,37 @@ async def get_asset_by_user_uuid_handler(
 ):
     try:
         assets = service.get_assets_by_user_uuid(
-            user_uuid, asset_type_uuid, page, page_size
+            user_uuid=user_uuid,
+            asset_type_uuid=asset_type_uuid,
+            page=page,
+            page_size=page_size,
+        )
+
+        return send_data(assets)
+
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/business/{business_uuid}", response_class=ORJSONResponse)
+@inject
+async def get_asset_by_business_uuid_handler(
+    business_uuid: str,
+    asset_type_uuid: str = None,
+    page: int = Query(1, ge=1, description="Page number, default is set to 1"),
+    page_size: int = Query(
+        10, ge=1, le=1000, description="Items per page, default is 10"
+    ),
+    service: AssetService = Depends(Provide[Container.asset_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        assets = service.get_assets_by_business_uuid(
+            business_uuid=business_uuid,
+            asset_type_uuid=asset_type_uuid,
+            page=page,
+            page_size=page_size,
         )
 
         return send_data(assets)

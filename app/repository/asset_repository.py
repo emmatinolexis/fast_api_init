@@ -1,6 +1,6 @@
 from contextlib import AbstractContextManager
 from datetime import datetime
-from typing import Callable, List, Tuple
+from typing import Any, Callable, Dict
 
 from sqlalchemy import desc, label
 from sqlalchemy.orm import Session, joinedload
@@ -21,26 +21,48 @@ class AssetRepository(BaseRepository):
         super().__init__(session_factory, Asset)
 
     def read_all_assets_by_uuid(
-        self, uuid: str, asset_type_uuid: str = None, page=1, page_size=10
-    ) -> Tuple[List[Asset], int]:
+        self,
+        user_uuid: str = None,
+        business_uuid: str = None,
+        asset_type_uuid: str = None,
+        page=1,
+        page_size=10,
+    ) -> Dict[str, Any]:
         with self.session_factory() as session:
             # Calculate the offset based on the page and per_page values
             offset = (page - 1) * page_size
 
-            query = session.query(self.model).filter(self.model.user_uuid == uuid)
-            total_assets = query.count()
-            # return query
-            if asset_type_uuid is not None:
-                query = query.filter(self.model.asset_type_uuid == asset_type_uuid)
+            if user_uuid is not None:
+                # Base query filtered by user UUID
+                base_query = session.query(self.model).filter(
+                    self.model.user_uuid == user_uuid
+                )
 
-            query = (
-                query.order_by(desc(self.model.created_at))
+            if business_uuid is not None:
+                # Base query filtered by user UUID
+                base_query = session.query(self.model).filter(
+                    self.model.business_profile_uuid == business_uuid
+                )
+
+            # Query to get the total count of assets
+            total_assets = base_query.count()
+
+            # Calculate total pages
+            total_pages = (total_assets + page_size - 1) // page_size
+
+            if asset_type_uuid is not None:
+                base_query = base_query.filter(
+                    self.model.asset_type_uuid == asset_type_uuid
+                )
+
+            paginated_query = (
+                base_query.order_by(desc(self.model.created_at))
                 .offset(offset)
                 .limit(page_size)
             )
 
             assets = (
-                query.options(joinedload(Asset.asset_type))
+                paginated_query.options(joinedload(Asset.asset_type))
                 .options(joinedload(Asset.driver))
                 .options(joinedload(Asset.device).joinedload(Device.inventory))
                 .options(joinedload(Asset.equipment))
@@ -81,7 +103,13 @@ class AssetRepository(BaseRepository):
                         # Handle case where no result is found
                         pass
 
-            return assets, total_assets
+            return {
+                "assets": assets,
+                "total_assets": total_assets,
+                "total_pages": total_pages,
+                "current_page": page,
+                "page_size": page_size,
+            }
 
     def read_all_third_party_assets(
         self, asset_type_uuid: str = None, page=1, page_size=10
