@@ -22,17 +22,6 @@ class TeamMemberInvitationRepository(BaseRepository):
         with self.session_factory() as session:
             return session.query(self.model).filter(self.model.email == email).first()
 
-    # def get_user_invitations(self, business_uuid: str, page=1, page_size=10):
-    #     with self.session_factory() as session:
-    #         offset = (page - 1) * page_size
-    #         return (
-    #             session.query(self.model)
-    #             .filter(self.model.business_profile_uuid == business_uuid)
-    #             .order_by(desc(self.model.created_at)).offset(offset).limit(page_size)
-    #             .options(joinedload(self.model.role))
-    #             .all()
-    #         )
-
     def get_user_invitations(self, business_uuid: str, page=1, page_size=10):
         with self.session_factory() as session:
             offset = (page - 1) * page_size
