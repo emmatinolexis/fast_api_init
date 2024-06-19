@@ -21,7 +21,7 @@ msg_prefix = "tracking"
 
 @router.get("/", response_class=ORJSONResponse)
 @inject
-async def get_tracking_details_handler(
+async def get_last_tracking_details_handler(
     service: TrackingEventService = Depends(Provide[Container.tracking_event_service]),
     current_user: User = Depends(get_current_user),
     device_imei: str = None,
