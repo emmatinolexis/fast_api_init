@@ -21,7 +21,7 @@ msg_prefix = "tracking"
 
 @router.get("/", response_class=ORJSONResponse)
 @inject
-async def get_tracking_details_handler(
+async def get_last_tracking_details_handler(
     service: TrackingEventService = Depends(Provide[Container.tracking_event_service]),
     current_user: User = Depends(get_current_user),
     device_imei: str = None,
@@ -30,7 +30,7 @@ async def get_tracking_details_handler(
     try:
         events = service.get_events_by_device_imei(device_imei, date)
         if events is None:
-            return send_client_side_error(user_msg=messages.NO_DATA_FOUND)
+            return send_client_side_error(user_msg=messages.NO_DATA)
         return send_data(events)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
