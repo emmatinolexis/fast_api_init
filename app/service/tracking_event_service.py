@@ -25,12 +25,14 @@ class TrackingEventService(BaseService):
             events = self.tracking_event_repository.read_all_events_by_device_imei(
                 device_imei, date
             )
-            if events is None:
+
+            if not events:
                 return []
 
             response = {"uuid": events[0].device_uuid, "date": str(date), "events": []}
 
             current_event = None
+
             for event in events:
                 if current_event is None:
                     current_event = {
@@ -172,7 +174,8 @@ class TrackingEventService(BaseService):
 
     def get_distance_travelled_by_device_imei(self, device_imei: str, date: str):
         events = self.get_events_by_device_imei_by_date(device_imei, date)
-        if events is None:
+
+        if not events:
             return f"0 {DISTANCE_UNIT}"
 
         coordinates = []
@@ -191,9 +194,6 @@ class TrackingEventService(BaseService):
             latest_tracking_event = self.get_latest_tracking_event_by_device_imei(
                 device_imei
             )
-
-            if latest_tracking_event is None:
-                return None
 
             distance_travelled = self.get_distance_travelled_by_device_imei(
                 device_imei, date
