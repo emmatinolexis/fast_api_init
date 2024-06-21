@@ -7,12 +7,11 @@ from app.core.container import Container
 from app.core.dependencies import get_current_user
 from app.core.exceptions import NotFoundError
 from app.model.user import User
-from app.schema.external_app_schema import (
-    ExternalAppGenerateTokenPayload,
-    ExternalAppPayload,
-)
+from app.schema.external_app_schema import (ExternalAppGenerateTokenPayload,
+                                            ExternalAppPayload)
 from app.service.external_app_service import ExternalAppService
-from app.util.utils import send_client_side_error, send_data, send_internal_server_error
+from app.util.utils import (send_client_side_error, send_data,
+                            send_internal_server_error)
 
 router = APIRouter(
     prefix="/external_app",

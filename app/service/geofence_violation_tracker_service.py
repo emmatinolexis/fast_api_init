@@ -1,6 +1,5 @@
-from app.repository.geofence_violation_tracker_repository import (
-    GeofenceViolationTrackerRepository,
-)
+from app.repository.geofence_violation_tracker_repository import \
+    GeofenceViolationTrackerRepository
 from app.service.base_service import BaseService
 
 

@@ -1,4 +1,5 @@
-from app.repository.subscription_payment_repository import SubscriptionPaymentRepository
+from app.repository.subscription_payment_repository import \
+    SubscriptionPaymentRepository
 from app.service.base_service import BaseService
 
 

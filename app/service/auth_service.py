@@ -3,25 +3,21 @@ from datetime import datetime
 from jose import jwt
 
 from app.core.constants import FREE_PACKAGE, FREE_PACKAGE_ITEMS
-from app.core.exceptions import (
-    AlreadyVerifiedError,
-    AuthError,
-    ExpiredVerificationCodeError,
-    NotFoundError,
-    NotVerifiedError,
-)
+from app.core.exceptions import (AlreadyVerifiedError, AuthError,
+                                 ExpiredVerificationCodeError, NotFoundError,
+                                 NotVerifiedError)
 from app.core.logger import get_logger
-from app.core.security import (
-    extract_user_data,
-    generate_token_for_existing_user,
-    generate_token_for_new_user,
-    generate_verification_token,
-)
+from app.core.security import (extract_user_data,
+                               generate_token_for_existing_user,
+                               generate_token_for_new_user,
+                               generate_verification_token)
 from app.core.settings import settings
-from app.repository.email_verification_repository import EmailVerificationRepository
+from app.repository.email_verification_repository import \
+    EmailVerificationRepository
 from app.repository.subscription_repository import SubscriptionRepository
 from app.repository.user_repository import UserRepository
-from app.repository.user_subscription_repository import UserSubscriptionRepository
+from app.repository.user_subscription_repository import \
+    UserSubscriptionRepository
 from app.schema.auth_schema import UserEmailVerification, VerifyToken
 from app.schema.user_schema import UserLogin
 from app.service.base_service import BaseService

@@ -1,6 +1,5 @@
-from app.repository.order_device_assignment_repository import (
-    OrderDeviceAssignmentRepository,
-)
+from app.repository.order_device_assignment_repository import \
+    OrderDeviceAssignmentRepository
 from app.service.base_service import BaseService
 
 
