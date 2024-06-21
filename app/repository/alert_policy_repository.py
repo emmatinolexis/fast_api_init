@@ -1,6 +1,6 @@
 import logging
 from contextlib import AbstractContextManager
-from datetime import date
+from datetime import datetime
 from typing import Callable
 
 from sqlalchemy import desc, func
@@ -144,10 +144,8 @@ class AlertPolicyRepository(BaseRepository):
                 .all()
             )
 
-            # return alert_policies
-
             for alert_policy in alert_policies:
-                # return alert_policy
+                # get violation data to check
                 geofence_violation_data = alert_policy.geofence_coordinate_data
 
                 # Generate geofence points based on shape type
@@ -169,24 +167,31 @@ class AlertPolicyRepository(BaseRepository):
                 alert_recipients = alert_policy.alert_recipients
 
                 # Get the current date
-                today_date = date.today()
-                today_date_str = today_date
-
-                # Convert the current date to the format of event_datetime for comparison
-                today_date_str = today_date_str.strftime("%Y-%m-%d")
+                today_date = datetime.now()
+                today_date_str = today_date.strftime("%Y-%m-%d")
 
                 for geofence_asset in geofence_assets:
-                    # Query the database for tracking events for today
+                    # Get the last checked time for the asset
+                    last_checked_time = (
+                        session.query(
+                            func.max(TrackingEvent.last_checked_geofence_violation)
+                        )
+                        .filter(TrackingEvent.device_imei == geofence_asset.device_imei)
+                        .scalar()
+                    )
+
+                    if last_checked_time is None:
+                        last_checked_time = f"{today_date_str} 00:00:00.000"
+                    else:
+                        last_checked_time = last_checked_time.strftime(
+                            "%Y-%m-%d %H:%M:%S.%f"
+                        )
+
+                    # Query the database for tracking events that occurred after the last checked time
                     asset_points = (
                         session.query(TrackingEvent)
-                        .filter(
-                            TrackingEvent.event_datetime
-                            >= f"{today_date_str} 00:00:00.000"
-                        )
-                        .filter(
-                            TrackingEvent.event_datetime
-                            <= f"{today_date_str} 23:59:59.999"
-                        )
+                        .filter(TrackingEvent.device_imei == geofence_asset.device_imei)
+                        .filter(TrackingEvent.event_datetime > last_checked_time)
                         .all()
                     )
 
@@ -207,7 +212,7 @@ class AlertPolicyRepository(BaseRepository):
                         }
                     )
 
-                    # # If violation occurs, create AlertPolicyViolation instance and persist it
+                    # If violation occurs, create AlertPolicyViolation instance and persist it
                     if violated_asset_coordinates:
                         violation = AlertPolicyViolation(
                             alert_policy_uuid=alert_policy.uuid,
@@ -218,7 +223,11 @@ class AlertPolicyRepository(BaseRepository):
                         )
                         session.add(violation)
 
-        session.commit()
+                    # Update last_checked_geofence_violation timestamp for the processed events
+                    for point in asset_points:
+                        point.last_checked_geofence_violation = datetime.now()
 
-        logging.info("Alert Notifications Sent")
-        return {"message": "Notifications Sent", "violations": violations}
+            session.commit()
+            msg = "Geofence policy data fetched successfully"
+            logging.info(msg)
+            return {"message": msg, "violations": violations}

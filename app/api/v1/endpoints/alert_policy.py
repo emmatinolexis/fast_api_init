@@ -6,6 +6,8 @@ from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
 from app.core.exceptions import NotFoundError
+
+# from app.main import app
 from app.model.user import User
 from app.schema.alert_policy_schema import (
     AlertPolicyPayload,

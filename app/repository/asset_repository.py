@@ -80,7 +80,7 @@ class AssetRepository(BaseRepository):
                             TrackingEvent.speed,
                             TrackingEvent.course,
                             label("timestamp", TrackingEvent.event_datetime),
-                            label("event_type", get_status(TrackingEvent.event_type)),
+                            label("event_type", TrackingEvent.event_type),
                         )
                         .filter(TrackingEvent.device_imei == asset.device_imei)
                         .order_by(desc(TrackingEvent.event_datetime))
@@ -96,6 +96,7 @@ class AssetRepository(BaseRepository):
                             "course": last_tracking_event.course,
                             "timestamp": last_tracking_event.timestamp,
                             "event_type": last_tracking_event.event_type,
+                            "status": get_status(last_tracking_event.event_type),
                         }
                         # Add last_tracking_event_dict to asset dictionary
                         asset.last_tracking_event = last_tracking_event_dict
