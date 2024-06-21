@@ -12,12 +12,10 @@ from app.model.asset import Asset
 from app.model.tracking_event import TrackingEvent
 from app.repository.base_repository import BaseRepository
 from app.util.enums import ActiveStatus, GeofenceShapeType, GeofenceTypeUuid
-from app.util.utils import (
-    check_violated_geofence,
-    generate_circle_geofence_coordinates,
-    generate_polygon_geofence_coordinates,
-    toggle_status,
-)
+from app.util.utils import (check_violated_geofence,
+                            generate_circle_geofence_coordinates,
+                            generate_polygon_geofence_coordinates,
+                            toggle_status)
 
 
 class AlertPolicyRepository(BaseRepository):
@@ -131,21 +129,22 @@ class AlertPolicyRepository(BaseRepository):
         with self.session_factory() as session:
             violations = []
 
-            # get all active geofence alert policies
+            # Get all active geofence alert policies
             alert_policies = (
                 session.query(AlertPolicy)
-                .filter(
-                    AlertPolicy.alert_policy_type_uuid
-                    == GeofenceTypeUuid.GEOFENCE_ALERT_POLICY
-                )
+                .filter(AlertPolicy.alert_policy_type_uuid == GeofenceTypeUuid.GEOFENCE_ALERT_POLICY)
                 .filter(AlertPolicy.status == ActiveStatus.ACTIVE)
                 .options(joinedload(AlertPolicy.assets))
                 .options(joinedload(AlertPolicy.alert_recipients))
                 .all()
             )
 
+            # Get the current date
+            today_date = datetime.now().date()
+            # today_date_str = today_date.strftime("%Y-%m-%d")
+
             for alert_policy in alert_policies:
-                # get violation data to check
+                # Get violation data to check
                 geofence_violation_data = alert_policy.geofence_coordinate_data
 
                 # Generate geofence points based on shape type
@@ -163,29 +162,21 @@ class AlertPolicyRepository(BaseRepository):
                 # Get all assets for the current alert policy
                 geofence_assets = alert_policy.assets
 
-                # Get all alert recipient
+                # Get all alert recipients
                 alert_recipients = alert_policy.alert_recipients
-
-                # Get the current date
-                today_date = datetime.now()
-                today_date_str = today_date.strftime("%Y-%m-%d")
 
                 for geofence_asset in geofence_assets:
                     # Get the last checked time for the asset
                     last_checked_time = (
-                        session.query(
-                            func.max(TrackingEvent.last_checked_geofence_violation)
-                        )
+                        session.query(func.max(TrackingEvent.last_checked_geofence_violation))
                         .filter(TrackingEvent.device_imei == geofence_asset.device_imei)
                         .scalar()
                     )
 
                     if last_checked_time is None:
-                        last_checked_time = f"{today_date_str} 00:00:00.000"
+                        last_checked_time = datetime.combine(today_date, datetime.min.time())
                     else:
-                        last_checked_time = last_checked_time.strftime(
-                            "%Y-%m-%d %H:%M:%S.%f"
-                        )
+                        last_checked_time = last_checked_time.replace(microsecond=0)
 
                     # Query the database for tracking events that occurred after the last checked time
                     asset_points = (
@@ -203,17 +194,17 @@ class AlertPolicyRepository(BaseRepository):
                         asset_coordinates, geofence_points, alert_policy.geofence_type
                     )
 
-                    violations.append(
-                        {
-                            "asset": geofence_asset,
-                            "violated_points": violated_asset_coordinates,
-                            "alert_policy": alert_policy,
-                            "alert_recipients": alert_recipients,
-                        }
-                    )
-
-                    # If violation occurs, create AlertPolicyViolation instance and persist it
                     if violated_asset_coordinates:
+                        violations.append(
+                            {
+                                "asset": geofence_asset,
+                                "violated_points": violated_asset_coordinates,
+                                "alert_policy": alert_policy,
+                                "alert_recipients": alert_recipients,
+                            }
+                        )
+
+                        # Create AlertPolicyViolation instance and persist it
                         violation = AlertPolicyViolation(
                             alert_policy_uuid=alert_policy.uuid,
                             asset_uuid=geofence_asset.uuid,

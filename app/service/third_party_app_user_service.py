@@ -1,4 +1,5 @@
-from app.repository.third_party_app_user_repository import ThirdPartAppUserRepository
+from app.repository.third_party_app_user_repository import \
+    ThirdPartAppUserRepository
 from app.service.base_service import BaseService
 
 

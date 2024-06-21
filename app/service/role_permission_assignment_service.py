@@ -1,6 +1,5 @@
-from app.repository.role_permission_assignment_repository import (
-    RolePermissionAssignment,
-)
+from app.repository.role_permission_assignment_repository import \
+    RolePermissionAssignment
 from app.service.base_service import BaseService
 
 

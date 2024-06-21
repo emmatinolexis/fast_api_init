@@ -3,9 +3,8 @@ from typing import Callable
 
 from sqlalchemy.orm import Session
 
-from app.model.alert_polcy_notification_type_assignment import (
-    AlertPolicyNotificationTypeAssignment,
-)
+from app.model.alert_polcy_notification_type_assignment import \
+    AlertPolicyNotificationTypeAssignment
 from app.repository.base_repository import BaseRepository
 
 

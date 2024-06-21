@@ -1,6 +1,5 @@
-from app.repository.order_shipping_address_repository import (
-    OrderShippingAddressRepository,
-)
+from app.repository.order_shipping_address_repository import \
+    OrderShippingAddressRepository
 from app.service.base_service import BaseService
 
 

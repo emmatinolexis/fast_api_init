@@ -6,16 +6,14 @@ from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
 from app.core.exceptions import NotFoundError
-
 # from app.main import app
 from app.model.user import User
-from app.schema.alert_policy_schema import (
-    AlertPolicyPayload,
-    GeofenceAlertPolicyPayload,
-)
+from app.schema.alert_policy_schema import (AlertPolicyPayload,
+                                            GeofenceAlertPolicyPayload)
 from app.service.alert_policy_service import AlertPolicyService
 from app.util.email import send_alert_policy_violation_email
-from app.util.utils import send_client_side_error, send_data, send_internal_server_error
+from app.util.utils import (send_client_side_error, send_data,
+                            send_internal_server_error)
 
 router = APIRouter(
     prefix="/alert_policies",
@@ -123,24 +121,26 @@ async def check_geofence_violation_handler(
     try:
         response_data = service.check_geofence_violation()
 
-        for violation in response_data.get("violations", []):
-            for alert_recipient in violation.get("alert_recipients", []):
-                if "@" in alert_recipient.recipient:
-                    recipient_name = "MVI User"
-                    email = alert_recipient.recipient
-                    asset_name = violation.get("asset").asset_name
-                    policy_name = violation.get("alert_policy").policy_name
+        violations = response_data.get("violations", [])
+        if violations:
+            for violation in violations:
+                for alert_recipient in violation.get("alert_recipients", []):
+                    if "@" in alert_recipient.recipient:
+                        recipient_name = "MVI User"
+                        email = alert_recipient.recipient
+                        asset_name = violation.get("asset").asset_name
+                        policy_name = violation.get("alert_policy").policy_name
 
-                    # Send email for each violation
-                    await send_alert_policy_violation_email(
-                        recipient_name,
-                        email,
-                        asset_name,
-                        policy_name,
-                    )
-                else:
-                    # send sms notification
-                    pass
+                        # Send email for each violation
+                        await send_alert_policy_violation_email(
+                            recipient_name,
+                            email,
+                            asset_name,
+                            policy_name,
+                        )
+                    else:
+                        # send sms notification
+                        pass
 
         return response_data
 
