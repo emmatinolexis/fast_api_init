@@ -27,6 +27,7 @@ from app.repository import (
     external_app_repository,
     feature_repository,
     fine_report_repository,
+    geofence_violation_tracker_repository,
     immobilizer_report_repository,
     inventory_repository,
     marker_icon_repository,
@@ -81,6 +82,7 @@ from app.service import (
     external_app_service,
     feature_service,
     fine_report_service,
+    geofence_violation_tracker_service,
     immobilizer_report_service,
     inventory_service,
     invitation_service,
@@ -384,6 +386,10 @@ class Container(containers.DeclarativeContainer):
         fine_report_repository.FineReportRepository,
         session_factory=db.provided.session,
     )
+    geofence_violation_tracker_repository = providers.Factory(
+        geofence_violation_tracker_repository.GeofenceViolationTrackerRepository,
+        session_factory=db.provided.session,
+    )
 
     # Services
     auth_service = providers.Factory(
@@ -622,4 +628,8 @@ class Container(containers.DeclarativeContainer):
     fine_report_service = providers.Factory(
         fine_report_service.FineReportService,
         fine_report_repository=fine_report_repository,
+    )
+    geofence_violation_tracker_service = providers.Factory(
+        geofence_violation_tracker_service.GeofenceViolationTrackerService,
+        geofence_violation_tracker_repository=geofence_violation_tracker_repository,
     )
