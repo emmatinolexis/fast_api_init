@@ -9,8 +9,7 @@ from fastapi.responses import ORJSONResponse
 from geopy.distance import geodesic
 
 from app.client.s3_client import S3Client
-from app.core.constants import (ADMIN_USER_ROLE, CUSTOMER_USER_ROLE,
-                                THIRD_PARTY_APP_ROLE)
+from app.core.constants import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE, THIRD_PARTY_APP_ROLE
 from app.core.logger import get_logger
 from app.core.security import JWTBearer
 from app.core.settings import settings

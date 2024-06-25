@@ -12,10 +12,12 @@ from app.model.asset import Asset
 from app.model.tracking_event import TrackingEvent
 from app.repository.base_repository import BaseRepository
 from app.util.enums import ActiveStatus, GeofenceShapeType, GeofenceTypeUuid
-from app.util.utils import (check_violated_geofence,
-                            generate_circle_geofence_coordinates,
-                            generate_polygon_geofence_coordinates,
-                            toggle_status)
+from app.util.utils import (
+    check_violated_geofence,
+    generate_circle_geofence_coordinates,
+    generate_polygon_geofence_coordinates,
+    toggle_status,
+)
 
 
 class AlertPolicyRepository(BaseRepository):
@@ -88,6 +90,44 @@ class AlertPolicyRepository(BaseRepository):
                 "page_size": page_size,
             }
 
+    def read_all_alert_policies_by_business(
+        self, business_uuid: str, page=1, page_size=10
+    ):
+        with self.session_factory() as session:
+            offset = (page - 1) * page_size
+
+            # Query to get the total count of alert policies
+            total_alert_policies = (
+                session.query(func.count(self.model.id))
+                .filter(self.model.business_profile_uuid == business_uuid)
+                .scalar()
+            )
+
+            # Calculate total pages
+            total_pages = (total_alert_policies + page_size - 1) // page_size
+
+            # Fetch paginated results
+            alerts = (
+                session.query(self.model)
+                .filter(self.model.business_profile_uuid == business_uuid)
+                .order_by(desc(self.model.created_at))
+                .offset(offset)
+                .limit(page_size)
+                .options(joinedload(self.model.alert_policy_type))
+                .options(joinedload(self.model.assets))
+                .options(joinedload(self.model.alert_notification_types))
+                .options(joinedload(self.model.maintenance_alert_type))
+                .all()
+            )
+
+            return {
+                "alerts": alerts,
+                "total_alert_policies": total_alert_policies,
+                "total_pages": total_pages,
+                "current_page": page,
+                "page_size": page_size,
+            }
+
     def read_all_alert_violations_by_user(self, user_uuid: str, page=1, page_size=10):
         with self.session_factory() as session:
             offset = (page - 1) * page_size
@@ -125,6 +165,45 @@ class AlertPolicyRepository(BaseRepository):
                 "page_size": page_size,
             }
 
+    def read_all_alert_violations_by_business(
+        self, business_uuid: str, page=1, page_size=10
+    ):
+        with self.session_factory() as session:
+            offset = (page - 1) * page_size
+
+            # Query to get the total count of alert violations
+            total_alerts = (
+                session.query(func.count(AlertPolicyViolation.id))
+                .filter(AlertPolicyViolation.user_uuid == business_uuid)
+                .scalar()
+            )
+
+            # Calculate total pages
+            total_pages = (total_alerts + page_size - 1) // page_size
+
+            # Fetch paginated results
+            alerts = (
+                session.query(AlertPolicyViolation)
+                .filter(AlertPolicyViolation.user_uuid == business_uuid)
+                .order_by(desc(AlertPolicyViolation.created_at))
+                .offset(offset)
+                .limit(page_size)
+                .options(joinedload(AlertPolicyViolation.alert_policy))
+                .options(
+                    joinedload(AlertPolicyViolation.asset).joinedload(Asset.driver)
+                )
+                .options(joinedload(AlertPolicyViolation.user))
+                .all()
+            )
+
+            return {
+                "alerts": alerts,
+                "total_alerts": total_alerts,
+                "total_pages": total_pages,
+                "current_page": page,
+                "page_size": page_size,
+            }
+
     def check_geofence_violation(self):
         with self.session_factory() as session:
             violations = []
@@ -132,7 +211,10 @@ class AlertPolicyRepository(BaseRepository):
             # Get all active geofence alert policies
             alert_policies = (
                 session.query(AlertPolicy)
-                .filter(AlertPolicy.alert_policy_type_uuid == GeofenceTypeUuid.GEOFENCE_ALERT_POLICY)
+                .filter(
+                    AlertPolicy.alert_policy_type_uuid
+                    == GeofenceTypeUuid.GEOFENCE_ALERT_POLICY
+                )
                 .filter(AlertPolicy.status == ActiveStatus.ACTIVE)
                 .options(joinedload(AlertPolicy.assets))
                 .options(joinedload(AlertPolicy.alert_recipients))
@@ -168,13 +250,17 @@ class AlertPolicyRepository(BaseRepository):
                 for geofence_asset in geofence_assets:
                     # Get the last checked time for the asset
                     last_checked_time = (
-                        session.query(func.max(TrackingEvent.last_checked_geofence_violation))
+                        session.query(
+                            func.max(TrackingEvent.last_checked_geofence_violation)
+                        )
                         .filter(TrackingEvent.device_imei == geofence_asset.device_imei)
                         .scalar()
                     )
 
                     if last_checked_time is None:
-                        last_checked_time = datetime.combine(today_date, datetime.min.time())
+                        last_checked_time = datetime.combine(
+                            today_date, datetime.min.time()
+                        )
                     else:
                         last_checked_time = last_checked_time.replace(microsecond=0)
 

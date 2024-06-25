@@ -9,8 +9,13 @@ from app.core.exceptions import NotFoundError
 from app.model.user import User
 from app.schema.marker_schema import MarkerIconPayload
 from app.service.marker_icon_service import MarkerIconService
-from app.util.utils import (allow_admins_only, send_client_side_error,
-                            send_data, send_info, send_internal_server_error)
+from app.util.utils import (
+    allow_admins_only,
+    send_client_side_error,
+    send_data,
+    send_info,
+    send_internal_server_error,
+)
 
 router = APIRouter(
     prefix="/marker_icons",

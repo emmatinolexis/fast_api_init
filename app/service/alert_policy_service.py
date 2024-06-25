@@ -1,19 +1,27 @@
-from app.repository.alert_maintenance_type_repository import \
-    AlertMaintenanceTypeRepository
-from app.repository.alert_notification_assignment_repository import \
-    AlertNotificationAssignmentRepository
-from app.repository.alert_policy_asset_assignment_repository import \
-    AlertPolicyAssetAssignmentRepository
-from app.repository.alert_policy_notification_type_assignment_repository import \
-    AlertPolicyNotificationTypeAssignmentRepository
+from app.repository.alert_maintenance_type_repository import (
+    AlertMaintenanceTypeRepository,
+)
+from app.repository.alert_notification_assignment_repository import (
+    AlertNotificationAssignmentRepository,
+)
+from app.repository.alert_policy_asset_assignment_repository import (
+    AlertPolicyAssetAssignmentRepository,
+)
+from app.repository.alert_policy_notification_type_assignment_repository import (
+    AlertPolicyNotificationTypeAssignmentRepository,
+)
 from app.repository.alert_policy_repository import AlertPolicyRepository
-from app.repository.alert_policy_type_repository import \
-    AlertPolicyTypeRepository
+from app.repository.alert_policy_type_repository import AlertPolicyTypeRepository
 from app.repository.asset_repository import AssetRepository
 from app.schema.alert_policy_schema import (
-    AlertNotificationAssignment, AlertPolicyAssetAssignment, AlertPolicyInput,
-    AlertPolicyNotificationTypeAssignment, AlertPolicyPayload,
-    GeofenceAlertPolicyInput, GeofenceAlertPolicyPayload)
+    AlertNotificationAssignment,
+    AlertPolicyAssetAssignment,
+    AlertPolicyInput,
+    AlertPolicyNotificationTypeAssignment,
+    AlertPolicyPayload,
+    GeofenceAlertPolicyInput,
+    GeofenceAlertPolicyPayload,
+)
 from app.service.base_service import BaseService
 from app.util.enums import ActiveStatus, GeofenceShapeType
 
@@ -58,10 +66,30 @@ class AlertPolicyService(BaseService):
         except Exception as e:
             raise e
 
+    def get_all_alert_policies_by_business(
+        self, business_uuid: str, page=1, page_size=10
+    ):
+        try:
+            return self.alert_policy_repository.read_all_alert_policies_by_business(
+                business_uuid, page, page_size
+            )
+        except Exception as e:
+            raise e
+
     def get_all_alert_violations_by_user(self, user_uuid: str, page=1, page_size=10):
         try:
             return self.alert_policy_repository.read_all_alert_violations_by_user(
                 user_uuid, page, page_size
+            )
+        except Exception as e:
+            raise e
+
+    def get_all_alert_violations_by_business(
+        self, business_uuid: str, page=1, page_size=10
+    ):
+        try:
+            return self.alert_policy_repository.read_all_alert_violations_by_business(
+                business_uuid, page, page_size
             )
         except Exception as e:
             raise e
@@ -78,7 +106,12 @@ class AlertPolicyService(BaseService):
         except Exception as e:
             raise e
 
-    def create_alert_policy(self, alert_policy: AlertPolicyPayload, user_uuid: str):
+    def create_alert_policy(
+        self,
+        alert_policy: AlertPolicyPayload,
+        user_uuid: str,
+        business_uuid: str = None,
+    ):
         try:
             self.validate_alert_policy(alert_policy)
 
@@ -91,6 +124,7 @@ class AlertPolicyService(BaseService):
                 maintenance_alert_schedule=alert_policy.maintenance_alert_schedule,
                 maximum_speed_limit=alert_policy.maximum_speed_limit,
                 user_uuid=user_uuid,
+                business_profile_uuid=business_uuid,
                 status=ActiveStatus.ACTIVE,
             )
 
@@ -110,11 +144,16 @@ class AlertPolicyService(BaseService):
             raise e
 
     def create_geofence_alert_policy(
-        self, alert_policy: GeofenceAlertPolicyPayload, user_uuid
+        self,
+        alert_policy: GeofenceAlertPolicyPayload,
+        user_uuid: str,
+        business_uuid: str = None,
     ):
         try:
             self.validate_alert_policy(alert_policy)
-            created_policy = self.create_alert_geofence_policy(alert_policy, user_uuid)
+            created_policy = self.create_alert_geofence_policy(
+                alert_policy, user_uuid, business_uuid
+            )
             self.assign_alert_recipients(alert_policy, created_policy)
             self.assign_alert_types(alert_policy, created_policy)
             self.assign_alert_assets(alert_policy, created_policy)
@@ -135,9 +174,9 @@ class AlertPolicyService(BaseService):
                 msg = f"Asset: {item} not found"
                 raise Exception(msg)
 
-                # raise NotFoundError(detail=messages.ASSET_NOT_FOUND + str(item))
-
-    def create_alert_geofence_policy(self, alert_policy, user_uuid):
+    def create_alert_geofence_policy(
+        self, alert_policy, user_uuid: str, business_uuid: str = None
+    ):
         if alert_policy.geofence_shape_type == GeofenceShapeType.CIRCULAR:
             alert_policy_data = GeofenceAlertPolicyInput(
                 policy_name=alert_policy.policy_name,
@@ -147,6 +186,7 @@ class AlertPolicyService(BaseService):
                 geofence_coordinate_data=alert_policy.circle_geofence_data,
                 geofence_shape_type=alert_policy.geofence_shape_type,
                 user_uuid=user_uuid,
+                business_profile_uuid=business_uuid,
                 status=ActiveStatus.ACTIVE,
             )
         else:
@@ -160,6 +200,7 @@ class AlertPolicyService(BaseService):
                 geofence_coordinate_data=geofence_data_wkt,
                 geofence_shape_type=alert_policy.geofence_shape_type,
                 user_uuid=user_uuid,
+                business_profile_uuid=business_uuid,
                 status=ActiveStatus.ACTIVE,
             )
         return self.add(alert_policy_data)

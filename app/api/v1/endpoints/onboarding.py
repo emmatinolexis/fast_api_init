@@ -7,12 +7,18 @@ from app.core.container import Container
 from app.core.dependencies import get_current_user
 from app.core.exceptions import NotFoundError
 from app.model.user import User
-from app.schema.onboarding_schema import (BusinessOnboardingPayload,
-                                          OnboardingPayload,
-                                          OnboardingUpdatePayload)
+from app.schema.onboarding_schema import (
+    BusinessOnboardingPayload,
+    OnboardingPayload,
+    OnboardingUpdatePayload,
+)
 from app.service.onboarding_service import OnboardingService
-from app.util.utils import (send_client_side_error, send_data, send_info,
-                            send_internal_server_error)
+from app.util.utils import (
+    send_client_side_error,
+    send_data,
+    send_info,
+    send_internal_server_error,
+)
 
 router = APIRouter(
     prefix="/onboarding",

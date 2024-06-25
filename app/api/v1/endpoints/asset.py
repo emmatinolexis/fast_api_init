@@ -5,25 +5,33 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
 
 from app.core import messages
-from app.core.constants import (ENGINE_SHUTDOWN_PASSWORD,
-                                ENGINE_SHUTDOWN_USERNAME)
+from app.core.constants import ENGINE_SHUTDOWN_PASSWORD, ENGINE_SHUTDOWN_USERNAME
 from app.core.container import Container
 from app.core.dependencies import get_current_user
 from app.core.exceptions import NotFoundError
 from app.model.user import User
-from app.schema.asset_schema import (AssetDeviceRequest, AssetPayload,
-                                     AssignDeviceInputPayload, EngineOnPayload,
-                                     ImmobilizerPayload, TheftIncidencePayload,
-                                     TheftReportPayload,
-                                     ThirdPartyAssetPayload)
+from app.schema.asset_schema import (
+    AssetDeviceRequest,
+    AssetPayload,
+    AssignDeviceInputPayload,
+    EngineOnPayload,
+    ImmobilizerPayload,
+    TheftIncidencePayload,
+    TheftReportPayload,
+    ThirdPartyAssetPayload,
+)
 from app.service.asset_device_request_service import AssetDeviceRequestService
 from app.service.asset_service import AssetService
 from app.service.theft_report_service import TheftReportService
 from app.service.tracking_event_service import TrackingEventService
 from app.util.enums import ImmobilizerReason, IncidentStatus, IncidentType
 from app.util.sms import send_sms
-from app.util.utils import (send_client_side_error, send_data, send_info,
-                            send_internal_server_error)
+from app.util.utils import (
+    send_client_side_error,
+    send_data,
+    send_info,
+    send_internal_server_error,
+)
 
 router = APIRouter(
     prefix="/assets",

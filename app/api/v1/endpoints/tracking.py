@@ -10,8 +10,7 @@ from app.core.dependencies import get_current_user
 from app.model.user import User
 from app.service.asset_service import AssetService
 from app.service.tracking_event_service import TrackingEventService
-from app.util.utils import (send_client_side_error, send_data,
-                            send_internal_server_error)
+from app.util.utils import send_client_side_error, send_data, send_internal_server_error
 
 router = APIRouter(
     prefix="/tracking",

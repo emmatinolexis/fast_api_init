@@ -1,8 +1,7 @@
 import requests
 
 from app.core.settings import settings
-from app.repository.user_subscription_repository import \
-    UserSubscriptionRepository
+from app.repository.user_subscription_repository import UserSubscriptionRepository
 from app.service.base_service import BaseService
 
 
