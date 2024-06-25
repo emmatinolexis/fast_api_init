@@ -1,5 +1,4 @@
-from app.repository.business_profile_repository import \
-    BusinessProfileRepository
+from app.repository.business_profile_repository import BusinessProfileRepository
 from app.service.base_service import BaseService
 
 

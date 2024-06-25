@@ -1,17 +1,18 @@
 from fastapi import APIRouter
 
-from app.api.v1.endpoints.alert_maintenance_type import \
-    router as alert_maintenance_type_router
+from app.api.v1.endpoints.alert_maintenance_type import (
+    router as alert_maintenance_type_router,
+)
 from app.api.v1.endpoints.alert_policy import router as alert_policy_router
-from app.api.v1.endpoints.alert_policy_type import \
-    router as alert_policy_type_router
+from app.api.v1.endpoints.alert_policy_type import router as alert_policy_type_router
 from app.api.v1.endpoints.asset import router as asset_router
 from app.api.v1.endpoints.asset_location import router as asset_location_router
 from app.api.v1.endpoints.asset_type import router as asset_type_router
 from app.api.v1.endpoints.authentication import router as auth_router
 from app.api.v1.endpoints.device import router as device_router
-from app.api.v1.endpoints.device_manufacturers import \
-    router as device_manufacturers_router
+from app.api.v1.endpoints.device_manufacturers import (
+    router as device_manufacturers_router,
+)
 from app.api.v1.endpoints.driver import router as driver_router
 from app.api.v1.endpoints.equipment import router as equipment_router
 from app.api.v1.endpoints.equipment_type import router as equipment_type_router
@@ -23,15 +24,17 @@ from app.api.v1.endpoints.inventory import router as inventory_router
 from app.api.v1.endpoints.marker_icon import router as marker_icon_router
 from app.api.v1.endpoints.onboarding import router as onboarding_router
 from app.api.v1.endpoints.order import router as order_router
-from app.api.v1.endpoints.organisation_contact import \
-    router as organisation_contact_router
+from app.api.v1.endpoints.organisation_contact import (
+    router as organisation_contact_router,
+)
 from app.api.v1.endpoints.package import router as package_router
 from app.api.v1.endpoints.package_item import router as package_item_router
 from app.api.v1.endpoints.payment import router as payment_router
 from app.api.v1.endpoints.permission import router as permission_router
 from app.api.v1.endpoints.subscription import router as subscription_router
-from app.api.v1.endpoints.subscription_payment import \
-    router as subscription_payment_router
+from app.api.v1.endpoints.subscription_payment import (
+    router as subscription_payment_router,
+)
 from app.api.v1.endpoints.third_party_app import router as third_party_router
 from app.api.v1.endpoints.tracking import router as tracking_router
 from app.api.v1.endpoints.upload import router as upload_router

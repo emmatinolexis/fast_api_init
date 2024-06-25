@@ -8,8 +8,12 @@ from app.core import messages
 from app.core.dependencies import get_current_user
 from app.model.user import User
 from app.schema.upload_schema import FileUploadPayload
-from app.util.utils import (get_content_type, send_data_with_info,
-                            send_internal_server_error, upload_to_s3)
+from app.util.utils import (
+    get_content_type,
+    send_data_with_info,
+    send_internal_server_error,
+    upload_to_s3,
+)
 
 router = APIRouter(
     prefix="/uploads",

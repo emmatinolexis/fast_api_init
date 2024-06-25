@@ -3,8 +3,7 @@ from typing import Callable
 
 from sqlalchemy.orm import Session
 
-from app.model.onboarding_asset_type_assignment import \
-    OnboardingAssetTypeAssignment
+from app.model.onboarding_asset_type_assignment import OnboardingAssetTypeAssignment
 from app.repository.base_repository import BaseRepository
 
 

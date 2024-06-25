@@ -9,8 +9,7 @@ from app.core.exceptions import NotFoundError
 from app.model.user import User
 from app.schema.device_schema import InventoryPayload
 from app.service.inventory_service import InventoryService
-from app.util.utils import (send_client_side_error, send_data,
-                            send_internal_server_error)
+from app.util.utils import send_client_side_error, send_data, send_internal_server_error
 
 router = APIRouter(
     prefix="/inventory",

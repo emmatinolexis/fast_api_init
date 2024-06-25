@@ -2,8 +2,10 @@ from sqlalchemy import exc
 
 from app.core.exceptions import NotFoundError
 from app.repository.package_repository import PackageRepository
-from app.schema.package_schema import (PackageItemAssignmentPayload,
-                                       PaystackPackagePlanPayload)
+from app.schema.package_schema import (
+    PackageItemAssignmentPayload,
+    PaystackPackagePlanPayload,
+)
 from app.service.base_service import BaseService
 
 

@@ -27,6 +27,9 @@ class AlertPolicy(BaseModel):
     geofence_shape_type = Column(Enum(GeofenceShapeType), nullable=True)
     geofence_coordinate_data = Column(JSON, nullable=True)
     user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
+    business_profile_uuid = Column(
+        UUID(as_uuid=True), ForeignKey("business_profiles.uuid"), nullable=True
+    )
     policy_name = Column(String(length=100), nullable=False, index=True)
     minimum_idle_time = Column(String(length=100), nullable=True, index=True)
     maximum_speed_limit = Column(String(length=100), nullable=True)
