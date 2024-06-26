@@ -32,13 +32,13 @@ class AssetRepository(BaseRepository):
             # Calculate the offset based on the page and per_page values
             offset = (page - 1) * page_size
 
-            if user_uuid is not None:
+            if user_uuid:
                 # Base query filtered by user UUID
                 base_query = session.query(self.model).filter(
                     self.model.user_uuid == user_uuid
                 )
 
-            if business_uuid is not None:
+            if business_uuid:
                 # Base query filtered by user UUID
                 base_query = session.query(self.model).filter(
                     self.model.business_profile_uuid == business_uuid

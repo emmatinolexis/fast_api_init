@@ -50,6 +50,7 @@ class AlertPolicyInput(BaseModel):
     maintenance_alert_type_uuid: Optional[UUID] = None
     maintenance_alert_schedule: Optional[MaintenanceAlertSchedule] = None
     user_uuid: UUID
+    business_profile_uuid: UUID
     status: str
 
 

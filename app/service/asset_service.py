@@ -26,7 +26,12 @@ from app.schema.asset_schema import (
     VehicleOwnerInput,
 )
 from app.service.base_service import BaseService
-from app.util.enums import AssetCreators, AssetStatus, PackageItemTrackerType
+from app.util.enums import (
+    AccountType,
+    AssetCreators,
+    AssetStatus,
+    PackageItemTrackerType,
+)
 
 
 class AssetService(BaseService):
@@ -68,8 +73,16 @@ class AssetService(BaseService):
             user_subscription = self.get_user_subscription(email_address)
 
             number_of_assets = self.get_filtered_package_item(user_subscription)
+            if user.get("account_type") == AccountType.INDIVIDUAL:
+                self.check_asset_creation_limit(
+                    user_uuid=user.get("uuid"), number_of_assets=number_of_assets
+                )
 
-            self.check_asset_creation_limit(asset.user_uuid, number_of_assets)
+            if user.get("account_type") == AccountType.BUSINESS:
+                self.check_asset_creation_limit(
+                    business_uuid=user.get("business_profile").uuid,
+                    number_of_assets=number_of_assets,
+                )
 
             self.check_existing_asset(asset)
 
@@ -145,8 +158,14 @@ class AssetService(BaseService):
             number_of_asset = filtered_package_item.number_of_assets
         return number_of_asset
 
-    def check_asset_creation_limit(self, user_uuid, number_of_assets: int):
-        user_assets = len(self.get_assets_by_user_uuid(user_uuid)[0])
+    def check_asset_creation_limit(
+        self, number_of_assets: int, user_uuid: str = None, business_uuid: str = None
+    ):
+        if business_uuid:
+            user_assets = len(self.get_assets_by_business_uuid(business_uuid))
+        if user_uuid:
+            user_assets = len(self.get_assets_by_user_uuid(user_uuid))
+
         if user_assets >= number_of_assets:
             raise Exception(
                 "You have reached the maximum number of assets you can create. Please subscribe for a higher package."
@@ -262,7 +281,11 @@ class AssetService(BaseService):
             raise e
 
     def get_assets_by_business_uuid(
-        self, business_uuid: str, asset_type_uuid: str = None, page=1, page_size=10
+        self,
+        business_uuid: str = None,
+        asset_type_uuid: str = None,
+        page=1,
+        page_size=10,
     ):
         try:
             return self.asset_repository.read_all_assets_by_uuid(
