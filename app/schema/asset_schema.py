@@ -115,6 +115,7 @@ class VehicleOwnerInput(BaseModel):
 
 class AssetInput(BaseModel):
     user_uuid: UUID
+    business_profile_uuid: Optional[UUID] = None
     asset_type_uuid: UUID
     asset_name: str
     asset_status: AssetStatus
