@@ -1,4 +1,5 @@
-from datetime import datetime
+import datetime
+from typing import Any, Dict, List, Union
 
 from app.core.constants import DISTANCE_UNIT, SPEED_UNIT
 from app.core.logger import get_logger
@@ -73,76 +74,108 @@ class TrackingEventService(BaseService):
         except Exception as e:
             raise e
 
-    def get_events_by_user(self, user_uuid: str, date: str):
+    def get_events_by_user(
+        self, date: str, user_uuid: str = None, business_uuid: str = None
+    ) -> List[Dict[str, Any]]:
         try:
-            if not date:
-                date = datetime.now().strftime("%d/%m/%Y")
-
-            device_events = self.tracking_event_repository.read_all_events_by_user(
-                user_uuid, date
-            )
+            date = self._initialize_date(date)
+            device_events = self._fetch_device_events(date, user_uuid, business_uuid)
 
             if device_events is None:
-                return {}
+                return []
 
-            response = []
+            return self._build_response(date, device_events)
+        except Exception as e:
+            raise e
 
-            for device_imei, data in device_events.items():
-                events = data["events"]
-                asset = data["asset"]
+    def _initialize_date(self, date: str) -> str:
+        if not date:
+            date = datetime.datetime.now().strftime("%d/%m/%Y")
+        return date
 
-                device_response = {
-                    "device_imei": device_imei,
-                    "asset_name": asset.asset_name,
-                    "date": str(date),
-                    "events": [],
+    def _fetch_device_events(
+        self, date: str, user_uuid: str, business_uuid: str
+    ) -> Union[Dict[str, Any], None]:
+        if user_uuid:
+            return self.tracking_event_repository.read_all_events_by_user(
+                date=date, user_uuid=user_uuid
+            )
+        if business_uuid:
+            return self.tracking_event_repository.read_all_events_by_user(
+                date=date, business_uuid=business_uuid
+            )
+        return None
+
+    def _build_response(
+        self, date: str, device_events: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
+        response = []
+        for device_imei, data in device_events.items():
+            device_response = self._process_device_events(device_imei, data, date)
+            response.append(device_response)
+        return response
+
+    def _process_device_events(
+        self, device_imei: str, data: Dict[str, Any], date: str
+    ) -> Dict[str, Any]:
+        events = data["events"]
+        asset = data["asset"]
+
+        device_response = {
+            "device_imei": device_imei,
+            "asset_name": asset.asset_name,
+            "date": str(date),
+            "events": [],
+        }
+
+        current_event = None
+
+        for event in events:
+            if current_event is None:
+                current_event = {
+                    "status": get_status(event.event_type),
+                    "start_time": event.event_datetime,
+                    "end_time": event.event_datetime,
                 }
-
-                current_event = None
-
-                for event in events:
-                    if current_event is None:
-                        current_event = {
-                            "status": get_status(event.event_type),
-                            "start_time": event.event_datetime,
-                            "end_time": event.event_datetime,
-                        }
-                    else:
-                        if current_event["status"] == get_status(event.event_type):
-                            current_event["end_time"] = event.event_datetime
-                        else:
-                            device_response["events"].append(
-                                {
-                                    "status": current_event["status"],
-                                    "period": generateTimeRange(
-                                        current_event["start_time"],
-                                        current_event["end_time"],
-                                    ),
-                                }
-                            )
-                            current_event = {
-                                "status": get_status(event.event_type),
-                                "start_time": event.event_datetime,
-                                "end_time": event.event_datetime,
-                            }
-
-                # Append the last event
-                if current_event is not None:
+            else:
+                if current_event["status"] == get_status(event.event_type):
+                    current_event["end_time"] = event.event_datetime
+                else:
                     device_response["events"].append(
                         {
                             "status": current_event["status"],
                             "period": generateTimeRange(
-                                current_event["start_time"], current_event["end_time"]
+                                current_event["start_time"],
+                                current_event["end_time"],
                             ),
                         }
                     )
+                    current_event = {
+                        "status": get_status(event.event_type),
+                        "start_time": event.event_datetime,
+                        "end_time": event.event_datetime,
+                    }
 
-                response.append(device_response)
+        # Append the last event
+        if current_event is not None:
+            device_response["events"].append(
+                {
+                    "status": current_event["status"],
+                    "period": generateTimeRange(
+                        current_event["start_time"], current_event["end_time"]
+                    ),
+                }
+            )
 
-            return response
+        return device_response
 
-        except Exception as e:
-            raise e
+    # Dummy implementations for missing functions to avoid reference errors
+    def get_status(event_type):
+        return "status_placeholder"
+
+    def generateTimeRange(start_time, end_time):
+        return f"{start_time} - {end_time}"
+
 
     def get_route_replay_events_by_device_imei(self, device_imei: str, date: str):
         try:

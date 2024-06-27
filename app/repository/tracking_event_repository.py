@@ -35,16 +35,27 @@ class TrackingEventRepository(BaseRepository):
             return query
 
     def read_all_events_by_user(
-        self, user_uuid: str, date: str
+        self, date: str, user_uuid: str = None, business_uuid: str = None
     ) -> Dict[str, List[TrackingEvent]]:
         with self.session_factory() as session:
             # get all device imei for user's assets
             events_by_device = {}
-            user_assets = (
-                session.query(Asset)
-                .filter(Asset.user_uuid == user_uuid, Asset.device_imei.isnot(None))
-                .all()
-            )
+            if user_uuid:
+                user_assets = (
+                    session.query(Asset)
+                    .filter(Asset.user_uuid == user_uuid, Asset.device_imei.isnot(None))
+                    .all()
+                )
+
+            if business_uuid:
+                user_assets = (
+                    session.query(Asset)
+                    .filter(
+                        Asset.business_profile_uuid == business_uuid,
+                        Asset.device_imei.isnot(None),
+                    )
+                    .all()
+                )
 
             # get all events for each device IMEI
             for asset in user_assets:

@@ -46,9 +46,27 @@ async def get_tracking_details_by_user_handler(
     date: str = None,
 ):
     try:
-        events = service.get_events_by_user(user_uuid, date)
+        events = service.get_events_by_user(date=date, user_uuid=user_uuid)
         if events is None:
-            return send_client_side_error(user_msg=messages.NO_DATA_FOUND)
+            return send_client_side_error(user_msg=messages.NO_DATA)
+        return send_data(events)
+    except Exception as e:
+        msg = f"{messages.GET_FAILED} {msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/business/{business_uuid}", response_class=ORJSONResponse)
+@inject
+async def get_tracking_details_by_business_handler(
+    business_uuid: str,
+    service: TrackingEventService = Depends(Provide[Container.tracking_event_service]),
+    current_user: User = Depends(get_current_user),
+    date: str = None,
+):
+    try:
+        events = service.get_events_by_user(date=date, business_uuid=business_uuid)
+        if events is None:
+            return send_client_side_error(user_msg=messages.NO_DATA)
         return send_data(events)
     except Exception as e:
         msg = f"{messages.GET_FAILED} {msg_prefix}s"
