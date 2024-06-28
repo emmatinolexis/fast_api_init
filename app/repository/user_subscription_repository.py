@@ -64,6 +64,7 @@ class UserSubscriptionRepository(BaseRepository):
                             "subscription_code"
                         ]
                     )
+
                     paystack_existing_subscription_token = (
                         paystack_existing_subscription.json()["data"]["email_token"]
                     )
@@ -78,7 +79,7 @@ class UserSubscriptionRepository(BaseRepository):
                         },
                     )
 
-                    paystack_subscription.raise_for_status()
+                    logging.info(paystack_subscription.raise_for_status())
 
                     # update existing user plan with new plan code
                     existing_subscription.subscription_code = subscription_code

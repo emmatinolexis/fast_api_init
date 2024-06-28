@@ -73,6 +73,7 @@ class AssetService(BaseService):
             user_subscription = self.get_user_subscription(email_address)
 
             number_of_assets = self.get_filtered_package_item(user_subscription)
+
             if user.get("account_type") == AccountType.INDIVIDUAL:
                 self.check_asset_creation_limit(
                     user_uuid=user.get("uuid"), number_of_assets=number_of_assets
@@ -161,9 +162,10 @@ class AssetService(BaseService):
     def check_asset_creation_limit(
         self, number_of_assets: int, user_uuid: str = None, business_uuid: str = None
     ):
-        if business_uuid:
+        if business_uuid is not None:
             user_assets = len(self.get_assets_by_business_uuid(business_uuid))
-        if user_uuid:
+
+        if user_uuid is not None:
             user_assets = len(self.get_assets_by_user_uuid(user_uuid))
 
         if user_assets >= number_of_assets:
@@ -267,32 +269,18 @@ class AssetService(BaseService):
         created_asset = self.asset_repository.create(AssetInput(**asset.dict()))
         return created_asset
 
-    def get_assets_by_user_uuid(
-        self, user_uuid: str, asset_type_uuid: str = None, page=1, page_size=10
-    ):
+    def get_assets_by_user_uuid(self, user_uuid: str):
         try:
-            return self.asset_repository.read_all_assets_by_uuid(
-                user_uuid=user_uuid,
-                asset_type_uuid=asset_type_uuid,
-                page=page,
-                page_size=page_size,
+            return self.asset_repository.read_all_assets_by_uuid_no_pagination(
+                user_uuid=user_uuid
             )
         except Exception as e:
             raise e
 
-    def get_assets_by_business_uuid(
-        self,
-        business_uuid: str = None,
-        asset_type_uuid: str = None,
-        page=1,
-        page_size=10,
-    ):
+    def get_assets_by_business_uuid(self, business_uuid: str = None):
         try:
-            return self.asset_repository.read_all_assets_by_uuid(
+            return self.asset_repository.read_all_assets_by_uuid_no_pagination(
                 business_uuid=business_uuid,
-                asset_type_uuid=asset_type_uuid,
-                page=page,
-                page_size=page_size,
             )
         except Exception as e:
             raise e
