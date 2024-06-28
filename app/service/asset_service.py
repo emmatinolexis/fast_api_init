@@ -163,10 +163,12 @@ class AssetService(BaseService):
         self, number_of_assets: int, user_uuid: str = None, business_uuid: str = None
     ):
         if business_uuid is not None:
-            user_assets = len(self.get_assets_by_business_uuid(business_uuid))
+            user_assets = len(
+                self.get_assets_by_business_uuid_no_pagination(business_uuid)
+            )
 
         if user_uuid is not None:
-            user_assets = len(self.get_assets_by_user_uuid(user_uuid))
+            user_assets = len(self.get_assets_by_user_uuid_no_pagination(user_uuid))
 
         if user_assets >= number_of_assets:
             raise Exception(
@@ -269,7 +271,37 @@ class AssetService(BaseService):
         created_asset = self.asset_repository.create(AssetInput(**asset.dict()))
         return created_asset
 
-    def get_assets_by_user_uuid(self, user_uuid: str):
+    def get_assets_by_user_uuid(
+        self, user_uuid: str, asset_type_uuid: str = None, page=1, page_size=10
+    ):
+        try:
+            return self.asset_repository.read_all_assets_by_uuid(
+                user_uuid=user_uuid,
+                page_size=page_size,
+                page=page,
+                asset_type_uuid=asset_type_uuid,
+            )
+        except Exception as e:
+            raise e
+
+    def get_assets_by_business_uuid(
+        self,
+        business_uuid: str = None,
+        asset_type_uuid: str = None,
+        page=1,
+        page_size=10,
+    ):
+        try:
+            return self.asset_repository.read_all_assets_by_uuid(
+                business_uuid=business_uuid,
+                page_size=page_size,
+                page=page,
+                asset_type_uuid=asset_type_uuid,
+            )
+        except Exception as e:
+            raise e
+
+    def get_assets_by_user_uuid_no_pagination(self, user_uuid: str):
         try:
             return self.asset_repository.read_all_assets_by_uuid_no_pagination(
                 user_uuid=user_uuid
@@ -277,10 +309,10 @@ class AssetService(BaseService):
         except Exception as e:
             raise e
 
-    def get_assets_by_business_uuid(self, business_uuid: str = None):
+    def get_assets_by_business_uuid_no_pagination(self, business_uuid: str):
         try:
             return self.asset_repository.read_all_assets_by_uuid_no_pagination(
-                business_uuid=business_uuid,
+                business_uuid=business_uuid
             )
         except Exception as e:
             raise e
