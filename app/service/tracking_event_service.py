@@ -176,7 +176,6 @@ class TrackingEventService(BaseService):
     def generateTimeRange(start_time, end_time):
         return f"{start_time} - {end_time}"
 
-
     def get_route_replay_events_by_device_imei(self, device_imei: str, date: str):
         try:
             if not date:

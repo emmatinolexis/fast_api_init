@@ -20,6 +20,30 @@ class AssetRepository(BaseRepository):
         self.session_factory = session_factory
         super().__init__(session_factory, Asset)
 
+    def read_all_assets_by_uuid_no_pagination(
+        self,
+        user_uuid: str = None,
+        business_uuid: str = None,
+    ):
+        with self.session_factory() as session:
+            if user_uuid is not None:
+                # Base query filtered by user UUID
+                assets = (
+                    session.query(self.model)
+                    .filter(self.model.user_uuid == user_uuid)
+                    .all()
+                )
+
+            if business_uuid is not None:
+                # Base query filtered by business UUID
+                assets = (
+                    session.query(self.model)
+                    .filter(self.model.business_profile_uuid == business_uuid)
+                    .all()
+                )
+
+            return assets
+
     def read_all_assets_by_uuid(
         self,
         user_uuid: str = None,
@@ -32,13 +56,13 @@ class AssetRepository(BaseRepository):
             # Calculate the offset based on the page and per_page values
             offset = (page - 1) * page_size
 
-            if user_uuid:
+            if user_uuid is not None:
                 # Base query filtered by user UUID
                 base_query = session.query(self.model).filter(
                     self.model.user_uuid == user_uuid
                 )
 
-            if business_uuid:
+            if business_uuid is not None:
                 # Base query filtered by user UUID
                 base_query = session.query(self.model).filter(
                     self.model.business_profile_uuid == business_uuid
