@@ -84,7 +84,7 @@ async def get_route_replay_tracking_details_handler(
     try:
         events = service.get_route_replay_events_by_device_imei(device_imei, date)
         if events is None:
-            return send_client_side_error(user_msg=messages.NO_DATA_FOUND)
+            return send_client_side_error(user_msg=messages.NO_DATA)
         return send_data(events)
     except Exception as e:
         msg = f"{messages.GET_FAILED} {msg_prefix}s"

@@ -74,7 +74,7 @@ class AuthService(BaseService):
                     "package_name": paystack_subscription["plan"]["name"],
                     "package_items": paystack_subscription["package_items"],
                 }
-                # return user_package
+
             else:
                 user_package = {
                     "package_name": FREE_PACKAGE,

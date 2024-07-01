@@ -23,6 +23,7 @@ class UserSubscriptionService(BaseService):
             )
 
             logging.info(paystack_subscription.raise_for_status())
+            paystack_subscription.raise_for_status()
 
             return self.user_subscription_repository.create_user_subscription(payload)
         except Exception as e:

@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 from typing import Any, Dict, List, Union
 
 from app.core.constants import DISTANCE_UNIT, SPEED_UNIT
