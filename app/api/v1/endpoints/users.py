@@ -7,7 +7,7 @@ from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
 from app.core.exceptions import ExpiredVerificationCodeError, NotFoundError
-from app.core.security import extract_user_data
+from app.core.security import extract_user_data, verify_password
 from app.core.settings import settings
 from app.model.user import User
 from app.schema.invitation_schema import (
@@ -204,16 +204,33 @@ async def change_password_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
+        user_to_update = service.get_by_uuid(user_uuid)
+        if user_to_update is None:
+            return send_client_side_error(
+                user_msg=messages.USER_NOT_FOUND,
+            )
+        if not payload.new_password == payload.password_confirmation:
+            user_msg = "Passwords do not match"
+            return send_client_side_error(user_msg=user_msg)
+
+        if not verify_password(payload.old_password, user_to_update.password):
+            user_msg = "You have provided an invalid current password"
+            return send_client_side_error(
+                user_msg=user_msg,
+            )
+
+        if verify_password(payload.new_password, user_to_update.password):
+            user_msg = "New password and old password cannot be the same"
+            return send_client_side_error(
+                user_msg=user_msg,
+            )
+
         user = service.change_password(
             user_uuid,
             payload.old_password,
             payload.new_password,
             payload.password_confirmation,
         )
-        if user is None:
-            return send_client_side_error(
-                user_msg=messages.USER_NOT_FOUND + user_uuid,
-            )
         return send_data(user)
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
