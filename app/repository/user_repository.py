@@ -6,7 +6,7 @@ from pydantic import EmailStr
 from sqlalchemy import desc, func
 from sqlalchemy.orm import Session, joinedload
 
-from app.core.security import extract_user_data, hash_user_password, verify_password
+from app.core.security import extract_user_data, hash_user_password
 from app.core.settings import settings
 from app.model.business_profile import BusinessProfile
 from app.model.email_verification import EmailVerification
@@ -115,29 +115,13 @@ class UserRepository(BaseRepository):
                 session.query(self.model).filter(self.model.uuid == user_uuid).first()
             )
 
-            # Check if the user exists
-            if not user:
-                raise Exception("User not found")
-
-            # check if new password and confirm password match
-            if not new_password == password_confirmation:
-                raise Exception("New password and confirm password does not match")
-
-            # Compare the old password with the stored hashed password
-            if not verify_password(old_password, user.password):
-                raise Exception("Incorrect old password provided")
-
-            if verify_password(new_password, user.password):
-                raise Exception("New password and old password cannot be the same")
-
-            # Update the password with the new hashed password
             user.password = hash_user_password(new_password)
 
             # Commit the changes to the database
             session.commit()
             session.refresh(user)
 
-            return user
+            return extract_user_data(user)
 
     def update_user_onboard_status(self, uuid):
         with self.session_factory() as session:
@@ -145,7 +129,7 @@ class UserRepository(BaseRepository):
             user.onboarding_status = datetime.now()
             session.commit()
             session.refresh(user)
-            return user
+            return extract_user_data(user)
 
     def get_account_users(self, business_uuid: str, page=1, page_size=10):
         with self.session_factory() as session:
