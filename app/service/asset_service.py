@@ -286,7 +286,7 @@ class AssetService(BaseService):
 
     def get_assets_by_business_uuid(
         self,
-        business_uuid: str = None,
+        business_uuid: str,
         asset_type_uuid: str = None,
         page=1,
         page_size=10,
