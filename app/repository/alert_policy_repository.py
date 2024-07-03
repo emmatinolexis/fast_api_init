@@ -174,7 +174,7 @@ class AlertPolicyRepository(BaseRepository):
             # Query to get the total count of alert violations
             total_alerts = (
                 session.query(func.count(AlertPolicyViolation.id))
-                .filter(AlertPolicyViolation.user_uuid == business_uuid)
+                .filter(AlertPolicyViolation.business_profile_uuid == business_uuid)
                 .scalar()
             )
 
@@ -184,7 +184,7 @@ class AlertPolicyRepository(BaseRepository):
             # Fetch paginated results
             alerts = (
                 session.query(AlertPolicyViolation)
-                .filter(AlertPolicyViolation.user_uuid == business_uuid)
+                .filter(AlertPolicyViolation.business_profile_uuid == business_uuid)
                 .order_by(desc(AlertPolicyViolation.created_at))
                 .offset(offset)
                 .limit(page_size)
@@ -296,6 +296,7 @@ class AlertPolicyRepository(BaseRepository):
                             asset_uuid=geofence_asset.uuid,
                             violation_coordinates=violated_asset_coordinates,
                             user_uuid=alert_policy.user_uuid,
+                            business_profile_uuid=alert_policy.business_profile_uuid,
                             status=ActiveStatus.ACTIVE,
                         )
                         session.add(violation)
