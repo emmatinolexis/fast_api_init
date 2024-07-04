@@ -170,11 +170,12 @@ async def check_geofence_violation_handler(
         if violations:
             for violation in violations:
                 for alert_recipient in violation.get("alert_recipients", []):
-                    if "@" in alert_recipient.recipient:
+
+                    if "@" in alert_recipient.get("recipient"):
                         recipient_name = "MVI User"
-                        email = alert_recipient.recipient
-                        asset_name = violation.get("asset").asset_name
-                        policy_name = violation.get("alert_policy").policy_name
+                        email = alert_recipient.get("recipient")
+                        asset_name = violation.get("asset").get("asset_name")
+                        policy_name = violation.get("alert_policy").get("policy_name")
 
                         # Send email for each violation
                         await send_alert_policy_violation_email(
