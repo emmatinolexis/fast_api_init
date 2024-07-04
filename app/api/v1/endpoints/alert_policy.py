@@ -167,6 +167,8 @@ async def check_geofence_violation_handler(
 
         violations = response_data.get("violations", [])
 
+        return violations
+
         if violations:
             for violation in violations:
                 for alert_recipient in violation.get("alert_recipients", []):
