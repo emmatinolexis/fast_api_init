@@ -90,7 +90,7 @@ class TrackingEventService(BaseService):
 
     def _initialize_date(self, date: str) -> str:
         if not date:
-            date = datetime.datetime.now().strftime("%d/%m/%Y")
+            date = datetime.now().strftime("%d/%m/%Y")
         return date
 
     def _fetch_device_events(
