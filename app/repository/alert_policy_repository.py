@@ -266,10 +266,9 @@ class AlertPolicyRepository(BaseRepository):
 
                     # Query the database for tracking events that occurred after the last checked time
                     asset_points = (
-                        session.query(TrackingEvent).filter(
-                            TrackingEvent.device_imei == geofence_asset.device_imei
-                        )
-                        # .filter(TrackingEvent.event_datetime > last_checked_time)
+                        session.query(TrackingEvent)
+                        .filter(TrackingEvent.device_imei == geofence_asset.device_imei)
+                        .filter(TrackingEvent.event_datetime > last_checked_time)
                         .all()
                     )
 
@@ -308,8 +307,8 @@ class AlertPolicyRepository(BaseRepository):
                         session.add(violation)
 
                     # Update last_checked_geofence_violation timestamp for the processed events
-                    # for point in asset_points:
-                    #     point.last_checked_geofence_violation = datetime.now()
+                    for point in asset_points:
+                        point.last_checked_geofence_violation = datetime.now()
 
             session.commit()
             msg = "Geofence policy data fetched successfully"
