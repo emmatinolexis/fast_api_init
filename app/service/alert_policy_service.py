@@ -100,6 +100,14 @@ class AlertPolicyService(BaseService):
         except Exception as e:
             raise e
 
+    def toggle_alert_violation_status(self, alert_violation_uuid: str):
+        try:
+            return self.alert_policy_repository.toggle_alert_violation_status(
+                alert_violation_uuid
+            )
+        except Exception as e:
+            raise e
+
     def check_geofence_violation(self):
         try:
             return self.alert_policy_repository.check_geofence_violation()

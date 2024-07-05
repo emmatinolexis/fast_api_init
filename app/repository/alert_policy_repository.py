@@ -54,6 +54,20 @@ class AlertPolicyRepository(BaseRepository):
 
             return alert
 
+    def toggle_alert_violation_status(self, alert_violation_uuid):
+        with self.session_factory() as session:
+            violation = (
+                session.query(AlertPolicyViolation)
+                .filter(AlertPolicyViolation.uuid == alert_violation_uuid)
+                .first()
+            )
+
+            violation.status = toggle_status(violation.status)
+            session.commit()
+            session.refresh(violation)
+
+            return violation
+
     def read_all_alert_policies_by_user(self, user_uuid: str, page=1, page_size=10):
         with self.session_factory() as session:
             offset = (page - 1) * page_size
