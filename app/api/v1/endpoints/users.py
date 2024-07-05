@@ -408,7 +408,9 @@ async def create_team_member_invitation(
                 email=invitation.email, role_uuid=invitation.role_uuid
             )
 
-            service.create_team_member_invitation(user_uuid, invitation_payload, user)
+            created_invite = service.create_team_member_invitation(
+                user_uuid, invitation_payload, user
+            )
 
             # send email invite
             await send_email_invitation(
@@ -417,6 +419,7 @@ async def create_team_member_invitation(
                 invitee_name=f"{user.first_name} {user.last_name}",
                 business_profile_uuid=str(user.business_profile_uuid),
                 role=str(invitation.role_uuid),
+                expiry_date=created_invite.expired_at,
             )
         msg = "Invitations sent successfully"
         return send_info(msg)
