@@ -206,3 +206,19 @@ async def toggle_alert_status_handler(
     except Exception as e:
         msg = messages.GET_FAILED + "alert policies"
         return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.put(
+    "/alert_violations/status/{alert_violation_uuid}", response_class=ORJSONResponse
+)
+@inject
+async def toggle_alert_violations_status_handler(
+    alert_violation_uuid: str,
+    service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        return send_data(service.toggle_alert_violation_status(alert_violation_uuid))
+    except Exception as e:
+        msg = messages.GET_FAILED + "alert policies"
+        return send_internal_server_error(user_msg=msg, error=e)
