@@ -1,6 +1,7 @@
 import math
 import secrets
 import uuid
+from datetime import datetime
 from typing import Any, List, Union
 
 from fastapi import Depends
@@ -106,6 +107,12 @@ def toggle_status(current_status):
         if current_status == ActiveStatus.INACTIVE
         else ActiveStatus.INACTIVE
     )
+
+
+def serialize_datetime(obj):
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    raise TypeError("Type not serializable")
 
 
 def send_internal_server_error(user_msg: str, error: Any, status_code: int = 500):

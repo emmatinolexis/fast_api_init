@@ -41,6 +41,7 @@ from app.util.utils import (
     send_data,
     send_info,
     send_internal_server_error,
+    serialize_datetime,
 )
 
 router = APIRouter(
@@ -419,7 +420,7 @@ async def create_team_member_invitation(
                 invitee_name=f"{user.first_name} {user.last_name}",
                 business_profile_uuid=str(user.business_profile_uuid),
                 role=str(invitation.role_uuid),
-                expiry_date=created_invite.expired_at,
+                expiry_date=serialize_datetime(created_invite.expired_at),
             )
         msg = "Invitations sent successfully"
         return send_info(msg)
