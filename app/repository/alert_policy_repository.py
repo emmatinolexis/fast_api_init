@@ -13,9 +13,12 @@ from app.model.tracking_event import TrackingEvent
 from app.repository.base_repository import BaseRepository
 from app.util.enums import ActiveStatus, GeofenceShapeType, GeofenceTypeUuid
 from app.util.utils import (
+    calculate_time_traveled,
     check_violated_geofence,
     generate_circle_geofence_coordinates,
     generate_polygon_geofence_coordinates,
+    get_distance_travelled_by_coordinates,
+    get_status,
     toggle_status,
 )
 
@@ -248,11 +251,11 @@ class AlertPolicyRepository(BaseRepository):
                     geofence_points = generate_circle_geofence_coordinates(
                         geofence_violation_data.get("center_point"),
                         geofence_violation_data.get("radius"),
-                        100,
+                        50,
                     )
                 else:
                     geofence_points = generate_polygon_geofence_coordinates(
-                        geofence_violation_data, 100
+                        geofence_violation_data, 50
                     )
 
                 # Get all assets for the current alert policy
@@ -287,18 +290,40 @@ class AlertPolicyRepository(BaseRepository):
                     )
 
                     asset_coordinates = [
-                        (point.latitude, point.longitude, point.speed)
+                        (point.latitude, point.longitude) for point in asset_points
+                    ]
+
+                    asset_coordinates_events = [
+                        {
+                            "lat": point.latitude,
+                            "lng": point.longitude,
+                            "speed": point.speed,
+                            "course": point.course,
+                            "timestamp": str(point.event_datetime),
+                            "event_type": get_status(point.event_type),
+                        }
                         for point in asset_points
                     ]
 
                     violated_asset_coordinates = check_violated_geofence(
-                        asset_coordinates, geofence_points, alert_policy.geofence_type
+                        asset_coordinates_events,
+                        geofence_points,
+                        alert_policy.geofence_type,
                     )
 
                     if violated_asset_coordinates:
+                        violation_time = calculate_time_traveled(
+                            violated_asset_coordinates
+                        )
+                        violation_distance = get_distance_travelled_by_coordinates(
+                            asset_coordinates
+                        )
+
                         violations.append(
                             {
                                 "asset": {"asset_name": geofence_asset.asset_name},
+                                "violation_time": violation_time,
+                                "violation_distance": violation_distance,
                                 "violated_points": violated_asset_coordinates,
                                 "alert_policy": {
                                     "policy_name": alert_policy.policy_name
@@ -314,16 +339,18 @@ class AlertPolicyRepository(BaseRepository):
                         violation = AlertPolicyViolation(
                             alert_policy_uuid=alert_policy.uuid,
                             asset_uuid=geofence_asset.uuid,
-                            violation_coordinates=violated_asset_coordinates,
+                            violation_coordinates=asset_coordinates_events,
                             user_uuid=alert_policy.user_uuid,
                             business_profile_uuid=alert_policy.business_profile_uuid,
                             status=ActiveStatus.ACTIVE,
+                            violation_time=violation_time,
+                            violation_distance=violation_distance,
                         )
                         session.add(violation)
 
                     # Update last_checked_geofence_violation timestamp for the processed events
-                    # for point in asset_points:
-                    #     point.last_checked_geofence_violation = datetime.now()
+                    for point in asset_points:
+                        point.last_checked_geofence_violation = datetime.now()
 
             session.commit()
             msg = "Geofence policy data fetched successfully"

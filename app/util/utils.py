@@ -240,37 +240,160 @@ def generate_circle_geofence_coordinates(center: dict, radius: float, num_points
     return geofence_coordinates
 
 
-def check_violated_geofence(asset_coordinates, geofence_coordinates, geofence_type):
+def check_violated_geofence(
+    asset_coordinates_events, geofence_coordinates, geofence_type
+):
     """
-    Check which geofences are violated by the given set of car points.
+    Check which geofences are violated by the given set of asset points.
 
     Args:
-    - asset_coordinates: list of tuples representing the points from the car (latitude, longitude, speed)
+    - asset_coordinates_events: list of dictionaries representing points from the asset
+                                {"lat": float, "lng": float, "speed": float,
+                                 "course": float, "timestamp": str, "event_type": str}
     - geofence_coordinates: list of tuples representing the coordinates of the geofence
     - geofence_type: string indicating the type of geofence ('zone_exit' or 'zone_entry')
 
     Returns:
-    - list of tuples representing the coordinates and speed of violated geofences
+    - list of dictionaries representing the coordinates and speed of violated geofences
+      {"lat": float, "lng": float, "speed": float, "course": float, "timestamp": str, "event_type": str}
     """
-    violated_geofences = set()
-    for point in asset_coordinates:
+    violated_geofences = []
+
+    for point in asset_coordinates_events:
         inside = False
         for i in range(len(geofence_coordinates) - 1):
             p1 = geofence_coordinates[i]
             p2 = geofence_coordinates[i + 1]
-            if ((p1[1] > point[1]) != (p2[1] > point[1])) and (
-                point[0]
-                < (p2[0] - p1[0]) * (point[1] - p1[1]) / (p2[1] - p1[1]) + p1[0]
+            if ((p1[1] > point["lng"]) != (p2[1] > point["lng"])) and (
+                point["lat"]
+                < (p2[0] - p1[0]) * (point["lng"] - p1[1]) / (p2[1] - p1[1]) + p1[0]
             ):
                 inside = not inside
 
         if geofence_type == "zone_entry" and inside:
-            violated_geofences.add((point[0], point[1], point[2]))
+            violated_geofences.append(point)
 
         elif geofence_type == "zone_exit" and not inside:
-            violated_geofences.add((point[0], point[1], point[2]))
+            violated_geofences.append(point)
 
-    return list(violated_geofences)
+    return violated_geofences
+
+
+# def check_violated_geofence(asset_coordinates, geofence_coordinates, geofence_type):
+#     """
+#     Check which geofences are violated by the given set of car points.
+#
+#     Args:
+#     - asset_coordinates: list of tuples representing the points from the car (latitude, longitude, speed)
+#     - geofence_coordinates: list of tuples representing the coordinates of the geofence
+#     - geofence_type: string indicating the type of geofence ('zone_exit' or 'zone_entry')
+#
+#     Returns:
+#     - list of tuples representing the coordinates and speed of violated geofences
+#     """
+#     violated_geofences = set()
+#     for point in asset_coordinates:
+#         inside = False
+#         for i in range(len(geofence_coordinates) - 1):
+#             p1 = geofence_coordinates[i]
+#             p2 = geofence_coordinates[i + 1]
+#             if ((p1[1] > point[1]) != (p2[1] > point[1])) and (
+#                 point[0]
+#                 < (p2[0] - p1[0]) * (point[1] - p1[1]) / (p2[1] - p1[1]) + p1[0]
+#             ):
+#                 inside = not inside
+#
+#         if geofence_type == "zone_entry" and inside:
+#             violated_geofences.add((point[0], point[1], point[2]))
+#
+#         elif geofence_type == "zone_exit" and not inside:
+#             violated_geofences.add((point[0], point[1], point[2]))
+#
+#     return list(violated_geofences)
+
+
+def haversine(coord1, coord2):
+    """
+    Calculate the great-circle distance between two points on the Earth using the Haversine formula.
+
+    Parameters:
+    coord1, coord2: tuple of floats
+        Coordinates of the two points in the format (latitude, longitude).
+
+    Returns:
+    float
+        Distance between the two points in kilometers.
+    """
+    rad = 6371  # Radius of the Earth in kilometers
+
+    lat1, lon1 = coord1
+    lat2, lon2 = coord2
+
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+
+    a = (
+        math.sin(dlat / 2) ** 2
+        + math.cos(math.radians(lat1))
+        * math.cos(math.radians(lat2))
+        * math.sin(dlon / 2) ** 2
+    )
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+    distance = rad * c
+    return distance
+
+
+def calculate_time_traveled(asset_coordinates_events, unit="minutes"):
+    """
+    Calculate the total time traveled given a set of asset coordinates and their speeds.
+
+    Parameters:
+    asset_coordinates_events: list of dictionaries
+        List of asset coordinates in the format [{"lat": lat1, "lng": lon1, "speed": speed1}, ...].
+    unit: str
+        Unit of time to return the result in ('minutes' or 'seconds').
+
+    Returns:
+    float
+        Total time traveled in the specified unit, rounded to the nearest whole number.
+    """
+    total_time_hours = 0.0
+
+    # Calculate the time for each segment and sum them
+    for i in range(len(asset_coordinates_events) - 1):
+        point1 = asset_coordinates_events[i]
+        point2 = asset_coordinates_events[i + 1]
+
+        # Extract coordinates and speeds
+        lat1, lon1, speed1 = point1["lat"], point1["lng"], point1["speed"]
+        lat2, lon2, speed2 = point2["lat"], point2["lng"], point2["speed"]
+
+        # Calculate distance between points using Haversine formula
+        distance = haversine((lat1, lon1), (lat2, lon2))
+
+        # Avoid division by zero: check if both speeds are zero
+        if speed1 == 0 and speed2 == 0:
+            continue
+
+        # Use the average speed for the segment
+        average_speed = (speed1 + speed2) / 2
+        time_for_segment = distance / average_speed
+
+        total_time_hours += time_for_segment
+
+    # Convert total time to the specified unit
+    if unit == "minutes":
+        total_time = total_time_hours * 60
+    elif unit == "seconds":
+        total_time = total_time_hours * 3600
+    else:
+        raise ValueError("Invalid unit. Use 'minutes' or 'seconds'.")
+
+    # Round the total time to the nearest whole number
+    total_time_rounded = round(total_time)
+
+    return total_time_rounded
 
 
 def calculate_average_speed(speeds: List[float]) -> float:
