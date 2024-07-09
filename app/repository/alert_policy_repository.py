@@ -287,7 +287,8 @@ class AlertPolicyRepository(BaseRepository):
                     )
 
                     asset_coordinates = [
-                        (point.latitude, point.longitude) for point in asset_points
+                        (point.latitude, point.longitude, point.speed)
+                        for point in asset_points
                     ]
 
                     violated_asset_coordinates = check_violated_geofence(
@@ -321,8 +322,8 @@ class AlertPolicyRepository(BaseRepository):
                         session.add(violation)
 
                     # Update last_checked_geofence_violation timestamp for the processed events
-                    for point in asset_points:
-                        point.last_checked_geofence_violation = datetime.now()
+                    # for point in asset_points:
+                    #     point.last_checked_geofence_violation = datetime.now()
 
             session.commit()
             msg = "Geofence policy data fetched successfully"

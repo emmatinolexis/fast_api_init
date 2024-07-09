@@ -245,16 +245,15 @@ def check_violated_geofence(asset_coordinates, geofence_coordinates, geofence_ty
     Check which geofences are violated by the given set of car points.
 
     Args:
-    - asset_coordinates: list of tuples representing the points from the car (latitude, longitude)
+    - asset_coordinates: list of tuples representing the points from the car (latitude, longitude, speed)
     - geofence_coordinates: list of tuples representing the coordinates of the geofence
     - geofence_type: string indicating the type of geofence ('zone_exit' or 'zone_entry')
 
     Returns:
-    - list of tuples representing the coordinates of violated geofences
+    - list of tuples representing the coordinates and speed of violated geofences
     """
-    violated_geofences = []
+    violated_geofences = set()
     for point in asset_coordinates:
-        # Check if the point is inside or outside the geofence based on geofence_type
         inside = False
         for i in range(len(geofence_coordinates) - 1):
             p1 = geofence_coordinates[i]
@@ -266,14 +265,12 @@ def check_violated_geofence(asset_coordinates, geofence_coordinates, geofence_ty
                 inside = not inside
 
         if geofence_type == "zone_entry" and inside:
-            # violated_geofences.append(point)
-            violated_geofences.append(point)
+            violated_geofences.add((point[0], point[1], point[2]))
 
         elif geofence_type == "zone_exit" and not inside:
-            # violated_geofences.append(point)
-            violated_geofences.append(point)
+            violated_geofences.add((point[0], point[1], point[2]))
 
-    return violated_geofences
+    return list(violated_geofences)
 
 
 def calculate_average_speed(speeds: List[float]) -> float:
