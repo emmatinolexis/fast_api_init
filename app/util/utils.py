@@ -278,40 +278,6 @@ def check_violated_geofence(
 
     return violated_geofences
 
-
-# def check_violated_geofence(asset_coordinates, geofence_coordinates, geofence_type):
-#     """
-#     Check which geofences are violated by the given set of car points.
-#
-#     Args:
-#     - asset_coordinates: list of tuples representing the points from the car (latitude, longitude, speed)
-#     - geofence_coordinates: list of tuples representing the coordinates of the geofence
-#     - geofence_type: string indicating the type of geofence ('zone_exit' or 'zone_entry')
-#
-#     Returns:
-#     - list of tuples representing the coordinates and speed of violated geofences
-#     """
-#     violated_geofences = set()
-#     for point in asset_coordinates:
-#         inside = False
-#         for i in range(len(geofence_coordinates) - 1):
-#             p1 = geofence_coordinates[i]
-#             p2 = geofence_coordinates[i + 1]
-#             if ((p1[1] > point[1]) != (p2[1] > point[1])) and (
-#                 point[0]
-#                 < (p2[0] - p1[0]) * (point[1] - p1[1]) / (p2[1] - p1[1]) + p1[0]
-#             ):
-#                 inside = not inside
-#
-#         if geofence_type == "zone_entry" and inside:
-#             violated_geofences.add((point[0], point[1], point[2]))
-#
-#         elif geofence_type == "zone_exit" and not inside:
-#             violated_geofences.add((point[0], point[1], point[2]))
-#
-#     return list(violated_geofences)
-
-
 def haversine(coord1, coord2):
     """
     Calculate the great-circle distance between two points on the Earth using the Haversine formula.
