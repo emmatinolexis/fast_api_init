@@ -278,6 +278,7 @@ def check_violated_geofence(
 
     return violated_geofences
 
+
 def haversine(coord1, coord2):
     """
     Calculate the great-circle distance between two points on the Earth using the Haversine formula.
