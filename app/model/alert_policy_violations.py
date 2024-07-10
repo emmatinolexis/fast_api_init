@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import JSON, Column, ForeignKey, String
+from sqlalchemy import JSON, Column, Float, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -30,6 +30,8 @@ class AlertPolicyViolation(BaseModel):
     user_uuid = Column(UUID(as_uuid=True), ForeignKey(User.uuid), nullable=False)
     violation_coordinates = Column(JSON, nullable=False)
     status = Column(String(length=20), nullable=False)
+    violation_time = Column(Float, nullable=False, default=0)
+    violation_distance = Column(Float, nullable=False, default=0)
     asset = relationship("Asset")
     alert_policy = relationship("AlertPolicy")
     user = relationship("User")
