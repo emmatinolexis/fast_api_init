@@ -14,6 +14,7 @@ from app.repository.base_repository import BaseRepository
 from app.util.enums import ActiveStatus, GeofenceShapeType, GeofenceTypeUuid
 from app.util.utils import (
     calculate_time_traveled,
+    check_overspeeding,
     check_violated_geofence,
     generate_circle_geofence_coordinates,
     generate_polygon_geofence_coordinates,
@@ -235,6 +236,20 @@ class AlertPolicyRepository(BaseRepository):
             .all()
         )
 
+    def get_active_over_speeding_alert_policies(self, session):
+        return (
+            session.query(AlertPolicy)
+            .filter(
+                AlertPolicy.alert_policy_type_uuid
+                == GeofenceTypeUuid.OVER_SPEEDING_ALERT_POLICY,
+                AlertPolicy.status == ActiveStatus.ACTIVE,
+            )
+            .options(
+                joinedload(AlertPolicy.assets), joinedload(AlertPolicy.alert_recipients)
+            )
+            .all()
+        )
+
     def generate_geofence_points(self, alert_policy):
         geofence_violation_data = alert_policy.geofence_coordinate_data
         if alert_policy.geofence_shape_type == GeofenceShapeType.CIRCULAR:
@@ -249,6 +264,17 @@ class AlertPolicyRepository(BaseRepository):
     def get_last_checked_time(self, session, device_imei, today_date):
         last_checked_time = (
             session.query(func.max(TrackingEvent.last_checked_geofence_violation))
+            .filter(TrackingEvent.device_imei == device_imei)
+            .scalar()
+        )
+
+        if last_checked_time is None:
+            return datetime.combine(today_date, datetime.min.time())
+        return last_checked_time.replace(microsecond=0)
+
+    def get_last_checked_over_speeding_time(self, session, device_imei, today_date):
+        last_checked_time = (
+            session.query(func.max(TrackingEvent.last_checked_over_speeding_violation))
             .filter(TrackingEvent.device_imei == device_imei)
             .scalar()
         )
@@ -291,6 +317,9 @@ class AlertPolicyRepository(BaseRepository):
             asset_coordinates_events, geofence_points, geofence_type
         )
 
+    def check_over_speeding(self, asset_coordinates_events, speed_limit):
+        return check_overspeeding(asset_coordinates_events, speed_limit)
+
     def create_violation_record(
         self,
         session,
@@ -315,6 +344,10 @@ class AlertPolicyRepository(BaseRepository):
     def update_last_checked_time(self, asset_points):
         for point in asset_points:
             point.last_checked_geofence_violation = datetime.now()
+
+    def update_last_checked_over_speeding_time(self, asset_points):
+        for point in asset_points:
+            point.last_checked_over_speeding_violation = datetime.now()
 
     def check_geofence_violation(self):
         with self.session_factory() as session:
@@ -396,6 +429,89 @@ class AlertPolicyRepository(BaseRepository):
 
                     # Update last checked geofence violation timestamp for the processed events
                     self.update_last_checked_time(asset_points)
+
+            session.commit()
+            msg = "Geofence policy data fetched successfully"
+            logging.info(msg)
+            return {"message": msg, "violations": violations}
+
+    def check_over_speeding_violation(self):
+        with self.session_factory() as session:
+            violations = []
+
+            # Get all active geofence alert policies
+            alert_policies = self.get_active_over_speeding_alert_policies(session)
+
+            # Get the current date
+            today_date = datetime.now().date()
+
+            for alert_policy in alert_policies:
+                # Get policy speed limit value
+                speed_limit_value = float(alert_policy.maximum_speed_limit)
+
+                # Get all assets for the current alert policy
+                alert_assets = alert_policy.assets
+
+                # Get all alert recipients
+                alert_recipients = alert_policy.alert_recipients
+
+                for geofence_asset in alert_assets:
+                    # Get the last checked time for the asset
+                    last_checked_time = self.get_last_checked_over_speeding_time(
+                        session, geofence_asset.device_imei, today_date
+                    )
+
+                    # Query the database for tracking events that occurred after the last checked time
+                    asset_points = self.get_asset_points(
+                        session, geofence_asset.device_imei, last_checked_time
+                    )
+
+                    (
+                        asset_coordinates,
+                        asset_coordinates_events,
+                    ) = self.extract_coordinates_and_events(asset_points)
+
+                    # Check for geofence violations
+                    violated_asset_coordinates = self.check_over_speeding(
+                        asset_coordinates_events, speed_limit_value
+                    )
+
+                    if violated_asset_coordinates:
+                        violation_time = calculate_time_traveled(
+                            violated_asset_coordinates
+                        )
+                        violation_distance = get_distance_travelled_by_coordinates(
+                            asset_coordinates
+                        )
+
+                        violations.append(
+                            {
+                                "asset": {"asset_name": geofence_asset.asset_name},
+                                "violation_time": violation_time,
+                                "violation_distance": violation_distance,
+                                "violated_points": violated_asset_coordinates,
+                                "alert_policy": {
+                                    "policy_name": alert_policy.policy_name
+                                },
+                                "alert_recipients": [
+                                    {"recipient": recipient.recipient}
+                                    for recipient in alert_recipients
+                                ],
+                            }
+                        )
+
+                        # Create AlertPolicyViolation instance and persist it
+                        self.create_violation_record(
+                            session,
+                            alert_policy,
+                            geofence_asset,
+                            asset_coordinates_events,
+                            violation_time,
+                            violation_distance,
+                        )
+
+                    # Update last checked geofence violation timestamp for the processed events
+                    self.update_last_checked_over_speeding_time(asset_points)
 
             session.commit()
             msg = "Geofence policy data fetched successfully"

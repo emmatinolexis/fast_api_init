@@ -3,7 +3,10 @@ from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
 from starlette.middleware.cors import CORSMiddleware
 
-from app.api.v1.endpoints.alert_policy import check_geofence_violation_handler
+from app.api.v1.endpoints.alert_policy import (
+    check_geofence_violation_handler,
+    check_over_speeding_violation_handler,
+)
 from app.api.v1.routes import routers as v1_routers
 from app.core.container import Container
 from app.core.logger import get_logger, init_logger
@@ -74,12 +77,20 @@ mqtt_service = app_creator.mqtt_service
 async def startup_event():
     scheduler.start()
 
-    # Add the job to the scheduler
+    # check geofence vilation for every 3 minutes
     scheduler.add_job(
         check_geofence_violation_handler,
         "interval",
         minutes=3,
         id="check_geofence_violation",
+    )
+
+    # check over speeding every 2 minutes
+    scheduler.add_job(
+        check_over_speeding_violation_handler,
+        "interval",
+        minutes=2,
+        id="check_over_speeding_violation",
     )
 
 
