@@ -201,7 +201,6 @@ async def check_over_speeding_violation_handler(
 ):
     try:
         response_data = service.check_over_speeding_violation()
-        return response_data
 
         violations = response_data.get("violations", [])
 
