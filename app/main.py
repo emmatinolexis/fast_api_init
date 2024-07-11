@@ -5,6 +5,7 @@ from starlette.middleware.cors import CORSMiddleware
 
 from app.api.v1.endpoints.alert_policy import (
     check_geofence_violation_handler,
+    check_idling_violation_handler,
     check_over_speeding_violation_handler,
 )
 from app.api.v1.routes import routers as v1_routers
@@ -77,7 +78,15 @@ mqtt_service = app_creator.mqtt_service
 async def startup_event():
     scheduler.start()
 
-    # check geofence vilation for every 3 minutes
+    # check over speeding every 2 minutes
+    scheduler.add_job(
+        check_over_speeding_violation_handler,
+        "interval",
+        minutes=2,
+        id="check_over_speeding_violation",
+    )
+
+    # check geofence violation for every 3 minutes
     scheduler.add_job(
         check_geofence_violation_handler,
         "interval",
@@ -85,12 +94,12 @@ async def startup_event():
         id="check_geofence_violation",
     )
 
-    # check over speeding every 2 minutes
+    # check geofence violation for every 3 minutes
     scheduler.add_job(
-        check_over_speeding_violation_handler,
+        check_idling_violation_handler,
         "interval",
-        minutes=2,
-        id="check_over_speeding_violation",
+        minutes=4,
+        id="check_idling_violation",
     )
 
 

@@ -120,6 +120,12 @@ class AlertPolicyService(BaseService):
         except Exception as e:
             raise e
 
+    def check_idling_violation(self):
+        try:
+            return self.alert_policy_repository.check_idling_violation()
+        except Exception as e:
+            raise e
+
     def create_alert_policy(
         self,
         alert_policy: AlertPolicyPayload,

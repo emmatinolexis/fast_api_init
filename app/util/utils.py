@@ -405,6 +405,78 @@ def get_content_type(file_format: FileFormat) -> str:
     return content_type
 
 
+def check_idle_time_exceeds_limit(events, idle_time_limit_minutes):
+    """
+    Check for idle periods exceeding the given limit.
+
+    Parameters:
+    events: list of dictionaries
+        List of events in the format
+        [{"lat": ..., "lng": ..., "speed": ..., "course": ..., "timestamp": ..., "event_type": ...}, ...].
+    idle_time_limit_minutes: int
+        The minimum idle time in minutes to be considered a violation.
+
+    Returns:
+    dict
+        A dictionary with sorted events and a list of idle periods that exceed
+        the given limit along with the total idle time for each period.
+    """
+    # Convert idle time limit from minutes to seconds
+    idle_time_limit_seconds = idle_time_limit_minutes * 60
+
+    # Sort events by timestamp
+    events_sorted = sorted(
+        events, key=lambda x: datetime.strptime(x["timestamp"], "%Y-%m-%d %H:%M:%S")
+    )
+
+    idle_periods = []
+    current_idle_period = []
+    current_idle_start_time = None
+    current_idle_end_time = None
+
+    # Iterate through sorted events to detect idle periods
+    for event in events_sorted:
+        if event["event_type"] == "idle":
+            if not current_idle_period:
+                current_idle_start_time = datetime.strptime(
+                    event["timestamp"], "%Y-%m-%d %H:%M:%S"
+                )
+            current_idle_period.append(event)
+            current_idle_end_time = datetime.strptime(
+                event["timestamp"], "%Y-%m-%d %H:%M:%S"
+            )
+        else:
+            if current_idle_period:
+                idle_duration = (
+                    current_idle_end_time - current_idle_start_time
+                ).total_seconds()
+                if idle_duration > idle_time_limit_seconds:
+                    idle_periods.append(
+                        {
+                            "events": current_idle_period,
+                            "total_idle_time_seconds": idle_duration,
+                        }
+                    )
+                current_idle_period = []
+                current_idle_start_time = None
+                current_idle_end_time = None
+
+    # Check for any remaining idle period after the loop
+    if current_idle_period:
+        idle_duration = (
+            current_idle_end_time - current_idle_start_time
+        ).total_seconds()
+        if idle_duration > idle_time_limit_seconds:
+            idle_periods.append(
+                {
+                    "events": current_idle_period,
+                    "total_idle_time_seconds": idle_duration,
+                }
+            )
+
+    return idle_periods
+
+
 async def upload_to_s3(file_name: str, file_content: bytes, content_type: str) -> str:
     s3_client = S3Client(
         aws_access_key=settings.AWS_ACCESS_KEY_ID,
