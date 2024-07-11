@@ -301,8 +301,7 @@ async def send_password_link_handler(
                     message=settings.PASSWORD_RESET_MAIL_VERIFICATION_MESSAGE,
                     url=settings.RESET_PASSWORD_URL,
                     btn=settings.RESET_BTN,
-                    token=reset_password_token,
-                    email_purpose=EmailPurpose.PASSWORD_RESET,
+                    token=reset_password_token
                 )
             except Exception as e:
                 return send_internal_server_error(
