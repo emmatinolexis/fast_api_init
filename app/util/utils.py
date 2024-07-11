@@ -363,6 +363,29 @@ def calculate_time_traveled(asset_coordinates_events, unit="minutes"):
     return total_time_rounded
 
 
+def check_overspeeding(asset_coordinates_events, speed_limit):
+    """
+    Check for overspeeding in the given set of asset coordinates and their speeds.
+
+    Parameters:
+    asset_coordinates_events: list of dictionaries
+        List of asset coordinates in the format [{"lat": lat1, "lng": lon1, "speed": speed1}, ...].
+    speed_limit: float
+        The speed limit to check against.
+
+    Returns:
+    list of dictionaries
+        List of dictionaries containing the points and speeds that are greater than the speed limit.
+    """
+    overspeeding_points = []
+
+    for point in asset_coordinates_events:
+        if point["speed"] > speed_limit:
+            overspeeding_points.append(point)
+
+    return overspeeding_points
+
+
 def calculate_average_speed(speeds: List[float]) -> float:
     if not speeds:
         raise ValueError("The list of speeds cannot be empty.")
