@@ -97,7 +97,7 @@ class Settings(BaseSettings):
 
     RESET_PASSWORD_URL: str = os.getenv(
         "RESET_PASSWORD_URL",
-        "https://mvitracking-frontend.vercel.app/authentication/set-password/",
+        "https://mvi-frontend-uat.sageinfrastructure.net/authentication/set-password/",
     )
 
     RESET_BTN: str = os.getenv("RESET_BTN", "Reset Password")

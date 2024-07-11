@@ -266,7 +266,6 @@ async def update_phone_handler(
         service.patch_by_uuid(uuid, payload)
         token = phone_otp_service.create_phone_verification_token(user.uuid)
         await send_otp_email(
-            subject=settings.PHONE_OTP_SUBJECT,
             recipient_name=user.first_name,
             email=user.email_address,
             otp=token,
