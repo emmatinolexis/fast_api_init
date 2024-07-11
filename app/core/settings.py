@@ -92,7 +92,7 @@ class Settings(BaseSettings):
     )
     VERIFY_EMAIL_URL: str = os.getenv(
         "VERIFY_EMAIL_URL",
-        "https://mvitracking-frontend.vercel.app/authentication/email-verification/",
+        "https://mvi-frontend-uat.sageinfrastructure.net/authentication/email-verification/",
     )
 
     RESET_PASSWORD_URL: str = os.getenv(
