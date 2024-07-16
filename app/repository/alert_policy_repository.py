@@ -21,6 +21,7 @@ from app.util.utils import (
     generate_polygon_geofence_coordinates,
     get_distance_travelled_by_coordinates,
     get_status,
+    is_time_to_send_maintenance_alert,
     toggle_status,
 )
 
@@ -257,6 +258,20 @@ class AlertPolicyRepository(BaseRepository):
             .filter(
                 AlertPolicy.alert_policy_type_uuid
                 == GeofenceTypeUuid.IDLING_ALERT_POLICY,
+                AlertPolicy.status == ActiveStatus.ACTIVE,
+            )
+            .options(
+                joinedload(AlertPolicy.assets), joinedload(AlertPolicy.alert_recipients)
+            )
+            .all()
+        )
+
+    def get_active_maintenance_policies(self, session):
+        return (
+            session.query(AlertPolicy)
+            .filter(
+                AlertPolicy.alert_policy_type_uuid
+                == GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
                 AlertPolicy.status == ActiveStatus.ACTIVE,
             )
             .options(
@@ -621,6 +636,47 @@ class AlertPolicyRepository(BaseRepository):
                     self.update_last_checked_idling_time(asset_points)
 
             session.commit()
+            msg = "Geofence policy data fetched successfully"
+            logging.info(msg)
+            return {"message": msg, "violations": violations}
+
+    def check_maintenance(self):
+        with self.session_factory() as session:
+            violations = []
+
+            # Get all active maintenance policies
+            maintenance_policies = self.get_active_maintenance_policies(session)
+
+            for maintenance_policy in maintenance_policies:
+                # Get policy speed limit value
+                maintenance_alert_schedule = int(
+                    maintenance_policy.maintenance_alert_schedule
+                )
+
+                # Get all assets for the current alert policy
+                alert_assets = maintenance_policy.assets
+
+                # Get all alert recipients
+                alert_recipients = maintenance_policy.alert_recipients
+
+                fire_alert = is_time_to_send_maintenance_alert(
+                    maintenance_policy.created_at, maintenance_alert_schedule
+                )
+                if fire_alert:
+                    for asset in alert_assets:
+                        violations.append(
+                            {
+                                "asset": {"asset_name": asset.asset_name},
+                                "alert_policy": {
+                                    "policy_name": maintenance_policy.policy_name
+                                },
+                                "alert_recipients": [
+                                    {"recipient": recipient.recipient}
+                                    for recipient in alert_recipients
+                                ],
+                            }
+                        )
+
             msg = "Geofence policy data fetched successfully"
             logging.info(msg)
             return {"message": msg, "violations": violations}

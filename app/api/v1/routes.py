@@ -31,6 +31,7 @@ from app.api.v1.endpoints.package import router as package_router
 from app.api.v1.endpoints.package_item import router as package_item_router
 from app.api.v1.endpoints.payment import router as payment_router
 from app.api.v1.endpoints.permission import router as permission_router
+from app.api.v1.endpoints.report import router as report_router
 from app.api.v1.endpoints.subscription import router as subscription_router
 from app.api.v1.endpoints.subscription_payment import (
     router as subscription_payment_router,
@@ -75,6 +76,7 @@ router_list = [
     vehicle_make_router,
     third_party_router,
     fine_report_router,
+    report_router,
 ]
 
 for router in router_list:

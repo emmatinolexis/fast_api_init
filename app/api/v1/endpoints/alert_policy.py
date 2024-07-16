@@ -268,6 +268,40 @@ async def check_idling_violation_handler(
         return send_internal_server_error(user_msg=msg, error=str(e))
 
 
+@router.get("/maintenance-check", response_class=ORJSONResponse)
+@inject
+async def check_maintenance_handler(
+    service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
+):
+    try:
+        response_data = service.check_maintenance()
+
+        violations = response_data.get("violations", [])
+
+        if violations:
+            for violation in violations:
+                for alert_recipient in violation.get("alert_recipients", []):
+                    if "@" in alert_recipient.get("recipient"):
+                        recipient_name = "MVI User"
+                        email = alert_recipient.get("recipient")
+                        asset_name = violation.get("asset").get("asset_name")
+                        policy_name = violation.get("alert_policy").get("policy_name")
+
+                        # Send email for each violation
+                        await send_alert_policy_violation_email(
+                            recipient_name, email, asset_name, policy_name
+                        )
+                    else:
+                        # send sms notification
+                        pass
+
+        return response_data
+
+    except Exception as e:
+        msg = messages.CREATE_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=str(e))
+
+
 @router.put("/{alert_uuid}", response_class=ORJSONResponse)
 @inject
 async def toggle_alert_status_handler(

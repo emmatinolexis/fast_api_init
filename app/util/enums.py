@@ -168,9 +168,9 @@ class OrderPickUpLocation(str, Enum):
 
 
 class MaintenanceAlertSchedule(str, Enum):
-    THIRTY_DAYS = "30 days"
-    SIXTY_DAYS = "60 days"
-    NINETY_DAYS = "90 days"
+    THIRTY_DAYS = "30"
+    SIXTY_DAYS = "60"
+    NINETY_DAYS = "90"
 
 
 class AssetStatus(str, Enum):

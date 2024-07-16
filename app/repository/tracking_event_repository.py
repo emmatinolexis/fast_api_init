@@ -2,7 +2,7 @@ from contextlib import AbstractContextManager
 from datetime import datetime
 from typing import Callable, Dict, List
 
-from sqlalchemy import Date, cast
+from sqlalchemy import Date, and_, cast
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.constants import ALLOWED_EVENT_TYPES
@@ -26,6 +26,28 @@ class TrackingEventRepository(BaseRepository):
                     self.model.device_imei == device_imei,
                     cast(self.model.event_datetime, Date)
                     == datetime.strptime(date, "%d/%m/%Y"),
+                    self.model.event_type.in_(ALLOWED_EVENT_TYPES),
+                )
+                .order_by(self.model.event_datetime)
+                .all()
+            )
+
+            return query
+
+    def read_all_events_by_device_imei_date_range(
+        self, device_imei: str, start_date: str, end_date: str
+    ):
+        with self.session_factory() as session:
+            query = (
+                session.query(self.model)
+                .filter(
+                    self.model.device_imei == device_imei,
+                    and_(
+                        cast(self.model.event_datetime, Date)
+                        >= datetime.strptime(start_date, "%d/%m/%Y"),
+                        cast(self.model.event_datetime, Date)
+                        <= datetime.strptime(end_date, "%d/%m/%Y"),
+                    ),
                     self.model.event_type.in_(ALLOWED_EVENT_TYPES),
                 )
                 .order_by(self.model.event_datetime)
