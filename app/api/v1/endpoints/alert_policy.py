@@ -268,7 +268,7 @@ async def check_idling_violation_handler(
         return send_internal_server_error(user_msg=msg, error=str(e))
 
 
-@router.get("/maintenance/check", response_class=ORJSONResponse)
+@router.get("/maintenance-check", response_class=ORJSONResponse)
 @inject
 async def check_maintenance_handler(
     service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
