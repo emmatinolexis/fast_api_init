@@ -430,15 +430,6 @@ class AssetService(BaseService):
         except Exception as e:
             raise e
 
-    def generate_distance_traveled_user_report(self, user_uuid: str):
-        try:
-            user_assets = self.asset_repository.read_all_assets_by_uuid_no_pagination(
-                user_uuid=user_uuid
-            )
-            return user_assets
-        except Exception as e:
-            raise e
-
     def generate_distance_traveled_report(
         self,
         start_date: str,

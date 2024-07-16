@@ -6,7 +6,6 @@ from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
 from app.model.user import User
-
 from app.service.asset_service import AssetService
 from app.service.user_service import UserService
 from app.util.enums import AccountType
