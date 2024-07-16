@@ -392,7 +392,7 @@ def check_overspeeding(asset_coordinates_events, speed_limit):
 
 def calculate_average_speed(speeds: List[float]) -> float:
     if not speeds:
-        raise ValueError("The list of speeds cannot be empty.")
+        return 0
 
     average_speed = sum(speeds) / len(speeds)
     return round(average_speed, 2)
