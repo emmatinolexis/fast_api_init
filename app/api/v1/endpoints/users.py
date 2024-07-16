@@ -34,7 +34,7 @@ from app.util.email import (
     send_email_verification,
     send_otp_email,
 )
-from app.util.enums import AccountType, EmailPurpose
+from app.util.enums import AccountType
 from app.util.utils import (
     allow_admins_only,
     send_client_side_error,
@@ -301,7 +301,7 @@ async def send_password_link_handler(
                     message=settings.PASSWORD_RESET_MAIL_VERIFICATION_MESSAGE,
                     url=settings.RESET_PASSWORD_URL,
                     btn=settings.RESET_BTN,
-                    token=reset_password_token
+                    token=reset_password_token,
                 )
             except Exception as e:
                 return send_internal_server_error(

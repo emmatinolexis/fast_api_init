@@ -150,6 +150,7 @@ class Container(containers.DeclarativeContainer):
             "app.api.v1.endpoints.vehicle_make",
             "app.api.v1.endpoints.third_party_app",
             "app.api.v1.endpoints.fine_report",
+            "app.api.v1.endpoints.report",
         ]
     )
 
@@ -446,6 +447,7 @@ class Container(containers.DeclarativeContainer):
         theft_incidence_repository=theft_incidence_repository,
         theft_report_repository=theft_report_repository,
         vehicle_owner_repository=vehicle_owner_repository,
+        tracking_event_repository=tracking_event_repository,
     )
     asset_device_request_service = providers.Factory(
         asset_device_request_service.AssetDeviceRequestService,

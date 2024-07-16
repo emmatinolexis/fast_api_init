@@ -13,6 +13,7 @@ from app.repository.immobilizer_report_repository import ImmobilizerReportReposi
 from app.repository.subscription_repository import SubscriptionRepository
 from app.repository.theft_incidence_repository import TheftIncidenceRepository
 from app.repository.theft_report_repository import TheftReportRepository
+from app.repository.tracking_event_repository import TrackingEventRepository
 from app.repository.user_repository import UserRepository
 from app.repository.vehicle_owner_repository import VehicleOwnerRepository
 from app.schema.asset_schema import (
@@ -32,6 +33,7 @@ from app.util.enums import (
     AssetStatus,
     PackageItemTrackerType,
 )
+from app.util.utils import get_distance_travelled_by_coordinates
 
 
 class AssetService(BaseService):
@@ -49,6 +51,7 @@ class AssetService(BaseService):
         theft_incidence_repository: TheftIncidenceRepository,
         theft_report_repository: TheftReportRepository,
         vehicle_owner_repository: VehicleOwnerRepository,
+        tracking_event_repository: TrackingEventRepository,
     ):
         self.asset_repository = asset_repository
         self.asset_type_repository = asset_type_repository
@@ -62,6 +65,7 @@ class AssetService(BaseService):
         self.theft_incidence_repository = theft_incidence_repository
         self.theft_report_repository = theft_report_repository
         self.vehicle_owner_repository = vehicle_owner_repository
+        self.tracking_event_repository = tracking_event_repository
         super().__init__(asset_repository)
 
     def create_asset(self, asset: AssetPayload):
@@ -423,5 +427,63 @@ class AssetService(BaseService):
                 raise NotFoundError(
                     f"There is no device associated with this asset:{asset.asset_name} "
                 )
+        except Exception as e:
+            raise e
+
+    def generate_distance_traveled_user_report(self, user_uuid: str):
+        try:
+            user_assets = self.asset_repository.read_all_assets_by_uuid_no_pagination(
+                user_uuid=user_uuid
+            )
+            return user_assets
+        except Exception as e:
+            raise e
+
+    def generate_distance_traveled_report(
+        self,
+        start_date: str,
+        end_date: str,
+        business_uuid: str = None,
+        user_uuid: str = None,
+    ):
+        try:
+            report = []
+            if business_uuid:
+                assets = self.asset_repository.read_all_assets_by_uuid_no_pagination(
+                    business_uuid=business_uuid
+                )
+            if user_uuid:
+                assets = self.asset_repository.read_all_assets_by_uuid_no_pagination(
+                    user_uuid=user_uuid
+                )
+
+            for asset in assets:
+                if asset.device_imei:
+                    # Get asset points for today in tracking events table
+                    asset_events = self.tracking_event_repository.read_all_events_by_device_imei_date_range(
+                        asset.device_imei, start_date, end_date
+                    )
+
+                    # Extract coordinates from asset events
+                    coordinates = [
+                        {"latitude": event.latitude, "longitude": event.longitude}
+                        for event in asset_events
+                    ]
+
+                    # Calculate distance traveled
+                    distance_traveled = get_distance_travelled_by_coordinates(
+                        coordinates
+                    )
+
+                    # Append the result
+                    report.append(
+                        {
+                            "asset_name": asset.asset_name,
+                            "distance_traveled": distance_traveled,
+                        }
+                    )
+
+            return report
+
         except Exception as e:
             raise e

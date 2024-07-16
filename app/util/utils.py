@@ -1,7 +1,7 @@
 import math
 import secrets
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, List, Union
 
 from fastapi import Depends
@@ -151,7 +151,11 @@ def get_distance_travelled_by_coordinates(coordinates: Union[List[dict], List[tu
     :param coordinates: List of dictionaries or list of tuples where each dictionary contains "latitude" and "longitude"
     :return: Total distance traveled as float
     """
+    if not coordinates:
+        return 0.0
+
     total_distance = 0.0
+
     if isinstance(coordinates[0], dict):
         for i in range(len(coordinates) - 1):
             coord1 = (coordinates[i]["latitude"], coordinates[i]["longitude"])
@@ -475,6 +479,37 @@ def check_idle_time_exceeds_limit(events, idle_time_limit_minutes):
             )
 
     return idle_periods
+
+
+def is_time_to_send_maintenance_alert(
+    date_created_str, alert_schedule_period_days, alert_start_days_before: int = 3
+):
+    """
+    Determines if it is time to send a maintenance alert for recurring alerts.
+
+    :param date_created_str: The datetime string of when the policy was created in the format 'YYYY-MM-DD HH:MM:SS.sss +0000'.
+    :param alert_schedule_period_days: The maintenance alert schedule period in days (int).
+    :param alert_start_days_before: The number of days before the alert period to start notifying (int).
+    :return: True if it's time to send the maintenance alert, False otherwise.
+    """
+    # Parse the datetime string to a datetime object
+    date_created = datetime.fromisoformat(str(date_created_str)).date()
+
+    current_date = datetime.now().date()  # Current date
+
+    # Calculate the first alert date
+    first_alert_date = date_created + timedelta(days=alert_schedule_period_days)
+    next_alert_date = first_alert_date
+
+    # Iterate to find the alert period that includes the current date
+    while next_alert_date < current_date:
+        next_alert_date += timedelta(days=alert_schedule_period_days)
+
+    # Calculate the start date for sending alerts for the current alert period
+    alert_start_date = next_alert_date - timedelta(days=alert_start_days_before)
+
+    # Check if current date is within the alert start period
+    return alert_start_date <= current_date <= next_alert_date
 
 
 async def upload_to_s3(file_name: str, file_content: bytes, content_type: str) -> str:
