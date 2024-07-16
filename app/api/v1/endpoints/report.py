@@ -18,7 +18,7 @@ router = APIRouter(
 msg_prefix = "Reports"
 
 
-@router.get("/distance_traveled/{user_uuid}", response_class=ORJSONResponse)
+@router.get("/distance_speed_report/{user_uuid}", response_class=ORJSONResponse)
 @inject
 async def generate_distance_traveled_report_handler(
     user_uuid: str,
@@ -35,7 +35,7 @@ async def generate_distance_traveled_report_handler(
         if user:
             if user.get("account_type") == AccountType.INDIVIDUAL:
                 return send_data(
-                    report_service.generate_distance_traveled_report(
+                    report_service.generate_distance_speed_report(
                         user_uuid=user.get("uuid"),
                         start_date=start_date,
                         end_date=end_date,
@@ -43,12 +43,15 @@ async def generate_distance_traveled_report_handler(
                 )
             if user.get("account_type") == AccountType.BUSINESS:
                 return send_data(
-                    report_service.generate_distance_traveled_report(
+                    report_service.generate_distance_speed_report(
                         business_uuid=user.get("business_profile").uuid,
                         start_date=start_date,
                         end_date=end_date,
                     )
                 )
+        else:
+            msg = f"{messages.USER_NOT_FOUND} {user_uuid}"
+            return send_internal_server_error(user_msg=msg, error=msg)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)

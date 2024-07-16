@@ -33,7 +33,10 @@ from app.util.enums import (
     AssetStatus,
     PackageItemTrackerType,
 )
-from app.util.utils import get_distance_travelled_by_coordinates
+from app.util.utils import (
+    calculate_average_speed,
+    get_distance_travelled_by_coordinates,
+)
 
 
 class AssetService(BaseService):
@@ -430,7 +433,7 @@ class AssetService(BaseService):
         except Exception as e:
             raise e
 
-    def generate_distance_traveled_report(
+    def generate_distance_speed_report(
         self,
         start_date: str,
         end_date: str,
@@ -439,6 +442,7 @@ class AssetService(BaseService):
     ):
         try:
             report = []
+
             if business_uuid:
                 assets = self.asset_repository.read_all_assets_by_uuid_no_pagination(
                     business_uuid=business_uuid
@@ -466,14 +470,20 @@ class AssetService(BaseService):
                         coordinates
                     )
 
+                    # Extract speeds from asset tracking event
+                    speeds = [event.speed for event in asset_events]
+
+                    # Calculate distance traveled
+                    average_speed = calculate_average_speed(speeds)
+
                     # Append the result
                     report.append(
                         {
                             "asset_name": asset.asset_name,
                             "distance_traveled": distance_traveled,
+                            "average_speed": average_speed,
                         }
                     )
-
             return report
 
         except Exception as e:
