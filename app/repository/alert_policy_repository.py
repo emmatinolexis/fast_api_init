@@ -340,8 +340,8 @@ class AlertPolicyRepository(BaseRepository):
         ]
         asset_coordinates_events = [
             {
-                "lat": point.latitude,
-                "lng": point.longitude,
+                "latitude": point.latitude,
+                "longitude": point.longitude,
                 "speed": point.speed,
                 "course": point.course,
                 "timestamp": str(point.event_datetime),

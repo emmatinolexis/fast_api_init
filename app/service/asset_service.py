@@ -31,11 +31,15 @@ from app.util.enums import (
     AccountType,
     AssetCreators,
     AssetStatus,
+    GeofenceTypeUuid,
     PackageItemTrackerType,
 )
 from app.util.utils import (
     calculate_average_speed,
+    calculate_time_traveled,
+    calculate_total_idle_time_and_movement,
     get_distance_travelled_by_coordinates,
+    get_status,
 )
 
 
@@ -459,9 +463,24 @@ class AssetService(BaseService):
                         asset.device_imei, start_date, end_date
                     )
 
+                    speed_violations = (
+                        self.asset_repository.get_over_speeding_violations(
+                            asset.uuid,
+                            GeofenceTypeUuid.OVER_SPEEDING_ALERT_POLICY,
+                            start_date,
+                            end_date,
+                        )
+                    )
+
                     # Extract coordinates from asset events
                     coordinates = [
-                        {"latitude": event.latitude, "longitude": event.longitude}
+                        {
+                            "latitude": event.latitude,
+                            "longitude": event.longitude,
+                            "speed": event.speed,
+                            "timestamp": str(event.event_datetime),
+                            "event_type": get_status(event.event_type),
+                        }
                         for event in asset_events
                     ]
 
@@ -476,12 +495,27 @@ class AssetService(BaseService):
                     # Calculate distance traveled
                     average_speed = calculate_average_speed(speeds)
 
+                    time_traveled = calculate_time_traveled(coordinates)
+
+                    total_idle_time = calculate_total_idle_time_and_movement(
+                        coordinates
+                    )
+
                     # Append the result
                     report.append(
                         {
                             "asset_name": asset.asset_name,
                             "distance_traveled": distance_traveled,
                             "average_speed": average_speed,
+                            "time_traveled": time_traveled,
+                            "total_idle_time": total_idle_time.get("total_idle_time"),
+                            "rapid_acceleration": total_idle_time.get(
+                                "rapid_acceleration_count"
+                            ),
+                            "rapid_breaking": total_idle_time.get(
+                                "rapid_braking_count"
+                            ),
+                            "speed_violations": len(speed_violations),
                         }
                     )
             return report
