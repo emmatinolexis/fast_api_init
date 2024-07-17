@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime,timedelta
 
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
@@ -545,7 +545,7 @@ async def resend_invitation_handler(
                 user_msg=messages.ACTION_NOT_ALLOWED,
             )
 
-        invitation_service.update_invitation_expiry(invitation_uuid, datetime.now())
+        invitation_service.update_invitation_expiry(invitation_uuid, datetime.now()+timedelta(days=3))
 
         # send email invite
         await send_email_invitation(
