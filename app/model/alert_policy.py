@@ -47,3 +47,4 @@ class AlertPolicy(BaseModel):
     alert_notification_types = relationship(
         "AlertPolicyNotificationTypeAssignment", back_populates="alert_policy"
     )
+    alert_policy_violations = relationship("AlertPolicyViolation")

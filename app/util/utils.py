@@ -268,9 +268,10 @@ def check_violated_geofence(
         for i in range(len(geofence_coordinates) - 1):
             p1 = geofence_coordinates[i]
             p2 = geofence_coordinates[i + 1]
-            if ((p1[1] > point["lng"]) != (p2[1] > point["lng"])) and (
-                point["lat"]
-                < (p2[0] - p1[0]) * (point["lng"] - p1[1]) / (p2[1] - p1[1]) + p1[0]
+            if ((p1[1] > point["longitude"]) != (p2[1] > point["longitude"])) and (
+                point["latitude"]
+                < (p2[0] - p1[0]) * (point["longitude"] - p1[1]) / (p2[1] - p1[1])
+                + p1[0]
             ):
                 inside = not inside
 
@@ -337,8 +338,8 @@ def calculate_time_traveled(asset_coordinates_events, unit="minutes"):
         point2 = asset_coordinates_events[i + 1]
 
         # Extract coordinates and speeds
-        lat1, lon1, speed1 = point1["lat"], point1["lng"], point1["speed"]
-        lat2, lon2, speed2 = point2["lat"], point2["lng"], point2["speed"]
+        lat1, lon1, speed1 = point1["latitude"], point1["longitude"], point1["speed"]
+        lat2, lon2, speed2 = point2["latitude"], point2["longitude"], point2["speed"]
 
         # Calculate distance between points using Haversine formula
         distance = haversine((lat1, lon1), (lat2, lon2))
@@ -510,6 +511,140 @@ def is_time_to_send_maintenance_alert(
 
     # Check if current date is within the alert start period
     return alert_start_date <= current_date <= next_alert_date
+
+
+def calculate_total_idle_time_and_movement(
+    events, idle_time_unit="minutes", accel_threshold=10, brake_threshold=-10
+):
+    """
+    Calculate the total idle time, rapid acceleration, and braking events from a list of events.
+
+    Parameters:
+    events: list of dictionaries
+        List of events in the format
+        [{"lat": ..., "lng": ..., "speed": ..., "course": ..., "timestamp": ..., "event_type": ...}, ...].
+    idle_time_unit: str, optional
+        The time unit for the total idle time ('seconds', 'minutes', or 'hours'). Defaults to 'minutes'.
+    accel_threshold: float, optional
+        Speed change threshold for rapid acceleration. Defaults to 10 units (e.g., km/h).
+    brake_threshold: float, optional
+        Speed change threshold for rapid braking. Defaults to -10 units (e.g., km/h).
+
+    Returns:
+    dict
+        A dictionary with sorted events, total idle time in the specified unit,
+        and counts of rapid acceleration and braking events.
+    """
+    # Convert time unit to a factor
+    time_unit_factors = {
+        "seconds": 1,
+        "minutes": 60,
+        "hours": 3600,
+    }
+    if idle_time_unit not in time_unit_factors:
+        raise ValueError(
+            f"Unsupported time unit: {idle_time_unit}. Use 'seconds', 'minutes', or 'hours'."
+        )
+
+    events_sorted = sort_events_by_timestamp(events)
+    total_idle_time_seconds = calculate_idle_time(events_sorted)
+    rapid_acceleration_count, rapid_braking_count = detect_rapid_events(events_sorted, accel_threshold, brake_threshold)
+
+    total_idle_time = round(total_idle_time_seconds / time_unit_factors[idle_time_unit], 2)
+
+    return {
+        "events_sorted": events_sorted,
+        "total_idle_time": total_idle_time,
+        "idle_time_unit": idle_time_unit,
+        "rapid_acceleration_count": rapid_acceleration_count,
+        "rapid_braking_count": rapid_braking_count,
+    }
+
+
+def sort_events_by_timestamp(events):
+    """
+    Sort events by timestamp.
+
+    Parameters:
+    events: list of dictionaries
+        List of events with timestamps.
+
+    Returns:
+    list
+        Sorted list of events by timestamp.
+    """
+    return sorted(events, key=lambda x: datetime.strptime(x["timestamp"], "%Y-%m-%d %H:%M:%S"))
+
+
+def calculate_idle_time(events_sorted):
+    """
+    Calculate total idle time from sorted events.
+
+    Parameters:
+    events_sorted: list of dictionaries
+        Sorted list of events.
+
+    Returns:
+    float
+        Total idle time in seconds.
+    """
+    total_idle_time_seconds = 0
+    idle_start_time = None
+
+    for event in events_sorted:
+        if event["event_type"] == "idle":
+            if idle_start_time is None:
+                idle_start_time = datetime.strptime(event["timestamp"], "%Y-%m-%d %H:%M:%S")
+        else:
+            if idle_start_time is not None:
+                idle_end_time = datetime.strptime(event["timestamp"], "%Y-%m-%d %H:%M:%S")
+                total_idle_time_seconds += (idle_end_time - idle_start_time).total_seconds()
+                idle_start_time = None
+
+    # Check for any remaining idle period after the loop
+    if idle_start_time is not None:
+        idle_end_time = datetime.strptime(events_sorted[-1]["timestamp"], "%Y-%m-%d %H:%M:%S")
+        total_idle_time_seconds += (idle_end_time - idle_start_time).total_seconds()
+
+    return total_idle_time_seconds
+
+
+def detect_rapid_events(events_sorted, accel_threshold, brake_threshold):
+    """
+    Detect rapid acceleration and braking events from sorted events.
+
+    Parameters:
+    events_sorted: list of dictionaries
+        Sorted list of events.
+    accel_threshold: float
+        Speed change threshold for rapid acceleration.
+    brake_threshold: float
+        Speed change threshold for rapid braking.
+
+    Returns:
+    tuple
+        Counts of rapid acceleration and braking events.
+    """
+    rapid_acceleration_count = 0
+    rapid_braking_count = 0
+
+    for i in range(1, len(events_sorted)):
+        current_event = events_sorted[i]
+        prev_event = events_sorted[i - 1]
+
+        time_diff = (datetime.strptime(current_event["timestamp"], "%Y-%m-%d %H:%M:%S") -
+                     datetime.strptime(prev_event["timestamp"], "%Y-%m-%d %H:%M:%S")).total_seconds()
+
+        if time_diff > 0:
+            speed_diff = current_event["speed"] - prev_event["speed"]
+            acceleration_rate = speed_diff / time_diff
+
+            if acceleration_rate >= accel_threshold:
+                rapid_acceleration_count += 1
+            elif acceleration_rate <= brake_threshold:
+                rapid_braking_count += 1
+
+    return rapid_acceleration_count, rapid_braking_count
 
 
 async def upload_to_s3(file_name: str, file_content: bytes, content_type: str) -> str:
