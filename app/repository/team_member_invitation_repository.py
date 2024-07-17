@@ -2,6 +2,7 @@ from contextlib import AbstractContextManager
 from typing import Callable
 
 from pydantic import EmailStr
+from sqlalchemy import desc, func
 from sqlalchemy.orm import Session, joinedload
 
 from app.model.invitation import Invitation
@@ -21,11 +22,45 @@ class TeamMemberInvitationRepository(BaseRepository):
         with self.session_factory() as session:
             return session.query(self.model).filter(self.model.email == email).first()
 
-    def get_user_invitations(self, business_uuid: str):
+    def get_user_invitations(self, business_uuid: str, page=1, page_size=10):
         with self.session_factory() as session:
-            return (
+            offset = (page - 1) * page_size
+
+            # Query to get the total count of invitations
+            total_invitations = (
+                session.query(func.count(self.model.id))
+                .filter(self.model.business_profile_uuid == business_uuid)
+                .scalar()
+            )
+
+            # Calculate total pages
+            total_pages = (total_invitations + page_size - 1) // page_size
+
+            invitations = (
                 session.query(self.model)
                 .filter(self.model.business_profile_uuid == business_uuid)
+                .order_by(desc(self.model.created_at))
+                .offset(offset)
+                .limit(page_size)
                 .options(joinedload(self.model.role))
                 .all()
             )
+
+            invitations_data = [
+                {
+                    "uuid": invitation.uuid,
+                    "email": invitation.email,
+                    "role": invitation.role,
+                    "status": invitation.status,
+                    "created_at": invitation.created_at,
+                }
+                for invitation in invitations
+            ]
+
+            return {
+                "invitations": invitations_data,
+                "total_invitations": total_invitations,
+                "total_pages": total_pages,
+                "current_page": page,
+                "page_size": page_size,
+            }

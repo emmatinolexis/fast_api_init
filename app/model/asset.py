@@ -1,12 +1,12 @@
 import uuid
 
-from sqlalchemy import Column, Enum, ForeignKey, String
+from sqlalchemy import Boolean, Column, Enum, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from app.model.asset_type import AssetType
 from app.model.base_model import BaseModel
-from app.util.enums import AssetStatus
+from app.util.enums import AssetCreators, AssetStatus
 
 
 class DeviceRequestAssetAssignment(BaseModel):
@@ -49,9 +49,14 @@ class Asset(BaseModel):
         unique=True,
         nullable=False,
     )
-    asset_name = Column(String(length=100), nullable=False, index=True)
+    asset_name = Column(String(length=100), nullable=True, index=True)
     asset_status = Column(Enum(AssetStatus), nullable=False, index=True)
-    user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
+    asset_stolen_status = Column(Boolean, nullable=True)
+    created_by = Column(Enum(AssetCreators), nullable=False, index=True)
+    user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=True)
+    business_profile_uuid = Column(
+        UUID(as_uuid=True), ForeignKey("business_profiles.uuid"), nullable=True
+    )
     vehicle_license_no = Column(
         String(length=50), nullable=False, unique=True, index=True
     )
@@ -70,6 +75,9 @@ class Asset(BaseModel):
         nullable=True,
         index=True,
     )
+    vehicle_owner_uuid = Column(
+        UUID(as_uuid=True), ForeignKey("vehicle_owners.uuid"), nullable=True
+    )
     vin = Column(String(length=100), nullable=True, unique=True, index=True)
     serial_number = Column(String(length=100), nullable=True, unique=True, index=True)
     make = Column(String(length=100), nullable=True, index=True)
@@ -77,7 +85,9 @@ class Asset(BaseModel):
     marker_icon_uuid = Column(
         UUID(as_uuid=True), ForeignKey("marker_icons.uuid"), nullable=True
     )
-    marker_color = Column(String(length=100), nullable=False, index=True)
+    image_url = Column(String(length=200), nullable=True)
+    usage_type = Column(String(length=50), nullable=True)
+    marker_color = Column(String(length=100), nullable=True, index=True)
     marker_icon = relationship("MarkerIcon", uselist=False)
     user = relationship("User", uselist=False)
     asset_type = relationship("AssetType", uselist=False)
@@ -88,3 +98,4 @@ class Asset(BaseModel):
     device_request = relationship(
         "AssetDeviceRequest", secondary="device_request_asset_assignments"
     )
+    vehicle_owner = relationship("VehicleOwner", uselist=False)

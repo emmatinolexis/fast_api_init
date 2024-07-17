@@ -138,6 +138,26 @@ spec:
             secretKeyRef:
               name: mvi-tracking
               key: rtd_base_url
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: mvi-tracking
+              key: aws_access_key_id
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: mvi-tracking
+              key: aws_secret_access_key
+        - name: AWS_REGION
+          valueFrom:
+            secretKeyRef:
+              name: mvi-tracking
+              key: aws_region
+        - name: S3_BUCKET
+          valueFrom:
+            secretKeyRef:
+              name: mvi-tracking
+              key: s3_bucket
         image: DOCKER_IMAGE
         imagePullPolicy: Always
         ports:

@@ -56,9 +56,7 @@ async def send_email_verification(
 
 
 async def send_email_invitation(
-    recipient_name,
-    email,
-    invitee_name,
+    recipient_name, email, invitee_name, business_profile_uuid, role, expiry_date
 ):
     try:
         response = await send_email(
@@ -66,6 +64,10 @@ async def send_email_invitation(
             email_body={
                 "recipient_name": recipient_name,
                 "invitee_name": invitee_name,
+                "business_profile_uuid": business_profile_uuid,
+                "email": email,
+                "role": role,
+                "expiry_date": expiry_date,
             },
             email=email,
         )

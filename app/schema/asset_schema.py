@@ -1,15 +1,17 @@
 from typing import List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from pydantic_extra_types.coordinate import Latitude, Longitude
 
 from app.schema.equipment_schema import EquipmentPayload, EquipmentTypePayload
 from app.schema.marker_schema import MarkerIconPayload
 from app.util.enums import (
     ActiveStatus,
+    AssetCreators,
     AssetDeviceRequestStatus,
     AssetStatus,
+    AssetUsageType,
     DriverType,
     ImmobilizerReason,
     ImmobilizerType,
@@ -32,6 +34,7 @@ class Asset(BaseModel):
     user_uuid: UUID
     asset_type_uuid: UUID
     asset_name: str
+    image_url: Optional[str] = None
     asset_status: AssetStatus
     equipment_type_uuid: Optional[UUID] = None
     vin_no: Optional[str] = None
@@ -52,8 +55,10 @@ class Asset(BaseModel):
 
 class AssetPayload(BaseModel):
     user_uuid: UUID
+    business_profile_uuid: Optional[UUID] = None
     asset_type_uuid: UUID
     asset_name: str
+    image_url: Optional[str] = None
     vehicle_license_no: Optional[str] = None
     asset_status: AssetStatus
     equipment_type_uuid: Optional[UUID] = None
@@ -71,11 +76,50 @@ class AssetPayload(BaseModel):
         orm_model = True
 
 
+class ThirdPartyAssetPayload(BaseModel):
+    usage_type: AssetUsageType
+    vin: str
+    vehicle_license_no: Optional[str] = None
+    equipment_uuid: UUID
+    make: Optional[str] = None
+    model: Optional[str] = None
+    image_url: str
+    first_name: str
+    last_name: str
+    phone_number: str
+    email_address: EmailStr
+    residential_address: str
+
+
+class ThirdPartyAssetInput(BaseModel):
+    asset_type_uuid: UUID
+    asset_status: AssetStatus
+    usage_type: AssetUsageType
+    created_by: AssetCreators
+    vin: str
+    vehicle_license_no: Optional[str] = None
+    equipment_uuid: UUID
+    make: Optional[str] = None
+    model: Optional[str] = None
+    image_url: str
+    vehicle_owner_uuid: UUID
+
+
+class VehicleOwnerInput(BaseModel):
+    first_name: str
+    last_name: str
+    phone_number: str
+    email_address: str
+    residential_address: str
+
+
 class AssetInput(BaseModel):
     user_uuid: UUID
+    business_profile_uuid: Optional[UUID] = None
     asset_type_uuid: UUID
     asset_name: str
     asset_status: AssetStatus
+    image_url: Optional[str] = None
     equipment_type_uuid: Optional[UUID] = None
     device_imei: Optional[str] = None
     vin: Optional[str] = None
@@ -106,6 +150,37 @@ class TheftIncidencePayload(BaseModel):
     user_uuid: UUID
     incident_type: IncidentType
     status: IncidentStatus
+
+
+class TheftReportPayload(BaseModel):
+    title: str
+    report_details: str
+    theft_incident_uuid: UUID
+    user_uuid: UUID
+
+
+class VehicleModelPayload(BaseModel):
+    value: str
+    title: str
+
+
+class VehicleMakeInput(BaseModel):
+    name: str
+
+
+class VehicleModelInput(BaseModel):
+    name: str
+    vehicle_make_uuid: UUID
+
+
+class VehicleMake(BaseModel):
+    value: str
+    title: str
+    models: List[VehicleModelPayload]
+
+
+class VehicleMakePayload(BaseModel):
+    vehicle_makes: List[VehicleMake]
 
 
 class AssetLocationFetch(BaseModel):

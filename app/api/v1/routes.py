@@ -18,6 +18,7 @@ from app.api.v1.endpoints.equipment import router as equipment_router
 from app.api.v1.endpoints.equipment_type import router as equipment_type_router
 from app.api.v1.endpoints.external_app import router as external_app_router
 from app.api.v1.endpoints.feature import router as feature_router
+from app.api.v1.endpoints.fine_report import router as fine_report_router
 from app.api.v1.endpoints.health_check import router as health_check_router
 from app.api.v1.endpoints.inventory import router as inventory_router
 from app.api.v1.endpoints.marker_icon import router as marker_icon_router
@@ -30,17 +31,22 @@ from app.api.v1.endpoints.package import router as package_router
 from app.api.v1.endpoints.package_item import router as package_item_router
 from app.api.v1.endpoints.payment import router as payment_router
 from app.api.v1.endpoints.permission import router as permission_router
+from app.api.v1.endpoints.report import router as report_router
 from app.api.v1.endpoints.subscription import router as subscription_router
 from app.api.v1.endpoints.subscription_payment import (
     router as subscription_payment_router,
 )
+from app.api.v1.endpoints.third_party_app import router as third_party_router
 from app.api.v1.endpoints.tracking import router as tracking_router
+from app.api.v1.endpoints.upload import router as upload_router
 from app.api.v1.endpoints.users import router as users_router
+from app.api.v1.endpoints.vehicle_make import router as vehicle_make_router
 
 routers = APIRouter()
 router_list = [
     health_check_router,
     auth_router,
+    upload_router,
     users_router,
     package_item_router,
     package_router,
@@ -67,6 +73,10 @@ router_list = [
     order_router,
     external_app_router,
     permission_router,
+    vehicle_make_router,
+    third_party_router,
+    fine_report_router,
+    report_router,
 ]
 
 for router in router_list:

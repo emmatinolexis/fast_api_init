@@ -1,5 +1,5 @@
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
 from pydantic import EmailStr
 
@@ -7,7 +7,7 @@ from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
 from app.core.exceptions import ExpiredVerificationCodeError, NotFoundError
-from app.core.security import extract_user_data
+from app.core.security import extract_user_data, verify_password
 from app.core.settings import settings
 from app.model.user import User
 from app.schema.invitation_schema import (
@@ -24,6 +24,7 @@ from app.schema.user_schema import (
     UserPhoneVerificationToken,
     UserUpdatePassword,
 )
+from app.service.business_profile_service import BusinessProfileService
 from app.service.invitation_service import InvitationService
 from app.service.phone_otp_service import PhoneOTPService
 from app.service.reset_password_service import ResetPassword
@@ -33,13 +34,14 @@ from app.util.email import (
     send_email_verification,
     send_otp_email,
 )
-from app.util.enums import AccountType, EmailPurpose
+from app.util.enums import AccountType
 from app.util.utils import (
     allow_admins_only,
     send_client_side_error,
     send_data,
     send_info,
     send_internal_server_error,
+    serialize_datetime,
 )
 
 router = APIRouter(
@@ -207,18 +209,26 @@ async def get_user_by_uuid_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/accounts/{user_uuid}", response_class=ORJSONResponse)
+@router.get("/accounts/{business_uuid}", response_class=ORJSONResponse)
 @inject
 async def user_account(
-    user_uuid: str,
+    business_uuid: str,
     service: UserService = Depends(Provide[Container.user_service]),
+    business_service: BusinessProfileService = Depends(
+        Provide[Container.business_profile_service]
+    ),
+    page: int = Query(1, ge=1, description="Page number, default is set to 1"),
+    page_size: int = Query(
+        10, ge=1, le=1000, description="Items per page, default is 10"
+    ),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        user = service.get_user_by_uuid(user_uuid)
-        if user is None:
-            return send_client_side_error(user_msg=messages.USER_NOT_FOUND + user_uuid)
-        return send_data(service.get_account_users(user_uuid))
+        business = business_service.get_by_uuid(business_uuid)
+        if business is None:
+            msg = f"{messages.BUSINESS_PROFILE_NOT_FOUND}{business_uuid}"
+            return send_internal_server_error(user_msg=msg, error=msg)
+        return send_data(service.get_account_users(business_uuid, page, page_size))
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
@@ -233,20 +243,77 @@ async def change_password_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
+        user_to_update = service.get_by_uuid(user_uuid)
+        if user_to_update is None:
+            return send_client_side_error(
+                user_msg=messages.USER_NOT_FOUND,
+            )
+        if not payload.new_password == payload.password_confirmation:
+            user_msg = "Passwords do not match"
+            return send_client_side_error(user_msg=user_msg)
+
+        if not verify_password(payload.old_password, user_to_update.password):
+            user_msg = "You have provided an invalid current password"
+            return send_client_side_error(
+                user_msg=user_msg,
+            )
+
+        if verify_password(payload.new_password, user_to_update.password):
+            user_msg = "New password and old password cannot be the same"
+            return send_client_side_error(
+                user_msg=user_msg,
+            )
+
         user = service.change_password(
             user_uuid,
             payload.old_password,
             payload.new_password,
             payload.password_confirmation,
         )
-        if user is None:
-            return send_client_side_error(
-                user_msg=messages.USER_NOT_FOUND + user_uuid,
-            )
         return send_data(user)
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.put("/phone/{uuid}", response_class=ORJSONResponse)
+@inject
+async def update_phone_handler(
+    uuid: str,
+    payload: UpdatePhoneNumber,
+    service: UserService = Depends(Provide[Container.user_service]),
+    phone_otp_service: PhoneOTPService = Depends(Provide[Container.phone_otp_service]),
+    current_user: User = Depends(get_current_user),
+):
+    user = service.get_by_uuid(uuid)
+
+    if user is None:
+        return send_client_side_error(
+            user_msg=messages.USER_NOT_FOUND + uuid,
+        )
+
+    user_with_phone_number = service.get_user_by_phone_number(payload.phone_number)
+
+    # check if the given phone number is already associated with another user
+    if user_with_phone_number and not (user_with_phone_number.uuid == user.uuid):
+        return send_client_side_error(
+            user_msg=messages.PHONE_NUMBER_EXISTS + payload.phone_number
+        )
+
+    try:
+        service.patch_by_uuid(uuid, payload)
+        token = phone_otp_service.create_phone_verification_token(user.uuid)
+        await send_otp_email(
+            subject=settings.PHONE_OTP_SUBJECT,
+            recipient_name=user.first_name,
+            email=user.email_address,
+            otp=token,
+        )
+        msg = "Phone number update pending verification"
+        return send_info(f"{msg}")
+    except Exception as e:
+        msg = messages.CREATE_FAILED + f"token for user {uuid}"
+        return send_internal_server_error(user_msg=msg, error=str(e))
 
 
 @router.post("/password/{email_address}", response_class=ORJSONResponse)
@@ -274,7 +341,6 @@ async def send_password_link_handler(
                     url=settings.RESET_PASSWORD_URL,
                     btn=settings.RESET_BTN,
                     token=reset_password_token,
-                    email_purpose=EmailPurpose.PASSWORD_RESET,
                 )
             except Exception as e:
                 return send_internal_server_error(
@@ -367,7 +433,7 @@ async def create_team_member_invitation(
             )
             if invitation_exists:
                 return send_client_side_error(
-                    user_msg=f"Invitation already exists : {invitation.email}",
+                    user_msg=f"Invitation already exists for : {invitation.email}",
                 )
 
             user = service.get_by_uuid(user_uuid)
@@ -380,13 +446,18 @@ async def create_team_member_invitation(
                 email=invitation.email, role_uuid=invitation.role_uuid
             )
 
-            service.create_team_member_invitation(user_uuid, invitation_payload, user)
+            created_invite = service.create_team_member_invitation(
+                user_uuid, invitation_payload, user
+            )
 
             # send email invite
             await send_email_invitation(
                 recipient_name="",
                 email=invitation.email,
                 invitee_name=f"{user.first_name} {user.last_name}",
+                business_profile_uuid=str(user.business_profile_uuid),
+                role=str(invitation.role_uuid),
+                expiry_date=serialize_datetime(created_invite.expired_at),
             )
         msg = "Invitations sent successfully"
         return send_info(msg)
@@ -404,10 +475,16 @@ async def get_all_user_invitations_handler(
     invitation_service: InvitationService = Depends(
         Provide[Container.invitation_service]
     ),
+    page: int = Query(1, ge=1, description="Page number, default is set to 1"),
+    page_size: int = Query(
+        10, ge=1, le=1000, description="Items per page, default is 10"
+    ),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        invitations = invitation_service.get_all_user_invites(business_uuid)
+        invitations = invitation_service.get_all_user_invites(
+            business_uuid, page, page_size
+        )
         return send_data(invitations)
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix

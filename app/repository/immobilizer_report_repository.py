@@ -32,6 +32,7 @@ class ImmobilizerReportRepository(BaseRepository):
                 action = (
                     session.query(self.model)
                     .filter_by(asset_uuid=asset_uuid)
+                    .options(joinedload(self.model.asset))
                     .order_by(desc(self.model.created_at))
                     .first()
                 )

@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import Dict, List
+from uuid import UUID
 
 from app.core.constants import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE, THIRD_PARTY_APP_ROLE
 
@@ -7,7 +8,9 @@ from app.core.constants import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE, THIRD_PARTY_
 class AccountType(str, Enum):
     BUSINESS = "business"
     INDIVIDUAL = "individual"
-    ADMIN = "admin"
+    ADMIN = ("admin",)
+    POLICE = ("police",)
+    DVLA = "dvla"
 
 
 class DeviceType(str, Enum):
@@ -42,6 +45,20 @@ class ActiveStatus(str, Enum):
     ACTIVE = "active"
     INACTIVE = "inactive"
     DEACTIVATED = "deactivated"
+
+
+class FineStatus(str, Enum):
+    PENDING_PAYMENT = "pending_payment"
+    PAID = "paid"
+    PAYMENT_OVERDUE = "payment_overdue"
+
+
+class FineType(str, Enum):
+    OVER_SPEEDING = "over_speeding"
+
+
+class CustomerRoles(str, Enum):
+    ADMIN = UUID("7d720dbf-f90f-462d-ada2-8fbf0bfba56b")
 
 
 class PackageItemTrackerType(str, Enum):
@@ -151,9 +168,9 @@ class OrderPickUpLocation(str, Enum):
 
 
 class MaintenanceAlertSchedule(str, Enum):
-    THIRTY_DAYS = "30 days"
-    SIXTY_DAYS = "60 days"
-    NINETY_DAYS = "90 days"
+    THIRTY_DAYS = "30"
+    SIXTY_DAYS = "60"
+    NINETY_DAYS = "90"
 
 
 class AssetStatus(str, Enum):
@@ -164,6 +181,16 @@ class AssetStatus(str, Enum):
     ACTIVE = "active"
     INACTIVE = "inactive"
     OFFLINE = "offline"
+
+
+class AssetCreators(str, Enum):
+    USER = "user"
+    DVLA = "dvla"
+
+
+class AssetUsageType(str, Enum):
+    INDIVIDUAL = "individual"
+    COMMERCIAL = "commercial"
 
 
 class UserRole(str, Enum):
@@ -197,3 +224,10 @@ class EmailPurpose(str, Enum):
     ALERT_VIOLATION = "Alert_Violation"
     INVITATION = "Invitation"
     PASSWORD_RESET = "Password_Reset"
+
+
+class FileFormat(str, Enum):
+    PDF = "pdf"
+    PNG = "png"
+    JPEG = "jpeg"
+    JPG = "jpg"

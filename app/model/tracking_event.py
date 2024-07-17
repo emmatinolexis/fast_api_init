@@ -43,3 +43,6 @@ class TrackingEvent(Base):
     rfid_login_status = Column(Boolean)
     protocol_version = Column(String(50))
     device = relationship("Device", back_populates="tracking_events")
+    last_checked_geofence_violation = Column(DateTime, default=None, nullable=True)
+    last_checked_over_speeding_violation = Column(DateTime, default=None, nullable=True)
+    last_checked_idling_violation = Column(DateTime, default=None, nullable=True)

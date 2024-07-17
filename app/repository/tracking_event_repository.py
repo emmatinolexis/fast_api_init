@@ -2,7 +2,7 @@ from contextlib import AbstractContextManager
 from datetime import datetime
 from typing import Callable, Dict, List
 
-from sqlalchemy import Date, cast
+from sqlalchemy import Date, and_, cast
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.constants import ALLOWED_EVENT_TYPES
@@ -10,7 +10,7 @@ from app.model.asset import Asset
 from app.model.device import Device
 from app.model.tracking_event import TrackingEvent
 from app.repository.base_repository import BaseRepository
-from app.util.utils import get_status
+from app.util.utils import calculate_average_speed, get_status
 
 
 class TrackingEventRepository(BaseRepository):
@@ -34,17 +34,50 @@ class TrackingEventRepository(BaseRepository):
 
             return query
 
+    def read_all_events_by_device_imei_date_range(
+        self, device_imei: str, start_date: str, end_date: str
+    ):
+        with self.session_factory() as session:
+            query = (
+                session.query(self.model)
+                .filter(
+                    self.model.device_imei == device_imei,
+                    and_(
+                        cast(self.model.event_datetime, Date)
+                        >= datetime.strptime(start_date, "%d/%m/%Y"),
+                        cast(self.model.event_datetime, Date)
+                        <= datetime.strptime(end_date, "%d/%m/%Y"),
+                    ),
+                    self.model.event_type.in_(ALLOWED_EVENT_TYPES),
+                )
+                .order_by(self.model.event_datetime)
+                .all()
+            )
+
+            return query
+
     def read_all_events_by_user(
-        self, user_uuid: str, date: str
+        self, date: str, user_uuid: str = None, business_uuid: str = None
     ) -> Dict[str, List[TrackingEvent]]:
         with self.session_factory() as session:
             # get all device imei for user's assets
             events_by_device = {}
-            user_assets = (
-                session.query(Asset)
-                .filter(Asset.user_uuid == user_uuid, Asset.device_imei.isnot(None))
-                .all()
-            )
+            if user_uuid:
+                user_assets = (
+                    session.query(Asset)
+                    .filter(Asset.user_uuid == user_uuid, Asset.device_imei.isnot(None))
+                    .all()
+                )
+
+            if business_uuid:
+                user_assets = (
+                    session.query(Asset)
+                    .filter(
+                        Asset.business_profile_uuid == business_uuid,
+                        Asset.device_imei.isnot(None),
+                    )
+                    .all()
+                )
 
             # get all events for each device IMEI
             for asset in user_assets:
@@ -64,7 +97,9 @@ class TrackingEventRepository(BaseRepository):
                     .all()
                 )
                 # Store the events for each device IMEI in the dictionary
-                events_by_device[device_imei] = query
+                events_by_device[device_imei] = {"events": query, "asset": asset}
+                # events_by_device[device_imei] = query
+                # events_by_device[asset] = asset
 
             return events_by_device
 
@@ -107,3 +142,39 @@ class TrackingEventRepository(BaseRepository):
                 .first()
             )
             return query
+
+    def read_asset_average_speed(
+        self, device_imei: str, date_from: datetime, date_to: datetime
+    ):
+        with self.session_factory() as session:
+            query = (
+                session.query(self.model)
+                .filter(self.model.device_imei == device_imei)
+                .filter(self.model.event_datetime >= date_from)
+                .filter(self.model.event_datetime <= date_to)
+                .all()
+            )
+
+            if not query:
+                raise ValueError("No events found for the specified criteria.")
+
+            event_data = [
+                {
+                    "speed": event.speed,
+                    "latitude": event.latitude,
+                    "longitude": event.longitude,
+                    "event_datetime": event.event_datetime,
+                }
+                for event in query
+                if event.speed is not None
+            ]
+
+            speeds = [event["speed"] for event in event_data]
+
+            if not speeds:
+                raise ValueError(
+                    "No valid speed data available for the specified criteria."
+                )
+
+            average_speed = calculate_average_speed(speeds)
+            return event_data, average_speed

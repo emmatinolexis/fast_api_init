@@ -32,6 +32,8 @@ EQUIPMENT_NOT_FOUND = "No equipment was found with the given uuid : "
 DRIVER_NOT_FOUND = "No driver was found with the given uuid : "
 ONBOARDING_NOT_FOUND = "No onboarding was found with the given uuid : "
 NO_DATA = "No data available"
+FINE_REPORT_NOT_FOUND = "No fine report found for the given uuid : "
+
 
 PACKAGE_ITEM_ASSIGNED_SUCCESS = "Package item assigned successfully"
 
@@ -45,3 +47,6 @@ PHONE_NUMBER_EXISTS = "Phone number already exists "
 PHONE_OTP_INVALID = "Phone verification token is invalid "
 PHONE_OTP_EXPIRED = "Phone verification token has expired "
 PHONE_OTP_FAILED = "Phone verification failed "
+
+UPLOAD_FAILED = "Failed to upload file "
+UPLOAD_SUCCESS = "File uploaded successfully "

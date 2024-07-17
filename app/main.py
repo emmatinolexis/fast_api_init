@@ -1,12 +1,21 @@
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
 from starlette.middleware.cors import CORSMiddleware
 
+from app.api.v1.endpoints.alert_policy import (
+    check_geofence_violation_handler,
+    check_idling_violation_handler,
+    check_over_speeding_violation_handler,
+)
 from app.api.v1.routes import routers as v1_routers
 from app.core.container import Container
 from app.core.logger import get_logger, init_logger
 from app.core.settings import settings
 from app.util.class_object import singleton
+
+# Create an instance of the scheduler
+scheduler = AsyncIOScheduler()
 
 
 @singleton
@@ -63,3 +72,37 @@ app = app_creator.app
 db = app_creator.db
 container = app_creator.container
 mqtt_service = app_creator.mqtt_service
+
+
+@app.on_event("startup")
+async def startup_event():
+    scheduler.start()
+
+    # check over speeding every 2 minutes
+    scheduler.add_job(
+        check_over_speeding_violation_handler,
+        "interval",
+        minutes=2,
+        id="check_over_speeding_violation",
+    )
+
+    # check geofence violation for every 3 minutes
+    scheduler.add_job(
+        check_geofence_violation_handler,
+        "interval",
+        minutes=3,
+        id="check_geofence_violation",
+    )
+
+    # check geofence violation for every 3 minutes
+    scheduler.add_job(
+        check_idling_violation_handler,
+        "interval",
+        minutes=4,
+        id="check_idling_violation",
+    )
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    scheduler.shutdown()

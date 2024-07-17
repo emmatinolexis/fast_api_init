@@ -1,6 +1,7 @@
 import math
 import secrets
 import uuid
+from datetime import datetime, timedelta
 from typing import Any, List, Union
 
 from fastapi import Depends
@@ -8,10 +9,12 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import ORJSONResponse
 from geopy.distance import geodesic
 
+from app.client.s3_client import S3Client
 from app.core.constants import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE, THIRD_PARTY_APP_ROLE
 from app.core.logger import get_logger
 from app.core.security import JWTBearer
-from app.util.enums import ActiveStatus
+from app.core.settings import settings
+from app.util.enums import ActiveStatus, FileFormat
 
 log = get_logger()
 
@@ -106,6 +109,12 @@ def toggle_status(current_status):
     )
 
 
+def serialize_datetime(obj):
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    raise TypeError("Type not serializable")
+
+
 def send_internal_server_error(user_msg: str, error: Any, status_code: int = 500):
     log.error(user_msg, extra={"error": error})
     return ORJSONResponse(
@@ -142,7 +151,11 @@ def get_distance_travelled_by_coordinates(coordinates: Union[List[dict], List[tu
     :param coordinates: List of dictionaries or list of tuples where each dictionary contains "latitude" and "longitude"
     :return: Total distance traveled as float
     """
+    if not coordinates:
+        return 0.0
+
     total_distance = 0.0
+
     if isinstance(coordinates[0], dict):
         for i in range(len(coordinates) - 1):
             coord1 = (coordinates[i]["latitude"], coordinates[i]["longitude"])
@@ -231,37 +244,278 @@ def generate_circle_geofence_coordinates(center: dict, radius: float, num_points
     return geofence_coordinates
 
 
-def check_violated_geofence(asset_coordinates, geofence_coordinates, geofence_type):
+def check_violated_geofence(
+    asset_coordinates_events, geofence_coordinates, geofence_type
+):
     """
-    Check which geofences are violated by the given set of car points.
+    Check which geofences are violated by the given set of asset points.
 
     Args:
-    - asset_coordinates: list of tuples representing the points from the car (latitude, longitude)
+    - asset_coordinates_events: list of dictionaries representing points from the asset
+                                {"lat": float, "lng": float, "speed": float,
+                                 "course": float, "timestamp": str, "event_type": str}
     - geofence_coordinates: list of tuples representing the coordinates of the geofence
     - geofence_type: string indicating the type of geofence ('zone_exit' or 'zone_entry')
 
     Returns:
-    - list of tuples representing the coordinates of violated geofences
+    - list of dictionaries representing the coordinates and speed of violated geofences
+      {"lat": float, "lng": float, "speed": float, "course": float, "timestamp": str, "event_type": str}
     """
     violated_geofences = []
-    for point in asset_coordinates:
-        # Check if the point is inside or outside the geofence based on geofence_type
+
+    for point in asset_coordinates_events:
         inside = False
         for i in range(len(geofence_coordinates) - 1):
             p1 = geofence_coordinates[i]
             p2 = geofence_coordinates[i + 1]
-            if ((p1[1] > point[1]) != (p2[1] > point[1])) and (
-                point[0]
-                < (p2[0] - p1[0]) * (point[1] - p1[1]) / (p2[1] - p1[1]) + p1[0]
+            if ((p1[1] > point["lng"]) != (p2[1] > point["lng"])) and (
+                point["lat"]
+                < (p2[0] - p1[0]) * (point["lng"] - p1[1]) / (p2[1] - p1[1]) + p1[0]
             ):
                 inside = not inside
 
         if geofence_type == "zone_entry" and inside:
-            # violated_geofences.append(point)
             violated_geofences.append(point)
 
         elif geofence_type == "zone_exit" and not inside:
-            # violated_geofences.append(point)
             violated_geofences.append(point)
 
     return violated_geofences
+
+
+def haversine(coord1, coord2):
+    """
+    Calculate the great-circle distance between two points on the Earth using the Haversine formula.
+
+    Parameters:
+    coord1, coord2: tuple of floats
+        Coordinates of the two points in the format (latitude, longitude).
+
+    Returns:
+    float
+        Distance between the two points in kilometers.
+    """
+    rad = 6371  # Radius of the Earth in kilometers
+
+    lat1, lon1 = coord1
+    lat2, lon2 = coord2
+
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+
+    a = (
+        math.sin(dlat / 2) ** 2
+        + math.cos(math.radians(lat1))
+        * math.cos(math.radians(lat2))
+        * math.sin(dlon / 2) ** 2
+    )
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+    distance = rad * c
+    return distance
+
+
+def calculate_time_traveled(asset_coordinates_events, unit="minutes"):
+    """
+    Calculate the total time traveled given a set of asset coordinates and their speeds.
+
+    Parameters:
+    asset_coordinates_events: list of dictionaries
+        List of asset coordinates in the format [{"lat": lat1, "lng": lon1, "speed": speed1}, ...].
+    unit: str
+        Unit of time to return the result in ('minutes' or 'seconds').
+
+    Returns:
+    float
+        Total time traveled in the specified unit, rounded to the nearest whole number.
+    """
+    total_time_hours = 0.0
+
+    # Calculate the time for each segment and sum them
+    for i in range(len(asset_coordinates_events) - 1):
+        point1 = asset_coordinates_events[i]
+        point2 = asset_coordinates_events[i + 1]
+
+        # Extract coordinates and speeds
+        lat1, lon1, speed1 = point1["lat"], point1["lng"], point1["speed"]
+        lat2, lon2, speed2 = point2["lat"], point2["lng"], point2["speed"]
+
+        # Calculate distance between points using Haversine formula
+        distance = haversine((lat1, lon1), (lat2, lon2))
+
+        # Avoid division by zero: check if both speeds are zero
+        if speed1 == 0 and speed2 == 0:
+            continue
+
+        # Use the average speed for the segment
+        average_speed = (speed1 + speed2) / 2
+        time_for_segment = distance / average_speed
+
+        total_time_hours += time_for_segment
+
+    # Convert total time to the specified unit
+    if unit == "minutes":
+        total_time = total_time_hours * 60
+    elif unit == "seconds":
+        total_time = total_time_hours * 3600
+    else:
+        raise ValueError("Invalid unit. Use 'minutes' or 'seconds'.")
+
+    # Round the total time to the nearest whole number
+    total_time_rounded = round(total_time)
+
+    return total_time_rounded
+
+
+def check_overspeeding(asset_coordinates_events, speed_limit):
+    """
+    Check for overspeeding in the given set of asset coordinates and their speeds.
+
+    Parameters:
+    asset_coordinates_events: list of dictionaries
+        List of asset coordinates in the format [{"lat": lat1, "lng": lon1, "speed": speed1}, ...].
+    speed_limit: float
+        The speed limit to check against.
+
+    Returns:
+    list of dictionaries
+        List of dictionaries containing the points and speeds that are greater than the speed limit.
+    """
+    overspeeding_points = []
+
+    for point in asset_coordinates_events:
+        if point["speed"] > speed_limit:
+            overspeeding_points.append(point)
+
+    return overspeeding_points
+
+
+def calculate_average_speed(speeds: List[float]) -> float:
+    if not speeds:
+        return 0
+
+    average_speed = sum(speeds) / len(speeds)
+    return round(average_speed, 2)
+
+
+def get_content_type(file_format: FileFormat) -> str:
+    content_types = {
+        "jpg": "image/jpeg",
+        "jpeg": "image/jpeg",
+        "png": "image/png",
+        "pdf": "application/pdf",
+    }
+    content_type = content_types.get(file_format.value)
+    return content_type
+
+
+def check_idle_time_exceeds_limit(events, idle_time_limit_minutes):
+    """
+    Check for idle periods exceeding the given limit.
+
+    Parameters:
+    events: list of dictionaries
+        List of events in the format
+        [{"lat": ..., "lng": ..., "speed": ..., "course": ..., "timestamp": ..., "event_type": ...}, ...].
+    idle_time_limit_minutes: int
+        The minimum idle time in minutes to be considered a violation.
+
+    Returns:
+    dict
+        A dictionary with sorted events and a list of idle periods that exceed
+        the given limit along with the total idle time for each period.
+    """
+    # Convert idle time limit from minutes to seconds
+    idle_time_limit_seconds = idle_time_limit_minutes * 60
+
+    # Sort events by timestamp
+    events_sorted = sorted(
+        events, key=lambda x: datetime.strptime(x["timestamp"], "%Y-%m-%d %H:%M:%S")
+    )
+
+    idle_periods = []
+    current_idle_period = []
+    current_idle_start_time = None
+    current_idle_end_time = None
+
+    # Iterate through sorted events to detect idle periods
+    for event in events_sorted:
+        if event["event_type"] == "idle":
+            if not current_idle_period:
+                current_idle_start_time = datetime.strptime(
+                    event["timestamp"], "%Y-%m-%d %H:%M:%S"
+                )
+            current_idle_period.append(event)
+            current_idle_end_time = datetime.strptime(
+                event["timestamp"], "%Y-%m-%d %H:%M:%S"
+            )
+        else:
+            if current_idle_period:
+                idle_duration = (
+                    current_idle_end_time - current_idle_start_time
+                ).total_seconds()
+                if idle_duration > idle_time_limit_seconds:
+                    idle_periods.append(
+                        {
+                            "events": current_idle_period,
+                            "total_idle_time_seconds": idle_duration,
+                        }
+                    )
+                current_idle_period = []
+                current_idle_start_time = None
+                current_idle_end_time = None
+
+    # Check for any remaining idle period after the loop
+    if current_idle_period:
+        idle_duration = (
+            current_idle_end_time - current_idle_start_time
+        ).total_seconds()
+        if idle_duration > idle_time_limit_seconds:
+            idle_periods.append(
+                {
+                    "events": current_idle_period,
+                    "total_idle_time_seconds": idle_duration,
+                }
+            )
+
+    return idle_periods
+
+
+def is_time_to_send_maintenance_alert(
+    date_created_str, alert_schedule_period_days, alert_start_days_before: int = 3
+):
+    """
+    Determines if it is time to send a maintenance alert for recurring alerts.
+
+    :param date_created_str: The datetime string of when the policy was created in the format 'YYYY-MM-DD HH:MM:SS.sss +0000'.
+    :param alert_schedule_period_days: The maintenance alert schedule period in days (int).
+    :param alert_start_days_before: The number of days before the alert period to start notifying (int).
+    :return: True if it's time to send the maintenance alert, False otherwise.
+    """
+    # Parse the datetime string to a datetime object
+    date_created = datetime.fromisoformat(str(date_created_str)).date()
+
+    current_date = datetime.now().date()  # Current date
+
+    # Calculate the first alert date
+    first_alert_date = date_created + timedelta(days=alert_schedule_period_days)
+    next_alert_date = first_alert_date
+
+    # Iterate to find the alert period that includes the current date
+    while next_alert_date < current_date:
+        next_alert_date += timedelta(days=alert_schedule_period_days)
+
+    # Calculate the start date for sending alerts for the current alert period
+    alert_start_date = next_alert_date - timedelta(days=alert_start_days_before)
+
+    # Check if current date is within the alert start period
+    return alert_start_date <= current_date <= next_alert_date
+
+
+async def upload_to_s3(file_name: str, file_content: bytes, content_type: str) -> str:
+    s3_client = S3Client(
+        aws_access_key=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_key=settings.AWS_SECRET_ACCESS_KEY,
+        bucket_name=settings.S3_BUCKET,
+    )
+    return await s3_client.upload_file(file_name, file_content, content_type)

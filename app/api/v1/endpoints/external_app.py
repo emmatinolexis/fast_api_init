@@ -16,7 +16,7 @@ from app.util.utils import send_client_side_error, send_data, send_internal_serv
 
 router = APIRouter(
     prefix="/external_app",
-    tags=["External Apps"],
+    tags=["External Apps Services"],
 )
 msg_prefix = "external_app"
 

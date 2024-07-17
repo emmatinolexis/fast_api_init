@@ -26,6 +26,8 @@ from app.repository import (
     equipment_type_repository,
     external_app_repository,
     feature_repository,
+    fine_report_repository,
+    geofence_violation_tracker_repository,
     immobilizer_report_repository,
     inventory_repository,
     marker_icon_repository,
@@ -49,10 +51,16 @@ from app.repository import (
     subscription_repository,
     team_member_invitation_repository,
     theft_incidence_repository,
+    theft_report_repository,
+    third_party_app_repository,
+    third_party_app_user_repository,
     tracking_event_repository,
     user_organisation_assignment_repository,
     user_repository,
     user_subscription_repository,
+    vehicle_make_repository,
+    vehicle_model_repository,
+    vehicle_owner_repository,
 )
 from app.service import (
     alert_maintenance_type_service,
@@ -63,6 +71,7 @@ from app.service import (
     asset_service,
     asset_type_service,
     auth_service,
+    business_profile_service,
     contact_sale_service,
     device_image_service,
     device_manufacturer_service,
@@ -72,6 +81,8 @@ from app.service import (
     equipment_type_service,
     external_app_service,
     feature_service,
+    fine_report_service,
+    geofence_violation_tracker_service,
     immobilizer_report_service,
     inventory_service,
     invitation_service,
@@ -93,9 +104,15 @@ from app.service import (
     subscription_payment_service,
     subscription_service,
     theft_incidence_service,
+    theft_report_service,
+    third_party_app_service,
+    third_party_app_user_service,
     tracking_event_service,
     user_service,
     user_subscription_service,
+    vehicle_make_service,
+    vehicle_model_service,
+    vehicle_owner_service,
 )
 
 
@@ -130,6 +147,10 @@ class Container(containers.DeclarativeContainer):
             "app.api.v1.endpoints.order",
             "app.api.v1.endpoints.external_app",
             "app.api.v1.endpoints.permission",
+            "app.api.v1.endpoints.vehicle_make",
+            "app.api.v1.endpoints.third_party_app",
+            "app.api.v1.endpoints.fine_report",
+            "app.api.v1.endpoints.report",
         ]
     )
 
@@ -337,6 +358,40 @@ class Container(containers.DeclarativeContainer):
         session_factory=db.provided.session,
     )
 
+    theft_report_repository = providers.Factory(
+        theft_report_repository.TheftReportRepository,
+        session_factory=db.provided.session,
+    )
+
+    vehicle_model_repository = providers.Factory(
+        vehicle_model_repository.VehicleModelRepository,
+        session_factory=db.provided.session,
+    )
+    vehicle_make_repository = providers.Factory(
+        vehicle_make_repository.VehicleMakeRepository,
+        session_factory=db.provided.session,
+    )
+    third_party_app_repository = providers.Factory(
+        third_party_app_repository.ThirdPartyAppRepository,
+        session_factory=db.provided.session,
+    )
+    third_party_app_user_repository = providers.Factory(
+        third_party_app_user_repository.ThirdPartAppUserRepository,
+        session_factory=db.provided.session,
+    )
+    vehicle_owner_repository = providers.Factory(
+        vehicle_owner_repository.VehicleOwnerRepository,
+        session_factory=db.provided.session,
+    )
+    fine_report_repository = providers.Factory(
+        fine_report_repository.FineReportRepository,
+        session_factory=db.provided.session,
+    )
+    geofence_violation_tracker_repository = providers.Factory(
+        geofence_violation_tracker_repository.GeofenceViolationTrackerRepository,
+        session_factory=db.provided.session,
+    )
+
     # Services
     auth_service = providers.Factory(
         auth_service.AuthService,
@@ -390,6 +445,9 @@ class Container(containers.DeclarativeContainer):
         device_repository=device_repository,
         immobilizer_report_repository=immobilizer_report_repository,
         theft_incidence_repository=theft_incidence_repository,
+        theft_report_repository=theft_report_repository,
+        vehicle_owner_repository=vehicle_owner_repository,
+        tracking_event_repository=tracking_event_repository,
     )
     asset_device_request_service = providers.Factory(
         asset_device_request_service.AssetDeviceRequestService,
@@ -539,4 +597,41 @@ class Container(containers.DeclarativeContainer):
     theft_incidence_service = providers.Factory(
         theft_incidence_service.TheftIncidenceService,
         theft_incidence_repository=theft_incidence_repository,
+    )
+    theft_report_service = providers.Factory(
+        theft_report_service.TheftReportService,
+        theft_report_repository=theft_report_repository,
+    )
+    vehicle_model_service = providers.Factory(
+        vehicle_model_service.VehicleModelService,
+        vehicle_model_repository=vehicle_model_repository,
+    )
+    vehicle_make_service = providers.Factory(
+        vehicle_make_service.VehicleMakeService,
+        vehicle_make_repository=vehicle_make_repository,
+        vehicle_model_repository=vehicle_model_repository,
+    )
+    third_party_app_service = providers.Factory(
+        third_party_app_service.ThirdPartyAppService,
+        third_party_app_repository=third_party_app_repository,
+    )
+    third_party_app_user_service = providers.Factory(
+        third_party_app_user_service.ThirdPartyAppUserService,
+        third_party_app_user_repository=third_party_app_user_repository,
+    )
+    vehicle_owner_service = providers.Factory(
+        vehicle_owner_service.VehicleOwnerService,
+        vehicle_owner_repository=vehicle_owner_repository,
+    )
+    business_profile_service = providers.Factory(
+        business_profile_service.BusinessProfileService,
+        business_profile_repository=business_profile_repository,
+    )
+    fine_report_service = providers.Factory(
+        fine_report_service.FineReportService,
+        fine_report_repository=fine_report_repository,
+    )
+    geofence_violation_tracker_service = providers.Factory(
+        geofence_violation_tracker_service.GeofenceViolationTrackerService,
+        geofence_violation_tracker_repository=geofence_violation_tracker_repository,
     )

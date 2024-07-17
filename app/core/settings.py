@@ -92,12 +92,12 @@ class Settings(BaseSettings):
     )
     VERIFY_EMAIL_URL: str = os.getenv(
         "VERIFY_EMAIL_URL",
-        "https://mvitracking-frontend.vercel.app/authentication/email-verification/",
+        "https://mvi-frontend-uat.sageinfrastructure.net/authentication/email-verification/",
     )
 
     RESET_PASSWORD_URL: str = os.getenv(
         "RESET_PASSWORD_URL",
-        "https://mvitracking-frontend.vercel.app/authentication/set-password/",
+        "https://mvi-frontend-uat.sageinfrastructure.net/authentication/set-password/",
     )
 
     RESET_BTN: str = os.getenv("RESET_BTN", "Reset Password")
@@ -108,7 +108,13 @@ class Settings(BaseSettings):
         "Please use the button link below to reset your password",
     )
 
-    PHONE_OTP_SUBJECT: str = "OTP For Account Update"
+    # aws
+    S3_BUCKET: str = os.getenv("S3_BUCKET", "")
+    AWS_ACCESS_KEY_ID: str = os.getenv("AWS_ACCESS_KEY_ID", "aws_access_key_id")
+    AWS_SECRET_ACCESS_KEY: str = os.getenv(
+        "AWS_SECRET_ACCESS_KEY", "aws_secret_access_key"
+    )
+    AWS_REGION: str = os.getenv("AWS_REGION", "us-east-2")
 
     # mqtt
     MQTT_HOST: str = os.getenv("MQTT_HOST", "3.98.106.16")

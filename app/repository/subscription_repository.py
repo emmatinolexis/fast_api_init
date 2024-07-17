@@ -126,8 +126,6 @@ class SubscriptionRepository(BaseRepository):
                 headers=settings.PAYSTACK_HEADERS,
             )
 
-            # return paystack_subscription.json()
-
             if paystack_subscription.status_code == 200:
                 subscriptions = []
                 for subscription in paystack_subscription.json()["data"]:

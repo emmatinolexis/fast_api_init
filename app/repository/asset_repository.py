@@ -1,8 +1,8 @@
 from contextlib import AbstractContextManager
 from datetime import datetime
-from typing import Callable, List, Tuple
+from typing import Any, Callable, Dict, List
 
-from sqlalchemy import desc, label
+from sqlalchemy import asc, desc, label
 from sqlalchemy.orm import Session, joinedload
 
 from app.model.asset import Asset
@@ -11,7 +11,7 @@ from app.model.tracking_event import TrackingEvent
 from app.model.user import User
 from app.repository.base_repository import BaseRepository
 from app.schema.asset_schema import AssignDeviceInputPayload
-from app.util.enums import AssetStatus
+from app.util.enums import AssetCreators, AssetStatus
 from app.util.utils import get_status
 
 
@@ -20,14 +20,229 @@ class AssetRepository(BaseRepository):
         self.session_factory = session_factory
         super().__init__(session_factory, Asset)
 
+    def read_all_assets_by_uuid_no_pagination(
+        self,
+        user_uuid: str = None,
+        business_uuid: str = None,
+    ):
+        with self.session_factory() as session:
+            if user_uuid is not None:
+                # Base query filtered by user UUID
+                assets = (
+                    session.query(self.model)
+                    .filter(self.model.user_uuid == user_uuid)
+                    .all()
+                )
+
+            if business_uuid is not None:
+                # Base query filtered by business UUID
+                assets = (
+                    session.query(self.model)
+                    .filter(self.model.business_profile_uuid == business_uuid)
+                    .all()
+                )
+
+            return assets
+
     def read_all_assets_by_uuid(
-        self, uuid: str, asset_type_uuid: str = None, page=1, page_size=10
-    ) -> Tuple[List[Asset], int]:
+        self,
+        user_uuid: str = None,
+        business_uuid: str = None,
+        asset_type_uuid: str = None,
+        page=1,
+        page_size=10,
+    ) -> Dict[str, Any]:
         with self.session_factory() as session:
             # Calculate the offset based on the page and per_page values
             offset = (page - 1) * page_size
 
-            query = session.query(self.model).filter(self.model.user_uuid == uuid)
+            # Start with a base query
+            base_query = session.query(self.model)
+
+            if user_uuid is not None:
+                # Add filter for user UUID
+                base_query = base_query.filter(self.model.user_uuid == user_uuid)
+
+            if business_uuid is not None:
+                # Add filter for business UUID
+                base_query = base_query.filter(
+                    self.model.business_profile_uuid == business_uuid
+                )
+
+            if asset_type_uuid is not None:
+                # Add filter for asset type UUID
+                base_query = base_query.filter(
+                    self.model.asset_type_uuid == asset_type_uuid
+                )
+
+            # Query to get the total count of assets
+            total_assets = base_query.count()
+
+            # Calculate total pages
+            total_pages = (total_assets + page_size - 1) // page_size
+
+            # Apply ordering and pagination
+            paginated_query = (
+                base_query.order_by(asc(self.model.created_at))
+                .offset(offset)
+                .limit(page_size)
+            )
+
+            assets = (
+                paginated_query.options(joinedload(self.model.asset_type))
+                .options(joinedload(self.model.driver))
+                .options(joinedload(self.model.device).joinedload(Device.inventory))
+                .options(joinedload(self.model.equipment))
+                .all()
+            )
+
+            # Process assets
+            processed_assets = self.process_assets(session, assets)
+
+            return {
+                "assets": processed_assets,
+                "total_assets": total_assets,
+                "total_pages": total_pages,
+                "current_page": page,
+                "page_size": page_size,
+            }
+
+    def process_assets(self, session, assets: List[Any]) -> List[Any]:
+        for asset in assets:
+            # check if asset has device imei
+            if asset.device_imei:
+                # Get device's last known location
+                last_tracking_event = (
+                    session.query(
+                        label("lat", TrackingEvent.latitude),
+                        label("lng", TrackingEvent.longitude),
+                        TrackingEvent.speed,
+                        TrackingEvent.course,
+                        label("timestamp", TrackingEvent.event_datetime),
+                        label("event_type", TrackingEvent.event_type),
+                    )
+                    .filter(TrackingEvent.device_imei == asset.device_imei)
+                    .order_by(desc(TrackingEvent.event_datetime))
+                    .first()
+                )
+
+                if last_tracking_event:
+                    # Construct a dictionary with the retrieved fields
+                    last_tracking_event_dict = {
+                        "lat": last_tracking_event.lat,
+                        "lng": last_tracking_event.lng,
+                        "speed": last_tracking_event.speed,
+                        "course": last_tracking_event.course,
+                        "timestamp": last_tracking_event.timestamp,
+                        "event_type": last_tracking_event.event_type,
+                        "status": get_status(last_tracking_event.event_type),
+                    }
+                    # Add last_tracking_event_dict to asset dictionary
+                    asset.last_tracking_event = last_tracking_event_dict
+        return assets
+
+    # def read_all_assets_by_uuid(
+    #     self,
+    #     user_uuid: str = None,
+    #     business_uuid: str = None,
+    #     asset_type_uuid: str = None,
+    #     page=1,
+    #     page_size=10,
+    # ) -> Dict[str, Any]:
+    #     with self.session_factory() as session:
+    #         # Calculate the offset based on the page and per_page values
+    #         offset = (page - 1) * page_size
+    #
+    #         if user_uuid is not None:
+    #             # Base query filtered by user UUID
+    #             base_query = session.query(self.model).filter(
+    #                 self.model.user_uuid == user_uuid
+    #             )
+    #
+    #         if business_uuid is not None:
+    #             # Base query filtered by user UUID
+    #             base_query = session.query(self.model).filter(
+    #                 self.model.business_profile_uuid == business_uuid
+    #             )
+    #
+    #         # Query to get the total count of assets
+    #         total_assets = base_query.count()
+    #
+    #         # Calculate total pages
+    #         total_pages = (total_assets + page_size - 1) // page_size
+    #
+    #         if asset_type_uuid is not None:
+    #             base_query = base_query.filter(
+    #                 self.model.asset_type_uuid == asset_type_uuid
+    #             )
+    #
+    #         paginated_query = (
+    #             base_query.order_by(desc(self.model.created_at))
+    #             .offset(offset)
+    #             .limit(page_size)
+    #         )
+    #
+    #         assets = (
+    #             paginated_query.options(joinedload(Asset.asset_type))
+    #             .options(joinedload(Asset.driver))
+    #             .options(joinedload(Asset.device).joinedload(Device.inventory))
+    #             .options(joinedload(Asset.equipment))
+    #             .all()
+    #         )
+    #
+    #         for asset in assets:
+    #             # check if asset has device imei
+    #             if asset.device_imei:
+    #                 # Get device's last known location
+    #                 last_tracking_event = (
+    #                     session.query(
+    #                         label("lat", TrackingEvent.latitude),
+    #                         label("lng", TrackingEvent.longitude),
+    #                         TrackingEvent.speed,
+    #                         TrackingEvent.course,
+    #                         label("timestamp", TrackingEvent.event_datetime),
+    #                         label("event_type", TrackingEvent.event_type),
+    #                     )
+    #                     .filter(TrackingEvent.device_imei == asset.device_imei)
+    #                     .order_by(desc(TrackingEvent.event_datetime))
+    #                     .first()
+    #                 )
+    #
+    #                 if last_tracking_event:
+    #                     # Construct a dictionary with the retrieved fields
+    #                     last_tracking_event_dict = {
+    #                         "lat": last_tracking_event.lat,
+    #                         "lng": last_tracking_event.lng,
+    #                         "speed": last_tracking_event.speed,
+    #                         "course": last_tracking_event.course,
+    #                         "timestamp": last_tracking_event.timestamp,
+    #                         "event_type": last_tracking_event.event_type,
+    #                         "status": get_status(last_tracking_event.event_type),
+    #                     }
+    #                     # Add last_tracking_event_dict to asset dictionary
+    #                     asset.last_tracking_event = last_tracking_event_dict
+    #                 else:
+    #                     # Handle case where no result is found
+    #                     pass
+    #
+    #         return {
+    #             "assets": assets,
+    #             "total_assets": total_assets,
+    #             "total_pages": total_pages,
+    #             "current_page": page,
+    #             "page_size": page_size,
+    #         }
+
+    def read_all_third_party_assets(
+        self, asset_type_uuid: str = None, page=1, page_size=10
+    ):
+        with self.session_factory() as session:
+            # Calculate the offset based on the page and per_page values
+            offset = (page - 1) * page_size
+
+            query = session.query(self.model).filter(
+                self.model.created_by == AssetCreators.DVLA
+            )
             total_assets = query.count()
             # return query
             if asset_type_uuid is not None:
@@ -44,10 +259,40 @@ class AssetRepository(BaseRepository):
                 .options(joinedload(Asset.driver))
                 .options(joinedload(Asset.device))
                 .options(joinedload(Asset.equipment))
+                .options(joinedload(Asset.vehicle_owner))
                 .all()
             )
 
-            # assets = [asset for asset in assets if asset.driver is not None]
+            return assets, total_assets
+
+    def read_all_stolen_assets(self, asset_type_uuid: str = None, page=1, page_size=10):
+        with self.session_factory() as session:
+            # Calculate the offset based on the page and per_page values
+            offset = (page - 1) * page_size
+
+            query = session.query(self.model).filter(
+                self.model.asset_stolen_status.is_(True)
+            )
+            total_assets = query.count()
+            # return query
+            if asset_type_uuid is not None:
+                query = query.filter(self.model.asset_type_uuid == asset_type_uuid)
+
+            query = (
+                query.order_by(desc(self.model.created_at))
+                .offset(offset)
+                .limit(page_size)
+            )
+
+            assets = (
+                query.options(joinedload(Asset.asset_type))
+                .options(joinedload(Asset.driver))
+                .options(joinedload(Asset.device))
+                .options(joinedload(Asset.equipment))
+                .options(joinedload(Asset.vehicle_owner))
+                .all()
+            )
+
             for asset in assets:
                 # check if asset has device imei
                 if asset.device_imei:
@@ -167,3 +412,21 @@ class AssetRepository(BaseRepository):
                     )
             else:
                 pass
+
+    def update_asset_stolen_status_to_true(self, asset_uuid: str):
+        with self.session_factory() as session:
+            asset = (
+                session.query(self.model).filter(self.model.uuid == asset_uuid).first()
+            )
+            asset.asset_stolen_status = True
+            session.commit()
+            session.refresh(asset)
+
+    def update_asset_stolen_status_to_false(self, asset_uuid: str):
+        with self.session_factory() as session:
+            asset = (
+                session.query(self.model).filter(self.model.uuid == asset_uuid).first()
+            )
+            asset.asset_stolen_status = False
+            session.commit()
+            session.refresh(asset)

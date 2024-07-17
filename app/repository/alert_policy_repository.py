@@ -1,8 +1,9 @@
 import logging
 from contextlib import AbstractContextManager
-from datetime import date
+from datetime import datetime
 from typing import Callable
 
+from sqlalchemy import desc, func
 from sqlalchemy.orm import Session, joinedload
 
 from app.model.alert_policy import AlertPolicy
@@ -12,9 +13,15 @@ from app.model.tracking_event import TrackingEvent
 from app.repository.base_repository import BaseRepository
 from app.util.enums import ActiveStatus, GeofenceShapeType, GeofenceTypeUuid
 from app.util.utils import (
+    calculate_time_traveled,
+    check_idle_time_exceeds_limit,
+    check_overspeeding,
     check_violated_geofence,
     generate_circle_geofence_coordinates,
     generate_polygon_geofence_coordinates,
+    get_distance_travelled_by_coordinates,
+    get_status,
+    is_time_to_send_maintenance_alert,
     toggle_status,
 )
 
@@ -24,10 +31,14 @@ class AlertPolicyRepository(BaseRepository):
         self.session_factory = session_factory
         super().__init__(session_factory, AlertPolicy)
 
-    def read_all_alert_policies(self):
+    def read_all_alert_policies(self, page, page_size):
         with self.session_factory() as session:
+            offset = (page - 1) * page_size
             alerts = (
                 session.query(self.model)
+                .order_by(desc(self.model.created_at))
+                .offset(offset)
+                .limit(page_size)
                 .options(joinedload(AlertPolicy.alert_policy_type))
                 .options(joinedload(AlertPolicy.assets))
                 .options(joinedload(AlertPolicy.maintenance_alert_type))
@@ -49,24 +60,115 @@ class AlertPolicyRepository(BaseRepository):
 
             return alert
 
-    def read_all_alert_policies_by_user(self, user_uuid: str):
+    def toggle_alert_violation_status(self, alert_violation_uuid):
         with self.session_factory() as session:
+            violation = (
+                session.query(AlertPolicyViolation)
+                .filter(AlertPolicyViolation.uuid == alert_violation_uuid)
+                .first()
+            )
+
+            violation.status = toggle_status(violation.status)
+            session.commit()
+            session.refresh(violation)
+
+            return violation
+
+    def read_all_alert_policies_by_user(self, user_uuid: str, page=1, page_size=10):
+        with self.session_factory() as session:
+            offset = (page - 1) * page_size
+
+            # Query to get the total count of alert policies
+            total_alert_policies = (
+                session.query(func.count(self.model.id))
+                .filter(self.model.user_uuid == user_uuid)
+                .scalar()
+            )
+
+            # Calculate total pages
+            total_pages = (total_alert_policies + page_size - 1) // page_size
+
+            # Fetch paginated results
             alerts = (
                 session.query(self.model)
                 .filter(self.model.user_uuid == user_uuid)
-                .options(joinedload(AlertPolicy.alert_policy_type))
-                .options(joinedload(AlertPolicy.assets))
-                .options(joinedload(AlertPolicy.alert_notification_types))
-                .options(joinedload(AlertPolicy.maintenance_alert_type))
+                .order_by(desc(self.model.created_at))
+                .offset(offset)
+                .limit(page_size)
+                .options(joinedload(self.model.alert_policy_type))
+                .options(joinedload(self.model.assets))
+                .options(joinedload(self.model.alert_notification_types))
+                .options(joinedload(self.model.maintenance_alert_type))
                 .all()
             )
-            return alerts
 
-    def read_all_alert_violations_by_user(self, user_uuid: str):
+            return {
+                "alerts": alerts,
+                "total_alert_policies": total_alert_policies,
+                "total_pages": total_pages,
+                "current_page": page,
+                "page_size": page_size,
+            }
+
+    def read_all_alert_policies_by_business(
+        self, business_uuid: str, page=1, page_size=10
+    ):
         with self.session_factory() as session:
+            offset = (page - 1) * page_size
+
+            # Query to get the total count of alert policies
+            total_alert_policies = (
+                session.query(func.count(self.model.id))
+                .filter(self.model.business_profile_uuid == business_uuid)
+                .scalar()
+            )
+
+            # Calculate total pages
+            total_pages = (total_alert_policies + page_size - 1) // page_size
+
+            # Fetch paginated results
+            alerts = (
+                session.query(self.model)
+                .filter(self.model.business_profile_uuid == business_uuid)
+                .order_by(desc(self.model.created_at))
+                .offset(offset)
+                .limit(page_size)
+                .options(joinedload(self.model.alert_policy_type))
+                .options(joinedload(self.model.assets))
+                .options(joinedload(self.model.alert_notification_types))
+                .options(joinedload(self.model.maintenance_alert_type))
+                .all()
+            )
+
+            return {
+                "alerts": alerts,
+                "total_alert_policies": total_alert_policies,
+                "total_pages": total_pages,
+                "current_page": page,
+                "page_size": page_size,
+            }
+
+    def read_all_alert_violations_by_user(self, user_uuid: str, page=1, page_size=10):
+        with self.session_factory() as session:
+            offset = (page - 1) * page_size
+
+            # Query to get the total count of alert violations
+            total_alerts = (
+                session.query(func.count(AlertPolicyViolation.id))
+                .filter(AlertPolicyViolation.user_uuid == user_uuid)
+                .scalar()
+            )
+
+            # Calculate total pages
+            total_pages = (total_alerts + page_size - 1) // page_size
+
+            # Fetch paginated results
             alerts = (
                 session.query(AlertPolicyViolation)
-                .filter(self.model.user_uuid == user_uuid)
+                .filter(AlertPolicyViolation.user_uuid == user_uuid)
+                .order_by(desc(AlertPolicyViolation.created_at))
+                .offset(offset)
+                .limit(page_size)
                 .options(joinedload(AlertPolicyViolation.alert_policy))
                 .options(
                     joinedload(AlertPolicyViolation.asset).joinedload(Asset.driver)
@@ -75,100 +177,506 @@ class AlertPolicyRepository(BaseRepository):
                 .all()
             )
 
-            return alerts
+            return {
+                "alerts": alerts,
+                "total_alerts": total_alerts,
+                "total_pages": total_pages,
+                "current_page": page,
+                "page_size": page_size,
+            }
+
+    def read_all_alert_violations_by_business(
+        self, business_uuid: str, page=1, page_size=10
+    ):
+        with self.session_factory() as session:
+            offset = (page - 1) * page_size
+
+            # Query to get the total count of alert violations
+            total_alerts = (
+                session.query(func.count(AlertPolicyViolation.id))
+                .filter(AlertPolicyViolation.business_profile_uuid == business_uuid)
+                .scalar()
+            )
+
+            # Calculate total pages
+            total_pages = (total_alerts + page_size - 1) // page_size
+
+            # Fetch paginated results
+            alerts = (
+                session.query(AlertPolicyViolation)
+                .filter(AlertPolicyViolation.business_profile_uuid == business_uuid)
+                .order_by(desc(AlertPolicyViolation.created_at))
+                .offset(offset)
+                .limit(page_size)
+                .options(joinedload(AlertPolicyViolation.alert_policy))
+                .options(
+                    joinedload(AlertPolicyViolation.asset).joinedload(Asset.driver)
+                )
+                .options(joinedload(AlertPolicyViolation.user))
+                .all()
+            )
+
+            return {
+                "alerts": alerts,
+                "total_alerts": total_alerts,
+                "total_pages": total_pages,
+                "current_page": page,
+                "page_size": page_size,
+            }
+
+    def get_active_geofence_alert_policies(self, session):
+        return (
+            session.query(AlertPolicy)
+            .filter(
+                AlertPolicy.alert_policy_type_uuid
+                == GeofenceTypeUuid.GEOFENCE_ALERT_POLICY,
+                AlertPolicy.status == ActiveStatus.ACTIVE,
+            )
+            .options(
+                joinedload(AlertPolicy.assets), joinedload(AlertPolicy.alert_recipients)
+            )
+            .all()
+        )
+
+    def get_active_over_speeding_alert_policies(self, session):
+        return (
+            session.query(AlertPolicy)
+            .filter(
+                AlertPolicy.alert_policy_type_uuid
+                == GeofenceTypeUuid.OVER_SPEEDING_ALERT_POLICY,
+                AlertPolicy.status == ActiveStatus.ACTIVE,
+            )
+            .options(
+                joinedload(AlertPolicy.assets), joinedload(AlertPolicy.alert_recipients)
+            )
+            .all()
+        )
+
+    def get_active_idling_alert_policies(self, session):
+        return (
+            session.query(AlertPolicy)
+            .filter(
+                AlertPolicy.alert_policy_type_uuid
+                == GeofenceTypeUuid.IDLING_ALERT_POLICY,
+                AlertPolicy.status == ActiveStatus.ACTIVE,
+            )
+            .options(
+                joinedload(AlertPolicy.assets), joinedload(AlertPolicy.alert_recipients)
+            )
+            .all()
+        )
+
+    def get_active_maintenance_policies(self, session):
+        return (
+            session.query(AlertPolicy)
+            .filter(
+                AlertPolicy.alert_policy_type_uuid
+                == GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
+                AlertPolicy.status == ActiveStatus.ACTIVE,
+            )
+            .options(
+                joinedload(AlertPolicy.assets), joinedload(AlertPolicy.alert_recipients)
+            )
+            .all()
+        )
+
+    def generate_geofence_points(self, alert_policy):
+        geofence_violation_data = alert_policy.geofence_coordinate_data
+        if alert_policy.geofence_shape_type == GeofenceShapeType.CIRCULAR:
+            return generate_circle_geofence_coordinates(
+                geofence_violation_data.get("center_point"),
+                geofence_violation_data.get("radius"),
+                100,
+            )
+        else:
+            return generate_polygon_geofence_coordinates(geofence_violation_data, 100)
+
+    def get_last_checked_time(self, session, device_imei, today_date):
+        last_checked_time = (
+            session.query(func.max(TrackingEvent.last_checked_geofence_violation))
+            .filter(TrackingEvent.device_imei == device_imei)
+            .scalar()
+        )
+
+        if last_checked_time is None:
+            return datetime.combine(today_date, datetime.min.time())
+        return last_checked_time.replace(microsecond=0)
+
+    def get_last_checked_over_speeding_time(self, session, device_imei, today_date):
+        last_checked_time = (
+            session.query(func.max(TrackingEvent.last_checked_over_speeding_violation))
+            .filter(TrackingEvent.device_imei == device_imei)
+            .scalar()
+        )
+
+        if last_checked_time is None:
+            return datetime.combine(today_date, datetime.min.time())
+        return last_checked_time.replace(microsecond=0)
+
+    def get_last_checked_idling_time(self, session, device_imei, today_date):
+        last_checked_time = (
+            session.query(func.max(TrackingEvent.last_checked_idling_violation))
+            .filter(TrackingEvent.device_imei == device_imei)
+            .scalar()
+        )
+
+        if last_checked_time is None:
+            return datetime.combine(today_date, datetime.min.time())
+        return last_checked_time.replace(microsecond=0)
+
+    def get_asset_points(self, session, device_imei, last_checked_time):
+        return (
+            session.query(TrackingEvent)
+            .filter(
+                TrackingEvent.device_imei == device_imei,
+                TrackingEvent.event_datetime > last_checked_time,
+            )
+            .all()
+        )
+
+    def extract_coordinates_and_events(self, asset_points):
+        asset_coordinates = [
+            (point.latitude, point.longitude) for point in asset_points
+        ]
+        asset_coordinates_events = [
+            {
+                "lat": point.latitude,
+                "lng": point.longitude,
+                "speed": point.speed,
+                "course": point.course,
+                "timestamp": str(point.event_datetime),
+                "event_type": get_status(point.event_type),
+            }
+            for point in asset_points
+        ]
+        return asset_coordinates, asset_coordinates_events
+
+    def check_violations(
+        self, asset_coordinates_events, geofence_points, geofence_type
+    ):
+        return check_violated_geofence(
+            asset_coordinates_events, geofence_points, geofence_type
+        )
+
+    def check_over_speeding(self, asset_coordinates_events, speed_limit):
+        return check_overspeeding(asset_coordinates_events, speed_limit)
+
+    def check_idling(self, asset_coordinates_events, idle_minimum_time):
+        return check_idle_time_exceeds_limit(
+            asset_coordinates_events, idle_minimum_time
+        )
+
+    def create_violation_record(
+        self,
+        session,
+        alert_policy,
+        geofence_asset,
+        asset_coordinates_events,
+        violation_time=0,
+        violation_distance=0,
+    ):
+        violation = AlertPolicyViolation(
+            alert_policy_uuid=alert_policy.uuid,
+            asset_uuid=geofence_asset.uuid,
+            violation_coordinates=asset_coordinates_events,
+            user_uuid=alert_policy.user_uuid,
+            business_profile_uuid=alert_policy.business_profile_uuid,
+            status=ActiveStatus.ACTIVE,
+            violation_time=violation_time,
+            violation_distance=violation_distance,
+        )
+        session.add(violation)
+
+    def update_last_checked_time(self, asset_points):
+        for point in asset_points:
+            point.last_checked_geofence_violation = datetime.now()
+
+    def update_last_checked_over_speeding_time(self, asset_points):
+        for point in asset_points:
+            point.last_checked_over_speeding_violation = datetime.now()
+
+    def update_last_checked_idling_time(self, asset_points):
+        for point in asset_points:
+            point.last_checked_idling_violation = datetime.now()
 
     def check_geofence_violation(self):
         with self.session_factory() as session:
             violations = []
 
-            # get all active geofence alert policies
-            alert_policies = (
-                session.query(AlertPolicy)
-                .filter(
-                    AlertPolicy.alert_policy_type_uuid
-                    == GeofenceTypeUuid.GEOFENCE_ALERT_POLICY
-                )
-                .filter(AlertPolicy.status == ActiveStatus.ACTIVE)
-                .options(joinedload(AlertPolicy.assets))
-                .options(joinedload(AlertPolicy.alert_recipients))
-                .all()
-            )
+            # Get all active geofence alert policies
+            alert_policies = self.get_active_geofence_alert_policies(session)
 
-            # return alert_policies
+            # Get the current date
+            today_date = datetime.now().date()
 
             for alert_policy in alert_policies:
-                # return alert_policy
-                geofence_violation_data = alert_policy.geofence_coordinate_data
-
                 # Generate geofence points based on shape type
-                if alert_policy.geofence_shape_type == GeofenceShapeType.CIRCULAR:
-                    geofence_points = generate_circle_geofence_coordinates(
-                        geofence_violation_data.get("center_point"),
-                        geofence_violation_data.get("radius"),
-                        100,
-                    )
-                else:
-                    geofence_points = generate_polygon_geofence_coordinates(
-                        geofence_violation_data, 100
-                    )
+                geofence_points = self.generate_geofence_points(alert_policy)
 
                 # Get all assets for the current alert policy
                 geofence_assets = alert_policy.assets
 
-                # Get all alert recipient
+                # Get all alert recipients
                 alert_recipients = alert_policy.alert_recipients
 
-                # Get the current date
-                today_date = date.today()
-                today_date_str = today_date
-
-                # Convert the current date to the format of event_datetime for comparison
-                today_date_str = today_date_str.strftime("%Y-%m-%d")
-
                 for geofence_asset in geofence_assets:
-                    # Query the database for tracking events for today
-                    asset_points = (
-                        session.query(TrackingEvent)
-                        .filter(
-                            TrackingEvent.event_datetime
-                            >= f"{today_date_str} 00:00:00.000"
-                        )
-                        .filter(
-                            TrackingEvent.event_datetime
-                            <= f"{today_date_str} 23:59:59.999"
-                        )
-                        .all()
+                    # Get the last checked time for the asset
+                    last_checked_time = self.get_last_checked_time(
+                        session, geofence_asset.device_imei, today_date
                     )
 
-                    asset_coordinates = [
-                        (point.latitude, point.longitude) for point in asset_points
-                    ]
-
-                    violated_asset_coordinates = check_violated_geofence(
-                        asset_coordinates, geofence_points, alert_policy.geofence_type
+                    # Query the database for tracking events that occurred after the last checked time
+                    asset_points = self.get_asset_points(
+                        session, geofence_asset.device_imei, last_checked_time
                     )
 
-                    violations.append(
-                        {
-                            "asset": geofence_asset,
-                            "violated_points": violated_asset_coordinates,
-                            "alert_policy": alert_policy,
-                            "alert_recipients": alert_recipients,
-                        }
+                    # Extract coordinates and events
+                    (
+                        asset_coordinates,
+                        asset_coordinates_events,
+                    ) = self.extract_coordinates_and_events(asset_points)
+
+                    # Check for geofence violations
+                    violated_asset_coordinates = self.check_violations(
+                        asset_coordinates_events,
+                        geofence_points,
+                        alert_policy.geofence_type,
                     )
 
-                    # # If violation occurs, create AlertPolicyViolation instance and persist it
                     if violated_asset_coordinates:
-                        violation = AlertPolicyViolation(
-                            alert_policy_uuid=alert_policy.uuid,
-                            asset_uuid=geofence_asset.uuid,
-                            violation_coordinates=violated_asset_coordinates,
-                            user_uuid=alert_policy.user_uuid,
-                            status=ActiveStatus.ACTIVE,
+                        violation_time = calculate_time_traveled(
+                            violated_asset_coordinates
                         )
-                        session.add(violation)
+                        violation_distance = get_distance_travelled_by_coordinates(
+                            asset_coordinates
+                        )
 
-        session.commit()
+                        violations.append(
+                            {
+                                "asset": {"asset_name": geofence_asset.asset_name},
+                                "violation_time": violation_time,
+                                "violation_distance": violation_distance,
+                                "violated_points": violated_asset_coordinates,
+                                "alert_policy": {
+                                    "policy_name": alert_policy.policy_name
+                                },
+                                "alert_recipients": [
+                                    {"recipient": recipient.recipient}
+                                    for recipient in alert_recipients
+                                ],
+                            }
+                        )
 
-        logging.info("Alert Notifications Sent")
-        return {"message": "Notifications Sent", "violations": violations}
+                        # Create AlertPolicyViolation instance and persist it
+                        self.create_violation_record(
+                            session,
+                            alert_policy,
+                            geofence_asset,
+                            violated_asset_coordinates,
+                            violation_time,
+                            violation_distance,
+                        )
+
+                    # Update last checked geofence violation timestamp for the processed events
+                    self.update_last_checked_time(asset_points)
+
+            session.commit()
+            msg = "Geofence policy data fetched successfully"
+            logging.info(msg)
+            return {"message": msg, "violations": violations}
+
+    def check_over_speeding_violation(self):
+        with self.session_factory() as session:
+            violations = []
+
+            # Get all active geofence alert policies
+            alert_policies = self.get_active_over_speeding_alert_policies(session)
+
+            # Get the current date
+            today_date = datetime.now().date()
+
+            for alert_policy in alert_policies:
+                # Get policy speed limit value
+                speed_limit_value = float(alert_policy.maximum_speed_limit)
+
+                # Get all assets for the current alert policy
+                alert_assets = alert_policy.assets
+
+                # Get all alert recipients
+                alert_recipients = alert_policy.alert_recipients
+
+                for geofence_asset in alert_assets:
+                    # Get the last checked time for the asset
+                    last_checked_time = self.get_last_checked_over_speeding_time(
+                        session, geofence_asset.device_imei, today_date
+                    )
+
+                    # Query the database for tracking events that occurred after the last checked time
+                    asset_points = self.get_asset_points(
+                        session, geofence_asset.device_imei, last_checked_time
+                    )
+
+                    (
+                        asset_coordinates,
+                        asset_coordinates_events,
+                    ) = self.extract_coordinates_and_events(asset_points)
+
+                    # Check for geofence violations
+                    violated_asset_coordinates = self.check_over_speeding(
+                        asset_coordinates_events, speed_limit_value
+                    )
+
+                    if violated_asset_coordinates:
+                        violation_time = calculate_time_traveled(
+                            violated_asset_coordinates
+                        )
+                        violation_distance = get_distance_travelled_by_coordinates(
+                            asset_coordinates
+                        )
+
+                        violations.append(
+                            {
+                                "asset": {"asset_name": geofence_asset.asset_name},
+                                "violation_time": violation_time,
+                                "violation_distance": violation_distance,
+                                "violated_points": violated_asset_coordinates,
+                                "alert_policy": {
+                                    "policy_name": alert_policy.policy_name
+                                },
+                                "alert_recipients": [
+                                    {"recipient": recipient.recipient}
+                                    for recipient in alert_recipients
+                                ],
+                            }
+                        )
+
+                        # Create AlertPolicyViolation instance and persist it
+                        self.create_violation_record(
+                            session,
+                            alert_policy,
+                            geofence_asset,
+                            violated_asset_coordinates,
+                            violation_time,
+                            violation_distance,
+                        )
+
+                    # Update last checked geofence violation timestamp for the processed events
+                    self.update_last_checked_over_speeding_time(asset_points)
+
+            session.commit()
+            msg = "Geofence policy data fetched successfully"
+            logging.info(msg)
+            return {"message": msg, "violations": violations}
+
+    def check_idling_violation(self):
+        with self.session_factory() as session:
+            violations = []
+
+            # Get all active geofence alert policies
+            alert_policies = self.get_active_idling_alert_policies(session)
+
+            # Get the current date
+            today_date = datetime.now().date()
+
+            for alert_policy in alert_policies:
+                # Get policy speed limit value
+                idling_minimum_time = float(alert_policy.minimum_idle_time)
+
+                # Get all assets for the current alert policy
+                alert_assets = alert_policy.assets
+
+                # Get all alert recipients
+                alert_recipients = alert_policy.alert_recipients
+
+                for geofence_asset in alert_assets:
+                    # Get the last checked time for the asset
+                    last_checked_time = self.get_last_checked_idling_time(
+                        session, geofence_asset.device_imei, today_date
+                    )
+
+                    # Query the database for tracking events that occurred after the last checked time
+                    asset_points = self.get_asset_points(
+                        session, geofence_asset.device_imei, last_checked_time
+                    )
+
+                    (
+                        asset_coordinates,
+                        asset_coordinates_events,
+                    ) = self.extract_coordinates_and_events(asset_points)
+
+                    # Check for geofence violations
+                    violated_asset_coordinates = self.check_idling(
+                        asset_coordinates_events, idling_minimum_time
+                    )
+
+                    if violated_asset_coordinates:
+                        violations.append(
+                            {
+                                "asset": {"asset_name": geofence_asset.asset_name},
+                                "violated_points": violated_asset_coordinates,
+                                "alert_policy": {
+                                    "policy_name": alert_policy.policy_name
+                                },
+                                "alert_recipients": [
+                                    {"recipient": recipient.recipient}
+                                    for recipient in alert_recipients
+                                ],
+                            }
+                        )
+
+                        # Create AlertPolicyViolation instance and persist it
+                        self.create_violation_record(
+                            session,
+                            alert_policy,
+                            geofence_asset,
+                            violated_asset_coordinates,
+                        )
+
+                    # Update last checked geofence violation timestamp for the processed events
+                    self.update_last_checked_idling_time(asset_points)
+
+            session.commit()
+            msg = "Geofence policy data fetched successfully"
+            logging.info(msg)
+            return {"message": msg, "violations": violations}
+
+    def check_maintenance(self):
+        with self.session_factory() as session:
+            violations = []
+
+            # Get all active maintenance policies
+            maintenance_policies = self.get_active_maintenance_policies(session)
+
+            for maintenance_policy in maintenance_policies:
+                # Get policy speed limit value
+                maintenance_alert_schedule = int(
+                    maintenance_policy.maintenance_alert_schedule
+                )
+
+                # Get all assets for the current alert policy
+                alert_assets = maintenance_policy.assets
+
+                # Get all alert recipients
+                alert_recipients = maintenance_policy.alert_recipients
+
+                fire_alert = is_time_to_send_maintenance_alert(
+                    maintenance_policy.created_at, maintenance_alert_schedule
+                )
+                if fire_alert:
+                    for asset in alert_assets:
+                        violations.append(
+                            {
+                                "asset": {"asset_name": asset.asset_name},
+                                "alert_policy": {
+                                    "policy_name": maintenance_policy.policy_name
+                                },
+                                "alert_recipients": [
+                                    {"recipient": recipient.recipient}
+                                    for recipient in alert_recipients
+                                ],
+                            }
+                        )
+
+            msg = "Geofence policy data fetched successfully"
+            logging.info(msg)
+            return {"message": msg, "violations": violations}
