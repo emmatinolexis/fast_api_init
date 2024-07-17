@@ -108,6 +108,8 @@ class Settings(BaseSettings):
         "Please use the button link below to reset your password",
     )
 
+    PHONE_OTP_SUBJECT: str = "OTP For Account Update"
+
     # mqtt
     MQTT_HOST: str = os.getenv("MQTT_HOST", "3.98.106.16")
     MQTT_PORT: int = os.getenv("MQTT_PORT", 1883)

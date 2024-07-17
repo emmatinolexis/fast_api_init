@@ -94,6 +94,44 @@ async def get_users(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
+@router.put("/phone", response_class=ORJSONResponse)
+@inject
+async def update_phone_handler(
+    payload: UpdatePhoneNumber,
+    service: UserService = Depends(Provide[Container.user_service]),
+    phone_otp_service: PhoneOTPService = Depends(Provide[Container.phone_otp_service]),
+    current_user: User = Depends(get_current_user),
+):
+    user = service.get_by_uuid(current_user.uuid)
+
+    if user is None:
+        return send_client_side_error(
+            user_msg=messages.USER_NOT_FOUND + current_user.uuid,
+        )
+
+    user_with_phone_number = service.get_user_by_phone_number(payload.phone_number)
+
+    # check if the given phone number is already associated with another user
+    if user_with_phone_number and not (user_with_phone_number.uuid == user.uuid):
+        return send_client_side_error(
+            user_msg=messages.PHONE_NUMBER_EXISTS + payload.phone_number
+        )
+
+    try:
+        service.patch_by_uuid(current_user.uuid, payload)
+        token = phone_otp_service.create_phone_verification_token(user.uuid)
+        await send_otp_email(
+            recipient_name=user.first_name,
+            email=user.email_address,
+            otp=token,
+        )
+        msg = "Phone number update pending verification"
+        return send_info(f"{msg}")
+    except Exception as e:
+        msg = messages.CREATE_FAILED + f"token for user {current_user.uuid}"
+        return send_internal_server_error(user_msg=msg, error=str(e))
+
+
 @router.put("/{uuid}", response_class=ORJSONResponse)
 @inject
 async def update_user(
@@ -209,46 +247,6 @@ async def change_password_handler(
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
-
-
-@router.put("/phone/{uuid}", response_class=ORJSONResponse)
-@inject
-async def update_phone_handler(
-    uuid: str,
-    payload: UpdatePhoneNumber,
-    service: UserService = Depends(Provide[Container.user_service]),
-    phone_otp_service: PhoneOTPService = Depends(Provide[Container.phone_otp_service]),
-    current_user: User = Depends(get_current_user),
-):
-    user = service.get_by_uuid(uuid)
-
-    if user is None:
-        return send_client_side_error(
-            user_msg=messages.USER_NOT_FOUND + uuid,
-        )
-
-    user_with_phone_number = service.get_user_by_phone_number(payload.phone_number)
-
-    # check if the given phone number is already associated with another user
-    if user_with_phone_number and not (user_with_phone_number.uuid == user.uuid):
-        return send_client_side_error(
-            user_msg=messages.PHONE_NUMBER_EXISTS + payload.phone_number
-        )
-
-    try:
-        service.patch_by_uuid(uuid, payload)
-        token = phone_otp_service.create_phone_verification_token(user.uuid)
-        await send_otp_email(
-            subject=settings.PHONE_OTP_SUBJECT,
-            recipient_name=user.first_name,
-            email=user.email_address,
-            otp=token,
-        )
-        msg = "Phone number update pending verification"
-        return send_info(f"{msg}")
-    except Exception as e:
-        msg = messages.CREATE_FAILED + f"token for user {uuid}"
-        return send_internal_server_error(user_msg=msg, error=str(e))
 
 
 @router.post("/password/{email_address}", response_class=ORJSONResponse)
