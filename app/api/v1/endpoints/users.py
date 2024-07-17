@@ -276,8 +276,6 @@ async def change_password_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-
-
 @router.post("/password/{email_address}", response_class=ORJSONResponse)
 @inject
 async def send_password_link_handler(
