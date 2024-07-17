@@ -542,7 +542,7 @@ async def resend_invitation_handler(
         # make sure the one who is resending the invitation is the inviter
         if invitation.business_profile_uuid != current_user.business_profile_uuid:
             return send_client_side_error(
-                user_msg="You are not allowed to resend this invitation"
+                user_msg=messages.ACTION_NOT_ALLOWED,
             )
 
         invitation_service.update_invitation_expiry(invitation_uuid, datetime.now())
