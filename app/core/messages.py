@@ -50,3 +50,7 @@ PHONE_OTP_FAILED = "Phone verification failed "
 
 UPLOAD_FAILED = "Failed to upload file "
 UPLOAD_SUCCESS = "File uploaded successfully "
+
+
+INVITATION_NOT_FOUND = "No invitation was found with the given uuid : "
+ACTION_NOT_ALLOWED = "You are not allowed to perform this action"
