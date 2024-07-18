@@ -1,4 +1,4 @@
-from datetime import datetime,timedelta
+from datetime import datetime, timedelta
 
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
@@ -36,7 +36,7 @@ from app.util.email import (
     send_email_verification,
     send_otp_email,
 )
-from app.util.enums import AccountType
+from app.util.enums import AccountType, EmailPurpose
 from app.util.utils import (
     allow_admins_only,
     send_client_side_error,
@@ -343,6 +343,7 @@ async def send_password_link_handler(
                     url=settings.RESET_PASSWORD_URL,
                     btn=settings.RESET_BTN,
                     token=reset_password_token,
+                    email_purpose=EmailPurpose.PASSWORD_RESET,
                 )
             except Exception as e:
                 return send_internal_server_error(
@@ -545,7 +546,9 @@ async def resend_invitation_handler(
                 user_msg=messages.ACTION_NOT_ALLOWED,
             )
 
-        invitation_service.update_invitation_expiry(invitation_uuid, datetime.now()+timedelta(days=3))
+        invitation_service.update_invitation_expiry(
+            invitation_uuid, datetime.now() + timedelta(days=3)
+        )
 
         # send email invite
         await send_email_invitation(
