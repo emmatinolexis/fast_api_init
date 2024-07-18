@@ -1,5 +1,6 @@
+import calendar
 from contextlib import AbstractContextManager
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Callable, Dict, List
 
 from sqlalchemy import Date, and_, cast
@@ -31,8 +32,60 @@ class TrackingEventRepository(BaseRepository):
                 .order_by(self.model.event_datetime)
                 .all()
             )
-
             return query
+
+    def read_all_events_by_current_previous_month(
+        self, device_imei: str, given_date: str
+    ):
+        # Parse the given date
+        given_datetime = datetime.strptime(given_date, "%d/%m/%Y")
+
+        # Calculate the start and end of the current month
+        start_current_month = given_datetime.replace(day=1)
+        end_current_month = given_datetime.replace(
+            day=calendar.monthrange(given_datetime.year, given_datetime.month)[1]
+        )
+
+        # Calculate the start and end of the previous month
+        start_last_month = (start_current_month - timedelta(days=1)).replace(day=1)
+        end_last_month = start_current_month - timedelta(days=1)
+
+        with self.session_factory() as session:
+            # Query for the current month
+            current_month_events = (
+                session.query(self.model)
+                .filter(
+                    self.model.device_imei == device_imei,
+                    and_(
+                        cast(self.model.event_datetime, Date) >= start_current_month,
+                        cast(self.model.event_datetime, Date) <= end_current_month,
+                    ),
+                    self.model.event_type.in_(ALLOWED_EVENT_TYPES),
+                )
+                .order_by(self.model.event_datetime)
+                .all()
+            )
+
+            # Query for the last month
+            last_month_events = (
+                session.query(self.model)
+                .filter(
+                    self.model.device_imei == device_imei,
+                    and_(
+                        cast(self.model.event_datetime, Date) >= start_last_month,
+                        cast(self.model.event_datetime, Date) <= end_last_month,
+                    ),
+                    self.model.event_type.in_(ALLOWED_EVENT_TYPES),
+                )
+                .order_by(self.model.event_datetime)
+                .all()
+            )
+
+            # Return results in a dictionary form
+            return {
+                "current_month_events": current_month_events,
+                "previous_month_events": last_month_events,
+            }
 
     def read_all_events_by_device_imei_date_range(
         self, device_imei: str, start_date: str, end_date: str
@@ -98,8 +151,6 @@ class TrackingEventRepository(BaseRepository):
                 )
                 # Store the events for each device IMEI in the dictionary
                 events_by_device[device_imei] = {"events": query, "asset": asset}
-                # events_by_device[device_imei] = query
-                # events_by_device[asset] = asset
 
             return events_by_device
 
