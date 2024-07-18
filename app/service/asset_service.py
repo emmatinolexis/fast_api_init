@@ -531,7 +531,6 @@ class AssetService(BaseService):
         user_uuid: str = None,
     ):
         try:
-            report = []
             total_distance_traveled_current_month = 0
             total_distance_traveled_previous_month = 0
 
@@ -641,15 +640,14 @@ class AssetService(BaseService):
                     user_uuid=user_uuid,
                 )
 
-            report.append(
-                {
-                    "geofence_violations": len(geofence_violations),
-                    "over_speeding_violations": len(over_speeding_violations),
-                    "idling_violations": len(idling_violations),
-                    "total_distance_traveled_current_month": total_distance_traveled_current_month,
-                    "total_distance_traveled_last_month": total_distance_traveled_previous_month,
-                }
-            )
+            report = {
+                "geofence_violations": len(geofence_violations),
+                "over_speeding_violations": len(over_speeding_violations),
+                "idling_violations": len(idling_violations),
+                "total_distance_traveled_current_month": total_distance_traveled_current_month,
+                "total_distance_traveled_last_month": total_distance_traveled_previous_month,
+            }
+
             return report
 
         except Exception as e:
