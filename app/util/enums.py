@@ -224,6 +224,7 @@ class EmailPurpose(str, Enum):
     ALERT_VIOLATION = "Alert_Violation"
     INVITATION = "Invitation"
     PASSWORD_RESET = "Password_Reset"
+    ACCOUNT_VERIFICATION = "Account_Verification"
 
 
 class FileFormat(str, Enum):

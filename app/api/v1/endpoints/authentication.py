@@ -11,6 +11,7 @@ from app.schema.auth_schema import UserEmailVerification, VerifyToken
 from app.schema.user_schema import UserLogin
 from app.service.auth_service import AuthService
 from app.util.email import send_email_verification
+from app.util.enums import EmailPurpose
 from app.util.utils import send_data, send_info, send_internal_server_error
 
 router = APIRouter(
@@ -86,6 +87,7 @@ async def verify_user_email(
                     url=settings.VERIFY_EMAIL_URL,
                     btn=settings.VERIFY_BTN,
                     token=token,
+                    email_purpose=EmailPurpose.ACCOUNT_VERIFICATION,
                 )
             except Exception as e:
                 return send_internal_server_error(
