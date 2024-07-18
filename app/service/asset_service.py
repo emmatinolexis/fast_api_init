@@ -523,6 +523,99 @@ class AssetService(BaseService):
         except Exception as e:
             raise e
 
+    def get_violations(self, start_date, end_date, business_uuid=None, user_uuid=None):
+        if business_uuid:
+            return {
+                "geofence_violations": self.asset_repository.get_violations_by_alert_type(
+                    GeofenceTypeUuid.GEOFENCE_ALERT_POLICY,
+                    start_date,
+                    end_date,
+                    business_uuid=business_uuid,
+                ),
+                "over_speeding_violations": self.asset_repository.get_violations_by_alert_type(
+                    GeofenceTypeUuid.OVER_SPEEDING_ALERT_POLICY,
+                    start_date,
+                    end_date,
+                    business_uuid=business_uuid,
+                ),
+                "idling_violations": self.asset_repository.get_violations_by_alert_type(
+                    GeofenceTypeUuid.IDLING_ALERT_POLICY,
+                    start_date,
+                    end_date,
+                    business_uuid=business_uuid,
+                ),
+            }
+        elif user_uuid:
+            return {
+                "geofence_violations": self.asset_repository.get_violations_by_alert_type(
+                    GeofenceTypeUuid.GEOFENCE_ALERT_POLICY,
+                    start_date,
+                    end_date,
+                    user_uuid=user_uuid,
+                ),
+                "over_speeding_violations": self.asset_repository.get_violations_by_alert_type(
+                    GeofenceTypeUuid.OVER_SPEEDING_ALERT_POLICY,
+                    start_date,
+                    end_date,
+                    user_uuid=user_uuid,
+                ),
+                "idling_violations": self.asset_repository.get_violations_by_alert_type(
+                    GeofenceTypeUuid.IDLING_ALERT_POLICY,
+                    start_date,
+                    end_date,
+                    user_uuid=user_uuid,
+                ),
+            }
+        else:
+            return {}
+
+    def calculate_total_distance(self, assets, start_date, end_date):
+        total_distance_traveled_current_range = 0
+        total_distance_traveled_past_range = 0
+
+        for asset in assets:
+            if asset.device_imei:
+                # Get asset points for the specified date range
+                asset_events = (
+                    self.tracking_event_repository.read_all_events_by_date_range(
+                        asset.device_imei, start_date, end_date
+                    )
+                )
+
+                # Extract coordinates from asset events
+                current_range_events = [
+                    {
+                        "latitude": event.latitude,
+                        "longitude": event.longitude,
+                        "speed": event.speed,
+                        "timestamp": str(event.event_datetime),
+                        "event_type": get_status(event.event_type),
+                    }
+                    for event in asset_events.get("current_range_events")
+                ]
+
+                past_range_events = [
+                    {
+                        "latitude": event.latitude,
+                        "longitude": event.longitude,
+                        "speed": event.speed,
+                        "timestamp": str(event.event_datetime),
+                        "event_type": get_status(event.event_type),
+                    }
+                    for event in asset_events.get("past_range_events")
+                ]
+
+                # Calculate distance traveled
+                current_distance = get_distance_travelled_by_coordinates(
+                    current_range_events
+                )
+                past_distance = get_distance_travelled_by_coordinates(past_range_events)
+
+                total_distance_traveled_current_range += current_distance
+                total_distance_traveled_past_range += past_distance
+
+        return total_distance_traveled_current_range, total_distance_traveled_past_range
+
     def generate_violation_reminder_report(
         self,
         start_date: str,
@@ -531,121 +624,38 @@ class AssetService(BaseService):
         user_uuid: str = None,
     ):
         try:
-            total_distance_traveled_current_month = 0
-            total_distance_traveled_previous_month = 0
+            violations = self.get_violations(
+                start_date, end_date, business_uuid, user_uuid
+            )
 
             if business_uuid:
-                geofence_violations = (
-                    self.asset_repository.get_violations_by_alert_type(
-                        GeofenceTypeUuid.GEOFENCE_ALERT_POLICY,
-                        start_date,
-                        end_date,
-                        business_uuid=business_uuid,
-                    )
-                )
-
-                over_speeding_violations = (
-                    self.asset_repository.get_violations_by_alert_type(
-                        GeofenceTypeUuid.OVER_SPEEDING_ALERT_POLICY,
-                        start_date,
-                        end_date,
-                        business_uuid=business_uuid,
-                    )
-                )
-
-                idling_violations = self.asset_repository.get_violations_by_alert_type(
-                    GeofenceTypeUuid.IDLING_ALERT_POLICY,
-                    start_date,
-                    end_date,
-                    business_uuid=business_uuid,
-                )
-
                 assets = self.asset_repository.read_all_assets_by_uuid_no_pagination(
                     business_uuid=business_uuid
                 )
-
-                for asset in assets:
-                    if asset.device_imei:
-                        # Get asset points for today in tracking events table
-                        asset_events = self.tracking_event_repository.read_all_events_by_current_previous_month(
-                            asset.device_imei, end_date
-                        )
-
-                        # Extract coordinates from asset events
-                        current_month_coordinates = [
-                            {
-                                "latitude": event.latitude,
-                                "longitude": event.longitude,
-                                "speed": event.speed,
-                                "timestamp": str(event.event_datetime),
-                                "event_type": get_status(event.event_type),
-                            }
-                            for event in asset_events.get("current_month_events")
-                        ]
-
-                        previous_month_coordinates = [
-                            {
-                                "latitude": event.latitude,
-                                "longitude": event.longitude,
-                                "speed": event.speed,
-                                "timestamp": str(event.event_datetime),
-                                "event_type": get_status(event.event_type),
-                            }
-                            for event in asset_events.get("previous_month_events")
-                        ]
-
-                        # Calculate distance traveled
-                        distance_traveled_by_asset_current_month = (
-                            get_distance_travelled_by_coordinates(
-                                current_month_coordinates
-                            )
-                        )
-
-                        distance_traveled_by_asset_previous_month = (
-                            get_distance_travelled_by_coordinates(
-                                previous_month_coordinates
-                            )
-                        )
-
-                        total_distance_traveled_current_month += (
-                            distance_traveled_by_asset_current_month
-                        )
-                        total_distance_traveled_previous_month += (
-                            distance_traveled_by_asset_previous_month
-                        )
-
-            if user_uuid:
-                geofence_violations = (
-                    self.asset_repository.get_violations_by_alert_type(
-                        GeofenceTypeUuid.GEOFENCE_ALERT_POLICY,
-                        start_date,
-                        end_date,
-                        user_uuid=user_uuid,
-                    )
+            elif user_uuid:
+                assets = self.asset_repository.read_all_assets_by_uuid_no_pagination(
+                    user_uuid=user_uuid
                 )
+            else:
+                assets = []
 
-                over_speeding_violations = (
-                    self.asset_repository.get_violations_by_alert_type(
-                        GeofenceTypeUuid.OVER_SPEEDING_ALERT_POLICY,
-                        start_date,
-                        end_date,
-                        user_uuid=user_uuid,
-                    )
-                )
-
-                idling_violations = self.asset_repository.get_violations_by_alert_type(
-                    GeofenceTypeUuid.IDLING_ALERT_POLICY,
-                    start_date,
-                    end_date,
-                    user_uuid=user_uuid,
-                )
+            (
+                total_distance_traveled_current_range,
+                total_distance_traveled_past_range,
+            ) = self.calculate_total_distance(assets, start_date, end_date)
 
             report = {
-                "geofence_violations": len(geofence_violations),
-                "over_speeding_violations": len(over_speeding_violations),
-                "idling_violations": len(idling_violations),
-                "total_distance_traveled_current_month": total_distance_traveled_current_month,
-                "total_distance_traveled_last_month": total_distance_traveled_previous_month,
+                "geofence_violations": len(violations.get("geofence_violations", [])),
+                "over_speeding_violations": len(
+                    violations.get("over_speeding_violations", [])
+                ),
+                "idling_violations": len(violations.get("idling_violations", [])),
+                "total_distance_traveled_current_range": round(
+                    total_distance_traveled_current_range, 2
+                ),
+                "total_distance_traveled_past_range": round(
+                    total_distance_traveled_past_range, 2
+                ),
             }
 
             return report
