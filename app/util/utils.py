@@ -548,9 +548,13 @@ def calculate_total_idle_time_and_movement(
 
     events_sorted = sort_events_by_timestamp(events)
     total_idle_time_seconds = calculate_idle_time(events_sorted)
-    rapid_acceleration_count, rapid_braking_count = detect_rapid_events(events_sorted, accel_threshold, brake_threshold)
+    rapid_acceleration_count, rapid_braking_count = detect_rapid_events(
+        events_sorted, accel_threshold, brake_threshold
+    )
 
-    total_idle_time = round(total_idle_time_seconds / time_unit_factors[idle_time_unit], 2)
+    total_idle_time = round(
+        total_idle_time_seconds / time_unit_factors[idle_time_unit], 2
+    )
 
     return {
         "events_sorted": events_sorted,
@@ -573,7 +577,9 @@ def sort_events_by_timestamp(events):
     list
         Sorted list of events by timestamp.
     """
-    return sorted(events, key=lambda x: datetime.strptime(x["timestamp"], "%Y-%m-%d %H:%M:%S"))
+    return sorted(
+        events, key=lambda x: datetime.strptime(x["timestamp"], "%Y-%m-%d %H:%M:%S")
+    )
 
 
 def calculate_idle_time(events_sorted):
@@ -594,16 +600,24 @@ def calculate_idle_time(events_sorted):
     for event in events_sorted:
         if event["event_type"] == "idle":
             if idle_start_time is None:
-                idle_start_time = datetime.strptime(event["timestamp"], "%Y-%m-%d %H:%M:%S")
+                idle_start_time = datetime.strptime(
+                    event["timestamp"], "%Y-%m-%d %H:%M:%S"
+                )
         else:
             if idle_start_time is not None:
-                idle_end_time = datetime.strptime(event["timestamp"], "%Y-%m-%d %H:%M:%S")
-                total_idle_time_seconds += (idle_end_time - idle_start_time).total_seconds()
+                idle_end_time = datetime.strptime(
+                    event["timestamp"], "%Y-%m-%d %H:%M:%S"
+                )
+                total_idle_time_seconds += (
+                    idle_end_time - idle_start_time
+                ).total_seconds()
                 idle_start_time = None
 
     # Check for any remaining idle period after the loop
     if idle_start_time is not None:
-        idle_end_time = datetime.strptime(events_sorted[-1]["timestamp"], "%Y-%m-%d %H:%M:%S")
+        idle_end_time = datetime.strptime(
+            events_sorted[-1]["timestamp"], "%Y-%m-%d %H:%M:%S"
+        )
         total_idle_time_seconds += (idle_end_time - idle_start_time).total_seconds()
 
     return total_idle_time_seconds
@@ -632,8 +646,10 @@ def detect_rapid_events(events_sorted, accel_threshold, brake_threshold):
         current_event = events_sorted[i]
         prev_event = events_sorted[i - 1]
 
-        time_diff = (datetime.strptime(current_event["timestamp"], "%Y-%m-%d %H:%M:%S") -
-                     datetime.strptime(prev_event["timestamp"], "%Y-%m-%d %H:%M:%S")).total_seconds()
+        time_diff = (
+            datetime.strptime(current_event["timestamp"], "%Y-%m-%d %H:%M:%S")
+            - datetime.strptime(prev_event["timestamp"], "%Y-%m-%d %H:%M:%S")
+        ).total_seconds()
 
         if time_diff > 0:
             speed_diff = current_event["speed"] - prev_event["speed"]

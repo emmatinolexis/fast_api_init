@@ -368,3 +368,52 @@ class AssetRepository(BaseRepository):
                 .all()
             )
             return violations
+
+    def get_violations_by_alert_type(
+        self,
+        alert_policy_type_uuid: str,
+        start_date: str,
+        end_date: str,
+        user_uuid: str = None,
+        business_uuid: str = None,
+    ):
+        with self.session_factory() as session:
+            if user_uuid:
+                violations = (
+                    session.query(AlertPolicyViolation)
+                    .join(
+                        AlertPolicy,
+                        AlertPolicyViolation.alert_policy_uuid == AlertPolicy.uuid,
+                    )
+                    .filter(
+                        AlertPolicyViolation.user_uuid == user_uuid,
+                        AlertPolicy.alert_policy_type_uuid == alert_policy_type_uuid,
+                        and_(
+                            cast(AlertPolicyViolation.created_at, Date)
+                            >= datetime.strptime(start_date, "%d/%m/%Y"),
+                            cast(AlertPolicyViolation.created_at, Date)
+                            <= datetime.strptime(end_date, "%d/%m/%Y"),
+                        ),
+                    )
+                    .all()
+                )
+            if business_uuid:
+                violations = (
+                    session.query(AlertPolicyViolation)
+                    .join(
+                        AlertPolicy,
+                        AlertPolicyViolation.alert_policy_uuid == AlertPolicy.uuid,
+                    )
+                    .filter(
+                        AlertPolicyViolation.business_profile_uuid == business_uuid,
+                        AlertPolicy.alert_policy_type_uuid == alert_policy_type_uuid,
+                        and_(
+                            cast(AlertPolicyViolation.created_at, Date)
+                            >= datetime.strptime(start_date, "%d/%m/%Y"),
+                            cast(AlertPolicyViolation.created_at, Date)
+                            <= datetime.strptime(end_date, "%d/%m/%Y"),
+                        ),
+                    )
+                    .all()
+                )
+            return violations

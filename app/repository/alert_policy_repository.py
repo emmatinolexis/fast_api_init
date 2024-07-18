@@ -677,6 +677,8 @@ class AlertPolicyRepository(BaseRepository):
                             }
                         )
 
+                        # save maintenance alert into db here
+
             msg = "Geofence policy data fetched successfully"
             logging.info(msg)
             return {"message": msg, "violations": violations}
