@@ -8,11 +8,16 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.model.alert_policy import AlertPolicy
 from app.model.alert_policy_violations import AlertPolicyViolation
-from app.model.maintenance_alert import MaintenanceAlert
 from app.model.asset import Asset
+from app.model.maintenance_alert import MaintenanceAlert
 from app.model.tracking_event import TrackingEvent
 from app.repository.base_repository import BaseRepository
-from app.util.enums import ActiveStatus, GeofenceShapeType, GeofenceTypeUuid, ServiceStatus
+from app.util.enums import (
+    ActiveStatus,
+    GeofenceShapeType,
+    GeofenceTypeUuid,
+    ServiceStatus,
+)
 from app.util.utils import (
     calculate_time_traveled,
     check_idle_time_exceeds_limit,
@@ -389,19 +394,14 @@ class AlertPolicyRepository(BaseRepository):
         session.add(violation)
 
     def create_maintenance_alert_record(
-            self,
-            session,
-            asset_uuid,
-            alert_policy_uuid,
-            business_profile_uuid,
-            user_uuid
+        self, session, asset_uuid, alert_policy_uuid, business_profile_uuid, user_uuid
     ):
         maintenance_alert = MaintenanceAlert(
             alert_policy_uuid=alert_policy_uuid,
             asset_uuid=asset_uuid,
             user_uuid=user_uuid,
             business_profile_uuid=business_profile_uuid,
-            status=ServiceStatus.NOT_SERVICED
+            status=ServiceStatus.NOT_SERVICED,
         )
 
         session.add(maintenance_alert)
@@ -702,7 +702,7 @@ class AlertPolicyRepository(BaseRepository):
                             asset.uuid,
                             maintenance_policy.uuid,
                             asset.business_profile_uuid,
-                            asset.user_uuid
+                            asset.user_uuid,
                         )
             session.commit()
             msg = "Maintenance alerts check successful"

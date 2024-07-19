@@ -29,6 +29,7 @@ from app.schema.asset_schema import (
 from app.service.base_service import BaseService
 from app.util.enums import (
     AccountType,
+    AlertPolicy,
     AssetCreators,
     AssetStatus,
     GeofenceTypeUuid,
@@ -516,6 +517,7 @@ class AssetService(BaseService):
                                 "rapid_braking_count"
                             ),
                             "speed_violations": len(speed_violations),
+                            "fuel_used": 0,
                         }
                     )
             return report
@@ -523,7 +525,9 @@ class AssetService(BaseService):
         except Exception as e:
             raise e
 
-    def get_violations(self, start_date, end_date, business_uuid=None, user_uuid=None):
+    def get_violations_reminders(
+        self, start_date, end_date, business_uuid=None, user_uuid=None
+    ):
         if business_uuid:
             return {
                 "geofence_violations": self.asset_repository.get_violations_by_alert_type(
@@ -540,6 +544,41 @@ class AssetService(BaseService):
                 ),
                 "idling_violations": self.asset_repository.get_violations_by_alert_type(
                     GeofenceTypeUuid.IDLING_ALERT_POLICY,
+                    start_date,
+                    end_date,
+                    business_uuid=business_uuid,
+                ),
+                "break_inspection": self.asset_repository.get_maintenance_by_alert_type(
+                    GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
+                    AlertPolicy.BRAKE_INSPECTION,
+                    start_date,
+                    end_date,
+                    business_uuid=business_uuid,
+                ),
+                "oil_change": self.asset_repository.get_maintenance_by_alert_type(
+                    GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
+                    AlertPolicy.OIL_CHANGE,
+                    start_date,
+                    end_date,
+                    business_uuid=business_uuid,
+                ),
+                "tire_rotation": self.asset_repository.get_maintenance_by_alert_type(
+                    GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
+                    AlertPolicy.TIRE_ROTATION,
+                    start_date,
+                    end_date,
+                    business_uuid=business_uuid,
+                ),
+                "general_servicing": self.asset_repository.get_maintenance_by_alert_type(
+                    GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
+                    AlertPolicy.GENERAL_SERVICING,
+                    start_date,
+                    end_date,
+                    business_uuid=business_uuid,
+                ),
+                "others": self.asset_repository.get_maintenance_by_alert_type(
+                    GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
+                    AlertPolicy.OTHER,
                     start_date,
                     end_date,
                     business_uuid=business_uuid,
@@ -561,6 +600,41 @@ class AssetService(BaseService):
                 ),
                 "idling_violations": self.asset_repository.get_violations_by_alert_type(
                     GeofenceTypeUuid.IDLING_ALERT_POLICY,
+                    start_date,
+                    end_date,
+                    user_uuid=user_uuid,
+                ),
+                "break_inspection": self.asset_repository.get_maintenance_by_alert_type(
+                    GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
+                    AlertPolicy.BRAKE_INSPECTION,
+                    start_date,
+                    end_date,
+                    user_uuid=user_uuid,
+                ),
+                "oil_change": self.asset_repository.get_maintenance_by_alert_type(
+                    GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
+                    AlertPolicy.OIL_CHANGE,
+                    start_date,
+                    end_date,
+                    user_uuid=user_uuid,
+                ),
+                "tire_rotation": self.asset_repository.get_maintenance_by_alert_type(
+                    GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
+                    AlertPolicy.TIRE_ROTATION,
+                    start_date,
+                    end_date,
+                    user_uuid=user_uuid,
+                ),
+                "general_servicing": self.asset_repository.get_maintenance_by_alert_type(
+                    GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
+                    AlertPolicy.GENERAL_SERVICING,
+                    start_date,
+                    end_date,
+                    user_uuid=user_uuid,
+                ),
+                "others": self.asset_repository.get_maintenance_by_alert_type(
+                    GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
+                    AlertPolicy.OTHER,
                     start_date,
                     end_date,
                     user_uuid=user_uuid,
@@ -624,7 +698,7 @@ class AssetService(BaseService):
         user_uuid: str = None,
     ):
         try:
-            violations = self.get_violations(
+            violations = self.get_violations_reminders(
                 start_date, end_date, business_uuid, user_uuid
             )
 
@@ -650,12 +724,19 @@ class AssetService(BaseService):
                     violations.get("over_speeding_violations", [])
                 ),
                 "idling_violations": len(violations.get("idling_violations", [])),
+                "oil_change": len(violations.get("oil_change", [])),
+                "break_inspection": len(violations.get("break_inspection", [])),
+                "tire_rotation": len(violations.get("tire_rotation", [])),
+                "general_servicing": len(violations.get("general_servicing", [])),
+                "others": len(violations.get("others", [])),
                 "total_distance_traveled_current_range": round(
                     total_distance_traveled_current_range, 2
                 ),
                 "total_distance_traveled_past_range": round(
                     total_distance_traveled_past_range, 2
                 ),
+                "total_fuel_used_current_range": 0,
+                "total_fuel_used_past_range": 0,
             }
 
             return report

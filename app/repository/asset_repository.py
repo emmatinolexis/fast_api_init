@@ -9,6 +9,7 @@ from app.model.alert_policy import AlertPolicy
 from app.model.alert_policy_violations import AlertPolicyViolation
 from app.model.asset import Asset
 from app.model.device import Device
+from app.model.maintenance_alert import MaintenanceAlert
 from app.model.tracking_event import TrackingEvent
 from app.model.user import User
 from app.repository.base_repository import BaseRepository
@@ -411,6 +412,60 @@ class AssetRepository(BaseRepository):
                             cast(AlertPolicyViolation.created_at, Date)
                             >= datetime.strptime(start_date, "%d/%m/%Y"),
                             cast(AlertPolicyViolation.created_at, Date)
+                            <= datetime.strptime(end_date, "%d/%m/%Y"),
+                        ),
+                    )
+                    .all()
+                )
+            return violations
+
+    def get_maintenance_by_alert_type(
+        self,
+        alert_policy_type_uuid: str,
+        maintenance_type_uuid: str,
+        start_date: str,
+        end_date: str,
+        user_uuid: str = None,
+        business_uuid: str = None,
+    ):
+        with self.session_factory() as session:
+            if user_uuid:
+                violations = (
+                    session.query(MaintenanceAlert)
+                    .join(
+                        AlertPolicy,
+                        MaintenanceAlert.alert_policy_uuid == AlertPolicy.uuid,
+                    )
+                    .filter(
+                        AlertPolicyViolation.user_uuid == user_uuid,
+                        AlertPolicy.alert_policy_type_uuid == alert_policy_type_uuid,
+                        AlertPolicy.maintenance_alert_type_uuid
+                        == maintenance_type_uuid,
+                        and_(
+                            cast(MaintenanceAlert.created_at, Date)
+                            >= datetime.strptime(start_date, "%d/%m/%Y"),
+                            cast(MaintenanceAlert.created_at, Date)
+                            <= datetime.strptime(end_date, "%d/%m/%Y"),
+                        ),
+                    )
+                    .all()
+                )
+            if business_uuid:
+                violations = (
+                    session.query(MaintenanceAlert)
+                    .join(
+                        AlertPolicy,
+                        MaintenanceAlert.alert_policy_uuid == AlertPolicy.uuid,
+                    )
+                    .filter(
+                        AlertPolicyViolation.business_profile_uuid == business_uuid,
+                        AlertPolicy.alert_policy_type_uuid == alert_policy_type_uuid,
+                        AlertPolicy.maintenance_alert_type_uuid
+                        == maintenance_type_uuid,
+                        and_(
+                            cast(MaintenanceAlert.created_at, Date)
+                            >= datetime.strptime(start_date, "%d/%m/%Y"),
+                            cast(MaintenanceAlert.created_at, Date)
                             <= datetime.strptime(end_date, "%d/%m/%Y"),
                         ),
                     )

@@ -12,7 +12,10 @@ from app.schema.alert_policy_schema import (
     GeofenceAlertPolicyPayload,
 )
 from app.service.alert_policy_service import AlertPolicyService
-from app.util.email import send_alert_policy_violation_email
+from app.util.email import (
+    send_alert_policy_violation_email,
+    send_maintenance_alert_email,
+)
 from app.util.utils import send_client_side_error, send_data, send_internal_server_error
 
 router = APIRouter(
@@ -288,7 +291,7 @@ async def check_maintenance_handler(
                         policy_name = violation.get("alert_policy").get("policy_name")
 
                         # Send email for each violation
-                        await send_alert_policy_violation_email(
+                        await send_maintenance_alert_email(
                             recipient_name, email, asset_name, policy_name
                         )
                     else:

@@ -30,6 +30,7 @@ from app.repository import (
     geofence_violation_tracker_repository,
     immobilizer_report_repository,
     inventory_repository,
+    maintenance_alert_repository,
     marker_icon_repository,
     onboarding_asset_type_assignment_repository,
     onboarding_feature_assignment_repository,
@@ -61,7 +62,6 @@ from app.repository import (
     vehicle_make_repository,
     vehicle_model_repository,
     vehicle_owner_repository,
-    maintenance_alert_repository
 )
 from app.service import (
     alert_maintenance_type_service,
@@ -87,6 +87,7 @@ from app.service import (
     immobilizer_report_service,
     inventory_service,
     invitation_service,
+    maintenance_alert_service,
     marker_icon_service,
     onboarding_service,
     order_device_assignment_service,
@@ -114,7 +115,6 @@ from app.service import (
     vehicle_make_service,
     vehicle_model_service,
     vehicle_owner_service,
-    maintenance_alert_service
 )
 
 
