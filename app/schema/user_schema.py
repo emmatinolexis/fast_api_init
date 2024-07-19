@@ -27,9 +27,9 @@ class UserPayload(BaseModel):
 
 
 class UpdateUserPayload(BaseModel):
-    location: str
-    address: str
-    phone_number: constr(max_length=15)
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    location: Optional[str] = None
 
     class Config:
         orm_model = True

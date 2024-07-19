@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
@@ -34,7 +36,7 @@ from app.util.email import (
     send_email_verification,
     send_otp_email,
 )
-from app.util.enums import AccountType
+from app.util.enums import AccountType, EmailPurpose
 from app.util.utils import (
     allow_admins_only,
     send_client_side_error,
@@ -94,6 +96,44 @@ async def get_users(
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.put("/phone", response_class=ORJSONResponse)
+@inject
+async def update_phone_handler(
+    payload: UpdatePhoneNumber,
+    service: UserService = Depends(Provide[Container.user_service]),
+    phone_otp_service: PhoneOTPService = Depends(Provide[Container.phone_otp_service]),
+    current_user: User = Depends(get_current_user),
+):
+    user = service.get_by_uuid(current_user.uuid)
+
+    if user is None:
+        return send_client_side_error(
+            user_msg=messages.USER_NOT_FOUND + current_user.uuid,
+        )
+
+    user_with_phone_number = service.get_user_by_phone_number(payload.phone_number)
+
+    # check if the given phone number is already associated with another user
+    if user_with_phone_number and not (user_with_phone_number.uuid == user.uuid):
+        return send_client_side_error(
+            user_msg=messages.PHONE_NUMBER_EXISTS + payload.phone_number
+        )
+
+    try:
+        service.patch_by_uuid(current_user.uuid, payload)
+        token = phone_otp_service.create_phone_verification_token(user.uuid)
+        await send_otp_email(
+            recipient_name=user.first_name,
+            email=user.email_address,
+            otp=token,
+        )
+        msg = "Phone number update pending verification"
+        return send_info(f"{msg}")
+    except Exception as e:
+        msg = messages.CREATE_FAILED + f"token for user {current_user.uuid}"
+        return send_internal_server_error(user_msg=msg, error=str(e))
 
 
 @router.put("/{uuid}", response_class=ORJSONResponse)
@@ -238,45 +278,6 @@ async def change_password_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.put("/phone/{uuid}", response_class=ORJSONResponse)
-@inject
-async def update_phone_handler(
-    uuid: str,
-    payload: UpdatePhoneNumber,
-    service: UserService = Depends(Provide[Container.user_service]),
-    phone_otp_service: PhoneOTPService = Depends(Provide[Container.phone_otp_service]),
-    current_user: User = Depends(get_current_user),
-):
-    user = service.get_by_uuid(uuid)
-
-    if user is None:
-        return send_client_side_error(
-            user_msg=messages.USER_NOT_FOUND + uuid,
-        )
-
-    user_with_phone_number = service.get_user_by_phone_number(payload.phone_number)
-
-    # check if the given phone number is already associated with another user
-    if user_with_phone_number and not (user_with_phone_number.uuid == user.uuid):
-        return send_client_side_error(
-            user_msg=messages.PHONE_NUMBER_EXISTS + payload.phone_number
-        )
-
-    try:
-        service.patch_by_uuid(uuid, payload)
-        token = phone_otp_service.create_phone_verification_token(user.uuid)
-        await send_otp_email(
-            recipient_name=user.first_name,
-            email=user.email_address,
-            otp=token,
-        )
-        msg = "Phone number update pending verification"
-        return send_info(f"{msg}")
-    except Exception as e:
-        msg = messages.CREATE_FAILED + f"token for user {uuid}"
-        return send_internal_server_error(user_msg=msg, error=str(e))
-
-
 @router.post("/password/{email_address}", response_class=ORJSONResponse)
 @inject
 async def send_password_link_handler(
@@ -302,6 +303,7 @@ async def send_password_link_handler(
                     url=settings.RESET_PASSWORD_URL,
                     btn=settings.RESET_BTN,
                     token=reset_password_token,
+                    email_purpose=EmailPurpose.PASSWORD_RESET,
                 )
             except Exception as e:
                 return send_internal_server_error(
@@ -478,3 +480,48 @@ async def phone_token_verification_handler(
     except Exception as e:
         msg = messages.PHONE_OTP_FAILED
         return send_client_side_error(user_msg=msg, dev_msg=str(e))
+
+
+@router.post(
+    "/business/invitations/resend/{invitation_uuid}", response_class=ORJSONResponse
+)
+@inject
+async def resend_invitation_handler(
+    invitation_uuid: str,
+    invitation_service: InvitationService = Depends(
+        Provide[Container.invitation_service]
+    ),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        invitation = invitation_service.get_by_uuid(invitation_uuid)
+        if not invitation:
+            return send_client_side_error(
+                user_msg=messages.INVITATION_NOT_FOUND + invitation_uuid,
+            )
+
+        # make sure the one who is resending the invitation is the inviter
+        if invitation.business_profile_uuid != current_user.business_profile_uuid:
+            return send_client_side_error(
+                user_msg=messages.ACTION_NOT_ALLOWED,
+            )
+
+        invitation_service.update_invitation_expiry(
+            invitation_uuid, datetime.now() + timedelta(days=3)
+        )
+
+        # send email invite
+        await send_email_invitation(
+            recipient_name="",
+            email=invitation.email,
+            invitee_name=f"{current_user.first_name} {current_user.last_name}",
+            business_profile_uuid=str(invitation.business_profile_uuid),
+            role=str(invitation.role_uuid),
+            expiry_date=serialize_datetime(invitation.expired_at),
+        )
+
+        msg = "Invitation resent successfully"
+        return send_info(msg)
+    except Exception as e:
+        msg = messages.CREATE_FAILED + "invitation"
+        return send_internal_server_error(user_msg=msg, error=str(e))

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import EmailStr
 
 from app.repository.team_member_invitation_repository import (
@@ -21,4 +23,9 @@ class InvitationService(BaseService):
     def get_all_user_invites(self, business_uuid: str, page=1, page_size=10):
         return self.invitation_repository.get_user_invitations(
             business_uuid, page, page_size
+        )
+
+    def update_invitation_expiry(self, invitation_uuid: str, expiry_date: datetime):
+        return self.invitation_repository.update_attr_by_uuid(
+            invitation_uuid, "expired_at", expiry_date
         )
