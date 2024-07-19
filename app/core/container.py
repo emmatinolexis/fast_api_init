@@ -61,6 +61,7 @@ from app.repository import (
     vehicle_make_repository,
     vehicle_model_repository,
     vehicle_owner_repository,
+    maintenance_alert_repository
 )
 from app.service import (
     alert_maintenance_type_service,
@@ -113,6 +114,7 @@ from app.service import (
     vehicle_make_service,
     vehicle_model_service,
     vehicle_owner_service,
+    maintenance_alert_service
 )
 
 
@@ -391,6 +393,10 @@ class Container(containers.DeclarativeContainer):
         geofence_violation_tracker_repository.GeofenceViolationTrackerRepository,
         session_factory=db.provided.session,
     )
+    maintenance_alert_repository = providers.Factory(
+        maintenance_alert_repository.MaintenanceAlertRepository,
+        session_factory=db.provided.session,
+    )
 
     # Services
     auth_service = providers.Factory(
@@ -634,4 +640,8 @@ class Container(containers.DeclarativeContainer):
     geofence_violation_tracker_service = providers.Factory(
         geofence_violation_tracker_service.GeofenceViolationTrackerService,
         geofence_violation_tracker_repository=geofence_violation_tracker_repository,
+    )
+    maintenance_alert_service = providers.Factory(
+        maintenance_alert_service.MaintenanceAlertService,
+        maintenance_alert_repository=maintenance_alert_repository,
     )

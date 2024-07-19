@@ -47,6 +47,11 @@ class ActiveStatus(str, Enum):
     DEACTIVATED = "deactivated"
 
 
+class ServiceStatus(str, Enum):
+    SERVICED = "serviced"
+    NOT_SERVICED = "not_serviced"
+
+
 class FineStatus(str, Enum):
     PENDING_PAYMENT = "pending_payment"
     PAID = "paid"
