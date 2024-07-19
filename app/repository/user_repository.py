@@ -36,13 +36,16 @@ class UserRepository(BaseRepository):
                 user_to_update = (
                     session.query(self.model).filter(self.model.uuid == uuid).first()
                 )
-                if user is None:
+                if user_to_update is None:
                     raise Exception("User not found")
 
                 # return self.update_by_uuid(uuid, user)
-                user_to_update.location = user.location
-                user_to_update.address = user.address
-                user_to_update.phone_number = user.phone_number
+                if user.first_name is not None:
+                    user_to_update.first_name = user.first_name
+                if user.last_name is not None:
+                    user_to_update.last_name = user.last_name
+                if user.location is not None:
+                    user_to_update.location = user.location
 
                 # Commit the changes to the database
                 session.commit()
