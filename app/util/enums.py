@@ -47,6 +47,11 @@ class ActiveStatus(str, Enum):
     DEACTIVATED = "deactivated"
 
 
+class ServiceStatus(str, Enum):
+    SERVICED = "serviced"
+    NOT_SERVICED = "not_serviced"
+
+
 class FineStatus(str, Enum):
     PENDING_PAYMENT = "pending_payment"
     PAID = "paid"
@@ -225,6 +230,7 @@ class EmailPurpose(str, Enum):
     INVITATION = "Invitation"
     PASSWORD_RESET = "Password_Reset"
     ACCOUNT_VERIFICATION = "Account_Verification"
+    MAINTENANCE_ALERT = "Maintenance_Alert"
 
 
 class FileFormat(str, Enum):
@@ -232,3 +238,11 @@ class FileFormat(str, Enum):
     PNG = "png"
     JPEG = "jpeg"
     JPG = "jpg"
+
+
+class AlertPolicy(str, Enum):
+    OIL_CHANGE = "7eb7e36d-e3ef-4f7d-9d43-afaca468c15a"
+    GENERAL_SERVICING = "84db7dc6-31e2-4f18-a956-bd3e1fe549ff"
+    TIRE_ROTATION = "a09c4122-c84a-4f9b-9c5c-19d0fc0747fd"
+    BRAKE_INSPECTION = "09c74ec5-1de6-4417-aacf-3f3431ba8a63"
+    OTHER = "e50fded1-b383-46bc-ba14-41bc51a3683e"

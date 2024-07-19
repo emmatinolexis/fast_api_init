@@ -30,6 +30,7 @@ from app.repository import (
     geofence_violation_tracker_repository,
     immobilizer_report_repository,
     inventory_repository,
+    maintenance_alert_repository,
     marker_icon_repository,
     onboarding_asset_type_assignment_repository,
     onboarding_feature_assignment_repository,
@@ -86,6 +87,7 @@ from app.service import (
     immobilizer_report_service,
     inventory_service,
     invitation_service,
+    maintenance_alert_service,
     marker_icon_service,
     onboarding_service,
     order_device_assignment_service,
@@ -391,6 +393,10 @@ class Container(containers.DeclarativeContainer):
         geofence_violation_tracker_repository.GeofenceViolationTrackerRepository,
         session_factory=db.provided.session,
     )
+    maintenance_alert_repository = providers.Factory(
+        maintenance_alert_repository.MaintenanceAlertRepository,
+        session_factory=db.provided.session,
+    )
 
     # Services
     auth_service = providers.Factory(
@@ -634,4 +640,8 @@ class Container(containers.DeclarativeContainer):
     geofence_violation_tracker_service = providers.Factory(
         geofence_violation_tracker_service.GeofenceViolationTrackerService,
         geofence_violation_tracker_repository=geofence_violation_tracker_repository,
+    )
+    maintenance_alert_service = providers.Factory(
+        maintenance_alert_service.MaintenanceAlertService,
+        maintenance_alert_repository=maintenance_alert_repository,
     )

@@ -128,3 +128,28 @@ async def send_alert_policy_violation_email(
     except Exception as e:
         log.error(f"Failed to send alert policy violation email [{email}]")
         raise Exception(str(e))
+
+
+async def send_maintenance_alert_email(
+    recipient_name,
+    email,
+    asset_name,
+    policy_name,
+):
+    try:
+        response = await send_email(
+            email_purpose=EmailPurpose.MAINTENANCE_ALERT,
+            email_body={
+                "recipient_name": recipient_name,
+                "asset_name": asset_name,
+                "policy_name": policy_name,
+            },
+            email=email,
+        )
+        if response["data"]["status"] == "success":
+            log.info(f"Alert policy violation email [{email}] sent successfully")
+            return
+        log.error(f"Failed to send alert policy violation email [{email}]")
+    except Exception as e:
+        log.error(f"Failed to send alert policy violation email [{email}]")
+        raise Exception(str(e))
