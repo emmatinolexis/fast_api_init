@@ -462,8 +462,6 @@ class AssetService(BaseService):
                     asset_type_uuid=asset_type_uuid,
                 )
 
-                return assets
-
             for asset in assets:
                 if asset.device_imei:
                     # Get asset points for today in tracking events table
@@ -538,7 +536,7 @@ class AssetService(BaseService):
         self, business_uuid=None, user_uuid=None, asset_uuid=None, asset_type_uuid=None
     ):
         assets = []
-        return business_uuid
+
         if business_uuid:
             if asset_type_uuid:
                 assets = self.asset_repository.read_all_assets_by_uuid_no_pagination(
@@ -546,7 +544,7 @@ class AssetService(BaseService):
                 )
             elif asset_uuid:
                 assets = self.asset_repository.read_all_assets_by_uuid_no_pagination(
-                    asset_uuid=asset_uuid
+                    asset_uuid=asset_uuid, business_uuid=business_uuid
                 )
             else:
                 assets = self.asset_repository.read_all_assets_by_uuid_no_pagination(
@@ -559,7 +557,7 @@ class AssetService(BaseService):
                 )
             elif asset_uuid:
                 assets = self.asset_repository.read_all_assets_by_uuid_no_pagination(
-                    asset_uuid=asset_uuid
+                    asset_uuid=asset_uuid, user_uuid=user_uuid
                 )
             else:
                 assets = self.asset_repository.read_all_assets_by_uuid_no_pagination(
@@ -739,28 +737,65 @@ class AssetService(BaseService):
         end_date: str,
         business_uuid: str = None,
         user_uuid: str = None,
+        asset_uuid: str = None,
+        asset_type_uuid: str = None,
     ):
         try:
+            # Fetch violations reminders based on provided parameters
             violations = self.get_violations_reminders(
                 start_date, end_date, business_uuid, user_uuid
             )
 
-            if business_uuid:
-                assets = self.asset_repository.read_all_assets_by_uuid_no_pagination(
-                    business_uuid=business_uuid
-                )
-            elif user_uuid:
-                assets = self.asset_repository.read_all_assets_by_uuid_no_pagination(
-                    user_uuid=user_uuid
-                )
-            else:
-                assets = []
+            # Initialize assets as an empty list
+            assets = []
 
+            # Fetch assets based on provided parameters
+            if business_uuid:
+                if asset_type_uuid:
+                    assets = (
+                        self.asset_repository.read_all_assets_by_uuid_no_pagination(
+                            business_uuid=business_uuid, asset_type_uuid=asset_type_uuid
+                        )
+                    )
+                elif asset_uuid:
+                    assets = (
+                        self.asset_repository.read_all_assets_by_uuid_no_pagination(
+                            asset_uuid=asset_uuid
+                        )
+                    )
+                else:
+                    assets = (
+                        self.asset_repository.read_all_assets_by_uuid_no_pagination(
+                            business_uuid=business_uuid
+                        )
+                    )
+            elif user_uuid:
+                if asset_type_uuid:
+                    assets = (
+                        self.asset_repository.read_all_assets_by_uuid_no_pagination(
+                            user_uuid=user_uuid, asset_type_uuid=asset_type_uuid
+                        )
+                    )
+                elif asset_uuid:
+                    assets = (
+                        self.asset_repository.read_all_assets_by_uuid_no_pagination(
+                            asset_uuid=asset_uuid
+                        )
+                    )
+                else:
+                    assets = (
+                        self.asset_repository.read_all_assets_by_uuid_no_pagination(
+                            user_uuid=user_uuid
+                        )
+                    )
+
+            # Calculate total distances for current and past ranges
             (
                 total_distance_traveled_current_range,
                 total_distance_traveled_past_range,
             ) = self.calculate_total_distance(assets, start_date, end_date)
 
+            # Construct the report dictionary
             report = {
                 "geofence_violations": len(violations.get("geofence_violations", [])),
                 "over_speeding_violations": len(
@@ -778,8 +813,8 @@ class AssetService(BaseService):
                 "total_distance_traveled_past_range": round(
                     total_distance_traveled_past_range, 2
                 ),
-                "total_fuel_used_current_range": 0,
-                "total_fuel_used_past_range": 0,
+                "total_fuel_used_current_range": 0,  # Placeholder for fuel used
+                "total_fuel_used_past_range": 0,  # Placeholder for fuel used
             }
 
             return report
