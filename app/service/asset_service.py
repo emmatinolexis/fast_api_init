@@ -444,18 +444,25 @@ class AssetService(BaseService):
         end_date: str,
         business_uuid: str = None,
         user_uuid: str = None,
+        asset_uuid: str = None,
+        asset_type_uuid: str = None,
     ):
         try:
             report = []
 
-            if business_uuid:
-                assets = self.asset_repository.read_all_assets_by_uuid_no_pagination(
-                    business_uuid=business_uuid
+            # Initialize assets as an empty list
+            assets = []
+
+            # Fetch assets based on provided parameters
+            if business_uuid or user_uuid or asset_uuid or asset_type_uuid:
+                assets = self.get_assets(
+                    business_uuid=business_uuid,
+                    user_uuid=user_uuid,
+                    asset_uuid=asset_uuid,
+                    asset_type_uuid=asset_type_uuid,
                 )
-            if user_uuid:
-                assets = self.asset_repository.read_all_assets_by_uuid_no_pagination(
-                    user_uuid=user_uuid
-                )
+
+                return assets
 
             for asset in assets:
                 if asset.device_imei:
@@ -493,11 +500,13 @@ class AssetService(BaseService):
                     # Extract speeds from asset tracking event
                     speeds = [event.speed for event in asset_events]
 
-                    # Calculate distance traveled
+                    # Calculate average speed
                     average_speed = calculate_average_speed(speeds)
 
+                    # Calculate time traveled
                     time_traveled = calculate_time_traveled(coordinates)
 
+                    # Calculate total idle time
                     total_idle_time = calculate_total_idle_time_and_movement(
                         coordinates
                     )
@@ -517,13 +526,47 @@ class AssetService(BaseService):
                                 "rapid_braking_count"
                             ),
                             "speed_violations": len(speed_violations),
-                            "fuel_used": 0,
+                            "fuel_used": 0,  # Placeholder for fuel used
                         }
                     )
             return report
 
         except Exception as e:
             raise e
+
+    def get_assets(
+        self, business_uuid=None, user_uuid=None, asset_uuid=None, asset_type_uuid=None
+    ):
+        assets = []
+        return business_uuid
+        if business_uuid:
+            if asset_type_uuid:
+                assets = self.asset_repository.read_all_assets_by_uuid_no_pagination(
+                    business_uuid=business_uuid, asset_type_uuid=asset_type_uuid
+                )
+            elif asset_uuid:
+                assets = self.asset_repository.read_all_assets_by_uuid_no_pagination(
+                    asset_uuid=asset_uuid
+                )
+            else:
+                assets = self.asset_repository.read_all_assets_by_uuid_no_pagination(
+                    business_uuid=business_uuid
+                )
+        elif user_uuid:
+            if asset_type_uuid:
+                assets = self.asset_repository.read_all_assets_by_uuid_no_pagination(
+                    user_uuid=user_uuid, asset_type_uuid=asset_type_uuid
+                )
+            elif asset_uuid:
+                assets = self.asset_repository.read_all_assets_by_uuid_no_pagination(
+                    asset_uuid=asset_uuid
+                )
+            else:
+                assets = self.asset_repository.read_all_assets_by_uuid_no_pagination(
+                    user_uuid=user_uuid
+                )
+
+        return assets
 
     def get_violations_reminders(
         self, start_date, end_date, business_uuid=None, user_uuid=None

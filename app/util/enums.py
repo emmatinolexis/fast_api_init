@@ -47,6 +47,11 @@ class ActiveStatus(str, Enum):
     DEACTIVATED = "deactivated"
 
 
+class DeviceStatus(str, Enum):
+    ASSIGNED = "assigned"
+    NOT_ASSIGNED = "not_assigned"
+
+
 class ServiceStatus(str, Enum):
     SERVICED = "serviced"
     NOT_SERVICED = "not_serviced"

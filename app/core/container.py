@@ -27,6 +27,8 @@ from app.repository import (
     external_app_repository,
     feature_repository,
     fine_report_repository,
+    gas_cylinder_event_repository,
+    gas_cylinder_repository,
     geofence_violation_tracker_repository,
     immobilizer_report_repository,
     inventory_repository,
@@ -83,6 +85,8 @@ from app.service import (
     external_app_service,
     feature_service,
     fine_report_service,
+    gas_cylinder_event_service,
+    gas_cylinder_service,
     geofence_violation_tracker_service,
     immobilizer_report_service,
     inventory_service,
@@ -153,6 +157,7 @@ class Container(containers.DeclarativeContainer):
             "app.api.v1.endpoints.third_party_app",
             "app.api.v1.endpoints.fine_report",
             "app.api.v1.endpoints.report",
+            "app.api.v1.endpoints.gas_cylinder",
         ]
     )
 
@@ -395,6 +400,14 @@ class Container(containers.DeclarativeContainer):
     )
     maintenance_alert_repository = providers.Factory(
         maintenance_alert_repository.MaintenanceAlertRepository,
+        session_factory=db.provided.session,
+    )
+    gas_cylinder_repository = providers.Factory(
+        gas_cylinder_repository.GasCylinderRepository,
+        session_factory=db.provided.session,
+    )
+    gas_cylinder_event_repository = providers.Factory(
+        gas_cylinder_event_repository.GasCylinderEventRepository,
         session_factory=db.provided.session,
     )
 
@@ -644,4 +657,12 @@ class Container(containers.DeclarativeContainer):
     maintenance_alert_service = providers.Factory(
         maintenance_alert_service.MaintenanceAlertService,
         maintenance_alert_repository=maintenance_alert_repository,
+    )
+    gas_cylinder_service = providers.Factory(
+        gas_cylinder_service.GasCylinderService,
+        gas_cylinder_repository=gas_cylinder_repository,
+    )
+    gas_cylinder_event_service = providers.Factory(
+        gas_cylinder_event_service.GasCylinderEventService,
+        gas_cylinder_event_repository=gas_cylinder_event_repository,
     )

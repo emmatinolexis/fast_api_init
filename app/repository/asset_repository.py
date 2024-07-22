@@ -27,23 +27,56 @@ class AssetRepository(BaseRepository):
         self,
         user_uuid: str = None,
         business_uuid: str = None,
+        asset_uuid: str = None,
+        asset_type_uuid: str = None,
     ):
         with self.session_factory() as session:
             if user_uuid is not None:
-                # Base query filtered by user UUID
-                assets = (
-                    session.query(self.model)
-                    .filter(self.model.user_uuid == user_uuid)
-                    .all()
-                )
+                if asset_uuid:
+                    assets = (
+                        session.query(self.model)
+                        .filter(self.model.uuid == asset_uuid)
+                        .all()
+                    )
+
+                elif asset_type_uuid:
+                    assets = (
+                        session.query(self.model)
+                        .filter(self.model.user_uuid == user_uuid)
+                        .filter(self.model.asset_type_uuid == asset_type_uuid)
+                        .all()
+                    )
+                else:
+                    # Base query filtered by user UUID
+                    assets = (
+                        session.query(self.model)
+                        .filter(self.model.user_uuid == user_uuid)
+                        .all()
+                    )
 
             if business_uuid is not None:
-                # Base query filtered by business UUID
-                assets = (
-                    session.query(self.model)
-                    .filter(self.model.business_profile_uuid == business_uuid)
-                    .all()
-                )
+                return "bus"
+                if asset_uuid:
+                    assets = (
+                        session.query(self.model)
+                        .filter(self.model.uuid == asset_uuid)
+                        .all()
+                    )
+
+                elif asset_type_uuid:
+                    assets = (
+                        session.query(self.model)
+                        .filter(self.model.user_uuid == user_uuid)
+                        .filter(self.model.asset_type_uuid == asset_type_uuid)
+                        .all()
+                    )
+                else:
+                    # Base query filtered by business UUID
+                    assets = (
+                        session.query(self.model)
+                        .filter(self.model.business_profile_uuid == business_uuid)
+                        .all()
+                    )
 
             return assets
 
