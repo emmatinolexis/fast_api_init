@@ -22,6 +22,8 @@ msg_prefix = "Report"
 @inject
 async def generate_distance_traveled_report_handler(
     user_uuid: str,
+    asset_uuid: str = None,
+    asset_type_uuid: str = None,
     start_date: str = Query(
         description="Start date should be in the format dd/mm/yyyy"
     ),
@@ -39,6 +41,8 @@ async def generate_distance_traveled_report_handler(
                         user_uuid=user.get("uuid"),
                         start_date=start_date,
                         end_date=end_date,
+                        asset_uuid=asset_uuid,
+                        asset_type_uuid=asset_type_uuid,
                     )
                 )
             if user.get("account_type") == AccountType.BUSINESS:
@@ -47,6 +51,8 @@ async def generate_distance_traveled_report_handler(
                         business_uuid=user.get("business_profile").uuid,
                         start_date=start_date,
                         end_date=end_date,
+                        asset_uuid=asset_uuid,
+                        asset_type_uuid=asset_type_uuid,
                     )
                 )
         else:
