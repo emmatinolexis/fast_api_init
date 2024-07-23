@@ -11,7 +11,12 @@ from app.service.gas_cylinder_event_service import GasCylinderEventService
 from app.service.gas_cylinder_service import GasCylinderService
 from app.service.gas_device_service import GasDeviceService
 from app.util.enums import ActiveStatus, DeviceStatus
-from app.util.utils import send_client_side_error, send_data, send_internal_server_error
+from app.util.utils import (
+    send_client_side_error,
+    send_data,
+    send_info,
+    send_internal_server_error,
+)
 
 router = APIRouter(
     prefix="/gas_cylinder",
@@ -150,7 +155,7 @@ async def unlink_gas_cylinder_from_device_handler(
 
         service.unlink_gas_device(gas_cylinder.uuid)
 
-        return send_data(gas_cylinder)
+        return send_info(messages.CYLINDER_UNLINKED)
 
     except Exception as e:
         # Handle unexpected errors
