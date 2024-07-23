@@ -54,3 +54,15 @@ UPLOAD_SUCCESS = "File uploaded successfully "
 
 INVITATION_NOT_FOUND = "No invitation was found with the given uuid : "
 ACTION_NOT_ALLOWED = "You are not allowed to perform this action"
+
+
+GAS_DEVICE_NOT_FOUND = "No gas device was found with the given uuid : "
+GAS_CYLINDER_NOT_FOUND = "No gas cylinder was found with the given uuid : "
+GAS_CYLINDER_INACTIVE = "Gas cylinder is inactive"
+
+
+DEVICE_ALREADY_ASSIGNED = "Device is already assigned"
+LINK_FAILED = "Failed to link "
+UNLINK_FAILED = "Failed to unlink "
+INTERNAL_SERVER_ERROR = "Internal server error"
+ALREADY_UNLINKED = "Gas cylinder is already unlinked"

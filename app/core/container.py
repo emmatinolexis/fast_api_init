@@ -29,6 +29,7 @@ from app.repository import (
     fine_report_repository,
     gas_cylinder_event_repository,
     gas_cylinder_repository,
+    gas_device_repository,
     geofence_violation_tracker_repository,
     immobilizer_report_repository,
     inventory_repository,
@@ -87,6 +88,7 @@ from app.service import (
     fine_report_service,
     gas_cylinder_event_service,
     gas_cylinder_service,
+    gas_device_service,
     geofence_violation_tracker_service,
     immobilizer_report_service,
     inventory_service,
@@ -158,6 +160,7 @@ class Container(containers.DeclarativeContainer):
             "app.api.v1.endpoints.fine_report",
             "app.api.v1.endpoints.report",
             "app.api.v1.endpoints.gas_cylinder",
+            "app.api.v1.endpoints.gas_device",
         ]
     )
 
@@ -408,6 +411,10 @@ class Container(containers.DeclarativeContainer):
     )
     gas_cylinder_event_repository = providers.Factory(
         gas_cylinder_event_repository.GasCylinderEventRepository,
+        session_factory=db.provided.session,
+    )
+    gas_device_repository = providers.Factory(
+        gas_device_repository.GasDeviceRepository,
         session_factory=db.provided.session,
     )
 
@@ -665,4 +672,8 @@ class Container(containers.DeclarativeContainer):
     gas_cylinder_event_service = providers.Factory(
         gas_cylinder_event_service.GasCylinderEventService,
         gas_cylinder_event_repository=gas_cylinder_event_repository,
+    )
+    gas_device_service = providers.Factory(
+        gas_device_service.GasDeviceService,
+        gas_device_repository=gas_device_repository,
     )
