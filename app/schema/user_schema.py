@@ -27,9 +27,23 @@ class UserPayload(BaseModel):
 
 
 class UpdateUserPayload(BaseModel):
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    location: Optional[str] = None
+    location: str
+    address: str
+    phone_number: str
+
+    @field_validator("phone_number")
+    @classmethod
+    def validate_phone_number(cls, value: str, info: ValidationInfo) -> str:
+        try:
+            phone_number = phonenumbers.parse(value, None)
+            if not phonenumbers.is_valid_number(phone_number):
+                raise ValueError("Invalid phone number format")
+
+            if not phonenumbers.is_possible_number(phone_number):
+                raise ValueError("Invalid phone number")
+            return value
+        except phonenumbers.NumberParseException as e:
+            raise ValueError(f"Invalid phone number: {e}")
 
     class Config:
         orm_model = True
