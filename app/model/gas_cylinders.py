@@ -24,6 +24,13 @@ class GasDevice(BaseModel):
         default=DeviceStatus.NOT_ASSIGNED,
         index=True,
     )
+    user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
+    business_profile_uuid = Column(
+        UUID(as_uuid=True),
+        ForeignKey("business_profiles.uuid"),
+        nullable=True,
+        index=True,
+    )
 
 
 class GasCylinder(BaseModel):
@@ -46,7 +53,7 @@ class GasCylinder(BaseModel):
         UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False, index=True
     )
     gas_device_uuid = Column(
-        UUID(as_uuid=True), ForeignKey("gas_devices.uuid"), nullable=False, index=True
+        UUID(as_uuid=True), ForeignKey("gas_devices.uuid"), nullable=True, index=True
     )
     business_profile_uuid = Column(
         UUID(as_uuid=True),

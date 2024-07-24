@@ -16,7 +16,6 @@ from app.util.email import (
     send_alert_policy_violation_email,
     send_maintenance_alert_email,
 )
-
 from app.util.utils import send_client_side_error, send_data, send_internal_server_error
 
 router = APIRouter(

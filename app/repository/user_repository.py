@@ -20,6 +20,7 @@ from app.schema.user_schema import (
     AccountDeactivationPayload,
     UpdateUserPayload,
     UserPayload,
+    UserProfileUdatePayload,
 )
 from app.util.enums import AccountType, ActiveStatus, CustomerRoles, InvitationStatus
 from app.util.utils import toggle_status
@@ -40,12 +41,9 @@ class UserRepository(BaseRepository):
                     raise Exception("User not found")
 
                 # return self.update_by_uuid(uuid, user)
-                if user.first_name is not None:
-                    user_to_update.first_name = user.first_name
-                if user.last_name is not None:
-                    user_to_update.last_name = user.last_name
-                if user.location is not None:
-                    user_to_update.location = user.location
+                user_to_update.location = user.location
+                user_to_update.address = user.address
+                user_to_update.phone_number = user.phone_number
 
                 # Commit the changes to the database
                 session.commit()
@@ -354,3 +352,28 @@ class UserRepository(BaseRepository):
             session.commit()
             session.refresh(user)
             return user
+
+    def patch_user_by_uuid(self, uuid: str, user: UserProfileUdatePayload):
+        try:
+            with self.session_factory() as session:
+                user_to_update = (
+                    session.query(self.model).filter(self.model.uuid == uuid).first()
+                )
+                if user_to_update is None:
+                    raise Exception("User not found")
+
+                # return self.update_by_uuid(uuid, user)
+                if user.first_name is not None:
+                    user_to_update.first_name = user.first_name
+                if user.last_name is not None:
+                    user_to_update.last_name = user.last_name
+                if user.location is not None:
+                    user_to_update.location = user.location
+
+                # Commit the changes to the database
+                session.commit()
+                session.refresh(user_to_update)
+
+                return user_to_update
+        except Exception as e:
+            raise e
