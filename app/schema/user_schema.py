@@ -49,6 +49,14 @@ class UpdateUserPayload(BaseModel):
         orm_model = True
 
 
+class UserProfileUdatePayload(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    location: Optional[str] = None
+
+
+
+
 class UserLogin(BaseModel):
     email_address: EmailStr
     password: str

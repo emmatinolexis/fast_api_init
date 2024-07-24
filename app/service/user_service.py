@@ -20,6 +20,7 @@ from app.schema.user_schema import (
     AccountDeactivationPayload,
     UpdateUserPayload,
     UserPayload,
+    UserProfileUdatePayload
 )
 from app.service.base_service import BaseService
 from app.util.enums import InvitationStatus
@@ -51,6 +52,19 @@ class UserService(BaseService):
             if not UUID(uuid):
                 return None
             user = self.user_repository.update_user_by_uuid(uuid, payload)
+            return user if user else None
+        except NotFoundError as e:
+            raise e
+        except Exception as e:
+            raise e
+        
+
+    def patch_user_by_uuid(self, uuid: str, payload: UserProfileUdatePayload):
+        try:
+            # check uuid is valid
+            if not UUID(uuid):
+                return None
+            user = self.user_repository.patch_user_by_uuid(uuid, payload)
             return user if user else None
         except NotFoundError as e:
             raise e
