@@ -20,7 +20,7 @@ from app.schema.user_schema import (
     AccountDeactivationPayload,
     UpdateUserPayload,
     UserPayload,
-    UserProfileUdatePayload
+    UserProfileUdatePayload,
 )
 from app.util.enums import AccountType, ActiveStatus, CustomerRoles, InvitationStatus
 from app.util.utils import toggle_status
@@ -352,7 +352,6 @@ class UserRepository(BaseRepository):
             session.commit()
             session.refresh(user)
             return user
-        
 
     def patch_user_by_uuid(self, uuid: str, user: UserProfileUdatePayload):
         try:
@@ -370,7 +369,6 @@ class UserRepository(BaseRepository):
                     user_to_update.last_name = user.last_name
                 if user.location is not None:
                     user_to_update.location = user.location
-                
 
                 # Commit the changes to the database
                 session.commit()

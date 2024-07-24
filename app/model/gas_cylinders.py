@@ -1,7 +1,8 @@
 import uuid
 
-from sqlalchemy import FLOAT, Column, DateTime, Enum, ForeignKey, String, func
+from sqlalchemy import FLOAT, Column, DateTime, Enum, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.sql import func
 
 from app.model.base_model import BaseModel
 from app.util.enums import ActiveStatus, DeviceStatus

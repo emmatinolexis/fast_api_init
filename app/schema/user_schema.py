@@ -55,8 +55,6 @@ class UserProfileUdatePayload(BaseModel):
     location: Optional[str] = None
 
 
-
-
 class UserLogin(BaseModel):
     email_address: EmailStr
     password: str

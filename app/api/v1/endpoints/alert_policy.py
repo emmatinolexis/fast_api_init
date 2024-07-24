@@ -186,8 +186,11 @@ async def check_geofence_violation_handler(
                             asset_name,
                             policy_name,
                         )
+                        pass
                     else:
                         # send sms notification
+                        # await send_sms('0541557459', 'Violation sms test')
+
                         pass
 
         return response_data

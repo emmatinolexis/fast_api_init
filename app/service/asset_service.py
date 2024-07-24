@@ -749,45 +749,53 @@ class AssetService(BaseService):
             # Initialize assets as an empty list
             assets = []
 
+            if business_uuid or user_uuid or asset_uuid or asset_type_uuid:
+                assets = self.get_assets(
+                    business_uuid=business_uuid,
+                    user_uuid=user_uuid,
+                    asset_uuid=asset_uuid,
+                    asset_type_uuid=asset_type_uuid,
+                )
+
             # Fetch assets based on provided parameters
-            if business_uuid:
-                if asset_type_uuid:
-                    assets = (
-                        self.asset_repository.read_all_assets_by_uuid_no_pagination(
-                            business_uuid=business_uuid, asset_type_uuid=asset_type_uuid
-                        )
-                    )
-                elif asset_uuid:
-                    assets = (
-                        self.asset_repository.read_all_assets_by_uuid_no_pagination(
-                            asset_uuid=asset_uuid
-                        )
-                    )
-                else:
-                    assets = (
-                        self.asset_repository.read_all_assets_by_uuid_no_pagination(
-                            business_uuid=business_uuid
-                        )
-                    )
-            elif user_uuid:
-                if asset_type_uuid:
-                    assets = (
-                        self.asset_repository.read_all_assets_by_uuid_no_pagination(
-                            user_uuid=user_uuid, asset_type_uuid=asset_type_uuid
-                        )
-                    )
-                elif asset_uuid:
-                    assets = (
-                        self.asset_repository.read_all_assets_by_uuid_no_pagination(
-                            asset_uuid=asset_uuid
-                        )
-                    )
-                else:
-                    assets = (
-                        self.asset_repository.read_all_assets_by_uuid_no_pagination(
-                            user_uuid=user_uuid
-                        )
-                    )
+            # if business_uuid:
+            #     if asset_type_uuid:
+            #         assets = (
+            #             self.asset_repository.read_all_assets_by_uuid_no_pagination(
+            #                 business_uuid=business_uuid, asset_type_uuid=asset_type_uuid
+            #             )
+            #         )
+            #     elif asset_uuid:
+            #         assets = (
+            #             self.asset_repository.read_all_assets_by_uuid_no_pagination(
+            #                 asset_uuid=asset_uuid
+            #             )
+            #         )
+            #     else:
+            #         assets = (
+            #             self.asset_repository.read_all_assets_by_uuid_no_pagination(
+            #                 business_uuid=business_uuid
+            #             )
+            #         )
+            # elif user_uuid:
+            #     if asset_type_uuid:
+            #         assets = (
+            #             self.asset_repository.read_all_assets_by_uuid_no_pagination(
+            #                 user_uuid=user_uuid, asset_type_uuid=asset_type_uuid
+            #             )
+            #         )
+            #     elif asset_uuid:
+            #         assets = (
+            #             self.asset_repository.read_all_assets_by_uuid_no_pagination(
+            #                 asset_uuid=asset_uuid
+            #             )
+            #         )
+            #     else:
+            #         assets = (
+            #             self.asset_repository.read_all_assets_by_uuid_no_pagination(
+            #                 user_uuid=user_uuid
+            #             )
+            #         )
 
             # Calculate total distances for current and past ranges
             (

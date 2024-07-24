@@ -20,7 +20,7 @@ from app.schema.user_schema import (
     AccountDeactivationPayload,
     UpdateUserPayload,
     UserPayload,
-    UserProfileUdatePayload
+    UserProfileUdatePayload,
 )
 from app.service.base_service import BaseService
 from app.util.enums import InvitationStatus
@@ -57,7 +57,6 @@ class UserService(BaseService):
             raise e
         except Exception as e:
             raise e
-        
 
     def patch_user_by_uuid(self, uuid: str, payload: UserProfileUdatePayload):
         try:

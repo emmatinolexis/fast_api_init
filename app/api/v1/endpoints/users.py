@@ -24,8 +24,8 @@ from app.schema.user_schema import (
     UpdateUserPayload,
     UserPayload,
     UserPhoneVerificationToken,
+    UserProfileUdatePayload,
     UserUpdatePassword,
-    UserProfileUdatePayload
 )
 from app.service.business_profile_service import BusinessProfileService
 from app.service.invitation_service import InvitationService
@@ -155,7 +155,7 @@ async def update_user(
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
-    
+
 
 @router.patch("/{uuid}", response_class=ORJSONResponse)
 @inject
