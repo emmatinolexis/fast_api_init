@@ -1,7 +1,8 @@
 import uuid
 
-from sqlalchemy import FLOAT, Column, Enum, ForeignKey, String
+from sqlalchemy import FLOAT, Column, DateTime, Enum, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.sql import func
 
 from app.model.base_model import BaseModel
 from app.util.enums import ActiveStatus, DeviceStatus
@@ -68,3 +69,5 @@ class GasCylinderEvent(BaseModel):
         UUID(as_uuid=True), ForeignKey("gas_devices.uuid"), nullable=False, index=True
     )
     current_weight = Column(FLOAT, nullable=False, index=True)
+    battery_level = Column(FLOAT, nullable=True, index=True)
+    event_timestamp = Column(DateTime(timezone=True), default=func.now())

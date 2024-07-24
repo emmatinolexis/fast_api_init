@@ -393,6 +393,42 @@ class AlertPolicyRepository(BaseRepository):
         )
         session.add(violation)
 
+    def get_violation_record(
+        self,
+        session,
+        alert_policy_uuid,
+        geofence_asset_uuid,
+    ):
+        return (
+            session.query(AlertPolicyViolation)
+            .filter(
+                AlertPolicyViolation.alert_policy_uuid == alert_policy_uuid,
+                AlertPolicyViolation.asset_uuid == geofence_asset_uuid,
+            )
+            .first()
+        )
+
+    def update_violation_record(
+        self,
+        session,
+        alert_policy_uuid,
+        geofence_asset_uuid,
+        asset_coordinates_events,
+        violation_time=0,
+        violation_distance=0,
+    ):
+        violation = (
+            session.query(AlertPolicyViolation)
+            .filter(
+                AlertPolicyViolation.alert_policy_uuid == alert_policy_uuid,
+                AlertPolicyViolation.asset_uuid == geofence_asset_uuid,
+            )
+            .first()
+        )
+        violation.asset_coordinates = asset_coordinates_events
+        violation.violation_time = violation_time
+        violation.violation_distance = violation_distance
+
     def create_maintenance_alert_record(
         self, session, asset_uuid, alert_policy_uuid, business_profile_uuid, user_uuid
     ):
@@ -486,15 +522,30 @@ class AlertPolicyRepository(BaseRepository):
                             }
                         )
 
-                        # Create AlertPolicyViolation instance and persist it
-                        self.create_violation_record(
-                            session,
-                            alert_policy,
-                            geofence_asset,
-                            violated_asset_coordinates,
-                            violation_time,
-                            violation_distance,
+                        saved_violation = self.get_violation_record(
+                            session, alert_policy.uuid, geofence_asset.uuid
                         )
+                        if saved_violation:
+                            # update existing violation
+                            self.update_violation_record(
+                                session,
+                                alert_policy.uuid,
+                                geofence_asset.asset_name,
+                                violated_asset_coordinates,
+                                violation_time,
+                                violation_distance,
+                            )
+
+                        else:
+                            # Create AlertPolicyViolation instance and persist it
+                            self.create_violation_record(
+                                session,
+                                alert_policy,
+                                geofence_asset,
+                                violated_asset_coordinates,
+                                violation_time,
+                                violation_distance,
+                            )
 
                     # Update last checked geofence violation timestamp for the processed events
                     self.update_last_checked_time(asset_points)

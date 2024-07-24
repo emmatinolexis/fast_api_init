@@ -16,6 +16,7 @@ from app.util.email import (
     send_alert_policy_violation_email,
     send_maintenance_alert_email,
 )
+
 from app.util.utils import send_client_side_error, send_data, send_internal_server_error
 
 router = APIRouter(
@@ -186,8 +187,11 @@ async def check_geofence_violation_handler(
                             asset_name,
                             policy_name,
                         )
+                        pass
                     else:
                         # send sms notification
+                        # await send_sms('0541557459', 'Violation sms test')
+
                         pass
 
         return response_data
