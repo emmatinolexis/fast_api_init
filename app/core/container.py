@@ -700,4 +700,5 @@ class Container(containers.DeclarativeContainer):
     other_cylinder_type_service = providers.Factory(
         other_cylinder_type_service.OtherCylinderTypeService,
         other_cylinder_type_repository=other_cylinder_types_repository,
+        user_repository=user_repository,
     )
