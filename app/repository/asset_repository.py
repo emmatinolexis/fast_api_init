@@ -413,101 +413,34 @@ class AssetRepository(BaseRepository):
         asset_type_uuid: str = None,
     ):
         with self.session_factory() as session:
-            if user_uuid:
-                if asset_uuid:
-                    violations = (
-                        session.query(AlertPolicyViolation)
-                        .join(
-                            AlertPolicy,
-                            AlertPolicyViolation.alert_policy_uuid == AlertPolicy.uuid,
-                        )
-                        .filter(
-                            AlertPolicyViolation.user_uuid == user_uuid,
-                            AlertPolicy.alert_policy_type_uuid
-                            == alert_policy_type_uuid,
-                            AlertPolicyViolation.asset_uuid == asset_uuid,
-                            and_(
-                                cast(AlertPolicyViolation.created_at, Date)
-                                >= datetime.strptime(start_date, "%d/%m/%Y"),
-                                cast(AlertPolicyViolation.created_at, Date)
-                                <= datetime.strptime(end_date, "%d/%m/%Y"),
-                            ),
-                        )
-                        .all()
-                    )
-                if asset_type_uuid:
-                    violations = (
-                        session.query(AlertPolicyViolation)
-                        .join(
-                            AlertPolicy,
-                            AlertPolicyViolation.alert_policy_uuid == AlertPolicy.uuid,
-                        )
-                        .join(
-                            Asset,
-                            AlertPolicyViolation.asset_uuid == Asset.uuid,
-                        )
-                        .filter(
-                            AlertPolicyViolation.user_uuid == user_uuid,
-                            AlertPolicy.alert_policy_type_uuid
-                            == alert_policy_type_uuid,
-                            Asset.asset_type_uuid == asset_type_uuid,
-                            and_(
-                                cast(AlertPolicyViolation.created_at, Date)
-                                >= datetime.strptime(start_date, "%d/%m/%Y"),
-                                cast(AlertPolicyViolation.created_at, Date)
-                                <= datetime.strptime(end_date, "%d/%m/%Y"),
-                            ),
-                        )
-                        .all()
-                    )
+            base_query = session.query(AlertPolicyViolation).join(
+                AlertPolicy, AlertPolicyViolation.alert_policy_uuid == AlertPolicy.uuid
+            )
 
+            filters = [
+                AlertPolicy.alert_policy_type_uuid == alert_policy_type_uuid,
+                cast(AlertPolicyViolation.created_at, Date)
+                >= datetime.strptime(start_date, "%d/%m/%Y"),
+                cast(AlertPolicyViolation.created_at, Date)
+                <= datetime.strptime(end_date, "%d/%m/%Y"),
+            ]
+
+            if user_uuid:
+                filters.append(AlertPolicyViolation.user_uuid == user_uuid)
             if business_uuid:
-                if asset_uuid:
-                    violations = (
-                        session.query(AlertPolicyViolation)
-                        .join(
-                            AlertPolicy,
-                            AlertPolicyViolation.alert_policy_uuid == AlertPolicy.uuid,
-                        )
-                        .filter(
-                            AlertPolicyViolation.business_profile_uuid == business_uuid,
-                            AlertPolicy.alert_policy_type_uuid
-                            == alert_policy_type_uuid,
-                            AlertPolicyViolation.asset_uuid == asset_uuid,
-                            and_(
-                                cast(AlertPolicyViolation.created_at, Date)
-                                >= datetime.strptime(start_date, "%d/%m/%Y"),
-                                cast(AlertPolicyViolation.created_at, Date)
-                                <= datetime.strptime(end_date, "%d/%m/%Y"),
-                            ),
-                        )
-                        .all()
-                    )
-                if asset_type_uuid:
-                    violations = (
-                        session.query(AlertPolicyViolation)
-                        .join(
-                            AlertPolicy,
-                            AlertPolicyViolation.alert_policy_uuid == AlertPolicy.uuid,
-                        )
-                        .join(
-                            Asset,
-                            AlertPolicyViolation.asset_uuid == Asset.uuid,
-                        )
-                        .filter(
-                            AlertPolicyViolation.business_profile_uuid == business_uuid,
-                            AlertPolicy.alert_policy_type_uuid
-                            == alert_policy_type_uuid,
-                            Asset.asset_type_uuid == asset_type_uuid,
-                            and_(
-                                cast(AlertPolicyViolation.created_at, Date)
-                                >= datetime.strptime(start_date, "%d/%m/%Y"),
-                                cast(AlertPolicyViolation.created_at, Date)
-                                <= datetime.strptime(end_date, "%d/%m/%Y"),
-                            ),
-                        )
-                        .all()
-                    )
+                filters.append(
+                    AlertPolicyViolation.business_profile_uuid == business_uuid
+                )
+            if asset_uuid:
+                filters.append(AlertPolicyViolation.asset_uuid == asset_uuid)
+            if asset_type_uuid:
+                base_query = base_query.join(
+                    Asset, AlertPolicyViolation.asset_uuid == Asset.uuid
+                )
+                filters.append(Asset.asset_type_uuid == asset_type_uuid)
+
+            violations = base_query.filter(and_(*filters)).all()
+
             return violations
 
     def get_maintenance_by_alert_type(
@@ -518,48 +451,94 @@ class AssetRepository(BaseRepository):
         end_date: str,
         user_uuid: str = None,
         business_uuid: str = None,
+        asset_uuid: str = None,
+        asset_type_uuid: str = None,
     ):
         with self.session_factory() as session:
+            base_query = session.query(MaintenanceAlert).join(
+                AlertPolicy, MaintenanceAlert.alert_policy_uuid == AlertPolicy.uuid
+            )
+
+            filters = [
+                AlertPolicy.alert_policy_type_uuid == alert_policy_type_uuid,
+                AlertPolicy.maintenance_alert_type_uuid == maintenance_type_uuid,
+                cast(MaintenanceAlert.created_at, Date)
+                >= datetime.strptime(start_date, "%d/%m/%Y"),
+                cast(MaintenanceAlert.created_at, Date)
+                <= datetime.strptime(end_date, "%d/%m/%Y"),
+            ]
+
             if user_uuid:
-                violations = (
-                    session.query(MaintenanceAlert)
-                    .join(
-                        AlertPolicy,
-                        MaintenanceAlert.alert_policy_uuid == AlertPolicy.uuid,
-                    )
-                    .filter(
-                        AlertPolicyViolation.user_uuid == user_uuid,
-                        AlertPolicy.alert_policy_type_uuid == alert_policy_type_uuid,
-                        AlertPolicy.maintenance_alert_type_uuid
-                        == maintenance_type_uuid,
-                        and_(
-                            cast(MaintenanceAlert.created_at, Date)
-                            >= datetime.strptime(start_date, "%d/%m/%Y"),
-                            cast(MaintenanceAlert.created_at, Date)
-                            <= datetime.strptime(end_date, "%d/%m/%Y"),
-                        ),
-                    )
-                    .all()
-                )
+                filters.append(AlertPolicyViolation.user_uuid == user_uuid)
             if business_uuid:
-                violations = (
-                    session.query(MaintenanceAlert)
-                    .join(
-                        AlertPolicy,
-                        MaintenanceAlert.alert_policy_uuid == AlertPolicy.uuid,
-                    )
-                    .filter(
-                        AlertPolicyViolation.business_profile_uuid == business_uuid,
-                        AlertPolicy.alert_policy_type_uuid == alert_policy_type_uuid,
-                        AlertPolicy.maintenance_alert_type_uuid
-                        == maintenance_type_uuid,
-                        and_(
-                            cast(MaintenanceAlert.created_at, Date)
-                            >= datetime.strptime(start_date, "%d/%m/%Y"),
-                            cast(MaintenanceAlert.created_at, Date)
-                            <= datetime.strptime(end_date, "%d/%m/%Y"),
-                        ),
-                    )
-                    .all()
+                filters.append(
+                    AlertPolicyViolation.business_profile_uuid == business_uuid
                 )
+            if asset_uuid:
+                filters.append(MaintenanceAlert.asset_uuid == asset_uuid)
+            if asset_type_uuid:
+                base_query = base_query.join(
+                    Asset, MaintenanceAlert.asset_uuid == Asset.uuid
+                )
+                filters.append(Asset.asset_type_uuid == asset_type_uuid)
+
+            violations = base_query.filter(and_(*filters)).all()
+
             return violations
+
+    # def get_maintenance_by_alert_type(
+    #     self,
+    #     alert_policy_type_uuid: str,
+    #     maintenance_type_uuid: str,
+    #     start_date: str,
+    #     end_date: str,
+    #     user_uuid: str = None,
+    #     business_uuid: str = None,
+    #     asset_uuid: str = None,
+    #     asset_type_uuid: str = None
+    # ):
+    #     with self.session_factory() as session:
+    #         if user_uuid:
+    #
+    #             violations = (
+    #                 session.query(MaintenanceAlert)
+    #                 .join(
+    #                     AlertPolicy,
+    #                     MaintenanceAlert.alert_policy_uuid == AlertPolicy.uuid,
+    #                 )
+    #                 .filter(
+    #                     AlertPolicyViolation.user_uuid == user_uuid,
+    #                     AlertPolicy.alert_policy_type_uuid == alert_policy_type_uuid,
+    #                     AlertPolicy.maintenance_alert_type_uuid
+    #                     == maintenance_type_uuid,
+    #                     and_(
+    #                         cast(MaintenanceAlert.created_at, Date)
+    #                         >= datetime.strptime(start_date, "%d/%m/%Y"),
+    #                         cast(MaintenanceAlert.created_at, Date)
+    #                         <= datetime.strptime(end_date, "%d/%m/%Y"),
+    #                     ),
+    #                 )
+    #                 .all()
+    #             )
+    #         if business_uuid:
+    #             violations = (
+    #                 session.query(MaintenanceAlert)
+    #                 .join(
+    #                     AlertPolicy,
+    #                     MaintenanceAlert.alert_policy_uuid == AlertPolicy.uuid,
+    #                 )
+    #                 .filter(
+    #                     AlertPolicyViolation.business_profile_uuid == business_uuid,
+    #                     AlertPolicy.alert_policy_type_uuid == alert_policy_type_uuid,
+    #                     AlertPolicy.maintenance_alert_type_uuid
+    #                     == maintenance_type_uuid,
+    #                     and_(
+    #                         cast(MaintenanceAlert.created_at, Date)
+    #                         >= datetime.strptime(start_date, "%d/%m/%Y"),
+    #                         cast(MaintenanceAlert.created_at, Date)
+    #                         <= datetime.strptime(end_date, "%d/%m/%Y"),
+    #                     ),
+    #                 )
+    #                 .all()
+    #             )
+    #         return violations

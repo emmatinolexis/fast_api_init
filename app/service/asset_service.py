@@ -567,7 +567,13 @@ class AssetService(BaseService):
         return assets
 
     def get_violations_reminders(
-        self, start_date, end_date, business_uuid=None, user_uuid=None
+        self,
+        start_date,
+        end_date,
+        business_uuid=None,
+        user_uuid=None,
+        asset_uuid=None,
+        asset_type_uuid=None,
     ):
         if business_uuid:
             return {
@@ -576,18 +582,24 @@ class AssetService(BaseService):
                     start_date,
                     end_date,
                     business_uuid=business_uuid,
+                    asset_uuid=asset_uuid,
+                    asset_type_uuid=asset_type_uuid,
                 ),
                 "over_speeding_violations": self.asset_repository.get_violations_by_alert_type(
                     GeofenceTypeUuid.OVER_SPEEDING_ALERT_POLICY,
                     start_date,
                     end_date,
                     business_uuid=business_uuid,
+                    asset_uuid=asset_uuid,
+                    asset_type_uuid=asset_type_uuid,
                 ),
                 "idling_violations": self.asset_repository.get_violations_by_alert_type(
                     GeofenceTypeUuid.IDLING_ALERT_POLICY,
                     start_date,
                     end_date,
                     business_uuid=business_uuid,
+                    asset_uuid=asset_uuid,
+                    asset_type_uuid=asset_type_uuid,
                 ),
                 "break_inspection": self.asset_repository.get_maintenance_by_alert_type(
                     GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
@@ -595,6 +607,8 @@ class AssetService(BaseService):
                     start_date,
                     end_date,
                     business_uuid=business_uuid,
+                    asset_uuid=asset_uuid,
+                    asset_type_uuid=asset_type_uuid,
                 ),
                 "oil_change": self.asset_repository.get_maintenance_by_alert_type(
                     GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
@@ -602,6 +616,8 @@ class AssetService(BaseService):
                     start_date,
                     end_date,
                     business_uuid=business_uuid,
+                    asset_uuid=asset_uuid,
+                    asset_type_uuid=asset_type_uuid,
                 ),
                 "tire_rotation": self.asset_repository.get_maintenance_by_alert_type(
                     GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
@@ -609,6 +625,8 @@ class AssetService(BaseService):
                     start_date,
                     end_date,
                     business_uuid=business_uuid,
+                    asset_uuid=asset_uuid,
+                    asset_type_uuid=asset_type_uuid,
                 ),
                 "general_servicing": self.asset_repository.get_maintenance_by_alert_type(
                     GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
@@ -616,6 +634,8 @@ class AssetService(BaseService):
                     start_date,
                     end_date,
                     business_uuid=business_uuid,
+                    asset_uuid=asset_uuid,
+                    asset_type_uuid=asset_type_uuid,
                 ),
                 "others": self.asset_repository.get_maintenance_by_alert_type(
                     GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
@@ -623,6 +643,8 @@ class AssetService(BaseService):
                     start_date,
                     end_date,
                     business_uuid=business_uuid,
+                    asset_uuid=asset_uuid,
+                    asset_type_uuid=asset_type_uuid,
                 ),
             }
         elif user_uuid:
@@ -632,12 +654,16 @@ class AssetService(BaseService):
                     start_date,
                     end_date,
                     user_uuid=user_uuid,
+                    asset_uuid=asset_uuid,
+                    asset_type_uuid=asset_type_uuid,
                 ),
                 "over_speeding_violations": self.asset_repository.get_violations_by_alert_type(
                     GeofenceTypeUuid.OVER_SPEEDING_ALERT_POLICY,
                     start_date,
                     end_date,
                     user_uuid=user_uuid,
+                    asset_uuid=asset_uuid,
+                    asset_type_uuid=asset_type_uuid,
                 ),
                 "idling_violations": self.asset_repository.get_violations_by_alert_type(
                     GeofenceTypeUuid.IDLING_ALERT_POLICY,
@@ -651,6 +677,8 @@ class AssetService(BaseService):
                     start_date,
                     end_date,
                     user_uuid=user_uuid,
+                    asset_uuid=asset_uuid,
+                    asset_type_uuid=asset_type_uuid,
                 ),
                 "oil_change": self.asset_repository.get_maintenance_by_alert_type(
                     GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
@@ -658,6 +686,8 @@ class AssetService(BaseService):
                     start_date,
                     end_date,
                     user_uuid=user_uuid,
+                    asset_uuid=asset_uuid,
+                    asset_type_uuid=asset_type_uuid,
                 ),
                 "tire_rotation": self.asset_repository.get_maintenance_by_alert_type(
                     GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
@@ -665,6 +695,8 @@ class AssetService(BaseService):
                     start_date,
                     end_date,
                     user_uuid=user_uuid,
+                    asset_uuid=asset_uuid,
+                    asset_type_uuid=asset_type_uuid,
                 ),
                 "general_servicing": self.asset_repository.get_maintenance_by_alert_type(
                     GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
@@ -672,6 +704,8 @@ class AssetService(BaseService):
                     start_date,
                     end_date,
                     user_uuid=user_uuid,
+                    asset_uuid=asset_uuid,
+                    asset_type_uuid=asset_type_uuid,
                 ),
                 "others": self.asset_repository.get_maintenance_by_alert_type(
                     GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
@@ -679,6 +713,8 @@ class AssetService(BaseService):
                     start_date,
                     end_date,
                     user_uuid=user_uuid,
+                    asset_uuid=asset_uuid,
+                    asset_type_uuid=asset_type_uuid,
                 ),
             }
         else:
@@ -743,7 +779,12 @@ class AssetService(BaseService):
         try:
             # Fetch violations reminders based on provided parameters
             violations = self.get_violations_reminders(
-                start_date, end_date, business_uuid, user_uuid
+                start_date,
+                end_date,
+                business_uuid,
+                user_uuid,
+                asset_uuid,
+                asset_type_uuid,
             )
 
             # Initialize assets as an empty list
@@ -756,46 +797,6 @@ class AssetService(BaseService):
                     asset_uuid=asset_uuid,
                     asset_type_uuid=asset_type_uuid,
                 )
-
-            # Fetch assets based on provided parameters
-            # if business_uuid:
-            #     if asset_type_uuid:
-            #         assets = (
-            #             self.asset_repository.read_all_assets_by_uuid_no_pagination(
-            #                 business_uuid=business_uuid, asset_type_uuid=asset_type_uuid
-            #             )
-            #         )
-            #     elif asset_uuid:
-            #         assets = (
-            #             self.asset_repository.read_all_assets_by_uuid_no_pagination(
-            #                 asset_uuid=asset_uuid
-            #             )
-            #         )
-            #     else:
-            #         assets = (
-            #             self.asset_repository.read_all_assets_by_uuid_no_pagination(
-            #                 business_uuid=business_uuid
-            #             )
-            #         )
-            # elif user_uuid:
-            #     if asset_type_uuid:
-            #         assets = (
-            #             self.asset_repository.read_all_assets_by_uuid_no_pagination(
-            #                 user_uuid=user_uuid, asset_type_uuid=asset_type_uuid
-            #             )
-            #         )
-            #     elif asset_uuid:
-            #         assets = (
-            #             self.asset_repository.read_all_assets_by_uuid_no_pagination(
-            #                 asset_uuid=asset_uuid
-            #             )
-            #         )
-            #     else:
-            #         assets = (
-            #             self.asset_repository.read_all_assets_by_uuid_no_pagination(
-            #                 user_uuid=user_uuid
-            #             )
-            #         )
 
             # Calculate total distances for current and past ranges
             (
