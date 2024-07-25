@@ -7,9 +7,11 @@ from app.core.container import Container
 from app.core.dependencies import get_current_user
 from app.core.exceptions import BadRequestError, NotFoundError
 from app.model.user import User
-from app.service.gas_cylinder_event_service import GasCylinderEventService
+from app.schema.gas_cylinder_schema import CreateGasCylinder, CreateGasCylinderPayload
 from app.service.gas_cylinder_service import GasCylinderService
 from app.service.gas_device_service import GasDeviceService
+from app.service.user_service import UserService
+from app.util.enums import AccountType
 from app.util.utils import (
     send_client_side_error,
     send_data,
@@ -39,18 +41,35 @@ async def get_all_gas_cylinder_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/events", response_class=ORJSONResponse)
+@router.post("/{user_uuid}", response_class=ORJSONResponse)
 @inject
-async def get_all_gas_event_handler(
-    service: GasCylinderEventService = Depends(
-        Provide[Container.gas_cylinder_event_service]
-    ),
+async def create_gas_cylinder_handler(
+    user_uuid: str,
+    gas_cylinder: CreateGasCylinderPayload,
+    service: GasCylinderService = Depends(Provide[Container.gas_cylinder_service]),
+    user_service: UserService = Depends(Provide[Container.user_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.get_list())
+        user = user_service.get_user_by_uuid(user_uuid)
+        if not user:
+            raise BadRequestError("User not found")
+
+        gas_cylinder_data = gas_cylinder.dict()
+
+        if user.get("account_type") == AccountType.BUSINESS:
+            gas_cylinder_data["business_id"] = user.get("id")
+
+        gas_cylinder_data["user_uuid"] = user_uuid
+        new_gas_cylinder = CreateGasCylinder(**gas_cylinder_data)
+
+        created_gas_cylinder = service.add(new_gas_cylinder)
+        return send_data(created_gas_cylinder)
+
+    except BadRequestError as e:
+        return send_client_side_error(user_msg=str(e), dev_msg=str(e))
     except Exception as e:
-        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        msg = f"{messages.CREATE_FAILED} - {str(e)}"
         return send_internal_server_error(user_msg=msg, error=e)
 
 

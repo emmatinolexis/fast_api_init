@@ -29,6 +29,7 @@ from app.repository import (
     fine_report_repository,
     gas_cylinder_event_repository,
     gas_cylinder_repository,
+    gas_cylinder_type_repository,
     gas_device_repository,
     geofence_violation_tracker_repository,
     immobilizer_report_repository,
@@ -42,6 +43,7 @@ from app.repository import (
     order_repository,
     order_shipping_address_repository,
     organisation_contact_repository,
+    other_cylinder_types_repository,
     package_item_repository,
     package_repository,
     payment_repository,
@@ -88,6 +90,7 @@ from app.service import (
     fine_report_service,
     gas_cylinder_event_service,
     gas_cylinder_service,
+    gas_cylinder_type_service,
     gas_device_service,
     geofence_violation_tracker_service,
     immobilizer_report_service,
@@ -100,6 +103,7 @@ from app.service import (
     order_service,
     order_shipping_address_service,
     organisation_contact_service,
+    other_cylinder_type_service,
     package_item_service,
     package_service,
     payment_service,
@@ -161,6 +165,7 @@ class Container(containers.DeclarativeContainer):
             "app.api.v1.endpoints.report",
             "app.api.v1.endpoints.gas_cylinder",
             "app.api.v1.endpoints.gas_device",
+            "app.api.v1.endpoints.gas_cylinder_type",
         ]
     )
 
@@ -415,6 +420,15 @@ class Container(containers.DeclarativeContainer):
     )
     gas_device_repository = providers.Factory(
         gas_device_repository.GasDeviceRepository,
+        session_factory=db.provided.session,
+    )
+    gas_cylinder_type_repository = providers.Factory(
+        gas_cylinder_type_repository.GasCylinderTypeRepository,
+        session_factory=db.provided.session,
+    )
+
+    other_cylinder_types_repository = providers.Factory(
+        other_cylinder_types_repository.OtherCylinderTypeRepository,
         session_factory=db.provided.session,
     )
 
@@ -677,4 +691,13 @@ class Container(containers.DeclarativeContainer):
     gas_device_service = providers.Factory(
         gas_device_service.GasDeviceService,
         gas_device_repository=gas_device_repository,
+    )
+    gas_cylinder_type_service = providers.Factory(
+        gas_cylinder_type_service.GasCylinderTypeService,
+        gas_cylinder_type_repository=gas_cylinder_type_repository,
+    )
+
+    other_cylinder_type_service = providers.Factory(
+        other_cylinder_type_service.OtherCylinderTypeService,
+        other_cylinder_type_repository=other_cylinder_types_repository,
     )

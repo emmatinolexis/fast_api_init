@@ -4,7 +4,7 @@ from sqlalchemy import FLOAT, Column, DateTime, Enum, ForeignKey, String, func
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.model.base_model import BaseModel
-from app.util.enums import ActiveStatus, DeviceStatus
+from app.util.enums import ActiveStatus, DeviceStatus, GasCylinderMaterialType
 
 
 class GasDevice(BaseModel):
@@ -17,6 +17,7 @@ class GasDevice(BaseModel):
         nullable=False,
     )
     device_name = Column(String(length=50), nullable=False, unique=True, index=True)
+    serial_number = Column(String(length=50), nullable=False, unique=True, index=True)
     status = Column(
         Enum(DeviceStatus),
         nullable=False,
@@ -42,18 +43,60 @@ class GasCylinder(BaseModel):
         nullable=False,
     )
     cylinder_name = Column(String(length=50), nullable=False, unique=True, index=True)
-    empty_weight = Column(FLOAT, nullable=False, index=True)
-    image_url = Column(String(length=200), nullable=True)
-    color = Column(String(length=100), nullable=False, unique=True, index=True)
     status = Column(
         Enum(ActiveStatus), nullable=False, default=ActiveStatus.ACTIVE, index=True
     )
+    material_type = Column(Enum(GasCylinderMaterialType), nullable=False, index=True)
     user_uuid = Column(
         UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False, index=True
     )
     gas_device_uuid = Column(
         UUID(as_uuid=True), ForeignKey("gas_devices.uuid"), nullable=True, index=True
     )
+    business_profile_uuid = Column(
+        UUID(as_uuid=True),
+        ForeignKey("business_profiles.uuid"),
+        nullable=True,
+        index=True,
+    )
+    cylinder_type_uuid = Column(
+        UUID(as_uuid=True), ForeignKey("cylinder_types.uuid"), nullable=True, index=True
+    )
+
+    other_cylinder_type_uuid = Column(
+        UUID(as_uuid=True), ForeignKey("cylinder_types.uuid"), nullable=True, index=True
+    )
+
+
+class CylinderTypes(BaseModel):
+    __tablename__ = "cylinder_types"
+    uuid = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        unique=True,
+        nullable=False,
+    )
+    name = Column(String(length=50), nullable=False, unique=True, index=True)
+    image_url = Column(String(length=200), nullable=True)
+    empty_weight = Column(FLOAT, nullable=False, index=True)
+    full_weight = Column(FLOAT, nullable=False, index=True)
+
+
+class OtherCylinderTypes(BaseModel):
+    __tablename__ = "other_types"
+    uuid = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        unique=True,
+        nullable=False,
+    )
+    name = Column(String(length=50), nullable=False, unique=True, index=True)
+    image_url = Column(String(length=200), nullable=True)
+    empty_weight = Column(FLOAT, nullable=False, index=True)
+    full_weight = Column(FLOAT, nullable=False, index=True)
+    user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
     business_profile_uuid = Column(
         UUID(as_uuid=True),
         ForeignKey("business_profiles.uuid"),
