@@ -6,3 +6,6 @@ class GasDeviceService(BaseService):
     def __init__(self, gas_device_repository: GasDeviceRepository):
         self.gas_device_repository = gas_device_repository
         super().__init__(gas_device_repository)
+
+    def get_device_by_uuid(self, uuid: str):
+        return self.gas_device_repository.read_by_uuid(uuid)

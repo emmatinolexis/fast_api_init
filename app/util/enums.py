@@ -47,6 +47,11 @@ class ActiveStatus(str, Enum):
     DEACTIVATED = "deactivated"
 
 
+class GasCylinderMaterialType(str, Enum):
+    FIBER = "fiber"
+    METAL = "metal"
+
+
 class DeviceStatus(str, Enum):
     ASSIGNED = "assigned"
     NOT_ASSIGNED = "not_assigned"
