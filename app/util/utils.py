@@ -145,6 +145,51 @@ def generate_unique_token(size: int):
     return secrets.token_hex(size).upper()
 
 
+def calculate_total_fuel_used(fuel_level_events):
+    if not fuel_level_events:
+        return 0.0
+
+    if len(fuel_level_events) < 2:
+        return (
+            fuel_level_events[0]["fuel_level"]
+            if "fuel_level" in fuel_level_events[0]
+            and fuel_level_events[0]["fuel_level"] is not None
+            else 0.0
+        )
+
+    total_fuel_used = 0.0
+
+    # Sort events by timestamp to ensure they are in chronological order
+    fuel_level_events.sort(key=lambda event: event["timestamp"])
+
+    # Iterate through events and calculate fuel used between consecutive events
+    for i in range(1, len(fuel_level_events)):
+        previous_event = fuel_level_events[i - 1]
+        current_event = fuel_level_events[i]
+
+        # Ensure that fuel levels are present and not None
+        if (
+            "fuel_level" in previous_event
+            and "fuel_level" in current_event
+            and previous_event["fuel_level"] is not None
+            and current_event["fuel_level"] is not None
+        ):
+            previous_fuel_level = previous_event["fuel_level"]
+            current_fuel_level = current_event["fuel_level"]
+
+            # Calculate the fuel used between the two events
+            fuel_used = previous_fuel_level - current_fuel_level
+
+            # Add to total fuel used, ensure that we are not adding negative values
+            if fuel_used > 0:
+                total_fuel_used += fuel_used
+
+    return total_fuel_used
+
+
+# Example usage:
+
+
 def get_distance_travelled_by_coordinates(coordinates: Union[List[dict], List[tuple]]):
     """
     Calculate the total distance traveled given sets of coordinates
