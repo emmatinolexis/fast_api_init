@@ -155,6 +155,7 @@ class AssetRepository(BaseRepository):
                         TrackingEvent.course,
                         label("timestamp", TrackingEvent.event_datetime),
                         label("event_type", TrackingEvent.event_type),
+                        label("fuel_level", TrackingEvent.fuel_level),
                     )
                     .filter(TrackingEvent.device_imei == asset.device_imei)
                     .order_by(desc(TrackingEvent.event_datetime))
@@ -171,6 +172,7 @@ class AssetRepository(BaseRepository):
                         "timestamp": last_tracking_event.timestamp,
                         "event_type": last_tracking_event.event_type,
                         "status": get_status(last_tracking_event.event_type),
+                        "fuel_level": last_tracking_event.fuel_level,
                     }
                     # Add last_tracking_event_dict to asset dictionary
                     asset.last_tracking_event = last_tracking_event_dict

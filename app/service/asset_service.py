@@ -38,6 +38,7 @@ from app.util.enums import (
 from app.util.utils import (
     calculate_average_speed,
     calculate_time_traveled,
+    calculate_total_fuel_used,
     calculate_total_idle_time_and_movement,
     get_distance_travelled_by_coordinates,
     get_status,
@@ -486,6 +487,7 @@ class AssetService(BaseService):
                             "speed": event.speed,
                             "timestamp": str(event.event_datetime),
                             "event_type": get_status(event.event_type),
+                            "fuel_level": event.fuel_level,
                         }
                         for event in asset_events
                     ]
@@ -503,6 +505,8 @@ class AssetService(BaseService):
 
                     # Calculate time traveled
                     time_traveled = calculate_time_traveled(coordinates)
+
+                    total_fuel_used = calculate_total_fuel_used(coordinates)
 
                     # Calculate total idle time
                     total_idle_time = calculate_total_idle_time_and_movement(
@@ -524,7 +528,7 @@ class AssetService(BaseService):
                                 "rapid_braking_count"
                             ),
                             "speed_violations": len(speed_violations),
-                            "fuel_used": 0,  # Placeholder for fuel used
+                            "fuel_used": total_fuel_used,  # Placeholder for fuel used
                         }
                     )
             return report
@@ -723,6 +727,8 @@ class AssetService(BaseService):
     def calculate_total_distance(self, assets, start_date, end_date):
         total_distance_traveled_current_range = 0
         total_distance_traveled_past_range = 0
+        fuel_level_current_range = 0
+        fuel_level_past_range = 0
 
         for asset in assets:
             if asset.device_imei:
@@ -741,6 +747,7 @@ class AssetService(BaseService):
                         "speed": event.speed,
                         "timestamp": str(event.event_datetime),
                         "event_type": get_status(event.event_type),
+                        "fuel_level": event.fuel_level,
                     }
                     for event in asset_events.get("current_range_events")
                 ]
@@ -752,6 +759,7 @@ class AssetService(BaseService):
                         "speed": event.speed,
                         "timestamp": str(event.event_datetime),
                         "event_type": get_status(event.event_type),
+                        "fuel_level": event.fuel_level,
                     }
                     for event in asset_events.get("past_range_events")
                 ]
@@ -762,10 +770,20 @@ class AssetService(BaseService):
                 )
                 past_distance = get_distance_travelled_by_coordinates(past_range_events)
 
+                current_fuel_level = calculate_total_fuel_used(current_range_events)
+                past_fuel_level = calculate_total_fuel_used(past_range_events)
+
                 total_distance_traveled_current_range += current_distance
                 total_distance_traveled_past_range += past_distance
+                fuel_level_past_range += past_fuel_level
+                fuel_level_current_range += current_fuel_level
 
-        return total_distance_traveled_current_range, total_distance_traveled_past_range
+        return (
+            total_distance_traveled_current_range,
+            total_distance_traveled_past_range,
+            fuel_level_current_range,
+            fuel_level_past_range,
+        )
 
     def generate_violation_reminder_report(
         self,
@@ -802,6 +820,8 @@ class AssetService(BaseService):
             (
                 total_distance_traveled_current_range,
                 total_distance_traveled_past_range,
+                fuel_level_current_range,
+                fuel_level_past_range,
             ) = self.calculate_total_distance(assets, start_date, end_date)
 
             # Construct the report dictionary
@@ -822,8 +842,8 @@ class AssetService(BaseService):
                 "total_distance_traveled_past_range": round(
                     total_distance_traveled_past_range, 2
                 ),
-                "total_fuel_used_current_range": 0,  # Placeholder for fuel used
-                "total_fuel_used_past_range": 0,  # Placeholder for fuel used
+                "total_fuel_used_current_range": fuel_level_current_range,
+                "total_fuel_used_past_range": fuel_level_past_range,
             }
 
             return report

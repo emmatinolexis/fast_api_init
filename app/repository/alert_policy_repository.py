@@ -402,8 +402,8 @@ class AlertPolicyRepository(BaseRepository):
         return (
             session.query(AlertPolicyViolation)
             .filter(
-                AlertPolicyViolation.alert_policy_uuid == alert_policy_uuid,
                 AlertPolicyViolation.asset_uuid == geofence_asset_uuid,
+                AlertPolicyViolation.alert_policy_uuid == alert_policy_uuid,
             )
             .first()
         )
@@ -526,7 +526,6 @@ class AlertPolicyRepository(BaseRepository):
                             session, alert_policy.uuid, geofence_asset.uuid
                         )
 
-                        # return saved_violation
                         if saved_violation:
                             # update existing violation
                             self.update_violation_record(
