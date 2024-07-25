@@ -525,6 +525,8 @@ class AlertPolicyRepository(BaseRepository):
                         saved_violation = self.get_violation_record(
                             session, alert_policy.uuid, geofence_asset.uuid
                         )
+
+                        # return saved_violation
                         if saved_violation:
                             # update existing violation
                             self.update_violation_record(
@@ -548,7 +550,7 @@ class AlertPolicyRepository(BaseRepository):
                             )
 
                     # Update last checked geofence violation timestamp for the processed events
-                    self.update_last_checked_time(asset_points)
+                    # self.update_last_checked_time(asset_points)
 
             session.commit()
             msg = "Geofence policy data fetched successfully"
