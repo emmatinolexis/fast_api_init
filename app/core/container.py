@@ -713,6 +713,6 @@ class Container(containers.DeclarativeContainer):
     building_service = providers.Factory(
         building_service.BuildingService,
         building_repository=building_repository,
-        gas_device_service=gas_device_service,
+        gas_device_repository=gas_device_repository,
         gas_cylinder_repository=gas_cylinder_repository,
     )
