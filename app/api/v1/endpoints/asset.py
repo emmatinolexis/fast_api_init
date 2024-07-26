@@ -27,7 +27,8 @@ from app.service.building_service import BuildingService
 from app.service.gas_device_service import GasDeviceService
 from app.service.theft_report_service import TheftReportService
 from app.service.tracking_event_service import TrackingEventService
-from app.util.enums import ImmobilizerReason, IncidentStatus, IncidentType
+from app.service.user_service import UserService
+from app.util.enums import AccountType, ImmobilizerReason, IncidentStatus, IncidentType
 from app.util.sms import send_sms
 from app.util.utils import (
     send_client_side_error,
@@ -532,6 +533,43 @@ async def create_building_handler(
         building = building_service.create_building(payload)
 
         return send_data(building)
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix} theft report"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/buildings/{user_uuid}", response_class=ORJSONResponse)
+@inject
+async def get_building_asset_handler(
+    user_uuid: str,
+    page: int = Query(1, ge=1, description="Page number, default is set to 1"),
+    page_size: int = Query(
+        10, ge=1, le=1000, description="Items per page, default is 10"
+    ),
+    building_service: BuildingService = Depends(Provide[Container.building_service]),
+    user_service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        user = user_service.get_user_by_uuid(user_uuid)
+        if not user:
+            msg = f"{messages.USER_NOT_FOUND} {user_uuid}"
+            return send_internal_server_error(user_msg=msg, error=msg)
+
+        if user.get("account_type") == AccountType.INDIVIDUAL:
+            buildings = building_service.get_all_buildings(
+                user_uuid=user_uuid, page=page, page_size=page_size
+            )
+            return send_data(buildings)
+
+        if user.get("account_type") == AccountType.BUSINESS:
+            buildings = building_service.get_all_buildings(
+                business_uuid=user.get("business_profile").uuid,
+                page=page,
+                page_size=page_size,
+            )
+            return send_data(buildings)
+
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix} theft report"
         return send_internal_server_error(user_msg=msg, error=e)
