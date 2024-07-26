@@ -10,6 +10,7 @@ from app.model.user import User
 from app.schema.gas_cylinder_schema import (
     CreateGasCylinder,
     CreateGasCylinderPayload,
+    GasCylinderEventResponse,
     GasEventPayload,
 )
 from app.service.gas_cylinder_event_service import GasCylinderEventService
@@ -56,7 +57,10 @@ async def create_gas_cylinder_event_handler(
 ):
     try:
         created_gas_cylinder = service.add(gas_cylinder)
-        return send_data(created_gas_cylinder)
+        response = GasCylinderEventResponse(
+            id=created_gas_cylinder.id,
+        )
+        return send_data(response)
     except Exception as e:
         msg = f"{messages.CREATE_FAILED} - {str(e)}"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -80,6 +84,7 @@ async def create_gas_cylinder_handler(
             )
 
         gas_cylinder_data = gas_cylinder.dict()
+        print(gas_cylinder_data)
 
         if user.get("account_type") == AccountType.BUSINESS:
             gas_cylinder_data["business_id"] = user.get("id")

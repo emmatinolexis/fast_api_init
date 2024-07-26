@@ -17,6 +17,7 @@ class CreateGasCylinder(BaseModel):
     material_type: GasCylinderMaterialType
     user_uuid: str
     business_profile_uuid: Optional[str] = None
+    gas_device_serial_number: Optional[str] = None
 
 
 class CreateGasCylinderPayload(BaseModel):
@@ -64,3 +65,7 @@ class GasEventPayload(BaseModel):
     current_weight: Optional[float] = None
     battery_level: Optional[float] = None
     event_timestamp: Optional[datetime] = None
+
+
+class GasCylinderEventResponse(BaseModel):
+    id: int
