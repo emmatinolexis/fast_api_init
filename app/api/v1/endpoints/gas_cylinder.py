@@ -7,9 +7,13 @@ from app.core.container import Container
 from app.core.dependencies import get_current_user
 from app.core.exceptions import BadRequestError, NotFoundError
 from app.model.user import User
-from app.schema.gas_cylinder_schema import CreateGasCylinder, CreateGasCylinderPayload,GasEventPayload
-from app.service.gas_cylinder_service import GasCylinderService
+from app.schema.gas_cylinder_schema import (
+    CreateGasCylinder,
+    CreateGasCylinderPayload,
+    GasEventPayload,
+)
 from app.service.gas_cylinder_event_service import GasCylinderEventService
+from app.service.gas_cylinder_service import GasCylinderService
 from app.service.gas_device_service import GasDeviceService
 from app.service.user_service import UserService
 from app.util.enums import AccountType, DeviceStatus
@@ -40,17 +44,17 @@ async def get_all_gas_cylinder_handler(
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
-    
 
 
 @router.post("/event", response_class=ORJSONResponse)
 @inject
 async def create_gas_cylinder_event_handler(
     gas_cylinder: GasEventPayload,
-    service: GasCylinderEventService = Depends( Provide[Container.gas_cylinder_event_service]),
+    service: GasCylinderEventService = Depends(
+        Provide[Container.gas_cylinder_event_service]
+    ),
 ):
     try:
-       
         created_gas_cylinder = service.add(gas_cylinder)
         return send_data(created_gas_cylinder)
     except Exception as e:
