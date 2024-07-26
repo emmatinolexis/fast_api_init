@@ -51,8 +51,8 @@ class GasCylinder(BaseModel):
     user_uuid = Column(
         UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False, index=True
     )
-    gas_device_uuid = Column(
-        UUID(as_uuid=True), ForeignKey("gas_devices.uuid"), nullable=True, index=True
+    building_uuid = Column(
+        UUID(as_uuid=True), ForeignKey("buildings.uuid"), nullable=False, index=True
     )
     business_profile_uuid = Column(
         UUID(as_uuid=True),
