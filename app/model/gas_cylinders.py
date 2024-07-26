@@ -115,8 +115,11 @@ class GasCylinderEvent(BaseModel):
         unique=True,
         nullable=False,
     )
-    gas_device_uuid = Column(
-        UUID(as_uuid=True), ForeignKey("gas_devices.uuid"), nullable=False, index=True
+    device_serial_number = Column(
+        String(length=50),
+        ForeignKey("gas_devices.serial_number"),
+        nullable=False,
+        index=True,
     )
     current_weight = Column(FLOAT, nullable=False, index=True)
     battery_level = Column(FLOAT, nullable=True, index=True)
