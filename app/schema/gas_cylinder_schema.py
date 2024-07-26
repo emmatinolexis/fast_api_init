@@ -65,3 +65,7 @@ class GasEventPayload(BaseModel):
     current_weight: Optional[float] = None
     battery_level: Optional[float] = None
     event_timestamp: Optional[datetime] = None
+
+
+class GasCylinderEventResponse(BaseModel):
+    id:int

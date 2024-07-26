@@ -11,6 +11,7 @@ from app.schema.gas_cylinder_schema import (
     CreateGasCylinder,
     CreateGasCylinderPayload,
     GasEventPayload,
+    GasCylinderEventResponse
 )
 from app.service.gas_cylinder_event_service import GasCylinderEventService
 from app.service.gas_cylinder_service import GasCylinderService
@@ -56,7 +57,10 @@ async def create_gas_cylinder_event_handler(
 ):
     try:
         created_gas_cylinder = service.add(gas_cylinder)
-        return send_data(created_gas_cylinder)
+        response = GasCylinderEventResponse(
+            id=created_gas_cylinder.id,
+        )
+        return send_data(response)
     except Exception as e:
         msg = f"{messages.CREATE_FAILED} - {str(e)}"
         return send_internal_server_error(user_msg=msg, error=e)
