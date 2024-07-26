@@ -21,10 +21,12 @@ class BuildingService(BaseService):
         try:
             # create building
             building_data = CreateBuildingInput(
-                building_name=payload.building_name,
-                location=payload.location,
-                image_url=payload.image_url,
-                status=payload.status,
+                building_name=payload.building.building_name,
+                location=payload.building.location,
+                image_url=payload.building.image_url,
+                status=payload.building.status,
+                user_uuid=payload.building.user_uuid,
+                business_profile_uuid=payload.building.business_profile_uuid
             )
 
             building = self.building_repository.create(building_data)
@@ -34,12 +36,11 @@ class BuildingService(BaseService):
                 cylinder_data = GasCylinderInput(
                     cylinder_name=payload.gas_cylinder.cylinder_name,
                     material_type=payload.gas_cylinder.material_type,
-                    gas_device_serial_number=payload.gas_cylinder.gas_device_serial_no,
+                    device_serial_number=payload.gas_cylinder.device_serial_number,
                     cylinder_type_uuid=payload.gas_cylinder.cylinder_type_uuid,
-                    user_uuid=payload.gas_cylinder.user_uuid,
-                    building_uuid=building.uuid,
-                    business_profile_uuid=payload.gas_cylinder.business_profile_uuid,
+                    building_uuid=building.uuid
                 )
+
                 cylinder = self.gas_cylinder_repository.create(cylinder_data)
 
                 return cylinder

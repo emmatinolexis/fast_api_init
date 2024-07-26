@@ -117,19 +117,8 @@ class VehicleOwnerInput(BaseModel):
 class GasCylinderInput(BaseModel):
     cylinder_name: str
     material_type: GasCylinderMaterialType
-    cylinder_type_uuid: str
-    gas_device_serial_number: str
-    user_uuid: UUID
-    business_profile_uuid: UUID
-
-
-class BuildingInput(BaseModel):
-    building_name: str
-    location: str
-    image_url: str
-    status: ActiveStatus
-    create_gas: bool
-    gas_cylinder: GasCylinderInput
+    cylinder_type_uuid: UUID
+    device_serial_number: str
 
 
 class CreateBuildingInput(BaseModel):
@@ -137,6 +126,15 @@ class CreateBuildingInput(BaseModel):
     location: str
     image_url: str
     status: ActiveStatus
+    user_uuid: UUID
+    business_profile_uuid: UUID
+
+
+class BuildingInput(BaseModel):
+    building: CreateBuildingInput
+    create_gas: bool
+    gas_cylinder: GasCylinderInput
+
 
 
 class AssetInput(BaseModel):

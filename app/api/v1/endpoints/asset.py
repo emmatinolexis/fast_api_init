@@ -522,7 +522,7 @@ async def create_building_handler(
 ):
     try:
         # validate gas device serial_no
-        gas_serial_no = payload.gas_device.gas_device_serial_number
+        gas_serial_no = payload.gas_cylinder.device_serial_number
         gas_device = gas_device_service.get_gas_device_by_serial_no(gas_serial_no)
 
         if not gas_device:
