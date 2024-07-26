@@ -23,7 +23,7 @@ class BuildingService(BaseService):
 
     def create_building(self, payload: BuildingInput):
         try:
-            # create building
+            # Create building
             building_data = CreateBuildingInput(
                 building_name=payload.building.building_name,
                 location=payload.building.location,
@@ -34,21 +34,24 @@ class BuildingService(BaseService):
             )
 
             building = self.building_repository.create(building_data)
-            # return building.uuid
+
             if building and payload.create_gas:
-                # create gas cylinder
-                cylinder_data = GasCylinderPayload(
-                    cylinder_name=payload.gas_cylinder.cylinder_name,
-                    material_type=payload.gas_cylinder.material_type,
-                    device_serial_number=payload.gas_cylinder.device_serial_number,
-                    cylinder_type_uuid=payload.gas_cylinder.cylinder_type_uuid,
-                    building_uuid=building.uuid,
-                    user_uuid=payload.building.user_uuid,
-                    business_profile_uuid=payload.building.business_profile_uuid,
-                )
+                try:
+                    # Create gas cylinder
+                    cylinder_data = GasCylinderPayload(
+                        cylinder_name=payload.gas_cylinder.cylinder_name,
+                        material_type=payload.gas_cylinder.material_type,
+                        device_serial_number=payload.gas_cylinder.device_serial_number,
+                        cylinder_type_uuid=payload.gas_cylinder.cylinder_type_uuid,
+                        building_uuid=building.uuid,
+                        user_uuid=payload.building.user_uuid,
+                        business_profile_uuid=payload.building.business_profile_uuid,
+                    )
 
-                cylinder = self.gas_cylinder_repository.create(cylinder_data)
-
-                return cylinder
+                    self.gas_cylinder_repository.create(cylinder_data)
+                    return building
+                except Exception as e:
+                    self.building_repository.delete_by_uuid(building.uuid)
+                    raise e
         except Exception as e:
             raise e
