@@ -2,6 +2,7 @@ import uuid
 
 from sqlalchemy import FLOAT, Column, DateTime, Enum, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 from app.model.base_model import BaseModel
 from app.util.enums import ActiveStatus, DeviceStatus, GasCylinderMaterialType
@@ -59,7 +60,6 @@ class GasCylinder(BaseModel):
         nullable=True,
         index=True,
     )
-
     business_profile_uuid = Column(
         UUID(as_uuid=True),
         ForeignKey("business_profiles.uuid"),
@@ -73,6 +73,7 @@ class GasCylinder(BaseModel):
     other_cylinder_type_uuid = Column(
         UUID(as_uuid=True), ForeignKey("cylinder_types.uuid"), nullable=True, index=True
     )
+    building = relationship("Building", back_populates="gas_cylinders")
 
 
 class CylinderTypes(BaseModel):

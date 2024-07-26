@@ -55,3 +55,21 @@ class BuildingService(BaseService):
                     raise e
         except Exception as e:
             raise e
+
+    def get_all_buildings(
+        self,
+        user_uuid: str = None,
+        business_uuid: str = None,
+        page_size: int = 10,
+        page: int = 1,
+    ):
+        try:
+            report = self.building_repository.read_all_building(
+                user_uuid=user_uuid,
+                business_uuid=business_uuid,
+                page=page,
+                page_size=page_size,
+            )
+            return report
+        except Exception as e:
+            raise e
