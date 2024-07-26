@@ -121,6 +121,16 @@ class GasCylinderInput(BaseModel):
     device_serial_number: str
 
 
+class GasCylinderPayload(BaseModel):
+    cylinder_name: str
+    material_type: GasCylinderMaterialType
+    cylinder_type_uuid: UUID
+    device_serial_number: str
+    user_uuid: UUID
+    building_uuid: UUID
+    business_profile_uuid: UUID
+
+
 class CreateBuildingInput(BaseModel):
     building_name: str
     location: str
@@ -134,7 +144,6 @@ class BuildingInput(BaseModel):
     building: CreateBuildingInput
     create_gas: bool
     gas_cylinder: GasCylinderInput
-
 
 
 class AssetInput(BaseModel):

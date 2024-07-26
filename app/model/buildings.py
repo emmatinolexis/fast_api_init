@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Column, Enum, String, ForeignKey
+from sqlalchemy import Column, Enum, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.model.base_model import BaseModel
@@ -24,4 +24,3 @@ class Building(BaseModel):
         UUID(as_uuid=True), ForeignKey("business_profiles.uuid"), nullable=True
     )
     user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=True)
-
