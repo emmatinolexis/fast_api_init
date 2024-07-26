@@ -56,7 +56,7 @@ INVITATION_NOT_FOUND = "No invitation was found with the given uuid : "
 ACTION_NOT_ALLOWED = "You are not allowed to perform this action"
 
 
-GAS_DEVICE_NOT_FOUND = "No gas device was found with the given uuid : "
+GAS_DEVICE_NOT_FOUND = "No gas device was found with the given id : "
 GAS_CYLINDER_NOT_FOUND = "No gas cylinder was found with the given uuid : "
 GAS_CYLINDER_INACTIVE = "Gas cylinder is inactive"
 

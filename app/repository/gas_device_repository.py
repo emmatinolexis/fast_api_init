@@ -15,3 +15,12 @@ class GasDeviceRepository(BaseRepository):
     def get_by_uuid(self, uuid: str):
         with self.session_factory() as session:
             return session.query(GasDevice).filter(GasDevice.uuid == uuid).first()
+
+    def get_device_by_serial_no(self, device_serial_no: str):
+        with self.session_factory() as session:
+            device = (
+                session.query(self.model)
+                .filter(self.model.serial_number == device_serial_no)
+                .first()
+            )
+            return device
