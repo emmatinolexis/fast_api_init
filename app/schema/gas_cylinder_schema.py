@@ -68,4 +68,4 @@ class GasEventPayload(BaseModel):
 
 
 class GasCylinderEventResponse(BaseModel):
-    id:int
+    id: int

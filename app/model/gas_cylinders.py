@@ -2,7 +2,6 @@ import uuid
 
 from sqlalchemy import FLOAT, Column, DateTime, Enum, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.sql import func
 
 from app.model.base_model import BaseModel
 from app.util.enums import ActiveStatus, DeviceStatus, GasCylinderMaterialType
@@ -52,7 +51,10 @@ class GasCylinder(BaseModel):
         UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False, index=True
     )
     gas_device_serial_number = Column(
-        String(length=50), ForeignKey("gas_devices.serial_number"), nullable=True, index=True
+        String(length=50),
+        ForeignKey("gas_devices.serial_number"),
+        nullable=True,
+        index=True,
     )
     business_profile_uuid = Column(
         UUID(as_uuid=True),
