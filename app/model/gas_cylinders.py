@@ -43,7 +43,7 @@ class GasCylinder(BaseModel):
         unique=True,
         nullable=False,
     )
-    cylinder_name = Column(String(length=50), nullable=False, unique=True, index=True)
+    cylinder_name = Column(String(length=50), nullable=False, index=True)
     status = Column(
         Enum(ActiveStatus), nullable=False, default=ActiveStatus.ACTIVE, index=True
     )
