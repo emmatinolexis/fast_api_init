@@ -1,5 +1,6 @@
 from typing import Optional
 from uuid import UUID
+from datetime import datetime
 
 from pydantic import BaseModel
 
@@ -56,3 +57,12 @@ class LinkGasCylinder(BaseModel):
 class UpdateGasDevice(BaseModel):
     device_name: Optional[str] = None
     status: Optional[DeviceStatus] = None
+
+
+class GasEventPayload(BaseModel):
+    device_serial_number : str
+    current_weight : Optional[float] = None
+    battery_level : Optional[float] = None
+    event_timestamp : Optional[datetime] = None
+
+
