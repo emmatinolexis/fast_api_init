@@ -42,7 +42,7 @@ class GasCylinder(BaseModel):
         unique=True,
         nullable=False,
     )
-    cylinder_name = Column(String(length=50), nullable=False, unique=True, index=True)
+    cylinder_name = Column(String(length=50), nullable=False, index=True)
     status = Column(
         Enum(ActiveStatus), nullable=False, default=ActiveStatus.ACTIVE, index=True
     )
@@ -50,12 +50,16 @@ class GasCylinder(BaseModel):
     user_uuid = Column(
         UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False, index=True
     )
-    gas_device_serial_number = Column(
+    building_uuid = Column(
+        UUID(as_uuid=True), ForeignKey("buildings.uuid"), nullable=False, index=True
+    )
+    device_serial_number = Column(
         String(length=50),
         ForeignKey("gas_devices.serial_number"),
         nullable=True,
         index=True,
     )
+
     business_profile_uuid = Column(
         UUID(as_uuid=True),
         ForeignKey("business_profiles.uuid"),
