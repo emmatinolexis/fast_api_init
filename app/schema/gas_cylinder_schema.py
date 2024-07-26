@@ -17,12 +17,13 @@ class CreateGasCylinder(BaseModel):
     material_type: GasCylinderMaterialType
     user_uuid: str
     business_profile_uuid: Optional[str] = None
+    gas_device_serial_number: Optional[str] = None
 
 
 class CreateGasCylinderPayload(BaseModel):
     cylinder_name: str
     material_type: GasCylinderMaterialType
-    gas_device_uuid: Optional[str] = None
+    gas_device_serial_number: Optional[str] = None
     cylinder_type_uuid: Optional[str] = None
     other_cylinder_type_uuid: Optional[str] = None
 

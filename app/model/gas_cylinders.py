@@ -51,8 +51,8 @@ class GasCylinder(BaseModel):
     user_uuid = Column(
         UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False, index=True
     )
-    gas_device_uuid = Column(
-        UUID(as_uuid=True), ForeignKey("gas_devices.uuid"), nullable=True, index=True
+    gas_device_serial_number = Column(
+        String(length=50), ForeignKey("gas_devices.serial_number"), nullable=True, index=True
     )
     business_profile_uuid = Column(
         UUID(as_uuid=True),
@@ -123,4 +123,4 @@ class GasCylinderEvent(BaseModel):
     )
     current_weight = Column(FLOAT, nullable=False, index=True)
     battery_level = Column(FLOAT, nullable=True, index=True)
-    event_timestamp = Column(DateTime(timezone=True), default=func.now())
+    event_timestamp = Column(DateTime(timezone=True), nullable=True)

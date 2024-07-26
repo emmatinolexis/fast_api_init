@@ -80,6 +80,7 @@ async def create_gas_cylinder_handler(
             )
 
         gas_cylinder_data = gas_cylinder.dict()
+        print(gas_cylinder_data)
 
         if user.get("account_type") == AccountType.BUSINESS:
             gas_cylinder_data["business_id"] = user.get("id")
