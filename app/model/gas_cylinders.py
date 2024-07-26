@@ -117,7 +117,6 @@ class GasCylinderEvent(BaseModel):
     )
     device_serial_number = Column(
         String(length=50),
-        ForeignKey("gas_devices.serial_number"),
         nullable=False,
         index=True,
     )

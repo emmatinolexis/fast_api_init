@@ -9,3 +9,12 @@ class GasDeviceService(BaseService):
 
     def get_device_by_uuid(self, uuid: str):
         return self.gas_device_repository.read_by_uuid(uuid)
+
+    def get_gas_device_by_serial_no(self, device_serial_no: str):
+        try:
+            device = self.gas_device_repository.get_device_by_serial_no(
+                device_serial_no
+            )
+            return device
+        except Exception as e:
+            raise e

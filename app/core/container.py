@@ -15,6 +15,7 @@ from app.repository import (
     asset_location_repository,
     asset_repository,
     asset_type_repository,
+    building_repository,
     business_profile_repository,
     contact_sale_repository,
     device_image_repository,
@@ -77,6 +78,7 @@ from app.service import (
     asset_service,
     asset_type_service,
     auth_service,
+    building_service,
     business_profile_service,
     contact_sale_service,
     device_image_service,
@@ -432,6 +434,11 @@ class Container(containers.DeclarativeContainer):
         session_factory=db.provided.session,
     )
 
+    building_repository = providers.Factory(
+        building_repository.BuildingRepository,
+        session_factory=db.provided.session,
+    )
+
     # Services
     auth_service = providers.Factory(
         auth_service.AuthService,
@@ -701,4 +708,11 @@ class Container(containers.DeclarativeContainer):
         other_cylinder_type_service.OtherCylinderTypeService,
         other_cylinder_type_repository=other_cylinder_types_repository,
         user_repository=user_repository,
+    )
+
+    building_service = providers.Factory(
+        building_service.BuildingService,
+        building_repository=building_repository,
+        gas_device_service=gas_device_service,
+        gas_cylinder_repository=gas_cylinder_repository,
     )

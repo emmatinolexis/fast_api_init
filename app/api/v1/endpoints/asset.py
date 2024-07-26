@@ -14,6 +14,7 @@ from app.schema.asset_schema import (
     AssetDeviceRequest,
     AssetPayload,
     AssignDeviceInputPayload,
+    BuildingInput,
     EngineOnPayload,
     ImmobilizerPayload,
     TheftIncidencePayload,
@@ -22,6 +23,8 @@ from app.schema.asset_schema import (
 )
 from app.service.asset_device_request_service import AssetDeviceRequestService
 from app.service.asset_service import AssetService
+from app.service.building_service import BuildingService
+from app.service.gas_device_service import GasDeviceService
 from app.service.theft_report_service import TheftReportService
 from app.service.tracking_event_service import TrackingEventService
 from app.util.enums import ImmobilizerReason, IncidentStatus, IncidentType
@@ -502,6 +505,33 @@ async def create_theft_report_handler(
     try:
         reports = theft_report_service.add(payload)
         return send_data(reports)
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix} theft report"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.post("/building/create", response_class=ORJSONResponse)
+@inject
+async def create_building_handler(
+    payload: BuildingInput,
+    building_service: BuildingService = Depends(Provide[Container.building_service]),
+    gas_device_service: GasDeviceService = Depends(
+        Provide[Container.gas_device_service]
+    ),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        # validate gas device serial_no
+        gas_serial_no = payload.gas_device.gas_device_serial_number
+        gas_device = gas_device_service.get_gas_device_by_serial_no(gas_serial_no)
+
+        if not gas_device:
+            msg = f"{messages.GAS_DEVICE_NOT_FOUND} {gas_serial_no}"
+            return send_internal_server_error(user_msg=msg, error=msg)
+
+        building = building_service.create_building(payload)
+
+        return send_data(building)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix} theft report"
         return send_internal_server_error(user_msg=msg, error=e)
