@@ -50,12 +50,12 @@ class GasCylinder(BaseModel):
     building = relationship("Building", back_populates="gas_cylinders")
     gas_events = relationship(
         "GasCylinderEvent",
-        primaryjoin="GasCylinder.device_serial_number == foreign(GasCylinderEvent.device_serial_number)",
+        primaryjoin="GasCylinder.gas_device_serial_number == foreign(GasCylinderEvent.device_serial_number)",
         # back_populates="gas_cylinder",
     )
     gas_device = relationship(
         "GasDevice",
-        primaryjoin="GasCylinder.device_serial_number == foreign(GasDevice.serial_number)",
+        primaryjoin="GasCylinder.gas_device_serial_number == foreign(GasDevice.serial_number)",
         # back_populates="cylinders",
         uselist=False,
     )
@@ -63,6 +63,7 @@ class GasCylinder(BaseModel):
     cylinder_type = relationship(
         "CylinderTypes",
         primaryjoin="GasCylinder.cylinder_type_uuid == foreign(CylinderTypes.uuid)",
+        uselist=False,
         # back_populates="gas_cylinders",
     )
 

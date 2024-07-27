@@ -5,6 +5,7 @@ from sqlalchemy import asc
 from sqlalchemy.orm import Session, joinedload
 
 from app.model.buildings import Building
+from app.model.gas_cylinders import GasCylinder
 from app.repository.base_repository import BaseRepository
 from app.util.utils import calculate_gas_level_percentage
 
@@ -51,21 +52,49 @@ class BuildingRepository(BaseRepository):
                 .limit(page_size)
             )
 
-            assets = (
-                paginated_query.options(joinedload(self.model.gas_cylinders))
-                .options(joinedload(self.model.gas_events))
-                .options(joinedload(self.model.gas_device))
-                .options(joinedload(self.model.cylinder_type))
-                .all()
-            )
+            assets = paginated_query.options(
+                joinedload(self.model.gas_cylinders).joinedload(GasCylinder.gas_events),
+                joinedload(self.model.gas_cylinders).joinedload(GasCylinder.gas_device),
+                joinedload(self.model.gas_cylinders).joinedload(
+                    GasCylinder.cylinder_type
+                ),
+            ).all()
 
             for asset in assets:
-                last_gas_event = asset.gas_events
-                return last_gas_event
-                # current_gas_level = calculate_gas_level_percentage(asset.gas)
+                building_cylinders = []
+                for event in asset.gas_cylinders:
+                    cylinder_type = event.cylinder_type
+                    if event.gas_events:
+                        last_gas_event = event.gas_events[-1]
+
+                        gas_level = calculate_gas_level_percentage(
+                            cylinder_type.empty_weight,
+                            cylinder_type.full_weight,
+                            last_gas_event.current_weight,
+                        )
+                    else:
+                        gas_level = 0  # Set gas level to 0 if there are no gas events
+
+                    cylinder = {
+                        "cylinder_name": event.cylinder_name,
+                        "status": event.status,
+                        "gas_level_in_percentage": round(gas_level),
+                    }
+
+                    building_cylinders.append(cylinder)
+
+                building_asset = {
+                    "building_name": asset.building_name,
+                    "longitude": asset.longitude,
+                    "latitude": asset.latitude,
+                    "status": asset.status,
+                    "image_url": asset.image_url,
+                    "cylinders": building_cylinders,
+                }
+                buildings.append(building_asset)
 
             return {
-                "assets": assets,
+                "assets": buildings,
                 "total_assets": total_assets,
                 "total_pages": total_pages,
                 "current_page": page,
