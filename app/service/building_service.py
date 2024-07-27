@@ -26,7 +26,8 @@ class BuildingService(BaseService):
             # Create building
             building_data = CreateBuildingInput(
                 building_name=payload.building.building_name,
-                location=payload.building.location,
+                longitude=payload.building.longitude,
+                latitude=payload.building.latitude,
                 image_url=payload.building.image_url,
                 status=payload.building.status,
                 user_uuid=payload.building.user_uuid,

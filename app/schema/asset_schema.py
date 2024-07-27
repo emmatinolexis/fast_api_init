@@ -133,7 +133,8 @@ class GasCylinderPayload(BaseModel):
 
 class CreateBuildingInput(BaseModel):
     building_name: str
-    location: str
+    longitude: float
+    latitude: float
     image_url: str
     status: ActiveStatus
     user_uuid: UUID
