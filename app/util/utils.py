@@ -737,9 +737,9 @@ def calculate_gas_level_percentage(
     total_gas_capacity = weight_of_full_gas_cylinder - weight_of_empty_gas_cylinder
 
     # Calculate the current gas amount (current weight - empty weight)
-    current_gas_amount = current_weight_of_cylinder - weight_of_empty_gas_cylinder
+    # current_gas_amount = current_weight_of_cylinder - weight_of_empty_gas_cylinder
 
     # Calculate the gas level percentage
-    gas_level_percentage = (current_gas_amount / total_gas_capacity) * 100
+    gas_level_percentage = (current_weight_of_cylinder / total_gas_capacity) * 100
 
     return gas_level_percentage

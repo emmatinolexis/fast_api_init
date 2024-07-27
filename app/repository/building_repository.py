@@ -79,6 +79,12 @@ class BuildingRepository(BaseRepository):
                         "cylinder_name": event.cylinder_name,
                         "status": event.status,
                         "gas_level_in_percentage": round(gas_level),
+                        "gas_device": {
+                            "device_name": event.gas_device.device_name,
+                            "serial_number": event.gas_device.serial_number,
+                            "status": event.gas_device.status,
+                            "created_at": event.gas_device.created_at,
+                        },
                     }
 
                     building_cylinders.append(cylinder)
