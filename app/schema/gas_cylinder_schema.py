@@ -18,6 +18,7 @@ class CreateGasCylinder(BaseModel):
     user_uuid: str
     business_profile_uuid: Optional[str] = None
     gas_device_serial_number: Optional[str] = None
+    building_uuid: str
 
 
 class CreateGasCylinderPayload(BaseModel):
@@ -26,6 +27,7 @@ class CreateGasCylinderPayload(BaseModel):
     gas_device_serial_number: Optional[str] = None
     cylinder_type_uuid: Optional[str] = None
     other_cylinder_type_uuid: Optional[str] = None
+    building_uuid:str
 
 
 class CreateGasCylinderType(BaseModel):
