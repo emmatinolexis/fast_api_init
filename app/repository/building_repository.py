@@ -93,7 +93,7 @@ class BuildingRepository(BaseRepository):
                     "building_name": asset.building_name,
                     "longitude": asset.longitude,
                     "latitude": asset.latitude,
-                    "status": "safe",
+                    "status": "Attention Needed",
                     "image_url": asset.image_url,
                     "cylinders": building_cylinders,
                 }
