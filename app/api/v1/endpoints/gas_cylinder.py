@@ -16,7 +16,6 @@ from app.schema.gas_cylinder_schema import (
 from app.service.gas_cylinder_event_service import GasCylinderEventService
 from app.service.gas_cylinder_service import GasCylinderService
 from app.service.gas_device_service import GasDeviceService
-from app.service.gas_device_service import GasDeviceService
 from app.service.user_service import UserService
 from app.util.enums import AccountType, DeviceStatus
 from app.util.utils import (
@@ -86,20 +85,24 @@ async def create_gas_cylinder_handler(
                 user_msg=messages.USER_NOT_FOUND + user_uuid,
                 dev_msg=messages.USER_NOT_FOUND + user_uuid,
             )
-        
-        gas_device = gas_device_service.get_gas_device_by_serial_no(gas_cylinder.gas_device_serial_number)
+
+        gas_device = gas_device_service.get_gas_device_by_serial_no(
+            gas_cylinder.gas_device_serial_number
+        )
         if not gas_device:
             return send_client_side_error(
-                user_msg=messages.GAS_DEVICE_NOT_FOUND + gas_cylinder.gas_device_serial_number,
-                dev_msg=messages.GAS_DEVICE_NOT_FOUND + gas_cylinder.gas_device_serial_number,
+                user_msg=messages.GAS_DEVICE_NOT_FOUND
+                + gas_cylinder.gas_device_serial_number,
+                dev_msg=messages.GAS_DEVICE_NOT_FOUND
+                + gas_cylinder.gas_device_serial_number,
             )
-        
+
         if gas_device.status == DeviceStatus.ASSIGNED:
             return send_client_side_error(
                 user_msg=messages.DEVICE_ALREADY_ASSIGNED,
                 dev_msg=messages.DEVICE_ALREADY_ASSIGNED,
             )
-        
+
         gas_cylinder_data = gas_cylinder.dict()
 
         if user.get("account_type") == AccountType.BUSINESS:
