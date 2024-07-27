@@ -90,6 +90,7 @@ class BuildingRepository(BaseRepository):
                     building_cylinders.append(cylinder)
 
                 building_asset = {
+                    "building_uuid": asset.uuid,
                     "building_name": asset.building_name,
                     "longitude": asset.longitude,
                     "latitude": asset.latitude,
