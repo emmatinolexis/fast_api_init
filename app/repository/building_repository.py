@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.model.buildings import Building
 from app.repository.base_repository import BaseRepository
+from app.util.utils import calculate_gas_level_percentage
 
 
 class BuildingRepository(BaseRepository):
@@ -23,7 +24,7 @@ class BuildingRepository(BaseRepository):
         with self.session_factory() as session:
             # Calculate the offset based on the page and per_page values
             offset = (page - 1) * page_size
-
+            buildings = []
             # Start with a base query
             base_query = session.query(self.model)
 
@@ -50,7 +51,18 @@ class BuildingRepository(BaseRepository):
                 .limit(page_size)
             )
 
-            assets = paginated_query.options(joinedload(self.model.gas_cylinders)).all()
+            assets = (
+                paginated_query.options(joinedload(self.model.gas_cylinders))
+                .options(joinedload(self.model.gas_events))
+                .options(joinedload(self.model.gas_device))
+                .options(joinedload(self.model.cylinder_type))
+                .all()
+            )
+
+            for asset in assets:
+                last_gas_event = asset.gas_events
+                return last_gas_event
+                # current_gas_level = calculate_gas_level_percentage(asset.gas)
 
             return {
                 "assets": assets,
