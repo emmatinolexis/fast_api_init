@@ -715,3 +715,31 @@ async def upload_to_s3(file_name: str, file_content: bytes, content_type: str) -
         bucket_name=settings.S3_BUCKET,
     )
     return await s3_client.upload_file(file_name, file_content, content_type)
+
+
+def calculate_gas_level_percentage(
+    weight_of_empty_gas_cylinder,
+    weight_of_full_gas_cylinder,
+    current_weight_of_cylinder,
+):
+    """
+    Calculate the gas level in percentage.
+
+    Args:
+    weight_of_empty_gas_cylinder (float): The weight of the empty gas cylinder.
+    weight_of_full_gas_cylinder (float): The weight of the full gas cylinder.
+    current_weight_of_cylinder (float): The current weight of the gas cylinder (with the gas).
+
+    Returns:
+    float: The gas level in percentage.
+    """
+    # Calculate the total gas capacity (full weight - empty weight)
+    total_gas_capacity = weight_of_full_gas_cylinder - weight_of_empty_gas_cylinder
+
+    # Calculate the current gas amount (current weight - empty weight)
+    current_gas_amount = current_weight_of_cylinder - weight_of_empty_gas_cylinder
+
+    # Calculate the gas level percentage
+    gas_level_percentage = (current_gas_amount / total_gas_capacity) * 100
+
+    return gas_level_percentage
