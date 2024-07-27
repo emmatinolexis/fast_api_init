@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Column, Enum, ForeignKey, String
+from sqlalchemy import Column, Enum, ForeignKey, String,FLOAT
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -18,7 +18,8 @@ class Building(BaseModel):
         nullable=False,
     )
     building_name = Column(String(length=50), nullable=False, index=True)
-    location = Column(String(length=100), nullable=False, index=True)
+    longitude = Column(FLOAT, nullable=False, index=True)
+    latitude = Column(FLOAT, nullable=False, index=True)
     image_url = Column(String(length=200), nullable=False, index=True)
     status = Column(Enum(ActiveStatus), nullable=False, index=True)
     business_profile_uuid = Column(

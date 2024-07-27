@@ -28,7 +28,7 @@ class GasCylinder(BaseModel):
     building_uuid = Column(
         UUID(as_uuid=True), ForeignKey("buildings.uuid"), nullable=False, index=True
     )
-    device_serial_number = Column(
+    gas_device_serial_number = Column(
         String(length=50),
         ForeignKey("gas_devices.serial_number"),
         nullable=True,
