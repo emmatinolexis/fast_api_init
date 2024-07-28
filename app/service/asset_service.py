@@ -9,6 +9,8 @@ from app.repository.device_repository import DeviceRepository
 from app.repository.driver_repository import DriverRepository
 from app.repository.equipment_repository import EquipmentRepository
 from app.repository.equipment_type_repository import EquipmentTypeRepository
+from app.repository.gas_cylinder_event_repository import GasCylinderEventRepository
+from app.repository.gas_cylinder_repository import GasCylinderRepository
 from app.repository.immobilizer_report_repository import ImmobilizerReportRepository
 from app.repository.subscription_repository import SubscriptionRepository
 from app.repository.theft_incidence_repository import TheftIncidenceRepository
@@ -61,6 +63,8 @@ class AssetService(BaseService):
         theft_report_repository: TheftReportRepository,
         vehicle_owner_repository: VehicleOwnerRepository,
         tracking_event_repository: TrackingEventRepository,
+        gas_cylinder_repository: GasCylinderRepository,
+        gas_cylinder_event_repository: GasCylinderEventRepository,
     ):
         self.asset_repository = asset_repository
         self.asset_type_repository = asset_type_repository
@@ -75,6 +79,8 @@ class AssetService(BaseService):
         self.theft_report_repository = theft_report_repository
         self.vehicle_owner_repository = vehicle_owner_repository
         self.tracking_event_repository = tracking_event_repository
+        self.gas_cylinder_repository = gas_cylinder_repository
+        self.gas_cylinder_event_repository = gas_cylinder_event_repository
         super().__init__(asset_repository)
 
     def create_asset(self, asset: AssetPayload):
@@ -439,6 +445,39 @@ class AssetService(BaseService):
         except Exception as e:
             raise e
 
+    def generate_gas_cylinder_report(
+        self,
+        start_date: str,
+        end_date: str,
+        business_uuid: str = None,
+        user_uuid: str = None,
+        cylinder_uuid: str = None,
+    ):
+        try:
+            report = []
+
+            # Initialize assets as an empty list
+            gas_cylinders = []
+
+            # Fetch assets based on provided parameters
+            if business_uuid or user_uuid or cylinder_uuid:
+                gas_cylinders = self.get_gas_cylinders(
+                    business_uuid, user_uuid, cylinder_uuid
+                )
+
+            for cylinder in gas_cylinders:
+                if cylinder.gas_device_serial_number:
+                    # Get asset points for today in tracking events table
+                    cylinder_events = self.gas_cylinder_event_repository.read_all_gas_events_by_date_range(
+                        cylinder.gas_device_serial_number, start_date, end_date
+                    )
+                    return cylinder_events
+
+            return report
+
+        except Exception as e:
+            raise e
+
     def generate_distance_speed_report(
         self,
         start_date: str,
@@ -565,6 +604,30 @@ class AssetService(BaseService):
                 )
             else:
                 assets = self.asset_repository.read_all_assets_by_uuid_no_pagination(
+                    user_uuid=user_uuid
+                )
+
+        return assets
+
+    def get_gas_cylinders(self, business_uuid=None, user_uuid=None, cylinder_uuid=None):
+        assets = []
+
+        if business_uuid:
+            if cylinder_uuid:
+                assets = self.gas_cylinder_repository.read_all_cylinders_no_pagination(
+                    cylinder_uuid=cylinder_uuid, business_uuid=business_uuid
+                )
+            else:
+                assets = self.gas_cylinder_repository.read_all_cylinders_no_pagination(
+                    business_uuid=business_uuid
+                )
+        elif user_uuid:
+            if cylinder_uuid:
+                assets = self.gas_cylinder_repository.read_all_cylinders_no_pagination(
+                    cylinder_uuid=cylinder_uuid, user_uuid=user_uuid
+                )
+            else:
+                assets = self.gas_cylinder_repository.read_all_cylinders_no_pagination(
                     user_uuid=user_uuid
                 )
 

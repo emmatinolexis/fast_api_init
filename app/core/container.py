@@ -495,6 +495,8 @@ class Container(containers.DeclarativeContainer):
         theft_report_repository=theft_report_repository,
         vehicle_owner_repository=vehicle_owner_repository,
         tracking_event_repository=tracking_event_repository,
+        gas_cylinder_repository=gas_cylinder_repository,
+        gas_cylinder_event_repository=gas_cylinder_event_repository,
     )
     asset_device_request_service = providers.Factory(
         asset_device_request_service.AssetDeviceRequestService,
