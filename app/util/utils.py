@@ -719,8 +719,8 @@ async def upload_to_s3(file_name: str, file_content: bytes, content_type: str) -
 
 def calculate_gas_level_percentage(
     weight_of_empty_gas_cylinder: float,
-    weight_of_full_gas_cylinder: float,
-    current_weight_of_cylinder: float,
+    weight_of_full_gas_cylinder_and_gas: float,
+    current_weight_of_cylinder_and_gas: float,
 ):
     """
     Calculate the gas level in percentage.
@@ -733,10 +733,17 @@ def calculate_gas_level_percentage(
     Returns:
     float: The gas level in percentage.
     """
-    # Calculate the total gas capacity (full weight - empty weight)
-    # total_gas_capacity = weight_of_full_gas_cylinder - weight_of_empty_gas_cylinder
+    # calculate the current gas weight without cylinder weight
+    current_gas_weight_only = (
+        current_weight_of_cylinder_and_gas - weight_of_empty_gas_cylinder
+    )
 
-    # Calculate the gas level percentage
-    gas_level_percentage = (current_weight_of_cylinder / weight_of_full_gas_cylinder) * 100
+    # calculate total gas weight without cylinder
+    total_gas_weight_only = (
+        weight_of_full_gas_cylinder_and_gas - weight_of_empty_gas_cylinder
+    )
+
+    # calculate total gas weight in percentage
+    gas_level_percentage = (current_gas_weight_only / total_gas_weight_only) * 100
 
     return gas_level_percentage
