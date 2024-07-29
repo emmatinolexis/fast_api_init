@@ -136,3 +136,40 @@ class BuildingRepository(BaseRepository):
             "image_url": asset.image_url,
             "cylinders": building_cylinders,
         }
+
+    def read_all_assets_by_uuid_no_pagination(
+        self,
+        user_uuid: str = None,
+        business_uuid: str = None,
+        asset_uuid: str = None,
+    ):
+        with self.session_factory() as session:
+            if user_uuid is not None:
+                if asset_uuid:
+                    return (
+                        session.query(self.model)
+                        .filter(self.model.uuid == asset_uuid)
+                        .all()
+                    )
+                else:
+                    return (
+                        session.query(self.model)
+                        .filter(self.model.user_uuid == user_uuid)
+                        .all()
+                    )
+
+            if business_uuid is not None:
+                if asset_uuid:
+                    return (
+                        session.query(self.model)
+                        .filter(self.model.uuid == asset_uuid)
+                        .all()
+                    )
+                else:
+                    return (
+                        session.query(self.model)
+                        .filter(self.model.business_profile_uuid == business_uuid)
+                        .all()
+                    )
+
+            return []
