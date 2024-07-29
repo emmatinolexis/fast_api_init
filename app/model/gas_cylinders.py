@@ -115,7 +115,6 @@ class CylinderTypes(BaseModel):
         nullable=False,
     )
     name = Column(String(length=50), nullable=False, unique=True, index=True)
-    image_url = Column(String(length=200), nullable=True)
     empty_weight = Column(FLOAT, nullable=False, index=True)
     full_weight = Column(FLOAT, nullable=False, index=True)
     # gas_cylinders = relationship(
