@@ -32,9 +32,14 @@ class CreateGasCylinderPayload(BaseModel):
 
 class CreateGasCylinderType(BaseModel):
     name: str
-    image_url: str
     empty_weight: float
     full_weight: float
+
+
+class UpdateGasCylinderType(BaseModel):
+    name: Optional[str] = None
+    empty_weight: Optional[float] = None
+    full_weight: Optional[float] = None
 
 
 class CreateOtherCylinderType(BaseModel):
