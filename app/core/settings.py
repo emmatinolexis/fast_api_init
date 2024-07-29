@@ -133,6 +133,8 @@ class Settings(BaseSettings):
     )
     SENDER_NAME: str = os.getenv("SENDER_NAME", "MVI Tracking")
 
+    GAS_DEVICE_DEFAULT: str = "Gas Device"
+
     # find query
     PAGE: int = 1
     PAGE_SIZE: int = 20
