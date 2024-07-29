@@ -68,3 +68,6 @@ INTERNAL_SERVER_ERROR = "Internal server error"
 ALREADY_UNLINKED = "Gas cylinder is already unlinked"
 CYLINDER_UNLINKED = "Gas cylinder unlinked successfully"
 CYLINDER_ALREADY_LINKED = "Gas cylinder is already linked"
+
+
+CSV_LOAD_FAILED = "Failed to load csv file"

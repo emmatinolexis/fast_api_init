@@ -14,12 +14,33 @@ from app.schema.gas_cylinder_schema import (
 from app.service.gas_device_service import GasDeviceService
 from app.service.user_service import UserService
 from app.util.enums import AccountType
-from app.util.utils import send_client_side_error, send_data, send_internal_server_error
+from app.util.utils import (
+    load_gas_device_serial_number_from_csv,
+    send_client_side_error,
+    send_data,
+    send_info,
+    send_internal_server_error,
+)
 
 router = APIRouter(
     prefix="/gas_device",
     tags=["Gas Device"],
 )
+
+
+@router.post("/load_csv", response_class=ORJSONResponse)
+@inject
+async def load_csv_handler(
+    csv_url: str,
+    service: GasDeviceService = Depends(Provide[Container.gas_device_service]),
+    user: User = Depends(get_current_user),
+):
+    try:
+        serial_numbers = load_gas_device_serial_number_from_csv(csv_url=csv_url)
+        return send_info(service.load_csv(serial_numbers, user))
+    except Exception as e:
+        msg = messages.CSV_LOAD_FAILED
+        return send_internal_server_error(user_msg=msg, error=e)
 
 
 @router.post("/{user_id}", response_class=ORJSONResponse)
