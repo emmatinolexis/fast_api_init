@@ -4,6 +4,7 @@ from sqlalchemy import FLOAT, Column, DateTime, Enum, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
+from app.core.settings import settings
 from app.model.base_model import BaseModel
 from app.util.enums import ActiveStatus, DeviceStatus, GasCylinderMaterialType
 
@@ -77,7 +78,12 @@ class GasDevice(BaseModel):
         unique=True,
         nullable=False,
     )
-    device_name = Column(String(length=50), nullable=False, unique=True, index=True)
+    device_name = Column(
+        String(length=50),
+        nullable=False,
+        index=True,
+        default=settings.GAS_DEVICE_DEFAULT,
+    )
     serial_number = Column(String(length=50), nullable=False, unique=True, index=True)
     status = Column(
         Enum(DeviceStatus),

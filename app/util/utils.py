@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Any, List, Union
 
+import pandas as pd
 from fastapi import Depends
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import ORJSONResponse
@@ -450,6 +451,7 @@ def get_content_type(file_format: FileFormat) -> str:
         "jpeg": "image/jpeg",
         "png": "image/png",
         "pdf": "application/pdf",
+        "csv": "text/csv",
     }
     content_type = content_types.get(file_format.value)
     return content_type
@@ -747,3 +749,11 @@ def calculate_gas_level_percentage(
     gas_level_percentage = (current_gas_weight_only / total_gas_weight_only) * 100
 
     return gas_level_percentage
+
+
+def load_gas_device_serial_number_from_csv(csv_url: str):
+    try:
+        df = pd.read_csv(csv_url)
+        return df["device_serial_number"].tolist()
+    except Exception as e:
+        raise e

@@ -89,6 +89,8 @@ async def create_gas_cylinder_handler(
         gas_device = gas_device_service.get_gas_device_by_serial_no(
             gas_cylinder.gas_device_serial_number
         )
+
+        print(gas_cylinder.gas_device_serial_number)
         if not gas_device:
             return send_client_side_error(
                 user_msg=messages.GAS_DEVICE_NOT_FOUND
@@ -195,3 +197,22 @@ async def unlink_gas_cylinder_from_device_handler(
         return send_internal_server_error(
             user_msg=messages.INTERNAL_SERVER_ERROR, error=error_msg
         )
+
+
+@router.post("/check_gas_level", response_class=ORJSONResponse)
+@inject
+async def check_gas_level_handler(
+    gas_cylinder: GasEventPayload,
+    service: GasCylinderEventService = Depends(
+        Provide[Container.gas_cylinder_event_service]
+    ),
+):
+    try:
+        created_gas_cylinder = service.add(gas_cylinder)
+        response = GasCylinderEventResponse(
+            id=created_gas_cylinder.id,
+        )
+        return send_data(response)
+    except Exception as e:
+        msg = f"{messages.CREATE_FAILED} - {str(e)}"
+        return send_internal_server_error(user_msg=msg, error=e)

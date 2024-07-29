@@ -119,6 +119,7 @@ class BuildingRepository(BaseRepository):
     def _get_gas_device_info(self, gas_device):
         if gas_device:
             return {
+                "uuid": gas_device.uuid,
                 "device_name": gas_device.device_name,
                 "serial_number": gas_device.serial_number,
                 "status": gas_device.status,
@@ -136,3 +137,40 @@ class BuildingRepository(BaseRepository):
             "image_url": asset.image_url,
             "cylinders": building_cylinders,
         }
+
+    def read_all_assets_by_uuid_no_pagination(
+        self,
+        user_uuid: str = None,
+        business_uuid: str = None,
+        asset_uuid: str = None,
+    ):
+        with self.session_factory() as session:
+            if user_uuid is not None:
+                if asset_uuid:
+                    return (
+                        session.query(self.model)
+                        .filter(self.model.uuid == asset_uuid)
+                        .all()
+                    )
+                else:
+                    return (
+                        session.query(self.model)
+                        .filter(self.model.user_uuid == user_uuid)
+                        .all()
+                    )
+
+            if business_uuid is not None:
+                if asset_uuid:
+                    return (
+                        session.query(self.model)
+                        .filter(self.model.uuid == asset_uuid)
+                        .all()
+                    )
+                else:
+                    return (
+                        session.query(self.model)
+                        .filter(self.model.business_profile_uuid == business_uuid)
+                        .all()
+                    )
+
+            return []

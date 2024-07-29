@@ -131,6 +131,12 @@ class AlertType(str, Enum):
     VOICE = "voice"
 
 
+class SmartReportType(str, Enum):
+    FLEET_OVERVIEW = "fleet_overview"
+    COST_ANALYSIS = "cost_analysis"
+    FLEET_PERFORMANCE = "fleet_performance"
+
+
 class ImmobilizerType(str, Enum):
     OFF = "off"
     ON = "on"
@@ -248,6 +254,7 @@ class FileFormat(str, Enum):
     PNG = "png"
     JPEG = "jpeg"
     JPG = "jpg"
+    CSV = "csv"
 
 
 class AlertPolicy(str, Enum):
