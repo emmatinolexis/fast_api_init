@@ -2,6 +2,7 @@ aiosmtplib==2.0.2
 alembic==1.12.0
 annotated-types==0.5.0
 anyio==3.7.1
+APScheduler==3.10.4
 bcrypt==4.0.1
 black==23.7.0
 blinker==1.7.0
@@ -41,12 +42,13 @@ numpy==1.26.4
 orjson==3.9.5
 packaging==23.1
 paho-mqtt==1.5.1
+pandas==2.2.2
 passlib==1.7.4
 pathspec==0.11.2
 phonenumbers==8.13.23
 platformdirs==3.10.0
+prometheus-client==0.20.0
 prometheus-fastapi-instrumentator==6.1.0
-prometheus_client==0.20.0
 psycopg==3.1.12
 psycopg-binary==3.1.12
 psycopg2-binary==2.9.9
@@ -54,14 +56,15 @@ pyasn1==0.5.0
 pycodestyle==2.11.1
 pycparser==2.21
 pydantic==2.3.0
+pydantic-core==2.6.3
 pydantic-extra-types==2.1.0
 pydantic-settings==2.0.3
-pydantic_core==2.6.3
 pyflakes==3.1.0
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.0
 python-jose==3.3.0
 python-multipart==0.0.6
+pytz==2024.1
 PyYAML==6.0.1
 requests==2.31.0
 rsa==4.9
@@ -74,7 +77,9 @@ SQLAlchemy==2.0.22
 starlette==0.27.0
 structlog==23.2.0
 tomli==2.0.1
-typing_extensions==4.7.1
+typing-extensions==4.7.1
+tzdata==2024.1
+tzlocal==5.2
 ujson==5.8.0
 urllib3==1.26.18
 uuid==1.30
@@ -83,5 +88,3 @@ uvloop==0.17.0
 watchfiles==0.20.0
 websockets==11.0.3
 wrapt==1.16.0
-
-APScheduler~=3.10.4
