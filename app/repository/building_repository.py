@@ -119,6 +119,7 @@ class BuildingRepository(BaseRepository):
     def _get_gas_device_info(self, gas_device):
         if gas_device:
             return {
+                "uuid": gas_device.uuid,
                 "device_name": gas_device.device_name,
                 "serial_number": gas_device.serial_number,
                 "status": gas_device.status,
