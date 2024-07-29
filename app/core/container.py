@@ -54,6 +54,7 @@ from app.repository import (
     reset_password_repository,
     role_permission_assignment_repository,
     role_repository,
+    smart_report_repository,
     subscription_payment_repository,
     subscription_repository,
     team_member_invitation_repository,
@@ -115,6 +116,7 @@ from app.service import (
     reset_password_service,
     role_permission_assignment_service,
     role_service,
+    smart_report_service,
     subscription_payment_service,
     subscription_service,
     theft_incidence_service,
@@ -438,6 +440,10 @@ class Container(containers.DeclarativeContainer):
         building_repository.BuildingRepository,
         session_factory=db.provided.session,
     )
+    smart_report_repository = providers.Factory(
+        smart_report_repository.SmartReportRepository,
+        session_factory=db.provided.session,
+    )
 
     # Services
     auth_service = providers.Factory(
@@ -717,4 +723,9 @@ class Container(containers.DeclarativeContainer):
         building_repository=building_repository,
         gas_device_repository=gas_device_repository,
         gas_cylinder_repository=gas_cylinder_repository,
+    )
+
+    smart_report_service = providers.Factory(
+        smart_report_service.SmartReportService,
+        smart_report_repository=smart_report_repository,
     )
