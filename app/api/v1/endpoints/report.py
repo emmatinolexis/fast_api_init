@@ -8,6 +8,7 @@ from app.core.dependencies import get_current_user
 from app.model.user import User
 from app.schema.report_schema import SmartReportInput, SmartReportPayload
 from app.service.asset_service import AssetService
+from app.service.smart_report_service import SmartReportService
 from app.service.user_service import UserService
 from app.util.enums import AccountType
 from app.util.utils import send_data, send_internal_server_error
