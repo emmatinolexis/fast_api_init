@@ -254,6 +254,7 @@ class FileFormat(str, Enum):
     PNG = "png"
     JPEG = "jpeg"
     JPG = "jpg"
+    CSV = "csv"
 
 
 class AlertPolicy(str, Enum):

@@ -89,6 +89,8 @@ async def create_gas_cylinder_handler(
         gas_device = gas_device_service.get_gas_device_by_serial_no(
             gas_cylinder.gas_device_serial_number
         )
+
+        print(gas_cylinder.gas_device_serial_number)
         if not gas_device:
             return send_client_side_error(
                 user_msg=messages.GAS_DEVICE_NOT_FOUND

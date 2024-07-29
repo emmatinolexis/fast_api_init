@@ -12,6 +12,11 @@ class CreateGasDevice(BaseModel):
     serial_number: str
 
 
+class UploadGasDeviceCSV(BaseModel):
+    serial_number: str
+    user_uuid: UUID
+
+
 class CreateGasCylinder(BaseModel):
     cylinder_name: str
     material_type: GasCylinderMaterialType
