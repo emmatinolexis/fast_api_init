@@ -202,3 +202,40 @@ async def create_smart_report_handler(
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/smart_report/{user_uuid}", response_class=ORJSONResponse)
+@inject
+async def get_smart_report_by_user_handler(
+    user_uuid: str,
+    smart_report_service: SmartReportService = Depends(
+        Provide[Container.smart_report_service]
+    ),
+    user_service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        user = user_service.get_user_by_uuid(str(user_uuid))
+        if user:
+            if user.get("account_type") == AccountType.INDIVIDUAL:
+                reports = smart_report_service.get_reports(
+                    user_uuid=user_uuid, page_size=10, page=1
+                )
+
+                return reports
+
+            if user.get("account_type") == AccountType.BUSINESS:
+                reports = smart_report_service.get_reports(
+                    business_profile_uuid=user.get("business_profile").uuid,
+                    page_size=10,
+                    page=1,
+                )
+
+                return reports
+
+        else:
+            msg = f"{messages.USER_NOT_FOUND} {user_uuid}"
+            return send_internal_server_error(user_msg=msg, error=msg)
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
