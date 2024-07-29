@@ -10,6 +10,7 @@ from app.model.user import User
 from app.schema.gas_cylinder_schema import (
     CreateGasCylinderType,
     CreateOtherCylinderType,
+    UpdateGasCylinderType,
 )
 from app.service.gas_cylinder_type_service import GasCylinderTypeService
 from app.service.other_cylinder_type_service import OtherCylinderTypeService
@@ -51,6 +52,28 @@ async def create_gas_cylinder_type_handler(
         return send_data(service.add(payload))
     except Exception as e:
         msg = messages.CREATE_FAILED + f"{msg_prefix}"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.patch("/{cylinder_type_uuid}", response_class=ORJSONResponse)
+@inject
+async def update_gas_cylinder_type_handler(
+    cylinder_type_uuid: str,
+    payload: UpdateGasCylinderType,
+    service: GasCylinderTypeService = Depends(
+        Provide[Container.gas_cylinder_type_service]
+    ),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        cylinder_type = service.get_by_uuid(cylinder_type_uuid)
+        if not cylinder_type:
+            return send_client_side_error(
+                user_msg=messages.GAS_CYLINDER_TYPE_NOT_FOUND + cylinder_type_uuid
+            )
+        return send_data(service.patch(cylinder_type.id, payload))
+    except Exception as e:
+        msg = messages.UPDATE_FAILED + f"{msg_prefix}"
         return send_internal_server_error(user_msg=msg, error=e)
 
 
