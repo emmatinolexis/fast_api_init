@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.util.enums import DeviceStatus, GasCylinderMaterialType
+from app.util.enums import ActiveStatus, DeviceStatus, GasCylinderMaterialType
 
 
 class CreateGasDevice(BaseModel):
@@ -40,6 +40,7 @@ class UpdateGasCylinderType(BaseModel):
     name: Optional[str] = None
     empty_weight: Optional[float] = None
     full_weight: Optional[float] = None
+    status: Optional[ActiveStatus] = None
 
 
 class CreateOtherCylinderType(BaseModel):

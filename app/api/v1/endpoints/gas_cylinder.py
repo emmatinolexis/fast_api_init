@@ -45,7 +45,6 @@ async def get_all_gas_cylinder_handler(
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
-    
 
 
 @router.post("/event", response_class=ORJSONResponse)
