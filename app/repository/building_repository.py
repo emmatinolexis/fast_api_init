@@ -90,6 +90,7 @@ class BuildingRepository(BaseRepository):
 
             cylinder_info = {
                 "cylinder_name": cylinder.cylinder_name,
+                "cylinder_type_uuid": cylinder.cylinder_type_uuid,
                 "status": cylinder.status,
                 "gas_level_in_percentage": round(gas_level, 2),
                 "gas_device": gas_device_info,
