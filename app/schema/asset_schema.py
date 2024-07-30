@@ -138,14 +138,15 @@ class CreateBuildingInput(BaseModel):
     image_url: str
     status: ActiveStatus
     user_uuid: UUID
-    business_profile_uuid: UUID
+    business_profile_uuid: Optional[UUID] = None
 
 
 class BuildingInput(BaseModel):
     building: Optional[CreateBuildingInput] = None
     building_uuid: Optional[UUID] = None
     create_gas: bool
-    gas_cylinder: GasCylinderInput
+    create_building_without_cylinder: bool
+    gas_cylinder: Optional[GasCylinderInput] = None
 
 
 class AssetInput(BaseModel):

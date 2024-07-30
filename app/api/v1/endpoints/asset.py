@@ -522,6 +522,10 @@ async def create_building_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
+        if payload.create_building_without_cylinder:
+            building = building_service.add(payload.building)
+            return send_data(building)
+
         # validate gas device serial_no
         gas_serial_no = payload.gas_cylinder.device_serial_number
         gas_device = gas_device_service.get_gas_device_by_serial_no(gas_serial_no)
