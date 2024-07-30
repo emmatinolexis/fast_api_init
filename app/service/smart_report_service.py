@@ -23,3 +23,18 @@ class SmartReportService(BaseService):
             )
         except Exception as e:
             raise e
+
+    def generate_smart_report(
+        self,
+        date_from: str,
+        date_to: str,
+        asset_type_uuid: str,
+        asset_uuids: list,
+        report_types: list,
+    ):
+        try:
+            return self.smart_report_repository.generate_smart_reports(
+                date_from, date_to, asset_type_uuid, asset_uuids, report_types
+            )
+        except Exception as e:
+            raise e

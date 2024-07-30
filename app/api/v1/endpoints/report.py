@@ -204,6 +204,162 @@ async def create_smart_report_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
+@router.get(
+    "/smart_report/fleet_overview/{smart_report_uuid}", response_class=ORJSONResponse
+)
+@inject
+async def view_smart_report_fleet_overview_handler(
+    smart_report_uuid: str,
+    asset_service: AssetService = Depends(Provide[Container.asset_service]),
+    smart_report_service: SmartReportService = Depends(
+        Provide[Container.smart_report_service]
+    ),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        return {
+            "total_fuel_recorded_current_date": 0,
+            "total_fuel_recorded_previous_date": 0,
+            "total_distance_covered_current_date": 0,
+            "total_distance_covered_previous_date": 0,
+            "Total_fuel_saved": 0,
+            "fleet": {
+                "total_asset": 0,
+                "good_asset": 0,
+                "poor_asset": 0,
+                "utilization_rate": {"truck": 0, "Cars": 0, "buldozer": 0},
+                "utilization_trend": {
+                    "January": {"hourse_worked": 0, "idle_time": 0},
+                    "Febuary": {"hourse_worked": 0, "idle_time": 0},
+                    "March": {"hourse_worked": 0, "idle_time": 0},
+                    "April": {"hourse_worked": 0, "idle_time": 0},
+                    "May": {"hourse_worked": 0, "idle_time": 0},
+                    "June": {"hourse_worked": 0, "idle_time": 0},
+                    "July": {"hourse_worked": 0, "idle_time": 0},
+                    "Aug": {"hourse_worked": 0, "idle_time": 0},
+                    "Sep": {"hourse_worked": 0, "idle_time": 0},
+                    "Oct": {"hourse_worked": 0, "idle_time": 0},
+                    "Nov": {"hourse_worked": 0, "idle_time": 0},
+                    "Dec": {"hourse_worked": 0, "idle_time": 0},
+                },
+            },
+        }
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get(
+    "/smart_report/fleet_performance/{smart_report_uuid}", response_class=ORJSONResponse
+)
+@inject
+async def view_smart_report_fleet_performance_handler(
+    smart_report_uuid: str,
+    asset_service: AssetService = Depends(Provide[Container.asset_service]),
+    smart_report_service: SmartReportService = Depends(
+        Provide[Container.smart_report_service]
+    ),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        return {
+            "fuel_usage": {
+                "January": 0,
+                "February": 0,
+                "March": 0,
+                "April": 0,
+                "May": 0,
+                "June": 0,
+                "July": 0,
+                "Aug": 0,
+                "Sep": 0,
+                "Oct": 0,
+                "Nov": 0,
+                "Dec": 0,
+                "total": 0,
+            },
+            "fuel_usage_by_asset_type": {
+                "Trucks": 0,
+                "Cars": 0,
+                "Bulldozers": 0,
+                "Cranes": 0,
+            },
+            "incidents": {
+                "geofence": 0,
+                "overspeeding": 0,
+                "rapid_acceleration": 0,
+                "emergency_breaking": 0,
+                "total_incidence": 0,
+            },
+            "incidents_by_asset": {"Buldozer": 0, "Cranes": 0, "Cement mixtures": 0},
+            "incidents_rate": {
+                "January": {
+                    "geofence_violations": 0,
+                    "Overspeeding": 0,
+                    "emergency_breaking": 0,
+                },
+                "Febuary": {
+                    "geofence_violations": 0,
+                    "Overspeeding": 0,
+                    "emergency_breaking": 0,
+                },
+                "March": {
+                    "geofence_violations": 0,
+                    "Overspeeding": 0,
+                    "emergency_breaking": 0,
+                },
+                "April": {
+                    "geofence_violations": 0,
+                    "Overspeeding": 0,
+                    "emergency_breaking": 0,
+                },
+                "May": {
+                    "geofence_violations": 0,
+                    "Overspeeding": 0,
+                    "emergency_breaking": 0,
+                },
+                "June": {
+                    "geofence_violations": 0,
+                    "Overspeeding": 0,
+                    "emergency_breaking": 0,
+                },
+                "July": {
+                    "geofence_violations": 0,
+                    "Overspeeding": 0,
+                    "emergency_breaking": 0,
+                },
+                "Aug": {
+                    "geofence_violations": 0,
+                    "Overspeeding": 0,
+                    "emergency_breaking": 0,
+                },
+                "Sept": {
+                    "geofence_violations": 0,
+                    "Overspeeding": 0,
+                    "emergency_breaking": 0,
+                },
+                "Oct": {
+                    "geofence_violations": 0,
+                    "Overspeeding": 0,
+                    "emergency_breaking": 0,
+                },
+                "Nov": {
+                    "geofence_violations": 0,
+                    "Overspeeding": 0,
+                    "emergency_breaking": 0,
+                },
+                "Dec": {
+                    "geofence_violations": 0,
+                    "Overspeeding": 0,
+                    "emergency_breaking": 0,
+                },
+            },
+        }
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
 @router.get("/smart_report/{user_uuid}", response_class=ORJSONResponse)
 @inject
 async def get_smart_report_by_user_handler(

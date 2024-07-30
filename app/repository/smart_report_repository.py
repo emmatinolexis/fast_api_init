@@ -4,6 +4,8 @@ from typing import Any, Callable, Dict
 from sqlalchemy import asc
 from sqlalchemy.orm import Session
 
+from app.model.asset import Asset
+
 from app.model.smart_report import SmartReport
 from app.repository.base_repository import BaseRepository
 
@@ -56,3 +58,24 @@ class SmartReportRepository(BaseRepository):
             )
 
         return base_query
+
+    def generate_smart_reports(
+        self,
+        date_from: str,
+        date_to: str,
+        asset_type_uuid: str,
+        asset_uuids: list,
+        report_types: list,
+    ):
+        try:
+            with self.session_factory() as session:
+                assets = []
+                for asset_uuid in asset_uuids:
+                    asset = (
+                        session.query(Asset).filter(Asset.uuid == asset_uuid).first()
+                    )
+                    assets.append(asset)
+
+                return assets
+        except Exception as e:
+            raise e
