@@ -1,3 +1,5 @@
+from typing import Optional
+
 from app.repository.building_repository import BuildingRepository
 from app.repository.gas_cylinder_repository import GasCylinderRepository
 from app.repository.gas_device_repository import GasDeviceRepository
@@ -84,5 +86,18 @@ class BuildingService(BaseService):
                 page_size=page_size,
             )
             return report
+        except Exception as e:
+            raise e
+
+    def get_building_cylinder_assets(
+        self, building_uuid: str, cylinder_status: Optional[str] = None
+    ):
+        try:
+            cylinders = self.gas_cylinder_repository.get_gas_cylinder_by_building_uuid(
+                building_uuid=building_uuid, cylinder_status=cylinder_status
+            )
+
+            return cylinders
+
         except Exception as e:
             raise e

@@ -71,4 +71,7 @@ CYLINDER_UNLINKED = "Gas cylinder unlinked successfully"
 CYLINDER_ALREADY_LINKED = "Gas cylinder is already linked"
 
 
+BUILDING_NOT_FOUND = "No building was found with the given uuid"
+
+
 CSV_LOAD_FAILED = "Failed to load csv file"
