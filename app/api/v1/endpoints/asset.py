@@ -585,6 +585,10 @@ async def get_building_asset_handler(
 @inject
 async def get_building_cylinder_assets_handler(
     building_uuid: str,
+    page: int = Query(1, ge=1, description="Page number, default is set to 1"),
+    page_size: int = Query(
+        10, ge=1, le=1000, description="Items per page, default is 10"
+    ),
     cylinder_status: ActiveStatus = Query(None, description="Filter by device status"),
     building_service: BuildingService = Depends(Provide[Container.building_service]),
     current_user: User = Depends(get_current_user),
@@ -596,7 +600,10 @@ async def get_building_cylinder_assets_handler(
             return send_internal_server_error(user_msg=msg, error=msg)
 
         cylinders = building_service.get_building_cylinder_assets(
-            building_uuid=building_uuid, cylinder_status=cylinder_status
+            building_uuid=building_uuid,
+            cylinder_status=cylinder_status,
+            page_size=page_size,
+            page=page,
         )
         return send_data(cylinders)
     except Exception as e:
