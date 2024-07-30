@@ -1,5 +1,5 @@
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
 
 from app.core import messages
@@ -40,6 +40,20 @@ async def load_csv_handler(
         return send_info(service.load_csv(serial_numbers, user))
     except Exception as e:
         msg = messages.CSV_LOAD_FAILED
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/", response_class=ORJSONResponse)
+@inject
+async def get_gas_devices_handler(
+    serial_number: str = Query(None, description="Serial number of the gas device"),
+    service: GasDeviceService = Depends(Provide[Container.gas_device_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        return send_data(service.get_all_devices(serial_number))
+    except Exception as e:
+        msg = messages.GET_FAILED + " gas devices"
         return send_internal_server_error(user_msg=msg, error=e)
 
 

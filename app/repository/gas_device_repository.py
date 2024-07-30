@@ -24,3 +24,12 @@ class GasDeviceRepository(BaseRepository):
                 .first()
             )
             return device
+
+    def search(self, serial_number: str = None):
+        with self.session_factory() as session:
+            query = session.query(self.model)
+            if serial_number:
+                query = query.filter(
+                    self.model.serial_number.ilike(f"%{serial_number}%")
+                )
+            return query.all()
