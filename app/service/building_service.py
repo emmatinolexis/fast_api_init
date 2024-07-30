@@ -1,3 +1,5 @@
+from typing import Optional
+
 from app.repository.building_repository import BuildingRepository
 from app.repository.gas_cylinder_repository import GasCylinderRepository
 from app.repository.gas_device_repository import GasDeviceRepository
@@ -84,5 +86,33 @@ class BuildingService(BaseService):
                 page_size=page_size,
             )
             return report
+        except Exception as e:
+            raise e
+
+    def get_building_cylinder_assets(
+        self,
+        building_uuid: str,
+        cylinder_status: Optional[str] = None,
+        page_size: int = 10,
+        page: int = 1,
+    ):
+        try:
+            cylinders = self.gas_cylinder_repository.get_gas_cylinder_by_building_uuid(
+                building_uuid=building_uuid, cylinder_status=cylinder_status
+            )
+
+            total = len(cylinders)
+            start_index = (page - 1) * page_size
+            end_index = start_index + page_size
+            paginated_cylinders = cylinders[start_index:end_index]
+
+            return {
+                "cylinders": paginated_cylinders,
+                "total_cylinders": total,
+                "total_pages": (total + page_size - 1) // page_size,
+                "current_page": page,
+                "page_size": page_size,
+            }
+
         except Exception as e:
             raise e

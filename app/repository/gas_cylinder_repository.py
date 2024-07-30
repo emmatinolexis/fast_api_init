@@ -48,3 +48,14 @@ class GasCylinderRepository(BaseRepository):
                     )
 
             return []
+
+    def get_gas_cylinder_by_building_uuid(
+        self, building_uuid: str, cylinder_status: str = None
+    ):
+        with self.session_factory() as session:
+            query = session.query(self.model).filter(
+                self.model.building_uuid == building_uuid
+            )
+            if cylinder_status:
+                query = query.filter(self.model.status == cylinder_status)
+            return query.all()

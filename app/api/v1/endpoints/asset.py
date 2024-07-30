@@ -28,7 +28,13 @@ from app.service.gas_device_service import GasDeviceService
 from app.service.theft_report_service import TheftReportService
 from app.service.tracking_event_service import TrackingEventService
 from app.service.user_service import UserService
-from app.util.enums import AccountType, ImmobilizerReason, IncidentStatus, IncidentType
+from app.util.enums import (
+    AccountType,
+    ActiveStatus,
+    ImmobilizerReason,
+    IncidentStatus,
+    IncidentType,
+)
 from app.util.sms import send_sms
 from app.util.utils import (
     send_client_side_error,
@@ -574,6 +580,36 @@ async def get_building_asset_handler(
             )
             return send_data(buildings)
 
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix} theft report"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/building/{building_uuid}", response_class=ORJSONResponse)
+@inject
+async def get_building_cylinder_assets_handler(
+    building_uuid: str,
+    page: int = Query(1, ge=1, description="Page number, default is set to 1"),
+    page_size: int = Query(
+        10, ge=1, le=1000, description="Items per page, default is 10"
+    ),
+    cylinder_status: ActiveStatus = Query(None, description="Filter by device status"),
+    building_service: BuildingService = Depends(Provide[Container.building_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        building = building_service.get_by_uuid(building_uuid)
+        if not building:
+            msg = f"{messages.BUILDING_NOT_FOUND} {building_uuid}"
+            return send_internal_server_error(user_msg=msg, error=msg)
+
+        cylinders = building_service.get_building_cylinder_assets(
+            building_uuid=building_uuid,
+            cylinder_status=cylinder_status,
+            page_size=page_size,
+            page=page,
+        )
+        return send_data(cylinders)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix} theft report"
         return send_internal_server_error(user_msg=msg, error=e)
