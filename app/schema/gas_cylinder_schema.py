@@ -30,9 +30,9 @@ class CreateGasCylinderPayload(BaseModel):
     cylinder_name: str
     material_type: GasCylinderMaterialType
     gas_device_serial_number: Optional[str] = None
-    cylinder_type_uuid: Optional[str] = None
-    other_cylinder_type_uuid: Optional[str] = None
-    building_uuid: str
+    cylinder_type_uuid: Optional[UUID] = None
+    other_cylinder_type_uuid: Optional[UUID] = None
+    building_uuid: UUID
 
 
 class CreateGasCylinderOnly(BaseModel):
