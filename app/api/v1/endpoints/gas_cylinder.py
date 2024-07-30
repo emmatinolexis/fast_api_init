@@ -9,6 +9,7 @@ from app.core.exceptions import BadRequestError, NotFoundError
 from app.model.user import User
 from app.schema.gas_cylinder_schema import (
     CreateGasCylinder,
+    CreateGasCylinderOnly,
     CreateGasCylinderPayload,
     GasCylinderEventResponse,
     GasEventPayload,
@@ -90,7 +91,6 @@ async def create_gas_cylinder_handler(
             gas_cylinder.gas_device_serial_number
         )
 
-        print(gas_cylinder.gas_device_serial_number)
         if not gas_device:
             return send_client_side_error(
                 user_msg=messages.GAS_DEVICE_NOT_FOUND
@@ -213,6 +213,38 @@ async def check_gas_level_handler(
             id=created_gas_cylinder.id,
         )
         return send_data(response)
+    except Exception as e:
+        msg = f"{messages.CREATE_FAILED} - {str(e)}"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.post("/create_cylinder_only/{user_uuid}", response_class=ORJSONResponse)
+@inject
+async def create_gas_cylinder_only_handler(
+    user_uuid: str,
+    gas_cylinder: CreateGasCylinderPayload,
+    service: GasCylinderService = Depends(Provide[Container.gas_cylinder_service]),
+    user_service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        user = user_service.get_user_by_uuid(user_uuid)
+        if not user:
+            return send_client_side_error(
+                user_msg=messages.USER_NOT_FOUND + user_uuid,
+                dev_msg=messages.USER_NOT_FOUND + user_uuid,
+            )
+
+        schema = CreateGasCylinderOnly(
+            **gas_cylinder.dict(),
+            user_uuid=user_uuid,
+            business_profile_uuid=user.get("business_profile_id")
+            if user.get("account_type") == AccountType.BUSINESS
+            else None,
+        )
+
+        created_gas_cylinder = service.add(schema)
+        return send_data(created_gas_cylinder)
     except Exception as e:
         msg = f"{messages.CREATE_FAILED} - {str(e)}"
         return send_internal_server_error(user_msg=msg, error=e)

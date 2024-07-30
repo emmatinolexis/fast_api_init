@@ -35,6 +35,14 @@ class CreateGasCylinderPayload(BaseModel):
     building_uuid: str
 
 
+class CreateGasCylinderOnly(BaseModel):
+    cylinder_name: str
+    material_type: GasCylinderMaterialType
+    user_uuid: str
+    business_profile_uuid: Optional[str] = None
+    building_uuid: str
+
+
 class CreateGasCylinderType(BaseModel):
     name: str
     empty_weight: float
