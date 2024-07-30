@@ -34,3 +34,12 @@ class GasDeviceService(BaseService):
             return "Gas Devices uploaded successfully"
         except Exception as e:
             raise e
+
+    def get_all_devices(self, serial_number: str = None):
+        try:
+            if serial_number:
+                return self.gas_device_repository.search(serial_number)
+
+            return self.gas_device_repository.read_all()
+        except Exception as e:
+            raise e
