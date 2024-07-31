@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.model.gas_cylinders import GasCylinder
 from app.repository.base_repository import BaseRepository
 from app.schema.gas_cylinder_schema import CreateGasCylinderPayload
+from app.util.enums import ActiveStatus
 
 
 class GasCylinderRepository(BaseRepository):
@@ -78,6 +79,7 @@ class GasCylinderRepository(BaseRepository):
             )
             if existing_gas:
                 existing_gas.gas_device_serial_number = None
+                existing_gas.status = ActiveStatus.INACTIVE
                 gas_data = GasCylinder(
                     cylinder_name=gas_payload.cylinder_name,
                     material_type=gas_payload.material_type,
