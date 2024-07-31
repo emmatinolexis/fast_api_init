@@ -11,7 +11,7 @@ from app.service.asset_service import AssetService
 from app.service.smart_report_service import SmartReportService
 from app.service.user_service import UserService
 from app.util.enums import AccountType
-from app.util.utils import send_data, send_internal_server_error
+from app.util.utils import convert_date_format, send_data, send_internal_server_error
 
 router = APIRouter(
     prefix="/reports",
@@ -55,48 +55,6 @@ async def generate_distance_traveled_report_handler(
                         end_date=end_date,
                         asset_uuid=asset_uuid,
                         asset_type_uuid=asset_type_uuid,
-                    )
-                )
-        else:
-            msg = f"{messages.USER_NOT_FOUND} {user_uuid}"
-            return send_internal_server_error(user_msg=msg, error=msg)
-    except Exception as e:
-        msg = messages.GET_FAILED + f"{msg_prefix}s"
-        return send_internal_server_error(user_msg=msg, error=e)
-
-
-@router.get("/cylinder_report/{user_uuid}", response_class=ORJSONResponse)
-@inject
-async def generate_gas_cylinder_report_handler(
-    user_uuid: str,
-    cylinder_uuid: str = None,
-    start_date: str = Query(
-        description="Start date should be in the format dd/mm/yyyy"
-    ),
-    end_date: str = Query(description="End date should be in the format dd/mm/yyyy"),
-    report_service: AssetService = Depends(Provide[Container.asset_service]),
-    user_service: UserService = Depends(Provide[Container.user_service]),
-    current_user: User = Depends(get_current_user),
-):
-    try:
-        user = user_service.get_user_by_uuid(user_uuid)
-        if user:
-            if user.get("account_type") == AccountType.INDIVIDUAL:
-                return send_data(
-                    report_service.generate_gas_cylinder_report(
-                        user_uuid=user.get("uuid"),
-                        start_date=start_date,
-                        end_date=end_date,
-                        cylinder_uuid=cylinder_uuid,
-                    )
-                )
-            if user.get("account_type") == AccountType.BUSINESS:
-                return send_data(
-                    report_service.generate_gas_cylinder_report(
-                        business_uuid=user.get("business_profile").uuid,
-                        start_date=start_date,
-                        end_date=end_date,
-                        cylinder_uuid=cylinder_uuid,
                     )
                 )
         else:
@@ -204,46 +162,96 @@ async def create_smart_report_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
+# @router.get(
+#     "/smart_report/fleet_overview/{smart_report_uuid}", response_class=ORJSONResponse
+# )
+# @inject
+# async def view_smart_report_fleet_overview_handler(
+#     smart_report_uuid: str,
+#     asset_service: AssetService = Depends(Provide[Container.asset_service]),
+#     smart_report_service: SmartReportService = Depends(
+#         Provide[Container.smart_report_service]
+#     ),
+#     current_user: User = Depends(get_current_user),
+# ):
+#     try:
+#         return {
+#             "total_fuel_recorded_current_date": 0,
+#             "total_fuel_recorded_previous_date": 0,
+#             "total_distance_covered_current_date": 0,
+#             "total_distance_covered_previous_date": 0,
+#             "Total_fuel_saved": 0,
+#             "fleet": {
+#                 "total_asset": 0,
+#                 "good_asset": 0,
+#                 "poor_asset": 0,
+#                 "utilization_rate": {"truck": 0, "Cars": 0, "buldozer": 0},
+#                 "utilization_trend": {
+#                     "January": {"hourse_worked": 0, "idle_time": 0},
+#                     "Febuary": {"hourse_worked": 0, "idle_time": 0},
+#                     "March": {"hourse_worked": 0, "idle_time": 0},
+#                     "April": {"hourse_worked": 0, "idle_time": 0},
+#                     "May": {"hourse_worked": 0, "idle_time": 0},
+#                     "June": {"hourse_worked": 0, "idle_time": 0},
+#                     "July": {"hourse_worked": 0, "idle_time": 0},
+#                     "Aug": {"hourse_worked": 0, "idle_time": 0},
+#                     "Sep": {"hourse_worked": 0, "idle_time": 0},
+#                     "Oct": {"hourse_worked": 0, "idle_time": 0},
+#                     "Nov": {"hourse_worked": 0, "idle_time": 0},
+#                     "Dec": {"hourse_worked": 0, "idle_time": 0},
+#                 },
+#             },
+#         }
+#     except Exception as e:
+#         msg = messages.GET_FAILED + f"{msg_prefix}s"
+#         return send_internal_server_error(user_msg=msg, error=e)
+
+
 @router.get(
     "/smart_report/fleet_overview/{smart_report_uuid}", response_class=ORJSONResponse
 )
 @inject
 async def view_smart_report_fleet_overview_handler(
     smart_report_uuid: str,
-    asset_service: AssetService = Depends(Provide[Container.asset_service]),
+    # asset_service: AssetService = Depends(Provide[Container.asset_service]),
     smart_report_service: SmartReportService = Depends(
         Provide[Container.smart_report_service]
     ),
     current_user: User = Depends(get_current_user),
+    user_service: UserService = Depends(Provide[Container.user_service]),
 ):
     try:
-        return {
-            "total_fuel_recorded_current_date": 0,
-            "total_fuel_recorded_previous_date": 0,
-            "total_distance_covered_current_date": 0,
-            "total_distance_covered_previous_date": 0,
-            "Total_fuel_saved": 0,
-            "fleet": {
-                "total_asset": 0,
-                "good_asset": 0,
-                "poor_asset": 0,
-                "utilization_rate": {"truck": 0, "Cars": 0, "buldozer": 0},
-                "utilization_trend": {
-                    "January": {"hourse_worked": 0, "idle_time": 0},
-                    "Febuary": {"hourse_worked": 0, "idle_time": 0},
-                    "March": {"hourse_worked": 0, "idle_time": 0},
-                    "April": {"hourse_worked": 0, "idle_time": 0},
-                    "May": {"hourse_worked": 0, "idle_time": 0},
-                    "June": {"hourse_worked": 0, "idle_time": 0},
-                    "July": {"hourse_worked": 0, "idle_time": 0},
-                    "Aug": {"hourse_worked": 0, "idle_time": 0},
-                    "Sep": {"hourse_worked": 0, "idle_time": 0},
-                    "Oct": {"hourse_worked": 0, "idle_time": 0},
-                    "Nov": {"hourse_worked": 0, "idle_time": 0},
-                    "Dec": {"hourse_worked": 0, "idle_time": 0},
-                },
-            },
-        }
+        smart_report = smart_report_service.get_by_uuid(smart_report_uuid)
+
+        if not smart_report:
+            usr_msg = "Smart report not found"
+            dev_msg = f"Smart report not found for {smart_report_uuid}"
+            return send_internal_server_error(user_msg=usr_msg, error=dev_msg)
+
+        user = user_service.get_user_by_uuid(str(smart_report.user_uuid))
+
+        if user.get("account_type") == AccountType.INDIVIDUAL:
+            report_data = smart_report_service.generate_smart_report(
+                convert_date_format(smart_report.start_date),
+                convert_date_format(smart_report.end_date),
+                smart_report.asset_type_uuid,
+                smart_report.asset_group_uuids.get("asset_uuids"),
+                user_uuid=smart_report.user_uuid,
+            )
+
+            return report_data
+
+        if user.get("account_type") == AccountType.BUSINESS:
+            report_data = smart_report_service.generate_smart_report(
+                convert_date_format(smart_report.start_date),
+                convert_date_format(smart_report.end_date),
+                smart_report.asset_type_uuid,
+                smart_report.asset_group_uuids.get("asset_uuids"),
+                business_uuid=smart_report.business_profile_uuid,
+            )
+
+            return report_data
+
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -364,6 +372,10 @@ async def view_smart_report_fleet_performance_handler(
 @inject
 async def get_smart_report_by_user_handler(
     user_uuid: str,
+    page: int = Query(1, ge=1, description="Page number, default is set to 1"),
+    page_size: int = Query(
+        10, ge=1, le=1000, description="Items per page, default is 10"
+    ),
     smart_report_service: SmartReportService = Depends(
         Provide[Container.smart_report_service]
     ),
@@ -375,7 +387,7 @@ async def get_smart_report_by_user_handler(
         if user:
             if user.get("account_type") == AccountType.INDIVIDUAL:
                 reports = smart_report_service.get_reports(
-                    user_uuid=user_uuid, page_size=10, page=1
+                    user_uuid=user_uuid, page_size=page_size, page=page
                 )
 
                 return reports
