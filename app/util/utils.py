@@ -759,20 +759,6 @@ def load_gas_device_serial_number_from_csv(csv_url: str):
         raise e
 
 
-<<<<<<< HEAD
-{
-    "data": {
-        "08:D1:F9:27:96:A8": {
-            "2024-07-26": 89,
-            "2024-07-27": 8,
-            "2024-07-28": 4.5,
-            "2024-07-29": 3.3200000000000003,
-            "2024-07-30": 4.06,
-            "current_gas_percentage": ...,
-        }
-    }
-}
-=======
 def convert_date_format(date_str):
     # Parse the date string into a datetime object
     date_obj = datetime.strptime(date_str, "%Y-%m-%d")
@@ -781,4 +767,4 @@ def convert_date_format(date_str):
     formatted_date = date_obj.strftime("%d/%m/%Y")
 
     return formatted_date
->>>>>>> development
+
