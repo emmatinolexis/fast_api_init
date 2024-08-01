@@ -425,6 +425,7 @@ async def get_gas_report(
         Provide[Container.gas_cylinder_event_service]
     ),
     user_service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
 ):
     try:
         user = user_service.get_user_by_uuid(user_uuid)

@@ -170,7 +170,6 @@ class Container(containers.DeclarativeContainer):
             "app.api.v1.endpoints.gas_cylinder",
             "app.api.v1.endpoints.gas_device",
             "app.api.v1.endpoints.gas_cylinder_type",
-            "app.api.v1.endpoints.gas_report",
         ]
     )
 

@@ -22,7 +22,6 @@ from app.api.v1.endpoints.fine_report import router as fine_report_router
 from app.api.v1.endpoints.gas_cylinder import router as gas_cylinder_router
 from app.api.v1.endpoints.gas_cylinder_type import router as gas_cylinder_type_router
 from app.api.v1.endpoints.gas_device import router as gas_device_router
-from app.api.v1.endpoints.gas_report import router as gas_report_router
 from app.api.v1.endpoints.health_check import router as health_check_router
 from app.api.v1.endpoints.inventory import router as inventory_router
 from app.api.v1.endpoints.marker_icon import router as marker_icon_router
@@ -84,7 +83,6 @@ router_list = [
     gas_cylinder_router,
     gas_device_router,
     gas_cylinder_type_router,
-    gas_report_router,
 ]
 
 for router in router_list:
