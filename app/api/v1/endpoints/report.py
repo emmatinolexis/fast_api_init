@@ -421,6 +421,9 @@ async def get_gas_report(
     user_uuid: str,
     start_date: str,
     end_date: str,
+    search: str = Query(
+        None, description="Search for gas cylinder by Name or Serial Number"
+    ),
     service: GasCylinderEventService = Depends(
         Provide[Container.gas_cylinder_event_service]
     ),
@@ -439,6 +442,7 @@ async def get_gas_report(
         if user.get("account_type") == AccountType.INDIVIDUAL:
             return send_data(
                 service.generate_report(
+                    search=search,
                     user_uuid=user_uuid,
                     start_date=start_date,
                     end_date=end_date,
@@ -451,6 +455,7 @@ async def get_gas_report(
                     business_uuid=user.get("business_profile").uuid,
                     start_date=start_date,
                     end_date=end_date,
+                    search=search,
                 )
             )
 

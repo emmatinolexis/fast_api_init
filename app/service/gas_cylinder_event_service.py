@@ -1,4 +1,5 @@
 from collections import defaultdict
+from typing import Optional
 
 from app.repository.gas_cylinder_event_repository import GasCylinderEventRepository
 from app.repository.gas_cylinder_repository import GasCylinderRepository
@@ -29,9 +30,22 @@ class GasCylinderEventService(BaseService):
             end_date=end_date,
         )
 
-    def generate_report(self, user_uuid: str, start_date: str, end_date: str):
+    def generate_report(
+        self,
+        user_uuid: str,
+        start_date: str,
+        end_date: str,
+        search: Optional[str] = None,
+    ):
         # Read all cylinders associated with the user
         user_cylinders = self.gas_cylinder_repository.read_all_by_user_uuid(user_uuid)
+
+        if search:
+            user_cylinders = [
+                cylinder
+                for cylinder in user_cylinders
+                if search.lower() in cylinder.cylinder_name.lower()
+            ]
 
         if not user_cylinders:
             return []
@@ -126,12 +140,23 @@ class GasCylinderEventService(BaseService):
         return all_devices_daily_usage
 
     def generate_report_business(
-        self, business_uuid: str, start_date: str, end_date: str
+        self,
+        business_uuid: str,
+        start_date: str,
+        end_date: str,
+        search: Optional[str] = None,
     ):
         # Read all cylinders associated with the business
         business_cylinders = self.gas_cylinder_repository.read_all_by_business_uuid(
             business_uuid
         )
+
+        if search:
+            business_cylinders = [
+                cylinder
+                for cylinder in business_cylinders
+                if search.lower() in cylinder.cylinder_name.lower()
+            ]
 
         if not business_cylinders:
             return []
