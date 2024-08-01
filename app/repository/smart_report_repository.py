@@ -4,6 +4,7 @@ from typing import Any, Callable, Dict
 from sqlalchemy import asc
 from sqlalchemy.orm import Session
 
+from app.model.asset import Asset
 from app.model.smart_report import SmartReport
 from app.repository.base_repository import BaseRepository
 

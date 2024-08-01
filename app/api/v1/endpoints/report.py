@@ -8,10 +8,16 @@ from app.core.dependencies import get_current_user
 from app.model.user import User
 from app.schema.report_schema import SmartReportInput, SmartReportPayload
 from app.service.asset_service import AssetService
+from app.service.gas_cylinder_event_service import GasCylinderEventService
 from app.service.smart_report_service import SmartReportService
 from app.service.user_service import UserService
 from app.util.enums import AccountType
-from app.util.utils import convert_date_format, send_data, send_internal_server_error
+from app.util.utils import (
+    convert_date_format,
+    send_client_side_error,
+    send_data,
+    send_internal_server_error,
+)
 
 router = APIRouter(
     prefix="/reports",
@@ -407,3 +413,46 @@ async def get_smart_report_by_user_handler(
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/{user_uuid}")
+@inject
+async def get_gas_report(
+    user_uuid: str,
+    start_date: str,
+    end_date: str,
+    service: GasCylinderEventService = Depends(
+        Provide[Container.gas_cylinder_event_service]
+    ),
+    user_service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        user = user_service.get_user_by_uuid(user_uuid)
+
+        if not user:
+            return send_client_side_error(
+                user_msg=messages.USER_NOT_FOUND,
+                error=f"User with uuid {user_uuid} not found",
+            )
+
+        if user.get("account_type") == AccountType.INDIVIDUAL:
+            return send_data(
+                service.generate_report(
+                    user_uuid=user_uuid,
+                    start_date=start_date,
+                    end_date=end_date,
+                )
+            )
+
+        if user.get("account_type") == AccountType.BUSINESS:
+            return send_data(
+                service.generate_report_business(
+                    business_uuid=user.get("business_profile").uuid,
+                    start_date=start_date,
+                    end_date=end_date,
+                )
+            )
+
+    except Exception as e:
+        return send_internal_server_error(user_msg="Failed to get gas report", error=e)

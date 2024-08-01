@@ -702,6 +702,8 @@ class Container(containers.DeclarativeContainer):
     gas_cylinder_event_service = providers.Factory(
         gas_cylinder_event_service.GasCylinderEventService,
         gas_cylinder_event_repository=gas_cylinder_event_repository,
+        gas_cylinder_repository=gas_cylinder_repository,
+        gas_cylinder_type_repository=gas_cylinder_type_repository,
     )
     gas_device_service = providers.Factory(
         gas_device_service.GasDeviceService,
