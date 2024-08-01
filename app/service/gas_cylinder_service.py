@@ -42,6 +42,7 @@ class GasCylinderService(BaseService):
 
     def get_user_cylinders(self, user_uuid: str):
         return self.gas_cylinder_repository.read_all_by_user_uuid(user_uuid)
+
     def create_gas_cylinder_without_device(
         self,
         payload: CreateGasCylinderPayload,

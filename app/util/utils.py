@@ -767,4 +767,3 @@ def convert_date_format(date_str):
     formatted_date = date_obj.strftime("%d/%m/%Y")
 
     return formatted_date
-
