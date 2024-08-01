@@ -1,12 +1,13 @@
 from contextlib import AbstractContextManager
 from typing import Callable
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.model.gas_cylinders import GasCylinder
 from app.repository.base_repository import BaseRepository
 from app.schema.gas_cylinder_schema import CreateGasCylinderPayload
 from app.util.enums import ActiveStatus
+from app.util.utils import calculate_gas_level_percentage
 
 
 class GasCylinderRepository(BaseRepository):
@@ -130,3 +131,45 @@ class GasCylinderRepository(BaseRepository):
         session.commit()
         session.refresh(gas_data)
         return gas_data
+
+    def get_gas_cylinder_by_uuid(self, cylinder_uuid: str):
+        with self.session_factory() as session:
+            cylinder = (
+                session.query(self.model)
+                .options(
+                    joinedload(self.model.gas_device),
+                    joinedload(self.model.cylinder_type),
+                    joinedload(self.model.gas_events),
+                    joinedload(self.model.cylinder_type),
+                )
+                .filter(self.model.uuid == cylinder_uuid)
+                .one_or_none()
+            )
+
+            gas_level = 0
+
+            if cylinder.gas_device:
+                latest_event = max(cylinder.gas_events, key=lambda x: x.created_at)
+
+                gas_level = calculate_gas_level_percentage(
+                    cylinder.cylinder_type.empty_weight,
+                    cylinder.cylinder_type.full_weight,
+                    latest_event.current_weight,
+                )
+
+            cylinder = {
+                "cylinder_name": cylinder.cylinder_name,
+                "material_type": cylinder.material_type,
+                "gas_device": {
+                    "device_name": cylinder.gas_device.device_name,
+                    "device_serial_number": cylinder.gas_device.serial_number,
+                },
+                "cylinder_type": {
+                    "name": cylinder.cylinder_type.name,
+                    "full_weight": cylinder.cylinder_type.full_weight,
+                    "empty_weight": cylinder.cylinder_type.empty_weight,
+                },
+                "current_weight": gas_level,
+            }
+
+            return cylinder

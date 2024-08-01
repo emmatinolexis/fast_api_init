@@ -262,3 +262,17 @@ async def create_gas_cylinder_only_handler(
     except Exception as e:
         msg = f"{messages.CREATE_FAILED} - {str(e)}"
         return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.post("/get_by_id/cylinder_uuid", response_class=ORJSONResponse)
+@inject
+async def get_cylinder_by_id_handler(
+    cylinder_uuid: str,
+    service: GasCylinderService = Depends(Provide[Container.gas_cylinder_service]),
+):
+    try:
+        cylinder = service.get_cylinder_by_uuid(cylinder_uuid)
+        return send_data(cylinder)
+    except Exception as e:
+        msg = f"{messages.CREATE_FAILED} - {str(e)}"
+        return send_internal_server_error(user_msg=msg, error=e)
