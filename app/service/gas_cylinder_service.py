@@ -38,3 +38,6 @@ class GasCylinderService(BaseService):
         )
 
         return cylinder
+
+    def get_user_cylinders(self, user_uuid: str):
+        return self.gas_cylinder_repository.read_all_by_user_uuid(user_uuid)

@@ -59,3 +59,11 @@ class GasCylinderRepository(BaseRepository):
             if cylinder_status:
                 query = query.filter(self.model.status == cylinder_status)
             return query.all()
+
+    def read_all_by_user_uuid(self, user_uuid: str):
+        with self.session_factory() as session:
+            return (
+                session.query(self.model)
+                .filter(self.model.user_uuid == user_uuid)
+                .all()
+            )

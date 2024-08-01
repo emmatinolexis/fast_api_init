@@ -757,3 +757,17 @@ def load_gas_device_serial_number_from_csv(csv_url: str):
         return df["device_serial_number"].tolist()
     except Exception as e:
         raise e
+
+
+{
+    "data": {
+        "08:D1:F9:27:96:A8": {
+            "2024-07-26": 89,
+            "2024-07-27": 8,
+            "2024-07-28": 4.5,
+            "2024-07-29": 3.3200000000000003,
+            "2024-07-30": 4.06,
+            "current_gas_percentage": ...,
+        }
+    }
+}
