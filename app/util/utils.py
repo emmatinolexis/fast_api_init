@@ -748,7 +748,9 @@ def calculate_gas_level_percentage(
     # calculate total gas weight in percentage
     gas_level_percentage = (current_gas_weight_only / total_gas_weight_only) * 100
 
-    return gas_level_percentage
+    gas_level_percentage = max(0, min(gas_level_percentage, 100))
+
+    return round(gas_level_percentage, 2)
 
 
 def load_gas_device_serial_number_from_csv(csv_url: str):

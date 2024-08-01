@@ -55,3 +55,12 @@ class GasCylinderService(BaseService):
             )
         except Exception as e:
             raise e
+
+    def get_cylinder_by_uuid(
+        self,
+        cylinder_uuid: str = None,
+    ):
+        try:
+            return self.gas_cylinder_repository.get_gas_cylinder_by_uuid(cylinder_uuid)
+        except Exception as e:
+            raise e
