@@ -759,6 +759,7 @@ def load_gas_device_serial_number_from_csv(csv_url: str):
         raise e
 
 
+<<<<<<< HEAD
 {
     "data": {
         "08:D1:F9:27:96:A8": {
@@ -771,3 +772,13 @@ def load_gas_device_serial_number_from_csv(csv_url: str):
         }
     }
 }
+=======
+def convert_date_format(date_str):
+    # Parse the date string into a datetime object
+    date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+
+    # Format the datetime object into the desired string format
+    formatted_date = date_obj.strftime("%d/%m/%Y")
+
+    return formatted_date
+>>>>>>> development

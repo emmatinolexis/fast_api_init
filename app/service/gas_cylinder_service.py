@@ -1,5 +1,6 @@
 from app.repository.gas_cylinder_repository import GasCylinderRepository
 from app.repository.gas_device_repository import GasDeviceRepository
+from app.schema.gas_cylinder_schema import CreateGasCylinderPayload
 from app.service.base_service import BaseService
 from app.util.enums import DeviceStatus
 
@@ -41,3 +42,15 @@ class GasCylinderService(BaseService):
 
     def get_user_cylinders(self, user_uuid: str):
         return self.gas_cylinder_repository.read_all_by_user_uuid(user_uuid)
+    def create_gas_cylinder_without_device(
+        self,
+        payload: CreateGasCylinderPayload,
+        user_uuid: str,
+        business_uuid: str = None,
+    ):
+        try:
+            return self.gas_cylinder_repository.create_gas_cylinder(
+                payload, user_uuid, business_uuid
+            )
+        except Exception as e:
+            raise e

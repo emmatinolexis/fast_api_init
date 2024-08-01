@@ -9,7 +9,6 @@ from app.core.exceptions import BadRequestError, NotFoundError
 from app.model.user import User
 from app.schema.gas_cylinder_schema import (
     CreateGasCylinder,
-    CreateGasCylinderOnly,
     CreateGasCylinderPayload,
     GasCylinderEventResponse,
     GasEventPayload,
@@ -222,9 +221,12 @@ async def check_gas_level_handler(
 @inject
 async def create_gas_cylinder_only_handler(
     user_uuid: str,
-    gas_cylinder: CreateGasCylinderPayload,
+    gas_cylinder_payload: CreateGasCylinderPayload,
     service: GasCylinderService = Depends(Provide[Container.gas_cylinder_service]),
     user_service: UserService = Depends(Provide[Container.user_service]),
+    gas_device_service: GasDeviceService = Depends(
+        Provide[Container.gas_device_service]
+    ),
     current_user: User = Depends(get_current_user),
 ):
     try:
@@ -235,16 +237,28 @@ async def create_gas_cylinder_only_handler(
                 dev_msg=messages.USER_NOT_FOUND + user_uuid,
             )
 
-        schema = CreateGasCylinderOnly(
-            **gas_cylinder.dict(),
-            user_uuid=user_uuid,
-            business_profile_uuid=user.get("business_profile_id")
-            if user.get("account_type") == AccountType.BUSINESS
-            else None,
+        gas_device = gas_device_service.get_gas_device_by_serial_no(
+            gas_cylinder_payload.gas_device_serial_number
         )
 
-        created_gas_cylinder = service.add(schema)
-        return send_data(created_gas_cylinder)
+        if not gas_device:
+            return send_client_side_error(
+                user_msg="Gas device not found",
+                dev_msg=f"{messages.GAS_DEVICE_NOT_FOUND} {gas_cylinder_payload.gas_device_serial_number}",
+            )
+
+        if user.get("account_type") == AccountType.BUSINESS:
+            return service.create_gas_cylinder_without_device(
+                gas_cylinder_payload,
+                user_uuid,
+                business_uuid=user.get("business_profile").uuid,
+            )
+
+        if user.get("account_type") == AccountType.INDIVIDUAL:
+            return service.create_gas_cylinder_without_device(
+                gas_cylinder_payload, user_uuid
+            )
+
     except Exception as e:
         msg = f"{messages.CREATE_FAILED} - {str(e)}"
         return send_internal_server_error(user_msg=msg, error=e)

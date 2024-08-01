@@ -33,7 +33,7 @@ class TrackingEvent(Base):
     course = Column(Float)
     altitude = Column(Float)
     milleage = Column(Integer)
-    fuel_level = Column(Integer)
+    fuel_level = Column(Float)
     gsm_mcc = Column(Integer)
     gsm_mnc = Column(Integer)
     gsm_lac = Column(String(50))
