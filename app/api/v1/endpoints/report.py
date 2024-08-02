@@ -237,7 +237,7 @@ async def view_smart_report_fleet_overview_handler(
         user = user_service.get_user_by_uuid(str(smart_report.user_uuid))
 
         if user.get("account_type") == AccountType.INDIVIDUAL:
-            report_data = smart_report_service.generate_smart_report(
+            report_data = smart_report_service.generate_smart_report_fleet_overview(
                 convert_date_format(smart_report.start_date),
                 convert_date_format(smart_report.end_date),
                 smart_report.asset_type_uuid,
@@ -248,7 +248,7 @@ async def view_smart_report_fleet_overview_handler(
             return report_data
 
         if user.get("account_type") == AccountType.BUSINESS:
-            report_data = smart_report_service.generate_smart_report(
+            report_data = smart_report_service.generate_smart_report_fleet_overview(
                 convert_date_format(smart_report.start_date),
                 convert_date_format(smart_report.end_date),
                 smart_report.asset_type_uuid,

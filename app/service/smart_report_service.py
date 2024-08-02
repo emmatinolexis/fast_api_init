@@ -1,5 +1,5 @@
-# from datetime import datetime, timedelta
-# from collections import defaultdict
+from collections import defaultdict
+from datetime import datetime, timedelta
 
 from app.repository.asset_repository import AssetRepository
 from app.repository.equipment_repository import EquipmentRepository
@@ -51,10 +51,7 @@ class SmartReportService(BaseService):
         self,
         date_from: str,
         date_to: str,
-        asset_type_uuid: str,
         asset_uuids: list,
-        user_uuid: str = None,
-        business_uuid: str = None,
     ):
         try:
             assets = []
@@ -89,7 +86,76 @@ class SmartReportService(BaseService):
         except Exception as e:
             raise e
 
-    def generate_smart_report(
+    def parse_dates(self, date_from, date_to):
+        date_from_dt = datetime.strptime(date_from, "%d/%m/%Y")
+        date_to_dt = datetime.strptime(date_to, "%d/%m/%Y")
+        months = [
+            (date_from_dt + timedelta(days=x)).strftime("%B")
+            for x in range((date_to_dt - date_from_dt).days + 1)
+        ]
+        unique_months = sorted(set(months), key=lambda x: datetime.strptime(x, "%B"))
+        return date_from_dt, date_to_dt, unique_months
+
+    def retrieve_assets(self, asset_uuids, date_from, date_to):
+        assets = []
+        for asset_uuid in asset_uuids:
+            asset = self.asset_repository.get_asset_with_relationships(
+                asset_uuid, date_from, date_to
+            )
+            assets.append(asset)
+        return assets
+
+    def group_events_by_month(self, asset):
+        monthly_events = defaultdict(list)
+        if asset.tracking_events:
+            for event in asset.tracking_events:
+                event_time = datetime.strptime(
+                    event.get("timestamp"), "%Y-%m-%d %H:%M:%S"
+                )
+                event_month = event_time.strftime("%B")
+                monthly_events[event_month].append(event)
+        return monthly_events
+
+    def calculate_times(self, events):
+        if events:
+            moving_time = calculate_time_traveled(events)
+            idling_time = calculate_total_idle_time_and_movement(events)
+            return moving_time, idling_time.get("total_idle_time", 0)
+        return 0, 0
+
+    def generate_report(
+        self,
+        assets,
+        grouped_assets,
+        good_asset_count,
+        poor_asset_count,
+        monthly_utilization,
+    ):
+        for equipment_name, times in grouped_assets.items():
+            total_time = times["moving_time"] + times["idling_time"]
+            if total_time > 0:
+                times["moving_time_percentage"] = round(
+                    (times["moving_time"] / total_time) * 100, 2
+                )
+                times["idling_time_percentage"] = round(
+                    (times["idling_time"] / total_time) * 100, 2
+                )
+            else:
+                times["moving_time_percentage"] = 0
+                times["idling_time_percentage"] = 0
+
+        report = {
+            "fleet": {
+                "total_asset": len(assets),
+                "good_assets": good_asset_count,
+                "poor_assets": poor_asset_count,
+            },
+            "utilization_rate": grouped_assets,
+            "utilization_trend": monthly_utilization,
+        }
+        return report
+
+    def generate_smart_report_fleet_overview(
         self,
         date_from: str,
         date_to: str,
@@ -99,26 +165,26 @@ class SmartReportService(BaseService):
         business_uuid: str = None,
     ):
         try:
-            assets = []
             good_asset_count = 0
             poor_asset_count = 0
 
-            for asset_uuid in asset_uuids:
-                asset = self.asset_repository.get_asset_with_relationships(
-                    asset_uuid, date_from, date_to
-                )
+            date_from_dt, date_to_dt, unique_months = self.parse_dates(
+                date_from, date_to
+            )
+            monthly_utilization = {
+                month: {"moving_time": 0, "idle_time": 0} for month in unique_months
+            }
 
-                assets.append(asset)
-
-            # Grouping assets by equipment
+            assets = self.retrieve_assets(asset_uuids, date_from, date_to)
             grouped_assets = {}
+
             for asset in assets:
                 asset_violation = self.asset_repository.get_violations_by_alert_type(
                     GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
                     date_from,
                     date_to,
                     business_uuid=business_uuid,
-                    asset_uuid=asset_uuid,
+                    asset_uuid=asset.uuid,
                     asset_type_uuid=asset_type_uuid,
                     user_uuid=user_uuid,
                 )
@@ -134,39 +200,26 @@ class SmartReportService(BaseService):
                         "idling_time": 0,
                     }
 
-                # Calculate times for Start_Moving and Idling_Alarm events
-                moving_time = calculate_time_traveled(asset.tracking_events)
-                idling_time = calculate_total_idle_time_and_movement(
+                monthly_events = self.group_events_by_month(asset)
+
+                for month, events in monthly_events.items():
+                    moving_time, idle_time = self.calculate_times(events)
+                    monthly_utilization[month]["moving_time"] += moving_time
+                    monthly_utilization[month]["idle_time"] += idle_time
+
+                overall_moving_time, overall_idle_time = self.calculate_times(
                     asset.tracking_events
                 )
+                grouped_assets[equipment_name]["moving_time"] += overall_moving_time
+                grouped_assets[equipment_name]["idling_time"] += overall_idle_time
 
-                grouped_assets[equipment_name]["moving_time"] += moving_time
-                grouped_assets[equipment_name]["idling_time"] += idling_time.get(
-                    "total_idle_time"
-                )
-
-            for equipment_name, times in grouped_assets.items():
-                total_time = times["moving_time"] + times["idling_time"]
-                if total_time > 0:
-                    times["moving_time_percentage"] = round(
-                        (times["moving_time"] / total_time) * 100, 2
-                    )
-                    times["idling_time_percentage"] = round(
-                        (times["idling_time"] / total_time) * 100, 2
-                    )
-                else:
-                    times["moving_time_percentage"] = 0
-                    times["idling_time_percentage"] = 0
-
-            report = {
-                "fleet": {
-                    "total_asset": len(assets),
-                    "good_assets": good_asset_count,
-                    "poor_assets": poor_asset_count,
-                },
-                "utilization_rate": grouped_assets,
-            }
-
+            report = self.generate_report(
+                assets,
+                grouped_assets,
+                good_asset_count,
+                poor_asset_count,
+                monthly_utilization,
+            )
             return report
 
         except Exception as e:
