@@ -5,11 +5,11 @@ from app.repository.tracking_event_repository import TrackingEventRepository
 from app.service.base_service import BaseService
 from app.util.enums import GeofenceTypeUuid
 from app.util.utils import (
+    calculate_time_traveled,
     calculate_total_fuel_used,
+    calculate_total_idle_time_and_movement,
     get_distance_travelled_by_coordinates,
     get_status,
-    calculate_time_traveled,
-    calculate_total_idle_time_and_movement
 )
 
 
@@ -45,18 +45,20 @@ class SmartReportService(BaseService):
             raise e
 
     def generate_total_distance_report(
-            self,
-            date_from: str,
-            date_to: str,
-            asset_type_uuid: str,
-            asset_uuids: list,
-            user_uuid: str = None,
-            business_uuid: str = None,
+        self,
+        date_from: str,
+        date_to: str,
+        asset_type_uuid: str,
+        asset_uuids: list,
+        user_uuid: str = None,
+        business_uuid: str = None,
     ):
         try:
             assets = []
             for asset_uuid in asset_uuids:
-                asset = self.asset_repository.get_asset_with_relationships(asset_uuid, date_from, date_to)
+                asset = self.asset_repository.get_asset_with_relationships(
+                    asset_uuid, date_from, date_to
+                )
 
                 assets.append(asset)
 
@@ -99,14 +101,15 @@ class SmartReportService(BaseService):
             poor_asset_count = 0
 
             for asset_uuid in asset_uuids:
-                asset = self.asset_repository.get_asset_with_relationships(asset_uuid, date_from, date_to)
+                asset = self.asset_repository.get_asset_with_relationships(
+                    asset_uuid, date_from, date_to
+                )
 
                 assets.append(asset)
 
             # Grouping assets by equipment
             grouped_assets = {}
             for asset in assets:
-
                 asset_violation = self.asset_repository.get_violations_by_alert_type(
                     GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
                     date_from,
@@ -123,23 +126,34 @@ class SmartReportService(BaseService):
 
                 equipment_name = asset.equipment.name
                 if equipment_name not in grouped_assets:
-                    grouped_assets[equipment_name] = {'moving_time': 0, 'idling_time': 0}
+                    grouped_assets[equipment_name] = {
+                        "moving_time": 0,
+                        "idling_time": 0,
+                    }
 
                 # Calculate times for Start_Moving and Idling_Alarm events
                 moving_time = calculate_time_traveled(asset.tracking_events)
-                idling_time = calculate_total_idle_time_and_movement(asset.tracking_events)
+                idling_time = calculate_total_idle_time_and_movement(
+                    asset.tracking_events
+                )
 
-                grouped_assets[equipment_name]['moving_time'] += moving_time
-                grouped_assets[equipment_name]['idling_time'] += idling_time.get("total_idle_time")
+                grouped_assets[equipment_name]["moving_time"] += moving_time
+                grouped_assets[equipment_name]["idling_time"] += idling_time.get(
+                    "total_idle_time"
+                )
 
             for equipment_name, times in grouped_assets.items():
-                total_time = times['moving_time'] + times['idling_time']
+                total_time = times["moving_time"] + times["idling_time"]
                 if total_time > 0:
-                    times['moving_time_percentage'] = round((times['moving_time'] / total_time) * 100, 2)
-                    times['idling_time_percentage'] = round((times['idling_time'] / total_time) * 100, 2)
+                    times["moving_time_percentage"] = round(
+                        (times["moving_time"] / total_time) * 100, 2
+                    )
+                    times["idling_time_percentage"] = round(
+                        (times["idling_time"] / total_time) * 100, 2
+                    )
                 else:
-                    times['moving_time_percentage'] = 0
-                    times['idling_time_percentage'] = 0
+                    times["moving_time_percentage"] = 0
+                    times["idling_time_percentage"] = 0
 
             report = {
                 "fleet": {
@@ -147,7 +161,7 @@ class SmartReportService(BaseService):
                     "good_assets": good_asset_count,
                     "poor_assets": poor_asset_count,
                 },
-                "utilization_rate": grouped_assets
+                "utilization_rate": grouped_assets,
             }
 
             return report

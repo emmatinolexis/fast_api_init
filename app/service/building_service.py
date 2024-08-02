@@ -94,9 +94,7 @@ class BuildingService(BaseService):
         building_uuid: str = None,
     ):
         try:
-            report = self.building_repository.read_building_by_uuid(
-                building_uuid
-            )
+            report = self.building_repository.read_building_by_uuid(building_uuid)
             return report
         except Exception as e:
             raise e

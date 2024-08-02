@@ -20,11 +20,22 @@ class BuildingRepository(BaseRepository):
         building_uuid: str = None,
     ) -> Dict[str, Any]:
         with self.session_factory() as session:
-            building = session.query(self.model).filter(self.model.uuid == building_uuid).options(
-                joinedload(self.model.gas_cylinders).joinedload(GasCylinder.gas_events),
-                joinedload(self.model.gas_cylinders).joinedload(GasCylinder.gas_device),
-                joinedload(self.model.gas_cylinders).joinedload(GasCylinder.cylinder_type)
-            ).first()
+            building = (
+                session.query(self.model)
+                .filter(self.model.uuid == building_uuid)
+                .options(
+                    joinedload(self.model.gas_cylinders).joinedload(
+                        GasCylinder.gas_events
+                    ),
+                    joinedload(self.model.gas_cylinders).joinedload(
+                        GasCylinder.gas_device
+                    ),
+                    joinedload(self.model.gas_cylinders).joinedload(
+                        GasCylinder.cylinder_type
+                    ),
+                )
+                .first()
+            )
 
             cylinders = []
 
@@ -41,7 +52,7 @@ class BuildingRepository(BaseRepository):
                     "gas_device_serial_number": cylinder.gas_device_serial_number,
                     "gas_device": cylinder.gas_device,
                     "cylinder_type": cylinder.cylinder_type,
-                    "gas_level": gas_level
+                    "gas_level": gas_level,
                 }
 
                 cylinders.append(cylinder_data)

@@ -522,7 +522,9 @@ class AssetRepository(BaseRepository):
     #
     #         return asset
 
-    def get_asset_with_relationships(self, asset_uuid: str, date_from: str, date_to: str):
+    def get_asset_with_relationships(
+        self, asset_uuid: str, date_from: str, date_to: str
+    ):
         try:
             # Parse date_from and date_to from dd/mm/yyyy to datetime objects
             date_from_obj = datetime.strptime(date_from, "%d/%m/%Y").date()
@@ -531,10 +533,14 @@ class AssetRepository(BaseRepository):
             raise ValueError("Date format should be dd/mm/yyyy") from e
 
         with self.session_factory() as session:
-            asset = session.query(self.model).filter_by(uuid=asset_uuid).options(
-                joinedload(self.model.asset_type),
-                joinedload(self.model.equipment)
-            ).first()
+            asset = (
+                session.query(self.model)
+                .filter_by(uuid=asset_uuid)
+                .options(
+                    joinedload(self.model.asset_type), joinedload(self.model.equipment)
+                )
+                .first()
+            )
 
             if asset and asset.device_imei:
                 # Get device's tracking events within the specified date range
@@ -562,14 +568,15 @@ class AssetRepository(BaseRepository):
                 # Ensure last_tracking_events is a list of dictionaries
                 asset.tracking_events = [
                     {
-                        'latitude': event.latitude,
-                        'longitude': event.longitude,
-                        'speed': event.speed,
-                        'course': event.course,
-                        'timestamp': str(event.timestamp),
-                        'event_type': get_status(event.event_type),
-                        'fuel_level': event.fuel_level,
-                    } for event in last_tracking_events
+                        "latitude": event.latitude,
+                        "longitude": event.longitude,
+                        "speed": event.speed,
+                        "course": event.course,
+                        "timestamp": str(event.timestamp),
+                        "event_type": get_status(event.event_type),
+                        "fuel_level": event.fuel_level,
+                    }
+                    for event in last_tracking_events
                 ]
 
             return asset

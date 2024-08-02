@@ -775,8 +775,8 @@ def calculate_total_time_by_event(events, event_type):
     total_time = 0
     last_timestamp = None
     for event in events:
-        if event['event_type'] == event_type:
-            event_timestamp = event.get('timestamp')
+        if event["event_type"] == event_type:
+            event_timestamp = event.get("timestamp")
             if isinstance(event_timestamp, str):
                 event_timestamp = datetime.fromisoformat(event_timestamp)
             elif isinstance(event_timestamp, datetime):

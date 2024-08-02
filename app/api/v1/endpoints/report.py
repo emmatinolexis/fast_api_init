@@ -261,7 +261,7 @@ async def view_smart_report_fleet_overview_handler(
     "/smart_report/total_distance/{smart_report_uuid}", response_class=ORJSONResponse
 )
 @inject
-async def view_smart_report_fleet_overview_handler(
+async def view_smart_report_total_distance_covered_handler(
     smart_report_uuid: str,
     smart_report_service: SmartReportService = Depends(
         Provide[Container.smart_report_service]

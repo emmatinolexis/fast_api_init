@@ -2,7 +2,6 @@ import uuid
 
 from sqlalchemy import FLOAT, Column, DateTime, Enum, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
-
 from sqlalchemy.orm import relationship
 
 from app.core.settings import settings
