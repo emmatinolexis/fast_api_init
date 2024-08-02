@@ -162,58 +162,12 @@ async def create_smart_report_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-# @router.get(
-#     "/smart_report/fleet_overview/{smart_report_uuid}", response_class=ORJSONResponse
-# )
-# @inject
-# async def view_smart_report_fleet_overview_handler(
-#     smart_report_uuid: str,
-#     asset_service: AssetService = Depends(Provide[Container.asset_service]),
-#     smart_report_service: SmartReportService = Depends(
-#         Provide[Container.smart_report_service]
-#     ),
-#     current_user: User = Depends(get_current_user),
-# ):
-#     try:
-#         return {
-#             "total_fuel_recorded_current_date": 0,
-#             "total_fuel_recorded_previous_date": 0,
-#             "total_distance_covered_current_date": 0,
-#             "total_distance_covered_previous_date": 0,
-#             "Total_fuel_saved": 0,
-#             "fleet": {
-#                 "total_asset": 0,
-#                 "good_asset": 0,
-#                 "poor_asset": 0,
-#                 "utilization_rate": {"truck": 0, "Cars": 0, "buldozer": 0},
-#                 "utilization_trend": {
-#                     "January": {"hourse_worked": 0, "idle_time": 0},
-#                     "Febuary": {"hourse_worked": 0, "idle_time": 0},
-#                     "March": {"hourse_worked": 0, "idle_time": 0},
-#                     "April": {"hourse_worked": 0, "idle_time": 0},
-#                     "May": {"hourse_worked": 0, "idle_time": 0},
-#                     "June": {"hourse_worked": 0, "idle_time": 0},
-#                     "July": {"hourse_worked": 0, "idle_time": 0},
-#                     "Aug": {"hourse_worked": 0, "idle_time": 0},
-#                     "Sep": {"hourse_worked": 0, "idle_time": 0},
-#                     "Oct": {"hourse_worked": 0, "idle_time": 0},
-#                     "Nov": {"hourse_worked": 0, "idle_time": 0},
-#                     "Dec": {"hourse_worked": 0, "idle_time": 0},
-#                 },
-#             },
-#         }
-#     except Exception as e:
-#         msg = messages.GET_FAILED + f"{msg_prefix}s"
-#         return send_internal_server_error(user_msg=msg, error=e)
-
-
 @router.get(
     "/smart_report/fleet_overview/{smart_report_uuid}", response_class=ORJSONResponse
 )
 @inject
 async def view_smart_report_fleet_overview_handler(
     smart_report_uuid: str,
-    # asset_service: AssetService = Depends(Provide[Container.asset_service]),
     smart_report_service: SmartReportService = Depends(
         Provide[Container.smart_report_service]
     ),
@@ -283,9 +237,7 @@ async def view_smart_report_total_distance_covered_handler(
             report_data = smart_report_service.generate_total_distance_report(
                 convert_date_format(smart_report.start_date),
                 convert_date_format(smart_report.end_date),
-                smart_report.asset_type_uuid,
                 smart_report.asset_group_uuids.get("asset_uuids"),
-                user_uuid=smart_report.user_uuid,
             )
 
             return report_data
@@ -294,9 +246,7 @@ async def view_smart_report_total_distance_covered_handler(
             report_data = smart_report_service.generate_total_distance_report(
                 convert_date_format(smart_report.start_date),
                 convert_date_format(smart_report.end_date),
-                smart_report.asset_type_uuid,
                 smart_report.asset_group_uuids.get("asset_uuids"),
-                business_uuid=smart_report.business_profile_uuid,
             )
 
             return report_data
