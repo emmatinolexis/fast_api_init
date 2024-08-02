@@ -39,10 +39,10 @@ class SmartReportService(BaseService):
     ):
         try:
             return self.smart_report_repository.read_all_reports(
-                business_uuid=business_profile_uuid,
                 user_uuid=user_uuid,
-                page_size=page_size,
+                business_uuid=business_profile_uuid,
                 page=page,
+                page_size=page_size,
             )
         except Exception as e:
             raise e

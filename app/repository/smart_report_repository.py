@@ -1,7 +1,7 @@
 from contextlib import AbstractContextManager
 from typing import Any, Callable, Dict
 
-from sqlalchemy import asc
+from sqlalchemy import desc, func
 from sqlalchemy.orm import Session
 
 from app.model.asset import Asset
@@ -22,38 +22,58 @@ class SmartReportRepository(BaseRepository):
         page_size: int = 10,
     ) -> Dict[str, Any]:
         with self.session_factory() as session:
-            offset = (page - 1) * page_size
-            base_query = self._build_base_query(session, user_uuid, business_uuid)
+            # offset = (page - 1) * page_size
 
-            total_assets = base_query.count()
-            total_pages = (total_assets + page_size - 1) // page_size
+            if user_uuid:
+                total_reports = (
+                    session.query(func.count(self.model.id))
+                    .filter(self.model.user_uuid == user_uuid)
+                    .scalar()
+                )
 
-            paginated_query = (
-                base_query.order_by(asc(self.model.created_at))
-                .offset(offset)
-                .limit(100)
-                .all()
-            )
+                total_pages = (total_reports + page_size - 1) // page_size
 
-            return {
-                "reports": paginated_query,
-                "total_assets": total_assets,
-                "total_pages": total_pages,
-                "current_page": page,
-                "page_size": page_size,
-            }
+                reports = (
+                    session.query(self.model)
+                    .filter(self.model.user_uuid == user_uuid)
+                    .order_by(desc(self.model.created_at))
+                    # .offset(offset)
+                    # .limit(page_size)
+                    .all()
+                )
 
-    def _build_base_query(
-        self, session, user_uuid: str = None, business_uuid: str = None
-    ):
-        base_query = session.query(self.model)
+                return {
+                    "reports": reports,
+                    "total_assets": total_reports,
+                    "total_pages": total_pages,
+                    "current_page": page,
+                    "page_size": page_size,
+                }
 
-        if user_uuid:
-            base_query = base_query.filter(self.model.user_uuid == user_uuid)
+            if business_uuid:
+                total_reports = (
+                    session.query(func.count(self.model.id))
+                    .filter(self.model.business_profile_uuid == business_uuid)
+                    .scalar()
+                )
 
-        if business_uuid:
-            base_query = base_query.filter(
-                self.model.business_profile_uuid == business_uuid
-            )
+                total_pages = (total_reports + page_size - 1) // page_size
 
-        return base_query
+                reports = (
+                    session.query(self.model)
+                    .filter(self.model.business_profile_uuid == business_uuid)
+                    .order_by(desc(self.model.created_at))
+                    # .offset(offset)
+                    # .limit(page_size)
+                    .all()
+                )
+
+                # return reports
+
+                return {
+                    "reports": reports,
+                    "total_assets": total_reports,
+                    "total_pages": total_pages,
+                    "current_page": page,
+                    "page_size": page_size,
+                }

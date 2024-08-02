@@ -184,12 +184,13 @@ class BuildingRepository(BaseRepository):
         return {}
 
     def _build_building_info(self, asset, building_cylinders):
+        status = "Attention Needed" if building_cylinders else "Safe"
         return {
             "building_uuid": asset.uuid,
             "building_name": asset.building_name,
             "longitude": asset.longitude,
             "latitude": asset.latitude,
-            "status": "Attention Needed",
+            "status": status,
             "image_url": asset.image_url,
             "cylinders": building_cylinders,
         }
