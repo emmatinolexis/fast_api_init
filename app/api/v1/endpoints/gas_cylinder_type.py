@@ -1,5 +1,5 @@
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
 
 from app.core import messages
@@ -14,6 +14,7 @@ from app.schema.gas_cylinder_schema import (
 )
 from app.service.gas_cylinder_type_service import GasCylinderTypeService
 from app.service.other_cylinder_type_service import OtherCylinderTypeService
+from app.util.enums import ActiveStatus
 from app.util.utils import send_client_side_error, send_data, send_internal_server_error
 
 router = APIRouter(
@@ -27,13 +28,14 @@ msg_prefix = "gas cylinder"
 @router.get("/", response_class=ORJSONResponse)
 @inject
 async def get_all_gas_cylinder_types_handler(
+    status: ActiveStatus = Query(None, description="Filter by status"),
     service: GasCylinderTypeService = Depends(
         Provide[Container.gas_cylinder_type_service]
     ),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.get_list())
+        return send_data(service.filter_by_status(status))
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
