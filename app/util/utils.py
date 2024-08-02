@@ -769,3 +769,23 @@ def convert_date_format(date_str):
     formatted_date = date_obj.strftime("%d/%m/%Y")
 
     return formatted_date
+
+
+def calculate_total_time_by_event(events, event_type):
+    total_time = 0
+    last_timestamp = None
+    for event in events:
+        if event["event_type"] == event_type:
+            event_timestamp = event.get("timestamp")
+            if isinstance(event_timestamp, str):
+                event_timestamp = datetime.fromisoformat(event_timestamp)
+            elif isinstance(event_timestamp, datetime):
+                event_timestamp = event_timestamp
+            else:
+                continue
+
+            if last_timestamp:
+                duration = (event_timestamp - last_timestamp).total_seconds()
+                total_time += duration
+            last_timestamp = event_timestamp
+    return total_time

@@ -89,6 +89,16 @@ class BuildingService(BaseService):
         except Exception as e:
             raise e
 
+    def get_building_by_uuid(
+        self,
+        building_uuid: str = None,
+    ):
+        try:
+            report = self.building_repository.read_building_by_uuid(building_uuid)
+            return report
+        except Exception as e:
+            raise e
+
     def get_building_cylinder_assets(
         self,
         building_uuid: str,

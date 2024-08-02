@@ -15,6 +15,58 @@ class BuildingRepository(BaseRepository):
         self.session_factory = session_factory
         super().__init__(session_factory, Building)
 
+    def read_building_by_uuid(
+        self,
+        building_uuid: str = None,
+    ) -> Dict[str, Any]:
+        with self.session_factory() as session:
+            building = (
+                session.query(self.model)
+                .filter(self.model.uuid == building_uuid)
+                .options(
+                    joinedload(self.model.gas_cylinders).joinedload(
+                        GasCylinder.gas_events
+                    ),
+                    joinedload(self.model.gas_cylinders).joinedload(
+                        GasCylinder.gas_device
+                    ),
+                    joinedload(self.model.gas_cylinders).joinedload(
+                        GasCylinder.cylinder_type
+                    ),
+                )
+                .first()
+            )
+
+            cylinders = []
+
+            for cylinder in building.gas_cylinders:
+                cylinder_type = cylinder.cylinder_type
+                gas_events = cylinder.gas_events
+
+                gas_level = self._get_gas_level(cylinder_type, gas_events)
+
+                cylinder_data = {
+                    "cylinder_uuid": cylinder.uuid,
+                    "cylinder_name": cylinder.cylinder_name,
+                    "material_type": cylinder.material_type,
+                    "gas_device_serial_number": cylinder.gas_device_serial_number,
+                    "gas_device": cylinder.gas_device,
+                    "cylinder_type": cylinder.cylinder_type,
+                    "gas_level": gas_level,
+                }
+
+                cylinders.append(cylinder_data)
+
+            building_data = {
+                "building_name": building.building_name,
+                "longitude": building.longitude,
+                "latitude": building.latitude,
+                "image_url": building.image_url,
+                "cylinders": cylinders,
+            }
+
+            return building_data
+
     def read_all_building(
         self,
         user_uuid: str = None,
@@ -102,7 +154,9 @@ class BuildingRepository(BaseRepository):
 
     def _get_gas_level(self, cylinder_type, gas_events):
         if gas_events:
-            last_gas_event = gas_events[-1]
+            # last_gas_event = gas_events[-1]
+            last_gas_event = max(gas_events, key=lambda x: x.created_at)
+
             gas_level = calculate_gas_level_percentage(
                 cylinder_type.empty_weight,
                 cylinder_type.full_weight,
