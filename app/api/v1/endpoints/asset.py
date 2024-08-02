@@ -585,6 +585,21 @@ async def get_building_asset_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
+@router.get("/buildings/get/{building_uuid}", response_class=ORJSONResponse)
+@inject
+async def get_building_by_uuid_handler(
+    building_uuid: str,
+    building_service: BuildingService = Depends(Provide[Container.building_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        building = building_service.get_building_by_uuid(building_uuid)
+        return send_data(building)
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix} theft report"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
 @router.get("/building/{building_uuid}", response_class=ORJSONResponse)
 @inject
 async def get_building_cylinder_assets_handler(

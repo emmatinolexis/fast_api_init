@@ -730,4 +730,5 @@ class Container(containers.DeclarativeContainer):
         smart_report_repository=smart_report_repository,
         asset_repository=asset_repository,
         tracking_event_repository=tracking_event_repository,
+        equipment_repository=equipment_repository,
     )

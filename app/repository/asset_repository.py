@@ -487,3 +487,89 @@ class AssetRepository(BaseRepository):
             violations = base_query.filter(and_(*filters)).all()
 
             return violations
+
+    # def get_asset_with_relationships(self, asset_uuid: str, date_from: str, date_to: str):
+    #     # Ensure date_to is inclusive
+    #     date_to = date_to.replace(hour=23, minute=59, second=59)
+    #
+    #     with self.session_factory() as session:
+    #         asset = session.query(self.model).filter_by(uuid=asset_uuid).options(
+    #             joinedload(self.model.asset_type),
+    #             joinedload(self.model.equipment)
+    #         ).first()
+    #
+    #         if asset and asset.device_imei:
+    #             # Get device's tracking events within the specified date range
+    #             last_tracking_events = (
+    #                 session.query(
+    #                     label("lat", TrackingEvent.latitude),
+    #                     label("lng", TrackingEvent.longitude),
+    #                     TrackingEvent.speed,
+    #                     TrackingEvent.course,
+    #                     label("timestamp", TrackingEvent.event_datetime),
+    #                     label("event_type", TrackingEvent.event_type),
+    #                     label("fuel_level", TrackingEvent.fuel_level),
+    #                 )
+    #                 .filter(
+    #                     TrackingEvent.device_imei == asset.device_imei,
+    #                     TrackingEvent.event_datetime.between(date_from, date_to_obj)
+    #                 )
+    #                 .order_by(desc(TrackingEvent.event_datetime))
+    #                 .all()
+    #             )
+    #
+    #             asset.tracking_events = last_tracking_events
+    #
+    #         return asset
+
+    def get_asset_with_relationships(self, asset_uuid: str, date_from: str, date_to: str):
+        try:
+            # Parse date_from and date_to from dd/mm/yyyy to datetime objects
+            date_from_obj = datetime.strptime(date_from, "%d/%m/%Y").date()
+            date_to_obj = datetime.strptime(date_to, "%d/%m/%Y").date()
+        except ValueError as e:
+            raise ValueError("Date format should be dd/mm/yyyy") from e
+
+        with self.session_factory() as session:
+            asset = session.query(self.model).filter_by(uuid=asset_uuid).options(
+                joinedload(self.model.asset_type),
+                joinedload(self.model.equipment)
+            ).first()
+
+            if asset and asset.device_imei:
+                # Get device's tracking events within the specified date range
+                last_tracking_events = (
+                    session.query(
+                        label("latitude", TrackingEvent.latitude),
+                        label("longitude", TrackingEvent.longitude),
+                        TrackingEvent.speed,
+                        TrackingEvent.course,
+                        label("timestamp", TrackingEvent.event_datetime),
+                        label("event_type", TrackingEvent.event_type),
+                        label("fuel_level", TrackingEvent.fuel_level),
+                    )
+                    .filter(
+                        TrackingEvent.device_imei == asset.device_imei,
+                        and_(
+                            cast(TrackingEvent.event_datetime, Date) >= date_from_obj,
+                            cast(TrackingEvent.event_datetime, Date) <= date_to_obj,
+                        ),
+                    )
+                    .order_by(desc(TrackingEvent.event_datetime))
+                    .all()
+                )
+
+                # Ensure last_tracking_events is a list of dictionaries
+                asset.tracking_events = [
+                    {
+                        'latitude': event.latitude,
+                        'longitude': event.longitude,
+                        'speed': event.speed,
+                        'course': event.course,
+                        'timestamp': str(event.timestamp),
+                        'event_type': get_status(event.event_type),
+                        'fuel_level': event.fuel_level,
+                    } for event in last_tracking_events
+                ]
+
+            return asset
