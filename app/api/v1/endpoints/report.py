@@ -510,3 +510,51 @@ async def get_gas_report(
 
     except Exception as e:
         return send_internal_server_error(user_msg="Failed to get gas report", error=e)
+
+
+@router.get(
+    "/smart_report/fuel_usage/{smart_report_uuid}", response_class=ORJSONResponse
+)
+@inject
+async def view_smart_report_fuel_usage_handler(
+    smart_report_uuid: str,
+    smart_report_service: SmartReportService = Depends(
+        Provide[Container.smart_report_service]
+    ),
+    user_service: UserService = Depends(Provide[Container.user_service]),
+):
+    try:
+        smart_report = smart_report_service.get_by_uuid(smart_report_uuid)
+
+        if not smart_report:
+            usr_msg = "Smart report not found"
+            dev_msg = f"Smart report not found for {smart_report_uuid}"
+            return send_internal_server_error(user_msg=usr_msg, error=dev_msg)
+
+        user = user_service.get_user_by_uuid(str(smart_report.user_uuid))
+
+        if user.get("account_type") == AccountType.INDIVIDUAL:
+            report_data = smart_report_service.generate_fuel_usage_report(
+                convert_date_format(smart_report.start_date),
+                convert_date_format(smart_report.end_date),
+                smart_report.asset_type_uuid,
+                smart_report.asset_group_uuids.get("asset_uuids"),
+                user_uuid=smart_report.user_uuid,
+            )
+
+            return send_data(report_data)
+
+        if user.get("account_type") == AccountType.BUSINESS:
+            report_data = smart_report_service.generate_fuel_usage_report(
+                convert_date_format(smart_report.start_date),
+                convert_date_format(smart_report.end_date),
+                smart_report.asset_type_uuid,
+                smart_report.asset_group_uuids.get("asset_uuids"),
+                business_uuid=smart_report.business_profile_uuid,
+            )
+
+            return send_data(report_data)
+
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)

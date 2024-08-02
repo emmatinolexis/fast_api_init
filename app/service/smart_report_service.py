@@ -1,3 +1,7 @@
+from collections import defaultdict
+
+from dateutil import parser
+
 from app.repository.asset_repository import AssetRepository
 from app.repository.equipment_repository import EquipmentRepository
 from app.repository.smart_report_repository import SmartReportRepository
@@ -229,3 +233,61 @@ class SmartReportService(BaseService):
             fuel_level_current_range,
             fuel_level_past_range,
         )
+
+    def generate_fuel_usage_report(
+        self,
+        start_date: str,
+        end_date: str,
+        asset_type_uuid: str,
+        asset_uuids: list,
+        user_uuid: str = None,
+        business_uuid: str = None,
+    ):
+        try:
+            assets = []
+            start_date_dt = parser.parse(start_date)
+            end_date_dt = parser.parse(end_date)
+
+            for asset_uuid in asset_uuids:
+                asset = self.asset_repository.get_asset_with_relationships(
+                    asset_uuid, start_date, end_date
+                )
+                assets.append(asset)
+
+            organized_events = defaultdict(list)
+
+            for asset in assets:
+                for event in asset.tracking_events:
+                    event_date = parser.parse(event["timestamp"])
+                    if start_date_dt <= event_date <= end_date_dt:
+                        # Determine the period for this event
+                        if (end_date_dt - start_date_dt).days <= 7:
+                            # Group by day
+                            period_key = event_date.strftime("%Y-%m-%d")
+                        elif (end_date_dt - start_date_dt).days <= 30:
+                            # Group by week
+                            period_key = (
+                                f"{event_date.year}-W{event_date.isocalendar()[1]}"
+                            )
+                        else:
+                            # Group by month
+                            period_key = event_date.strftime("%Y-%m")
+
+                        organized_events[period_key].append(event)
+
+            fuel_usage_report = {}
+
+            for period, events in organized_events.items():
+                # Filter out events that have a fuel level
+                fuel_level_events = [
+                    event for event in events if event["fuel_level"] is not None
+                ]
+                # Calculate total fuel used for this period
+                total_fuel_used = calculate_total_fuel_used(fuel_level_events)
+                # Store the result in the report
+                fuel_usage_report[period] = total_fuel_used
+
+            return fuel_usage_report
+
+        except Exception as e:
+            raise e
