@@ -386,16 +386,15 @@ async def get_smart_report_by_user_handler(
         if user:
             if user.get("account_type") == AccountType.INDIVIDUAL:
                 reports = smart_report_service.get_reports(
-                    user_uuid=user_uuid, page_size=page_size, page=page
+                    user_uuid=user_uuid, page=page, page_size=page_size
                 )
-
                 return reports
 
             if user.get("account_type") == AccountType.BUSINESS:
                 reports = smart_report_service.get_reports(
                     business_profile_uuid=user.get("business_profile").uuid,
-                    page_size=10,
-                    page=1,
+                    page=10,
+                    page_size=page_size,
                 )
 
                 return reports
