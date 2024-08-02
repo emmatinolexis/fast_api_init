@@ -184,12 +184,7 @@ class BuildingRepository(BaseRepository):
         return {}
 
     def _build_building_info(self, asset, building_cylinders):
-        status = "Safe"
-        if building_cylinders:
-            for cylinder in building_cylinders:
-                if cylinder["status"] < 25:
-                    status = "Attention Needed"
-                    break
+        status = "Attention Needed" if building_cylinders else "Safe"
 
         return {
             "building_uuid": asset.uuid,
