@@ -1,9 +1,10 @@
 import uuid
 
-from sqlalchemy import Column, DateTime, Enum, ForeignKey, String
+from sqlalchemy import Column, DateTime, Enum, ForeignKey, String, event
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
+from app.core import constants
 from app.model.base_model import BaseModel
 from app.util.enums import AccountType, ActiveStatus, UserRole
 
@@ -28,6 +29,8 @@ class User(BaseModel):
     address = Column(String(length=50), nullable=True, index=True)
     account_type = Column(Enum(AccountType), nullable=False, index=True)
     onboarding_status = Column(String(length=50), nullable=True, index=True)
+    country = Column(String(length=50), nullable=True, index=True)
+    currency = Column(String(length=50), nullable=True, index=True)
     status = Column(Enum(ActiveStatus), default=ActiveStatus.ACTIVE, nullable=False)
     deactivation_reason = Column(String(length=250), nullable=True)
     avatar_url = Column(String(length=200), nullable=True)
@@ -54,3 +57,13 @@ class User(BaseModel):
 
     asset_device_requests = relationship("AssetDeviceRequest", back_populates="user")
     # business_profile_assignments = relationship(UserOrganisationAssignment, back_populates='user')
+
+
+def set_currency_based_on_country(target, value, oldvalue, initiator):
+    if value in constants.COUNTRY_CURRENCY_MAP:
+        target.currency = constants.COUNTRY_CURRENCY_MAP[value]
+    else:
+        target.currency = None  # or some default value
+
+
+event.listen(User.country, "set", set_currency_based_on_country, retval=False)
