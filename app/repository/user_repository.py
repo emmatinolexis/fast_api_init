@@ -44,6 +44,7 @@ class UserRepository(BaseRepository):
                 user_to_update.location = user.location
                 user_to_update.address = user.address
                 user_to_update.phone_number = user.phone_number
+                user_to_update.country = user.country
 
                 # Commit the changes to the database
                 session.commit()
