@@ -48,7 +48,7 @@ async def create_fuel_log_handler_for_individual(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.post("/bulk/{user_uuid}", response_class=ORJSONResponse)
+@router.post("/fleet_manager_bulk/{user_uuid}", response_class=ORJSONResponse)
 @inject
 async def create_bulk_fuel_logs_handler(
     user_uuid: str,
@@ -59,8 +59,6 @@ async def create_bulk_fuel_logs_handler(
 ):
     try:
         user = user_service.get_user_by_uuid(user_uuid)
-
-        print(user)
 
         if not user:
             return send_client_side_error(
@@ -85,7 +83,7 @@ async def create_bulk_fuel_logs_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.post("/single/{user_uuid}", response_class=ORJSONResponse)
+@router.post("/fleet_manager_single/{user_uuid}", response_class=ORJSONResponse)
 @inject
 async def create_fuel_log_handler_for_fleet_manager(
     user_uuid: str,
@@ -101,8 +99,6 @@ async def create_fuel_log_handler_for_fleet_manager(
             return send_client_side_error(
                 user_msg=messages.USER_NOT_FOUND, status_code=404
             )
-
-        print(user_uuid)
 
         data = service.create_fleet_manager_single_fuel_log(
             payload,
