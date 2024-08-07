@@ -11,7 +11,12 @@ from app.schema.fuel_log_schema import FuelLogSchema, SingleFuelLog
 from app.service.fuel_log_service import FuelLogService
 from app.service.user_service import UserService
 from app.util.enums import AccountType
-from app.util.utils import send_client_side_error, send_data, send_internal_server_error
+from app.util.utils import (
+    send_client_side_error,
+    send_data,
+    send_data_with_info,
+    send_internal_server_error,
+)
 
 router = APIRouter(
     prefix="/fuel_logs",
@@ -109,7 +114,7 @@ async def create_fuel_log_handler_for_fleet_manager(
             else None,
         )
 
-        return send_data(data)
+        return send_data_with_info(data, messages.CREATE_SUCCESS + msg_prefix)
     except NotFoundError as e:
         return send_client_side_error(
             user_msg=e.detail, status_code=401, dev_msg=e.detail
