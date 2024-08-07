@@ -411,7 +411,7 @@ async def view_smart_report_violations_handler(
                     "asset_name": "Hyndai Elentra (Black)",
                     "vehicle_license_no": "GR-8551-23",
                     "image_url": "https://mvitracking.s3.eu-central-1.amazonaws.com/"
-                                 "Er-ist-wieder-da-648x432-49da1694f552880d.jpg",
+                    "Er-ist-wieder-da-648x432-49da1694f552880d.jpg",
                     "driver": {
                         "first_name": "Joshua ",
                         "last_name": "Tetteh",
@@ -432,7 +432,7 @@ async def view_smart_report_violations_handler(
                     "asset_name": "Toyota Corolla",
                     "vehicle_license_no": "GR 3251-23",
                     "image_url": "https://mvitracking.s3.eu-central-1.amazonaws.com/"
-                                 "Er-ist-wieder-da-648x432-49da1694f552880d.jpg",
+                    "Er-ist-wieder-da-648x432-49da1694f552880d.jpg",
                     "driver": {
                         "first_name": "Joshua ",
                         "last_name": "Tetteh",
