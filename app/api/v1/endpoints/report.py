@@ -270,27 +270,6 @@ async def view_smart_report_fleet_performance_handler(
 ):
     try:
         return {
-            "fuel_usage": {
-                "January": 0,
-                "February": 0,
-                "March": 0,
-                "April": 0,
-                "May": 0,
-                "June": 0,
-                "July": 0,
-                "Aug": 0,
-                "Sep": 0,
-                "Oct": 0,
-                "Nov": 0,
-                "Dec": 0,
-                "total": 0,
-            },
-            "fuel_usage_by_asset_type": {
-                "Trucks": 0,
-                "Cars": 0,
-                "Bulldozers": 0,
-                "Cranes": 0,
-            },
             "incidents": {
                 "geofence": 0,
                 "overspeeding": 0,
@@ -361,6 +340,110 @@ async def view_smart_report_fleet_performance_handler(
                     "emergency_breaking": 0,
                 },
             },
+        }
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get(
+    "/smart_report/cost_analysis/{smart_report_uuid}", response_class=ORJSONResponse
+)
+@inject
+async def view_smart_report_cost_analysis_handler(
+    smart_report_uuid: str,
+    asset_service: AssetService = Depends(Provide[Container.asset_service]),
+    smart_report_service: SmartReportService = Depends(
+        Provide[Container.smart_report_service]
+    ),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        return {
+            "fuel_cost": {
+                "January": 0,
+                "February": 0,
+                "March": 0,
+                "April": 0,
+                "May": 0,
+                "June": 0,
+                "July": 0,
+                "Aug": 0,
+                "Sept": 0,
+                "Oct": 0,
+                "Nov": 0,
+                "Dec": 0,
+            },
+            "fuel_cost_by_asset_type": {
+                "trucks": 0,
+                "cars": 0,
+                "bulldozers": 0,
+                "cranes": 0,
+            },
+        }
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get(
+    "/smart_report/violations/{smart_report_uuid}", response_class=ORJSONResponse
+)
+@inject
+async def view_smart_report_violations_handler(
+    smart_report_uuid: str,
+    asset_service: AssetService = Depends(Provide[Container.asset_service]),
+    smart_report_service: SmartReportService = Depends(
+        Provide[Container.smart_report_service]
+    ),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        return {
+            "assets": [
+                {
+                    "asset_name": "Hyndai Elentra (Black)",
+                    "vehicle_license_no": "GR-8551-23",
+                    "image_url": "https://mvitracking.s3.eu-central-1.amazonaws.com/"
+                                 "Er-ist-wieder-da-648x432-49da1694f552880d.jpg",
+                    "driver": {
+                        "first_name": "Joshua ",
+                        "last_name": "Tetteh",
+                        "phone_number": "+233245678024",
+                    },
+                    "last_tracking_event": {
+                        "lat": 5.7582366,
+                        "lng": -0.1398266,
+                        "speed": 0,
+                        "course": 105,
+                        "timestamp": "2024-08-06T15:50:17",
+                        "event_type": "Stop_Moving",
+                        "status": "stopped",
+                        "fuel_level": 0,
+                    },
+                },
+                {
+                    "asset_name": "Toyota Corolla",
+                    "vehicle_license_no": "GR 3251-23",
+                    "image_url": "https://mvitracking.s3.eu-central-1.amazonaws.com/"
+                                 "Er-ist-wieder-da-648x432-49da1694f552880d.jpg",
+                    "driver": {
+                        "first_name": "Joshua ",
+                        "last_name": "Tetteh",
+                        "phone_number": "+233245678024",
+                    },
+                    "last_tracking_event": {
+                        "lat": 5.7582366,
+                        "lng": -0.1398266,
+                        "speed": 0,
+                        "course": 105,
+                        "timestamp": "2024-08-06T15:50:17",
+                        "event_type": "Stop_Moving",
+                        "status": "stopped",
+                        "fuel_level": 0,
+                    },
+                },
+            ]
         }
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
