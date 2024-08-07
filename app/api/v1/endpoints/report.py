@@ -417,15 +417,10 @@ async def view_smart_report_violations_handler(
                         "last_name": "Tetteh",
                         "phone_number": "+233245678024",
                     },
+                    "date_of_incidence": "20/08/2024",
                     "last_tracking_event": {
                         "lat": 5.7582366,
                         "lng": -0.1398266,
-                        "speed": 0,
-                        "course": 105,
-                        "timestamp": "2024-08-06T15:50:17",
-                        "event_type": "Stop_Moving",
-                        "status": "stopped",
-                        "fuel_level": 0,
                     },
                 },
                 {
@@ -438,15 +433,10 @@ async def view_smart_report_violations_handler(
                         "last_name": "Tetteh",
                         "phone_number": "+233245678024",
                     },
+                    "date_of_incidence": "20/08/2024",
                     "last_tracking_event": {
                         "lat": 5.7582366,
                         "lng": -0.1398266,
-                        "speed": 0,
-                        "course": 105,
-                        "timestamp": "2024-08-06T15:50:17",
-                        "event_type": "Stop_Moving",
-                        "status": "stopped",
-                        "fuel_level": 0,
                     },
                 },
             ]
