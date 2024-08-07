@@ -75,8 +75,10 @@ BUILDING_NOT_FOUND = "No building was found with the given uuid"
 
 
 CSV_LOAD_FAILED = "Failed to load csv file"
+CSV_LOAD_SUCCESS = "CSV file loaded successfully"
 
 
 MUST_BE_ASSIGNED = "You must be assigned to an asset to perform this action"
 
 CREATE_SUCCESS = "Successfully created "
+GET_SUCCESS = "Successfully retrieved "

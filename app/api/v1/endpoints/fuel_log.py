@@ -15,6 +15,7 @@ from app.util.utils import (
     send_client_side_error,
     send_data,
     send_data_with_info,
+    send_info,
     send_internal_server_error,
 )
 
@@ -79,7 +80,7 @@ async def create_bulk_fuel_logs_handler(
             else None,
         )
 
-        return send_data(messages.UPLOAD_SUCCESS)
+        return send_info(messages.CSV_LOAD_SUCCESS)
     except NotFoundError as e:
         return send_client_side_error(
             user_msg=e.detail, status_code=401, dev_msg=e.detail
@@ -152,7 +153,7 @@ async def get_fuel_logs_handler(
                 str(user.get("business_profile").uuid), page, page_size, search
             )
 
-        return send_data(data)
+        return send_data_with_info(data, messages.GET_SUCCESS + f"{msg_prefix}s")
     except NotFoundError as e:
         return send_client_side_error(
             user_msg=e.detail, status_code=401, dev_msg=e.detail

@@ -113,8 +113,6 @@ class FuelLogService(BaseService):
             total = len(fuel_logs)
             paginated_fuel_logs = fuel_logs[(page - 1) * page_size : page * page_size]
 
-            # for paginated fuel logs witout a assset=
-
             return {
                 "total": total,
                 "page": page,
