@@ -2,8 +2,15 @@ from app.core import messages
 from app.core.exceptions import NotFoundError
 from app.repository.asset_repository import AssetRepository
 from app.repository.fuel_log_repository import FuelLogRepository
-from app.schema.fuel_log_schema import FuelLogCreateSchema, FuelLogSchema
+from app.schema.fuel_log_schema import (
+    FleetManagerFuelLog,
+    FuelLogCreateSchema,
+    FuelLogSchema,
+    SingleFuelLog,
+    SingleFuelLogSchema,
+)
 from app.service.base_service import BaseService
+from app.util.utils import load_bulk_fuel_logs_from_csv
 
 
 class FuelLogService(BaseService):
@@ -32,3 +39,38 @@ class FuelLogService(BaseService):
         )
 
         return self.fuel_log_repository.create(log_payload)
+
+    def create_bulk_fuel_logs(
+        self, user_uuid: str, csv_url: str, business_profile_uuid: str = None
+    ):
+        try:
+            data = load_bulk_fuel_logs_from_csv(csv_url)
+            for item in data:
+                log_payload = FleetManagerFuelLog(
+                    amount=item.get("amount"),
+                    quantity=item.get("litres"),
+                    purchase_date=item.get("purchase_date"),
+                    driver_name=item.get("driver_name"),
+                    asset_name=item.get("asset_name"),
+                    business_profile_uuid=business_profile_uuid,
+                    user_uuid=user_uuid,
+                )
+                self.fuel_log_repository.create(log_payload)
+
+        except Exception as e:
+            raise e
+
+    def create_fleet_manager_single_fuel_log(
+        self, payload: SingleFuelLog, user_uuid: str, business_profile_uuid: str = None
+    ):
+        full_payload = SingleFuelLogSchema(
+            asset_uuid=payload.asset_uuid,
+            amount=payload.amount,
+            quantity=payload.quantity,
+            purchase_date=payload.purchase_date,
+            receipt_image=payload.receipt_image,
+            user_uuid=user_uuid,
+            business_profile_uuid=business_profile_uuid,
+        )
+
+        return self.fuel_log_repository.create(full_payload)
