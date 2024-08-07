@@ -11,7 +11,7 @@ ENV: str = "test"
 
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "MV Tracking Hub"
+    PROJECT_NAME: str = "MVI Tracking Hub"
     API_VERSION: str = os.getenv("API_VERSION", "0.0.1")
     ENV: str = os.getenv("ENV", ENV)
     API: str = "/api"
