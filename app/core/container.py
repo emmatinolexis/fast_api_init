@@ -28,6 +28,7 @@ from app.repository import (
     external_app_repository,
     feature_repository,
     fine_report_repository,
+    fuel_log_repository,
     gas_cylinder_event_repository,
     gas_cylinder_repository,
     gas_cylinder_type_repository,
@@ -91,6 +92,7 @@ from app.service import (
     external_app_service,
     feature_service,
     fine_report_service,
+    fuel_log_service,
     gas_cylinder_event_service,
     gas_cylinder_service,
     gas_cylinder_type_service,
@@ -170,6 +172,7 @@ class Container(containers.DeclarativeContainer):
             "app.api.v1.endpoints.gas_cylinder",
             "app.api.v1.endpoints.gas_device",
             "app.api.v1.endpoints.gas_cylinder_type",
+            "app.api.v1.endpoints.fuel_log",
         ]
     )
 
@@ -442,6 +445,10 @@ class Container(containers.DeclarativeContainer):
     )
     smart_report_repository = providers.Factory(
         smart_report_repository.SmartReportRepository,
+        session_factory=db.provided.session,
+    )
+    fuel_log_repository = providers.Factory(
+        fuel_log_repository.FuelLogRepository,
         session_factory=db.provided.session,
     )
 
@@ -733,4 +740,10 @@ class Container(containers.DeclarativeContainer):
         asset_repository=asset_repository,
         tracking_event_repository=tracking_event_repository,
         equipment_repository=equipment_repository,
+    )
+
+    fuel_log_service = providers.Factory(
+        fuel_log_service.FuelLogService,
+        fuel_log_repository=fuel_log_repository,
+        asset_repository=asset_repository,
     )
