@@ -3,6 +3,10 @@ from app.repository.gas_device_repository import GasDeviceRepository
 from app.schema.gas_cylinder_schema import CreateGasCylinderPayload
 from app.service.base_service import BaseService
 from app.util.enums import DeviceStatus
+from app.model.user import User
+from app.util.enums import AccountType
+from app.core.exceptions import AuthError,NotFoundError
+from app.core import messages
 
 
 class GasCylinderService(BaseService):
@@ -64,3 +68,22 @@ class GasCylinderService(BaseService):
             return self.gas_cylinder_repository.get_gas_cylinder_by_uuid(cylinder_uuid)
         except Exception as e:
             raise e
+        
+
+    def delete_gas_cylinder(self, cylinder_uuid: str, user: User):
+        try:
+            user_uuid = user.uuid
+            user_account_type = user.account_type
+
+            cylinder = self.get_cylinder_by_uuid(cylinder_uuid)
+            if not cylinder:
+                raise NotFoundError(messages.GAS_CYLINDER_NOT_FOUND + cylinder_uuid)
+
+            if user_account_type == AccountType.INDIVIDUAL and cylinder.user_uuid != user_uuid:
+                raise AuthError(messages.ACTION_NOT_ALLOWED)
+            elif user_account_type == AccountType.BUSINESS and cylinder.business_profile_uuid != user.business_profile.uuid:
+                raise AuthError(messages.ACTION_NOT_ALLOWED)
+
+            self.gas_cylinder_repository.delete_by_uuid(cylinder_uuid)
+        except Exception as e:
+            raise Exception(f"An unexpected error occurred: {str(e)}")

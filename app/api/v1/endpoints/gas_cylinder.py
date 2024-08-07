@@ -5,7 +5,7 @@ from fastapi.responses import ORJSONResponse
 from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
-from app.core.exceptions import BadRequestError, NotFoundError
+from app.core.exceptions import BadRequestError, NotFoundError,AuthError
 from app.model.user import User
 from app.schema.gas_cylinder_schema import (
     CreateGasCylinder,
@@ -275,4 +275,21 @@ async def get_cylinder_by_id_handler(
         return send_data(cylinder)
     except Exception as e:
         msg = f"{messages.CREATE_FAILED} - {str(e)}"
+        return send_internal_server_error(user_msg=msg, error=e)
+    
+
+@router.delete("/{cylinder_uuid}", response_class=ORJSONResponse)
+@inject
+async def delete_gas_cylinder_handler(
+    cylinder_uuid: str,
+    service: GasCylinderService = Depends(Provide[Container.gas_cylinder_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        service.delete_gas_cylinder(cylinder_uuid,current_user)
+        return send_info(messages.DELETE_SUCCESS + f"{msg_prefix}")
+    except (NotFoundError,AuthError) as e:
+        return send_client_side_error(user_msg=str(e.detail), dev_msg=str(e.detail))
+    except Exception as e:
+        msg = f"{messages.DELETE_FAILED} - {str(e)}"
         return send_internal_server_error(user_msg=msg, error=e)
