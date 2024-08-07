@@ -403,44 +403,18 @@ async def view_smart_report_violations_handler(
             "assets": [
                 {
                     "asset_name": "Hyndai Elentra (Black)",
-                    "vehicle_license_no": "GR-8551-23",
-                    "image_url": "https://mvitracking.s3.eu-central-1.amazonaws.com/"
-                                 "Er-ist-wieder-da-648x432-49da1694f552880d.jpg",
-                    "driver": {
-                        "first_name": "Joshua ",
-                        "last_name": "Tetteh",
-                        "phone_number": "+233245678024",
-                    },
+                    "date_of_incidence": "20/08/2024",
                     "last_tracking_event": {
                         "lat": 5.7582366,
                         "lng": -0.1398266,
-                        "speed": 0,
-                        "course": 105,
-                        "timestamp": "2024-08-06T15:50:17",
-                        "event_type": "Stop_Moving",
-                        "status": "stopped",
-                        "fuel_level": 0,
                     },
                 },
                 {
                     "asset_name": "Toyota Corolla",
-                    "vehicle_license_no": "GR 3251-23",
-                    "image_url": "https://mvitracking.s3.eu-central-1.amazonaws.com/"
-                                 "Er-ist-wieder-da-648x432-49da1694f552880d.jpg",
-                    "driver": {
-                        "first_name": "Joshua ",
-                        "last_name": "Tetteh",
-                        "phone_number": "+233245678024",
-                    },
+                    "date_of_incidence": "20/08/2024",
                     "last_tracking_event": {
                         "lat": 5.7582366,
                         "lng": -0.1398266,
-                        "speed": 0,
-                        "course": 105,
-                        "timestamp": "2024-08-06T15:50:17",
-                        "event_type": "Stop_Moving",
-                        "status": "stopped",
-                        "fuel_level": 0,
                     },
                 },
             ]
