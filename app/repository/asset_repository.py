@@ -9,6 +9,7 @@ from app.model.alert_policy import AlertPolicy
 from app.model.alert_policy_violations import AlertPolicyViolation
 from app.model.asset import Asset
 from app.model.device import Device
+from app.model.driver import Driver
 from app.model.maintenance_alert import MaintenanceAlert
 from app.model.tracking_event import TrackingEvent
 from app.model.user import User
@@ -586,5 +587,14 @@ class AssetRepository(BaseRepository):
             return (
                 session.query(self.model)
                 .filter(self.model.user_uuid == user_uuid)
+                .first()
+            )
+
+    def get_driver_by_asset_uuid(self, asset_uuid: str):
+        with self.session_factory() as session:
+            return (
+                session.query(Driver)
+                .join(Asset, Driver.asset_uuid == Asset.uuid)
+                .filter(Asset.uuid == asset_uuid)
                 .first()
             )

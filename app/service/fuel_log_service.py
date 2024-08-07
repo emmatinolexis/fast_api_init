@@ -63,6 +63,12 @@ class FuelLogService(BaseService):
     def create_fleet_manager_single_fuel_log(
         self, payload: SingleFuelLog, user_uuid: str, business_profile_uuid: str = None
     ):
+        asset = self.asset_repository.read_by_uuid(payload.asset_uuid)
+        if not asset:
+            raise NotFoundError(detail=messages.ASSET_NOT_FOUND)
+
+        driver = self.asset_repository.get_driver_by_asset_uuid(payload.asset_uuid)
+
         full_payload = SingleFuelLogSchema(
             asset_uuid=payload.asset_uuid,
             amount=payload.amount,
@@ -71,6 +77,49 @@ class FuelLogService(BaseService):
             receipt_image=payload.receipt_image,
             user_uuid=user_uuid,
             business_profile_uuid=business_profile_uuid,
+            driver_name=f"{driver.first_name} {driver.last_name}" if driver else None,
         )
 
         return self.fuel_log_repository.create(full_payload)
+
+    def get_fuel_logs_by_user_uuid(
+        self, user_uuid: str, page: int = 1, page_size: int = 10, search: str = None
+    ):
+        try:
+            fuel_logs = self.fuel_log_repository.get_fuel_logs_by_user_uuid(
+                user_uuid, search
+            )
+
+            total = len(fuel_logs)
+            paginated_fuel_logs = fuel_logs[(page - 1) * page_size : page * page_size]
+
+            return {
+                "total": total,
+                "page": page,
+                "page_size": page_size,
+                "data": paginated_fuel_logs,
+            }
+        except Exception as e:
+            raise e
+
+    def get_fuel_logs_by_business_uuid(
+        self, business_uuid: str, page: int = 1, page_size: int = 10, search: str = None
+    ):
+        try:
+            fuel_logs = self.fuel_log_repository.get_fuel_logs_by_business_uuid(
+                business_uuid, search
+            )
+
+            total = len(fuel_logs)
+            paginated_fuel_logs = fuel_logs[(page - 1) * page_size : page * page_size]
+
+            # for paginated fuel logs witout a assset=
+
+            return {
+                "total": total,
+                "page": page,
+                "page_size": page_size,
+                "data": paginated_fuel_logs,
+            }
+        except Exception as e:
+            raise e
