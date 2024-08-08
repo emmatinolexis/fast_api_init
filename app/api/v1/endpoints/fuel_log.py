@@ -86,7 +86,7 @@ async def create_bulk_fuel_logs_handler(
             user_msg=e.detail, status_code=401, dev_msg=e.detail
         )
     except Exception as e:
-        msg = messages.GET_FAILED + msg_prefix
+        msg = messages.CSV_LOAD_FAILED
         return send_internal_server_error(user_msg=msg, error=e)
 
 

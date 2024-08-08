@@ -598,3 +598,12 @@ class AssetRepository(BaseRepository):
                 .filter(Asset.uuid == asset_uuid)
                 .first()
             )
+
+    def get_asset_by_driver_email(self, driver_email: str):
+        with self.session_factory() as session:
+            return (
+                session.query(Asset)
+                .join(Driver, Asset.uuid == Driver.asset_uuid)
+                .filter(Driver.email == driver_email)
+                .first()
+            )

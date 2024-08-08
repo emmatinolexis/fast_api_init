@@ -1,6 +1,7 @@
 from app.core import messages
 from app.core.exceptions import NotFoundError
 from app.repository.asset_repository import AssetRepository
+from app.repository.driver_repository import DriverRepository
 from app.repository.fuel_log_repository import FuelLogRepository
 from app.schema.fuel_log_schema import (
     FleetManagerFuelLog,
@@ -15,10 +16,14 @@ from app.util.utils import load_bulk_fuel_logs_from_csv
 
 class FuelLogService(BaseService):
     def __init__(
-        self, fuel_log_repository: FuelLogRepository, asset_repository: AssetRepository
+        self,
+        fuel_log_repository: FuelLogRepository,
+        asset_repository: AssetRepository,
+        driver_repository: DriverRepository,
     ):
         self.fuel_log_repository = fuel_log_repository
         self.asset_repository = asset_repository
+        self.driver_repository = driver_repository
         super().__init__(fuel_log_repository)
 
     def create_individual_fuel_log(
@@ -44,20 +49,50 @@ class FuelLogService(BaseService):
         self, user_uuid: str, csv_url: str, business_profile_uuid: str = None
     ):
         try:
-            data = load_bulk_fuel_logs_from_csv(csv_url)
-            for item in data:
-                log_payload = FleetManagerFuelLog(
-                    amount=item.get("amount"),
-                    quantity=item.get("litres"),
-                    purchase_date=item.get("purchase_date"),
-                    driver_name=item.get("driver_name"),
-                    asset_name=item.get("asset_name"),
-                    business_profile_uuid=business_profile_uuid,
-                    user_uuid=user_uuid,
-                )
-                self.fuel_log_repository.create(log_payload)
+            with self.fuel_log_repository.session_factory() as session:
+                data = load_bulk_fuel_logs_from_csv(csv_url)
+                fuel_logs = []  # Accumulate all fuel logs here
 
-        except Exception as e:
+                for item in data:
+                    driver_email = item.get("driver_email")
+                    driver_details = self.driver_repository.get_driver_by_email(
+                        driver_email
+                    )
+                    if not driver_details:
+                        raise NotFoundError(
+                            detail=messages.WRONG_DRIVER_EMAIL + driver_email
+                        )
+
+                    drivers_asset = self.asset_repository.get_asset_by_driver_email(
+                        driver_email
+                    )
+                    if not drivers_asset:
+                        raise NotFoundError(
+                            detail=messages.DRIVER_NOT_ASSIGNED.format(driver_email)
+                        )
+
+                    log_payload = FleetManagerFuelLog(
+                        amount=item.get("amount"),
+                        quantity=item.get("litres"),
+                        purchase_date=item.get("purchase_date"),
+                        driver_name=driver_details.first_name
+                        + " "
+                        + driver_details.last_name,
+                        asset_name=drivers_asset.asset_name,
+                        business_profile_uuid=business_profile_uuid,
+                        user_uuid=user_uuid,
+                    )
+
+                    fuel_logs.append(log_payload)  # Accumulate the log payload
+
+                # Only after successful validation, perform bulk insert
+                for log in fuel_logs:
+                    self.fuel_log_repository.create(log)
+
+                session.commit()  # Commit the transaction only if no errors occur
+        except (NotFoundError, Exception) as e:
+            if session:
+                session.rollback()  # Rollback the transaction
             raise e
 
     def create_fleet_manager_single_fuel_log(
