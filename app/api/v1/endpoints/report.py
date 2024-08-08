@@ -16,6 +16,7 @@ from app.util.utils import (
     convert_date_format,
     send_client_side_error,
     send_data,
+    send_data_with_info,
     send_internal_server_error,
 )
 
@@ -522,6 +523,7 @@ async def view_smart_report_fuel_usage_handler(
         Provide[Container.smart_report_service]
     ),
     user_service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
 ):
     try:
         smart_report = smart_report_service.get_by_uuid(smart_report_uuid)
@@ -553,7 +555,9 @@ async def view_smart_report_fuel_usage_handler(
                 business_uuid=smart_report.business_profile_uuid,
             )
 
-            return send_data(report_data)
+            return send_data_with_info(
+                data=report_data, info=messages.GET_SUCCESS + "fuel usage report"
+            )
 
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"

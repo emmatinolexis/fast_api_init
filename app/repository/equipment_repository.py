@@ -28,7 +28,6 @@ class EquipmentRepository(BaseRepository):
                 .options(joinedload(self.model.asset_type))
                 .all()
             )
-        
 
     def get_equipment_by_asset_uuid(self, asset_uuid: str):
         with self.session_factory() as session:

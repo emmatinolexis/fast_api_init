@@ -1,3 +1,4 @@
+import logging
 from collections import defaultdict
 
 from dateutil import parser
@@ -16,10 +17,7 @@ from app.util.utils import (
     get_status,
 )
 
-import logging
-
 logger = logging.getLogger(__name__)
-
 
 
 class SmartReportService(BaseService):
@@ -238,17 +236,15 @@ class SmartReportService(BaseService):
             fuel_level_current_range,
             fuel_level_past_range,
         )
-    
 
-    
     def generate_fuel_usage_report(
-            self,
-            start_date: str,
-            end_date: str,
-            asset_type_uuid: str,
-            asset_uuids: list,
-            user_uuid: str = None,
-            business_uuid: str = None,
+        self,
+        start_date: str,
+        end_date: str,
+        asset_type_uuid: str,
+        asset_uuids: list,
+        user_uuid: str = None,
+        business_uuid: str = None,
     ):
         try:
             assets = []
@@ -257,8 +253,6 @@ class SmartReportService(BaseService):
 
             logger.info(f"Start date: {start_date_dt}")
             logger.info(f"End date: {end_date_dt}")
-
-            asset_uuids_copy = asset_uuids.copy()
 
             for asset_uuid in asset_uuids:
                 asset = self.asset_repository.get_asset_with_relationships(
@@ -275,7 +269,9 @@ class SmartReportService(BaseService):
                 # Move to the next month
                 next_month = current_date.month % 12 + 1
                 next_year = current_date.year + (current_date.month // 12)
-                current_date = current_date.replace(year=next_year, month=next_month, day=1)
+                current_date = current_date.replace(
+                    year=next_year, month=next_month, day=1
+                )
 
             organized_events = defaultdict(list)
 
@@ -300,35 +296,9 @@ class SmartReportService(BaseService):
                 # Update the report with actual values
                 fuel_usage_report[month_name] = total_fuel_used
 
-            # Calculate total fuel used across all periods
-            total_fuel_used_all = sum(fuel_usage_report.values())
-
-            # Define equipment types of interest
-            equipment_types = ["Cars", "Truck", "Bulldozer", "Train"]
-
-            # Calculate fuel used by specified equipment types
-            total_fuel_used_specified = 0
-
-            for asset_uuid in asset_uuids_copy:
-                equipment = self.equipment_repository.get_equipment_by_asset_uuid(asset_uuid)
-                if equipment.name in equipment_types:
-                    for period, events in organized_events.items():
-                        fuel_level_events = [
-                            event for event in events if event["fuel_level"] is not None
-                        ]
-                        total_fuel_used_specified += calculate_total_fuel_used(fuel_level_events)
-
-            # Calculate percentage of fuel used by specified equipment types
-            percentage_fuel_used_specified = (
-                (total_fuel_used_specified / total_fuel_used_all) * 100
-                if total_fuel_used_all > 0
-                else 0
-            )
-
             return {
                 "fuel_usage_report": fuel_usage_report,
-                "total_fuel_used": total_fuel_used_all,
-                "percentage_fuel_used_by_specified_types": percentage_fuel_used_specified,
+                "total_fuel_used": sum(fuel_usage_report.values()),
             }
 
         except Exception as e:
