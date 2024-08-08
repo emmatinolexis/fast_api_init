@@ -60,6 +60,7 @@ GAS_DEVICE_NOT_FOUND = "No gas device was found with the given id : "
 GAS_CYLINDER_NOT_FOUND = "No gas cylinder was found with the given uuid : "
 GAS_CYLINDER_TYPE_NOT_FOUND = "No gas cylinder type was found with the given uuid : "
 GAS_CYLINDER_INACTIVE = "Gas cylinder is inactive"
+GAS_CYLINDER_CREATED = "Gas cylinder created successfully"
 
 
 DEVICE_ALREADY_ASSIGNED = "Device is already assigned"
