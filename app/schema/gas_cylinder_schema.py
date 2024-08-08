@@ -90,3 +90,19 @@ class GasEventPayload(BaseModel):
 
 class GasCylinderEventResponse(BaseModel):
     id: int
+
+
+class CreateSpareGasCylinder(BaseModel):
+    cylinder_name: str
+    material_type: GasCylinderMaterialType
+    gas_cylinder_type_uuid: str
+    building_uuid: str
+
+
+class CreateSpareGasCylinderSchema(BaseModel):
+    cylinder_name: str
+    material_type: GasCylinderMaterialType
+    user_uuid: str
+    business_profile_uuid: Optional[str] = None
+    building_uuid: str
+    status: ActiveStatus = ActiveStatus.INACTIVE
