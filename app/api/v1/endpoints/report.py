@@ -232,24 +232,18 @@ async def view_smart_report_total_distance_covered_handler(
             return send_internal_server_error(user_msg=usr_msg, error=dev_msg)
 
         user = user_service.get_user_by_uuid(str(smart_report.user_uuid))
+        if not user:
+            usr_msg = "User not found"
+            dev_msg = f"User not found for  {smart_report.user_uuid}"
+            return send_internal_server_error(user_msg=usr_msg, error=dev_msg)
 
-        if user.get("account_type") == AccountType.INDIVIDUAL:
-            report_data = smart_report_service.generate_total_distance_report(
-                convert_date_format(smart_report.start_date),
-                convert_date_format(smart_report.end_date),
-                smart_report.asset_group_uuids.get("asset_uuids"),
-            )
+        report_data = smart_report_service.generate_total_distance_report(
+            convert_date_format(smart_report.start_date),
+            convert_date_format(smart_report.end_date),
+            smart_report.asset_group_uuids.get("asset_uuids"),
+        )
 
-            return report_data
-
-        if user.get("account_type") == AccountType.BUSINESS:
-            report_data = smart_report_service.generate_total_distance_report(
-                convert_date_format(smart_report.start_date),
-                convert_date_format(smart_report.end_date),
-                smart_report.asset_group_uuids.get("asset_uuids"),
-            )
-
-            return report_data
+        return report_data
 
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
@@ -262,85 +256,25 @@ async def view_smart_report_total_distance_covered_handler(
 @inject
 async def view_smart_report_fleet_performance_handler(
     smart_report_uuid: str,
-    asset_service: AssetService = Depends(Provide[Container.asset_service]),
     smart_report_service: SmartReportService = Depends(
         Provide[Container.smart_report_service]
     ),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return {
-            "incidents": {
-                "geofence": 0,
-                "overspeeding": 0,
-                "rapid_acceleration": 0,
-                "emergency_breaking": 0,
-                "total_incidence": 0,
-            },
-            "incidents_by_asset": {"Buldozer": 0, "Cranes": 0, "Cement mixtures": 0},
-            "incidents_rate": {
-                "January": {
-                    "geofence_violations": 0,
-                    "Overspeeding": 0,
-                    "emergency_breaking": 0,
-                },
-                "Febuary": {
-                    "geofence_violations": 0,
-                    "Overspeeding": 0,
-                    "emergency_breaking": 0,
-                },
-                "March": {
-                    "geofence_violations": 0,
-                    "Overspeeding": 0,
-                    "emergency_breaking": 0,
-                },
-                "April": {
-                    "geofence_violations": 0,
-                    "Overspeeding": 0,
-                    "emergency_breaking": 0,
-                },
-                "May": {
-                    "geofence_violations": 0,
-                    "Overspeeding": 0,
-                    "emergency_breaking": 0,
-                },
-                "June": {
-                    "geofence_violations": 0,
-                    "Overspeeding": 0,
-                    "emergency_breaking": 0,
-                },
-                "July": {
-                    "geofence_violations": 0,
-                    "Overspeeding": 0,
-                    "emergency_breaking": 0,
-                },
-                "Aug": {
-                    "geofence_violations": 0,
-                    "Overspeeding": 0,
-                    "emergency_breaking": 0,
-                },
-                "Sept": {
-                    "geofence_violations": 0,
-                    "Overspeeding": 0,
-                    "emergency_breaking": 0,
-                },
-                "Oct": {
-                    "geofence_violations": 0,
-                    "Overspeeding": 0,
-                    "emergency_breaking": 0,
-                },
-                "Nov": {
-                    "geofence_violations": 0,
-                    "Overspeeding": 0,
-                    "emergency_breaking": 0,
-                },
-                "Dec": {
-                    "geofence_violations": 0,
-                    "Overspeeding": 0,
-                    "emergency_breaking": 0,
-                },
-            },
-        }
+        smart_report = smart_report_service.get_by_uuid(smart_report_uuid)
+
+        if not smart_report:
+            usr_msg = "Smart report not found"
+            dev_msg = f"Smart report not found for {smart_report_uuid}"
+            return send_internal_server_error(user_msg=usr_msg, error=dev_msg)
+
+        violations = smart_report_service.generate_violation_report(
+            convert_date_format(smart_report.start_date),
+            convert_date_format(smart_report.end_date),
+            smart_report.asset_group_uuids.get("asset_uuids"),
+        )
+        return violations
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -361,24 +295,31 @@ async def view_smart_report_cost_analysis_handler(
     try:
         return {
             "fuel_cost": {
-                "January": 0,
-                "February": 0,
-                "March": 0,
-                "April": 0,
-                "May": 0,
-                "June": 0,
-                "July": 0,
-                "Aug": 0,
-                "Sept": 0,
-                "Oct": 0,
-                "Nov": 0,
-                "Dec": 0,
+                "January": 550,
+                "February": 230,
+                "March": 129,
+                "April": 110,
+                "May": 350,
+                "June": 65,
+                "July": 180,
+                "Aug": 360,
+                "Sept": 320,
+                "Oct": 120,
+                "Nov": 130,
+                "Dec": 160,
             },
+            "total_fuel": 2890,
             "fuel_cost_by_asset_type": {
                 "trucks": 0,
                 "cars": 0,
                 "bulldozers": 0,
                 "cranes": 0,
+            },
+            "fuel_cost_by_asset_type_in_percentage": {
+                "trucks": 20,
+                "cars": 30,
+                "bulldozers": 30,
+                "cranes": 80,
             },
         }
     except Exception as e:
@@ -399,26 +340,20 @@ async def view_smart_report_violations_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return {
-            "assets": [
-                {
-                    "asset_name": "Hyndai Elentra (Black)",
-                    "date_of_incidence": "20/08/2024",
-                    "last_tracking_event": {
-                        "lat": 5.7582366,
-                        "lng": -0.1398266,
-                    },
-                },
-                {
-                    "asset_name": "Toyota Corolla",
-                    "date_of_incidence": "20/08/2024",
-                    "last_tracking_event": {
-                        "lat": 5.7582366,
-                        "lng": -0.1398266,
-                    },
-                },
-            ]
-        }
+        smart_report = smart_report_service.get_by_uuid(smart_report_uuid)
+
+        if not smart_report:
+            usr_msg = "Smart report not found"
+            dev_msg = f"Smart report not found for {smart_report_uuid}"
+            return send_internal_server_error(user_msg=usr_msg, error=dev_msg)
+
+        violations = smart_report_service.generate_violation_report(
+            convert_date_format(smart_report.start_date),
+            convert_date_format(smart_report.end_date),
+            smart_report.asset_group_uuids.get("asset_uuids"),
+            smart_report.asset_type_uuid,
+        )
+        return violations
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
