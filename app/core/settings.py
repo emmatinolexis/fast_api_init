@@ -19,7 +19,10 @@ class Settings(BaseSettings):
 
     # date
     DATETIME_FORMAT: str = "%Y-%m-%dT%H:%M:%S"
+    DATETIME_FORMAT_YEAR: str = "%d-%m-%YT%H:%M:%S"
     DATE_FORMAT: str = "%Y-%m-%d"
+    DATE_FORMAT_YEAR: str = "%d/%m/%Y"
+
 
     # auth
     SECRET_KEY: str = os.getenv("SECRET_KEY", "test_secret_key")

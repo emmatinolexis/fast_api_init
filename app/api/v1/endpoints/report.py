@@ -125,7 +125,6 @@ async def generate_violation_reminders_report_handler(
 @inject
 async def create_smart_report_handler(
     smart_report_payload: SmartReportPayload,
-    asset_service: AssetService = Depends(Provide[Container.asset_service]),
     smart_report_service: SmartReportService = Depends(
         Provide[Container.smart_report_service]
     ),
