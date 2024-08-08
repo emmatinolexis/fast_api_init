@@ -106,3 +106,9 @@ class DriverRepository(BaseRepository):
             session.commit()
             session.refresh(driver)
             return driver
+
+    def get_driver_by_email(self, email: str) -> Driver:
+        with self.session_factory() as session:
+            query = session.query(self.model)
+            driver = query.filter(self.model.email == email).first()
+            return driver

@@ -65,6 +65,7 @@ class GasCylinder(BaseModel):
         primaryjoin="GasCylinder.cylinder_type_uuid == foreign(CylinderTypes.uuid)",
         uselist=False,
         # back_populates="gas_cylinders",
+        cascade="all, delete-orphan",
     )
 
 
@@ -158,9 +159,4 @@ class GasCylinderEvent(BaseModel):
     current_weight = Column(FLOAT, nullable=False, index=True)
     battery_level = Column(FLOAT, nullable=True, index=True)
     event_timestamp = Column(DateTime(timezone=True), nullable=True)
-    # gas_cylinder = relationship(
-    #     "GasCylinder",
-    #     primaryjoin="GasCylinderEvent.device_serial_number == foreign(GasCylinder.device_serial_number)",
-    #     back_populates="gas_events",
-    #     uselist=False
-    # )
+

@@ -746,4 +746,5 @@ class Container(containers.DeclarativeContainer):
         fuel_log_service.FuelLogService,
         fuel_log_repository=fuel_log_repository,
         asset_repository=asset_repository,
+        driver_repository=driver_repository,
     )

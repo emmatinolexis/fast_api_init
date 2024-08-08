@@ -1,8 +1,16 @@
+from app.core import messages
+from app.core.exceptions import AuthError, NotFoundError
+from app.model.user import User
 from app.repository.gas_cylinder_repository import GasCylinderRepository
 from app.repository.gas_device_repository import GasDeviceRepository
-from app.schema.gas_cylinder_schema import CreateGasCylinderPayload
+from app.schema.gas_cylinder_schema import (
+    CreateGasCylinderPayload,
+    CreateSpareGasCylinder,
+    CreateSpareGasCylinderSchema,
+)
 from app.service.base_service import BaseService
-from app.util.enums import DeviceStatus
+from app.transfomers.gas_cylinder_transformers import gas_cylinder_transformer
+from app.util.enums import AccountType, DeviceStatus
 
 
 class GasCylinderService(BaseService):
@@ -62,5 +70,47 @@ class GasCylinderService(BaseService):
     ):
         try:
             return self.gas_cylinder_repository.get_gas_cylinder_by_uuid(cylinder_uuid)
+        except Exception as e:
+            raise e
+
+    def delete_gas_cylinder(self, cylinder_uuid: str, user: User):
+        try:
+            user_uuid = user.uuid
+            user_account_type = user.account_type
+
+            cylinder = self.gas_cylinder_repository.read_by_uuid(cylinder_uuid)
+            if not cylinder:
+                raise NotFoundError(messages.GAS_CYLINDER_NOT_FOUND + cylinder_uuid)
+
+            if (
+                user_account_type == AccountType.INDIVIDUAL
+                and cylinder.user_uuid != user_uuid
+            ):
+                raise AuthError(messages.ACTION_NOT_ALLOWED)
+            elif (
+                user_account_type == AccountType.BUSINESS
+                and cylinder.business_profile_uuid != user.business_profile.uuid
+            ):
+                raise AuthError(messages.ACTION_NOT_ALLOWED)
+
+            self.gas_cylinder_repository.delete_by_uuid(cylinder_uuid)
+        except Exception as e:
+            raise Exception(f"An unexpected error occurred: {str(e)}")
+
+    def create_spare_cylinder(
+        self,
+        payload: CreateSpareGasCylinder,
+        user_uuid: str,
+        business_profile_uuid: str = None,
+    ):
+        try:
+            full_payload = CreateSpareGasCylinderSchema(
+                **payload.dict(),
+                user_uuid=user_uuid,
+                business_profile_uuid=business_profile_uuid,
+            )
+            created_cylinder = self.gas_cylinder_repository.create(full_payload)
+            return gas_cylinder_transformer(created_cylinder)
+
         except Exception as e:
             raise e
