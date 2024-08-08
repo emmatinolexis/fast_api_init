@@ -15,7 +15,12 @@ from app.schema.gas_cylinder_schema import (
 from app.service.gas_cylinder_type_service import GasCylinderTypeService
 from app.service.other_cylinder_type_service import OtherCylinderTypeService
 from app.util.enums import ActiveStatus
-from app.util.utils import send_client_side_error, send_data, send_internal_server_error, send_data_with_info
+from app.util.utils import (
+    send_client_side_error,
+    send_data,
+    send_data_with_info,
+    send_internal_server_error,
+)
 
 router = APIRouter(
     prefix="/gas_cylinder_type",
@@ -75,7 +80,9 @@ async def update_gas_cylinder_type_handler(
             return send_client_side_error(
                 user_msg=messages.GAS_CYLINDER_TYPE_NOT_FOUND + cylinder_type_uuid
             )
-        return send_data_with_info(service.patch(cylinder_type.id, payload), messages.SUCCESS_MESSAGE)
+        return send_data_with_info(
+            service.patch(cylinder_type.id, payload), messages.SUCCESS_MESSAGE
+        )
     except Exception as e:
         msg = messages.UPDATE_FAILED + f"{msg_prefix}"
         return send_internal_server_error(user_msg=msg, error=e)

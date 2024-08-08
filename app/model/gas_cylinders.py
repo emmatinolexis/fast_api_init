@@ -112,9 +112,7 @@ class CylinderTypes(BaseModel):
     name = Column(FLOAT, nullable=False, unique=True, index=True)
     empty_weight = Column(FLOAT, nullable=False, index=True)
     full_weight = Column(FLOAT, nullable=False, index=True)
-    fiber_type = Column(
-        Enum(GasCylinderMaterialType), nullable=False, index=True
-    )
+    fiber_type = Column(Enum(GasCylinderMaterialType), nullable=False, index=True)
     status = Column(
         Enum(ActiveStatus), nullable=False, default=ActiveStatus.ACTIVE, index=True
     )
@@ -159,4 +157,3 @@ class GasCylinderEvent(BaseModel):
     current_weight = Column(FLOAT, nullable=False, index=True)
     battery_level = Column(FLOAT, nullable=True, index=True)
     event_timestamp = Column(DateTime(timezone=True), nullable=True)
-

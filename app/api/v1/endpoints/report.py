@@ -53,7 +53,7 @@ async def generate_distance_traveled_report_handler(
                         asset_uuid=asset_uuid,
                         asset_type_uuid=asset_type_uuid,
                     ),
-                    messages.SUCCESS_MESSAGE
+                    messages.SUCCESS_MESSAGE,
                 )
             if user.get("account_type") == AccountType.BUSINESS:
                 return send_data_with_info(
@@ -64,7 +64,7 @@ async def generate_distance_traveled_report_handler(
                         asset_uuid=asset_uuid,
                         asset_type_uuid=asset_type_uuid,
                     ),
-                    messages.SUCCESS_MESSAGE
+                    messages.SUCCESS_MESSAGE,
                 )
         else:
             msg = f"{messages.USER_NOT_FOUND} {user_uuid}"
@@ -100,7 +100,7 @@ async def generate_violation_reminders_report_handler(
                         asset_uuid=asset_uuid,
                         asset_type_uuid=asset_type_uuid,
                     ),
-                    messages.SUCCESS_MESSAGE
+                    messages.SUCCESS_MESSAGE,
                 )
             if user.get("account_type") == AccountType.BUSINESS:
                 return send_data_with_info(
@@ -111,7 +111,7 @@ async def generate_violation_reminders_report_handler(
                         asset_uuid=asset_uuid,
                         asset_type_uuid=asset_type_uuid,
                     ),
-                    messages.SUCCESS_MESSAGE
+                    messages.SUCCESS_MESSAGE,
                 )
         else:
             msg = f"{messages.USER_NOT_FOUND} {user_uuid}"
@@ -481,7 +481,7 @@ async def get_gas_report(
                     end_date=end_date,
                     search=search,
                 ),
-                messages.SUCCESS_MESSAGE
+                messages.SUCCESS_MESSAGE,
             )
 
     except Exception as e:

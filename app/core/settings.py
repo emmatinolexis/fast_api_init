@@ -23,7 +23,6 @@ class Settings(BaseSettings):
     DATE_FORMAT: str = "%Y-%m-%d"
     DATE_FORMAT_YEAR: str = "%d/%m/%Y"
 
-
     # auth
     SECRET_KEY: str = os.getenv("SECRET_KEY", "test_secret_key")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = (
