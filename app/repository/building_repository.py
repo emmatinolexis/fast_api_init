@@ -48,19 +48,20 @@ class BuildingRepository(BaseRepository):
                 cylinder_data = {
                     "cylinder_uuid": cylinder.uuid,
                     "cylinder_name": cylinder.cylinder_name,
-                    "material_type": cylinder.material_type,
-                    "gas_device_serial_number": cylinder.gas_device_serial_number,
+                    "cylinder_type_uuid": cylinder.cylinder_type_uuid,
+                    "status": cylinder.status,
+                    "gas_level_in_percentage": gas_level,
                     "gas_device": cylinder.gas_device,
-                    "cylinder_type": cylinder.cylinder_type,
-                    "gas_level": gas_level,
                 }
 
                 cylinders.append(cylinder_data)
 
             building_data = {
+                "building_uuid": building.uuid,
                 "building_name": building.building_name,
                 "longitude": building.longitude,
                 "latitude": building.latitude,
+                "status": building.status,
                 "image_url": building.image_url,
                 "cylinders": cylinders,
             }
@@ -183,12 +184,22 @@ class BuildingRepository(BaseRepository):
         return {}
 
     def _build_building_info(self, asset, building_cylinders):
+        status = "Safe"
+
+        if building_cylinders:
+            for cylinder in building_cylinders:
+                if (
+                    cylinder["gas_level_in_percentage"] < 25
+                ):  # Assuming the status is stored in a field called 'status'
+                    status = "Attention Needed"
+                    break
+
         return {
             "building_uuid": asset.uuid,
             "building_name": asset.building_name,
             "longitude": asset.longitude,
             "latitude": asset.latitude,
-            "status": "Attention Needed",
+            "status": status,
             "image_url": asset.image_url,
             "cylinders": building_cylinders,
         }

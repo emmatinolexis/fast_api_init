@@ -59,3 +59,10 @@ class DriverService(BaseService):
             return self.driver_repository.unassign_driver(driver_uuid)
         except Exception as e:
             raise e
+
+    def get_driver_by_uuid(self, uuid: str):
+        try:
+            driver = self.driver_repository.read_by_uuid(uuid)
+            return driver
+        except Exception as e:
+            raise e

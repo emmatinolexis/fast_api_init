@@ -45,28 +45,30 @@ async def generate_distance_traveled_report_handler(
         user = user_service.get_user_by_uuid(user_uuid)
         if user:
             if user.get("account_type") == AccountType.INDIVIDUAL:
-                return send_data(
+                return send_data_with_info(
                     report_service.generate_distance_speed_report(
                         user_uuid=user.get("uuid"),
                         start_date=start_date,
                         end_date=end_date,
                         asset_uuid=asset_uuid,
                         asset_type_uuid=asset_type_uuid,
-                    )
+                    ),
+                    messages.SUCCESS_MESSAGE
                 )
             if user.get("account_type") == AccountType.BUSINESS:
-                return send_data(
+                return send_data_with_info(
                     report_service.generate_distance_speed_report(
                         business_uuid=user.get("business_profile").uuid,
                         start_date=start_date,
                         end_date=end_date,
                         asset_uuid=asset_uuid,
                         asset_type_uuid=asset_type_uuid,
-                    )
+                    ),
+                    messages.SUCCESS_MESSAGE
                 )
         else:
             msg = f"{messages.USER_NOT_FOUND} {user_uuid}"
-            return send_internal_server_error(user_msg=msg, error=msg)
+            return send_client_side_error(user_msg=msg, dev_msg=msg)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -90,28 +92,30 @@ async def generate_violation_reminders_report_handler(
         user = user_service.get_user_by_uuid(user_uuid)
         if user:
             if user.get("account_type") == AccountType.INDIVIDUAL:
-                return send_data(
+                return send_data_with_info(
                     report_service.generate_violation_reminder_report(
                         user_uuid=user.get("uuid"),
                         start_date=start_date,
                         end_date=end_date,
                         asset_uuid=asset_uuid,
                         asset_type_uuid=asset_type_uuid,
-                    )
+                    ),
+                    messages.SUCCESS_MESSAGE
                 )
             if user.get("account_type") == AccountType.BUSINESS:
-                return send_data(
+                return send_data_with_info(
                     report_service.generate_violation_reminder_report(
                         business_uuid=user.get("business_profile").uuid,
                         start_date=start_date,
                         end_date=end_date,
                         asset_uuid=asset_uuid,
                         asset_type_uuid=asset_type_uuid,
-                    )
+                    ),
+                    messages.SUCCESS_MESSAGE
                 )
         else:
             msg = f"{messages.USER_NOT_FOUND} {user_uuid}"
-            return send_internal_server_error(user_msg=msg, error=msg)
+            return send_client_side_error(user_msg=msg, dev_msg=msg)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -121,7 +125,6 @@ async def generate_violation_reminders_report_handler(
 @inject
 async def create_smart_report_handler(
     smart_report_payload: SmartReportPayload,
-    asset_service: AssetService = Depends(Provide[Container.asset_service]),
     smart_report_service: SmartReportService = Depends(
         Provide[Container.smart_report_service]
     ),
@@ -144,7 +147,8 @@ async def create_smart_report_handler(
 
                 report = smart_report_service.add(smart_report_input)
 
-                return report
+                return send_data_with_info(report, messages.SUCCESS_MESSAGE)
+
             if user.get("account_type") == AccountType.BUSINESS:
                 smart_report_input = SmartReportInput(
                     title=smart_report_payload.title,
@@ -159,59 +163,15 @@ async def create_smart_report_handler(
 
                 report = smart_report_service.add(smart_report_input)
 
-                return report
+                return send_data_with_info(report, messages.SUCCESS_MESSAGE)
 
         else:
             msg = f"{messages.USER_NOT_FOUND} {smart_report_payload.user_uuid}"
-            return send_internal_server_error(user_msg=msg, error=msg)
+            return send_client_side_error(user_msg=msg, dev_msg=msg)
+
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
-
-
-# @router.get(
-#     "/smart_report/fleet_overview/{smart_report_uuid}", response_class=ORJSONResponse
-# )
-# @inject
-# async def view_smart_report_fleet_overview_handler(
-#     smart_report_uuid: str,
-#     asset_service: AssetService = Depends(Provide[Container.asset_service]),
-#     smart_report_service: SmartReportService = Depends(
-#         Provide[Container.smart_report_service]
-#     ),
-#     current_user: User = Depends(get_current_user),
-# ):
-#     try:
-#         return {
-#             "total_fuel_recorded_current_date": 0,
-#             "total_fuel_recorded_previous_date": 0,
-#             "total_distance_covered_current_date": 0,
-#             "total_distance_covered_previous_date": 0,
-#             "Total_fuel_saved": 0,
-#             "fleet": {
-#                 "total_asset": 0,
-#                 "good_asset": 0,
-#                 "poor_asset": 0,
-#                 "utilization_rate": {"truck": 0, "Cars": 0, "buldozer": 0},
-#                 "utilization_trend": {
-#                     "January": {"hourse_worked": 0, "idle_time": 0},
-#                     "Febuary": {"hourse_worked": 0, "idle_time": 0},
-#                     "March": {"hourse_worked": 0, "idle_time": 0},
-#                     "April": {"hourse_worked": 0, "idle_time": 0},
-#                     "May": {"hourse_worked": 0, "idle_time": 0},
-#                     "June": {"hourse_worked": 0, "idle_time": 0},
-#                     "July": {"hourse_worked": 0, "idle_time": 0},
-#                     "Aug": {"hourse_worked": 0, "idle_time": 0},
-#                     "Sep": {"hourse_worked": 0, "idle_time": 0},
-#                     "Oct": {"hourse_worked": 0, "idle_time": 0},
-#                     "Nov": {"hourse_worked": 0, "idle_time": 0},
-#                     "Dec": {"hourse_worked": 0, "idle_time": 0},
-#                 },
-#             },
-#         }
-#     except Exception as e:
-#         msg = messages.GET_FAILED + f"{msg_prefix}s"
-#         return send_internal_server_error(user_msg=msg, error=e)
 
 
 @router.get(
@@ -220,7 +180,6 @@ async def create_smart_report_handler(
 @inject
 async def view_smart_report_fleet_overview_handler(
     smart_report_uuid: str,
-    # asset_service: AssetService = Depends(Provide[Container.asset_service]),
     smart_report_service: SmartReportService = Depends(
         Provide[Container.smart_report_service]
     ),
@@ -233,12 +192,12 @@ async def view_smart_report_fleet_overview_handler(
         if not smart_report:
             usr_msg = "Smart report not found"
             dev_msg = f"Smart report not found for {smart_report_uuid}"
-            return send_internal_server_error(user_msg=usr_msg, error=dev_msg)
+            return send_client_side_error(user_msg=usr_msg, dev_msg=dev_msg)
 
         user = user_service.get_user_by_uuid(str(smart_report.user_uuid))
 
         if user.get("account_type") == AccountType.INDIVIDUAL:
-            report_data = smart_report_service.generate_smart_report(
+            report_data = smart_report_service.generate_smart_report_fleet_overview(
                 convert_date_format(smart_report.start_date),
                 convert_date_format(smart_report.end_date),
                 smart_report.asset_type_uuid,
@@ -246,10 +205,10 @@ async def view_smart_report_fleet_overview_handler(
                 user_uuid=smart_report.user_uuid,
             )
 
-            return report_data
+            return send_data_with_info(report_data, messages.SUCCESS_MESSAGE)
 
         if user.get("account_type") == AccountType.BUSINESS:
-            report_data = smart_report_service.generate_smart_report(
+            report_data = smart_report_service.generate_smart_report_fleet_overview(
                 convert_date_format(smart_report.start_date),
                 convert_date_format(smart_report.end_date),
                 smart_report.asset_type_uuid,
@@ -257,7 +216,7 @@ async def view_smart_report_fleet_overview_handler(
                 business_uuid=smart_report.business_profile_uuid,
             )
 
-            return report_data
+            return send_data_with_info(report_data, messages.SUCCESS_MESSAGE)
 
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
@@ -282,31 +241,21 @@ async def view_smart_report_total_distance_covered_handler(
         if not smart_report:
             usr_msg = "Smart report not found"
             dev_msg = f"Smart report not found for {smart_report_uuid}"
-            return send_internal_server_error(user_msg=usr_msg, error=dev_msg)
+            return send_client_side_error(user_msg=usr_msg, dev_msg=dev_msg)
 
         user = user_service.get_user_by_uuid(str(smart_report.user_uuid))
+        if not user:
+            usr_msg = "User not found"
+            dev_msg = f"User not found for  {smart_report.user_uuid}"
+            return send_client_side_error(user_msg=usr_msg, dev_msg=dev_msg)
 
-        if user.get("account_type") == AccountType.INDIVIDUAL:
-            report_data = smart_report_service.generate_total_distance_report(
-                convert_date_format(smart_report.start_date),
-                convert_date_format(smart_report.end_date),
-                smart_report.asset_type_uuid,
-                smart_report.asset_group_uuids.get("asset_uuids"),
-                user_uuid=smart_report.user_uuid,
-            )
+        report_data = smart_report_service.generate_total_distance_report(
+            convert_date_format(smart_report.start_date),
+            convert_date_format(smart_report.end_date),
+            smart_report.asset_group_uuids.get("asset_uuids"),
+        )
 
-            return report_data
-
-        if user.get("account_type") == AccountType.BUSINESS:
-            report_data = smart_report_service.generate_total_distance_report(
-                convert_date_format(smart_report.start_date),
-                convert_date_format(smart_report.end_date),
-                smart_report.asset_type_uuid,
-                smart_report.asset_group_uuids.get("asset_uuids"),
-                business_uuid=smart_report.business_profile_uuid,
-            )
-
-            return report_data
+        return send_data_with_info(report_data, messages.SUCCESS_MESSAGE)
 
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
@@ -319,6 +268,36 @@ async def view_smart_report_total_distance_covered_handler(
 @inject
 async def view_smart_report_fleet_performance_handler(
     smart_report_uuid: str,
+    smart_report_service: SmartReportService = Depends(
+        Provide[Container.smart_report_service]
+    ),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        smart_report = smart_report_service.get_by_uuid(smart_report_uuid)
+
+        if not smart_report:
+            usr_msg = "Smart report not found"
+            dev_msg = f"Smart report not found for {smart_report_uuid}"
+            return send_client_side_error(user_msg=usr_msg, dev_msg=dev_msg)
+
+        violations = smart_report_service.generate_violation_report(
+            convert_date_format(smart_report.start_date),
+            convert_date_format(smart_report.end_date),
+            smart_report.asset_group_uuids.get("asset_uuids"),
+        )
+        return send_data_with_info(violations, messages.REPORT_SUCCESS)
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get(
+    "/smart_report/cost_analysis/{smart_report_uuid}", response_class=ORJSONResponse
+)
+@inject
+async def view_smart_report_cost_analysis_handler(
+    smart_report_uuid: str,
     asset_service: AssetService = Depends(Provide[Container.asset_service]),
     smart_report_service: SmartReportService = Depends(
         Provide[Container.smart_report_service]
@@ -326,99 +305,94 @@ async def view_smart_report_fleet_performance_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return {
-            "fuel_usage": {
-                "January": 0,
-                "February": 0,
-                "March": 0,
-                "April": 0,
-                "May": 0,
-                "June": 0,
-                "July": 0,
-                "Aug": 0,
-                "Sep": 0,
-                "Oct": 0,
-                "Nov": 0,
-                "Dec": 0,
-                "total": 0,
+        report = {
+            "fuel_cost": {
+                "January": 550,
+                "February": 230,
+                "March": 129,
+                "April": 110,
+                "May": 350,
+                "June": 65,
+                "July": 180,
+                "August": 360,
+                "September": 320,
+                "October": 120,
+                "November": 130,
+                "December": 160,
             },
-            "fuel_usage_by_asset_type": {
-                "Trucks": 0,
-                "Cars": 0,
-                "Bulldozers": 0,
-                "Cranes": 0,
+            "total_fuel": 2890,
+            "fuel_cost_by_asset_type": {
+                "trucks": 0,
+                "cars": 0,
+                "bulldozers": 0,
+                "cranes": 0,
             },
-            "incidents": {
-                "geofence": 0,
-                "overspeeding": 0,
-                "rapid_acceleration": 0,
-                "emergency_breaking": 0,
-                "total_incidence": 0,
-            },
-            "incidents_by_asset": {"Buldozer": 0, "Cranes": 0, "Cement mixtures": 0},
-            "incidents_rate": {
-                "January": {
-                    "geofence_violations": 0,
-                    "Overspeeding": 0,
-                    "emergency_breaking": 0,
-                },
-                "Febuary": {
-                    "geofence_violations": 0,
-                    "Overspeeding": 0,
-                    "emergency_breaking": 0,
-                },
-                "March": {
-                    "geofence_violations": 0,
-                    "Overspeeding": 0,
-                    "emergency_breaking": 0,
-                },
-                "April": {
-                    "geofence_violations": 0,
-                    "Overspeeding": 0,
-                    "emergency_breaking": 0,
-                },
-                "May": {
-                    "geofence_violations": 0,
-                    "Overspeeding": 0,
-                    "emergency_breaking": 0,
-                },
-                "June": {
-                    "geofence_violations": 0,
-                    "Overspeeding": 0,
-                    "emergency_breaking": 0,
-                },
-                "July": {
-                    "geofence_violations": 0,
-                    "Overspeeding": 0,
-                    "emergency_breaking": 0,
-                },
-                "Aug": {
-                    "geofence_violations": 0,
-                    "Overspeeding": 0,
-                    "emergency_breaking": 0,
-                },
-                "Sept": {
-                    "geofence_violations": 0,
-                    "Overspeeding": 0,
-                    "emergency_breaking": 0,
-                },
-                "Oct": {
-                    "geofence_violations": 0,
-                    "Overspeeding": 0,
-                    "emergency_breaking": 0,
-                },
-                "Nov": {
-                    "geofence_violations": 0,
-                    "Overspeeding": 0,
-                    "emergency_breaking": 0,
-                },
-                "Dec": {
-                    "geofence_violations": 0,
-                    "Overspeeding": 0,
-                    "emergency_breaking": 0,
-                },
+            "fuel_cost_by_asset_type_in_percentage": {
+                "trucks": 20,
+                "cars": 30,
+                "bulldozers": 30,
+                "cranes": 80,
             },
         }
+        return send_data_with_info(report, messages.SUCCESS_MESSAGE)
+
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get(
+    "/smart_report/violations/{smart_report_uuid}", response_class=ORJSONResponse
+)
+@inject
+async def view_smart_report_violations_handler(
+    smart_report_uuid: str,
+    asset_service: AssetService = Depends(Provide[Container.asset_service]),
+    smart_report_service: SmartReportService = Depends(
+        Provide[Container.smart_report_service]
+    ),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        report = {
+            "assets": [
+                {
+                    "asset_name": "Hyndai Elentra (Black)",
+                    "vehicle_license_no": "GR-8551-23",
+                    "image_url": "https://mvitracking.s3.eu-central-1.amazonaws.com/"
+                    "Er-ist-wieder-da-648x432-49da1694f552880d.jpg",
+                    "driver": {
+                        "first_name": "Joshua ",
+                        "last_name": "Tetteh",
+                        "phone_number": "+233245678024",
+                    },
+                    "date_of_incidence": "20/08/2024",
+                    "last_tracking_event": {
+                        "lat": 5.7582366,
+                        "lng": -0.1398266,
+                    },
+                },
+                {
+                    "asset_name": "Toyota Corolla",
+                    "vehicle_license_no": "GR 3251-23",
+                    "image_url": "https://mvitracking.s3.eu-central-1.amazonaws.com/"
+                    "Er-ist-wieder-da-648x432-49da1694f552880d.jpg",
+                    "driver": {
+                        "first_name": "Joshua ",
+                        "last_name": "Tetteh",
+                        "phone_number": "+233245678024",
+                    },
+                    "date_of_incidence": "20/08/2024",
+                    "last_tracking_event": {
+                        "lat": 5.7582366,
+                        "lng": -0.1398266,
+                    },
+                },
+            ]
+        }
+
+        return send_data_with_info(report, messages.SUCCESS_MESSAGE)
+
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -443,19 +417,19 @@ async def get_smart_report_by_user_handler(
         if user:
             if user.get("account_type") == AccountType.INDIVIDUAL:
                 reports = smart_report_service.get_reports(
-                    user_uuid=user_uuid, page_size=page_size, page=page
+                    user_uuid=user_uuid, page=page, page_size=page_size
                 )
 
-                return reports
+                return send_data_with_info(reports, messages.SUCCESS_MESSAGE)
 
             if user.get("account_type") == AccountType.BUSINESS:
                 reports = smart_report_service.get_reports(
                     business_profile_uuid=user.get("business_profile").uuid,
-                    page_size=10,
-                    page=1,
+                    page=10,
+                    page_size=page_size,
                 )
 
-                return reports
+                return send_data_with_info(reports, messages.SUCCESS_MESSAGE)
 
         else:
             msg = f"{messages.USER_NOT_FOUND} {user_uuid}"
@@ -486,7 +460,7 @@ async def get_gas_report(
         if not user:
             return send_client_side_error(
                 user_msg=messages.USER_NOT_FOUND,
-                error=f"User with uuid {user_uuid} not found",
+                dev_msg=f"User with uuid {user_uuid} not found",
             )
 
         if user.get("account_type") == AccountType.INDIVIDUAL:
@@ -500,13 +474,14 @@ async def get_gas_report(
             )
 
         if user.get("account_type") == AccountType.BUSINESS:
-            return send_data(
+            return send_data_with_info(
                 service.generate_report_business(
                     business_uuid=user.get("business_profile").uuid,
                     start_date=start_date,
                     end_date=end_date,
                     search=search,
-                )
+                ),
+                messages.SUCCESS_MESSAGE
             )
 
     except Exception as e:

@@ -5,11 +5,12 @@ from fastapi.responses import ORJSONResponse
 from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
-from app.core.exceptions import BadRequestError, NotFoundError
+from app.core.exceptions import AuthError, BadRequestError, NotFoundError
 from app.model.user import User
 from app.schema.gas_cylinder_schema import (
     CreateGasCylinder,
     CreateGasCylinderPayload,
+    CreateSpareGasCylinder,
     GasCylinderEventResponse,
     GasEventPayload,
 )
@@ -21,6 +22,7 @@ from app.util.enums import AccountType, DeviceStatus
 from app.util.utils import (
     send_client_side_error,
     send_data,
+    send_data_with_info,
     send_info,
     send_internal_server_error,
 )
@@ -275,4 +277,53 @@ async def get_cylinder_by_id_handler(
         return send_data(cylinder)
     except Exception as e:
         msg = f"{messages.CREATE_FAILED} - {str(e)}"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.delete("/{cylinder_uuid}", response_class=ORJSONResponse)
+@inject
+async def delete_gas_cylinder_handler(
+    cylinder_uuid: str,
+    service: GasCylinderService = Depends(Provide[Container.gas_cylinder_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        service.delete_gas_cylinder(cylinder_uuid, current_user)
+        return send_info(messages.DELETE_SUCCESS + f"{msg_prefix}")
+    except (NotFoundError, AuthError) as e:
+        return send_client_side_error(user_msg=str(e.detail), dev_msg=str(e.detail))
+    except Exception as e:
+        msg = f"{messages.DELETE_FAILED}" + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.post("/spare/{user_uuid}", response_class=ORJSONResponse)
+@inject
+async def create_spare_gas_cylinder_handler(
+    user_uuid: str,
+    gas_cylinder_payload: CreateSpareGasCylinder,
+    service: GasCylinderService = Depends(Provide[Container.gas_cylinder_service]),
+    user_service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        user = user_service.get_user_by_uuid(user_uuid)
+        if not user:
+            return send_client_side_error(
+                user_msg=messages.USER_NOT_FOUND + user_uuid,
+                dev_msg=messages.USER_NOT_FOUND + user_uuid,
+            )
+
+        data = service.create_spare_cylinder(
+            gas_cylinder_payload,
+            user_uuid,
+            str(user.get("business_profile").uuid)
+            if user.get("business_profile").uuid
+            else None,
+        )
+
+        return send_data_with_info(data, messages.GAS_CYLINDER_CREATED)
+
+    except Exception as e:
+        msg = f"{messages.CREATE_FAILED}" + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)

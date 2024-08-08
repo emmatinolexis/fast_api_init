@@ -2,6 +2,7 @@ import uuid
 
 from sqlalchemy import Column, Enum, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 from app.model.base_model import BaseModel
 from app.util.enums import ServiceStatus
@@ -25,3 +26,5 @@ class MaintenanceAlert(BaseModel):
     )
     user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
     status = Column(Enum(ServiceStatus), nullable=False, index=True)
+    asset = relationship("Asset")
+    alert_policy = relationship("AlertPolicy")

@@ -11,7 +11,7 @@ ENV: str = "test"
 
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "MV Tracking Hub"
+    PROJECT_NAME: str = "MVI Tracking Hub"
     API_VERSION: str = os.getenv("API_VERSION", "0.0.1")
     ENV: str = os.getenv("ENV", ENV)
     API: str = "/api"
@@ -19,7 +19,10 @@ class Settings(BaseSettings):
 
     # date
     DATETIME_FORMAT: str = "%Y-%m-%dT%H:%M:%S"
+    DATETIME_FORMAT_YEAR: str = "%d-%m-%YT%H:%M:%S"
     DATE_FORMAT: str = "%Y-%m-%d"
+    DATE_FORMAT_YEAR: str = "%d/%m/%Y"
+
 
     # auth
     SECRET_KEY: str = os.getenv("SECRET_KEY", "test_secret_key")

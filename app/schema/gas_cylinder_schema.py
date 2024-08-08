@@ -19,7 +19,6 @@ class UploadGasDeviceCSV(BaseModel):
 
 class CreateGasCylinder(BaseModel):
     cylinder_name: str
-    material_type: GasCylinderMaterialType
     user_uuid: str
     business_profile_uuid: Optional[str] = None
     gas_device_serial_number: Optional[str] = None
@@ -28,7 +27,6 @@ class CreateGasCylinder(BaseModel):
 
 class CreateGasCylinderPayload(BaseModel):
     cylinder_name: Optional[str] = None
-    material_type: Optional[GasCylinderMaterialType] = None
     gas_device_serial_number: Optional[str] = None
     cylinder_type_uuid: Optional[UUID] = None
     building_uuid: Optional[UUID] = None
@@ -44,9 +42,10 @@ class CreateGasCylinderOnly(BaseModel):
 
 
 class CreateGasCylinderType(BaseModel):
-    name: str
+    name: float
     empty_weight: float
     full_weight: float
+    fiber_type: GasCylinderMaterialType
 
 
 class UpdateGasCylinderType(BaseModel):
@@ -90,3 +89,19 @@ class GasEventPayload(BaseModel):
 
 class GasCylinderEventResponse(BaseModel):
     id: int
+
+
+class CreateSpareGasCylinder(BaseModel):
+    cylinder_name: str
+    material_type: GasCylinderMaterialType
+    gas_cylinder_type_uuid: str
+    building_uuid: str
+
+
+class CreateSpareGasCylinderSchema(BaseModel):
+    cylinder_name: str
+    material_type: GasCylinderMaterialType
+    user_uuid: str
+    business_profile_uuid: Optional[str] = None
+    building_uuid: str
+    status: ActiveStatus = ActiveStatus.INACTIVE

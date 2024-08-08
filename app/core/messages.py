@@ -61,6 +61,7 @@ GAS_DEVICE_NOT_FOUND = "No gas device was found with the given id : "
 GAS_CYLINDER_NOT_FOUND = "No gas cylinder was found with the given uuid : "
 GAS_CYLINDER_TYPE_NOT_FOUND = "No gas cylinder type was found with the given uuid : "
 GAS_CYLINDER_INACTIVE = "Gas cylinder is inactive"
+GAS_CYLINDER_CREATED = "Gas cylinder created successfully"
 
 
 DEVICE_ALREADY_ASSIGNED = "Device is already assigned"
@@ -70,9 +71,14 @@ INTERNAL_SERVER_ERROR = "Internal server error"
 ALREADY_UNLINKED = "Gas cylinder is already unlinked"
 CYLINDER_UNLINKED = "Gas cylinder unlinked successfully"
 CYLINDER_ALREADY_LINKED = "Gas cylinder is already linked"
-
-
 BUILDING_NOT_FOUND = "No building was found with the given uuid"
-
-
 CSV_LOAD_FAILED = "Failed to load csv file"
+CSV_LOAD_SUCCESS = "CSV file loaded successfully"
+MUST_BE_ASSIGNED = "You must be assigned to an asset to perform this action"
+REPORT_SUCCESS = "Report successfully generated"
+SUCCESS_MESSAGE = "Successful"
+CREATE_SUCCESS = "Successfully created "
+GET_SUCCESS = "Successfully retrieved "
+WRONG_DRIVER_EMAIL = "No Driver Was Found With The Given Email : "
+DRIVER_NOT_ASSIGNED = "Driver with {driver_email} is not assigned to any asset"
+
