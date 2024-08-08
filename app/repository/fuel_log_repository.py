@@ -1,4 +1,5 @@
 from contextlib import AbstractContextManager
+from datetime import datetime
 from typing import Callable
 
 from sqlalchemy import or_
@@ -13,42 +14,56 @@ class FuelLogRepository(BaseRepository):
         self.session_factory = session_factory
         super().__init__(session_factory, FuelLog)
 
-    def get_fuel_logs_by_user_uuid(self, user_uuid: str, search: str = None):
+    def _apply_common_filters(self, query, search, start_date, end_date):
+        if search:
+            search_pattern = f"%{search}%"
+            try:
+                search_numeric = float(search)
+                query = query.filter(
+                    or_(
+                        FuelLog.driver_name.ilike(search_pattern),
+                        FuelLog.amount == search_numeric,
+                    )
+                )
+            except ValueError:
+                query = query.filter(FuelLog.driver_name.ilike(search_pattern))
+
+        if start_date:
+            # Convert start_date to the same string format as the purchase_date in the database
+            start_date_str = datetime.strptime(start_date, "%d/%m/%Y").strftime(
+                "%d/%m/%Y"
+            )
+            query = query.filter(FuelLog.purchase_date >= start_date_str)
+
+        if end_date:
+            # Convert end_date to the same string format as the purchase_date in the database
+            end_date_str = datetime.strptime(end_date, "%d/%m/%Y").strftime("%d/%m/%Y")
+            query = query.filter(FuelLog.purchase_date <= end_date_str)
+
+        return query
+
+    def get_fuel_logs_by_user_uuid(
+        self,
+        user_uuid: str,
+        search: str = None,
+        start_date: str = None,
+        end_date: str = None,
+    ):
         with self.session_factory() as session:
             query = session.query(FuelLog).filter(FuelLog.user_uuid == user_uuid)
-
-            if search:
-                search_pattern = f"%{search}%"
-                try:
-                    search_numeric = float(search)
-                    query = query.filter(
-                        or_(
-                            FuelLog.driver_name.ilike(search_pattern),
-                            FuelLog.amount == search_numeric,
-                        )
-                    )
-                except ValueError:
-                    query = query.filter(FuelLog.driver_name.ilike(search_pattern))
-
+            query = self._apply_common_filters(query, search, start_date, end_date)
             return query.all()
 
-    def get_fuel_logs_by_business_uuid(self, business_uuid: str, search: str = None):
+    def get_fuel_logs_by_business_uuid(
+        self,
+        business_uuid: str,
+        search: str = None,
+        start_date: str = None,
+        end_date: str = None,
+    ):
         with self.session_factory() as session:
             query = session.query(FuelLog).filter(
                 FuelLog.business_profile_uuid == business_uuid
             )
-
-            if search:
-                search_pattern = f"%{search}%"
-                try:
-                    search_numeric = float(search)
-                    query = query.filter(
-                        or_(
-                            FuelLog.driver_name.ilike(search_pattern),
-                            FuelLog.amount == search_numeric,
-                        )
-                    )
-                except ValueError:
-                    query = query.filter(FuelLog.driver_name.ilike(search_pattern))
-
+            query = self._apply_common_filters(query, search, start_date, end_date)
             return query.all()

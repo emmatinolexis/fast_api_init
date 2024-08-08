@@ -115,7 +115,7 @@ async def create_fuel_log_handler_for_fleet_manager(
             else None,
         )
 
-        return send_data_with_info(data, messages.CREATE_SUCCESS + msg_prefix)
+        return send_data_with_info(data, messages.CREATE_SUCCESS + "fuel log")
     except NotFoundError as e:
         return send_client_side_error(
             user_msg=e.detail, status_code=401, dev_msg=e.detail
@@ -132,6 +132,8 @@ async def get_fuel_logs_handler(
     page: int = Query(1, gt=0, description="Page number"),
     page_size: int = Query(10, gt=0, description="Page size"),
     search: str = Query(None, description="Search query"),
+    start_date: str = Query(None, description="Start date"),
+    end_date: str = Query(None, description="End date"),
     service: FuelLogService = Depends(Provide[Container.fuel_log_service]),
     user_service: UserService = Depends(Provide[Container.user_service]),
     current_user: User = Depends(get_current_user),
@@ -146,14 +148,19 @@ async def get_fuel_logs_handler(
 
         if user.get("account_type") == AccountType.INDIVIDUAL:
             data = service.get_fuel_logs_by_user_uuid(
-                user_uuid, page, page_size, search
+                user_uuid, page, page_size, search, start_date, end_date
             )
         else:
             data = service.get_fuel_logs_by_business_uuid(
-                str(user.get("business_profile").uuid), page, page_size, search
+                str(user.get("business_profile").uuid),
+                page,
+                page_size,
+                search,
+                start_date,
+                end_date,
             )
 
-        return send_data_with_info(data, messages.GET_SUCCESS + f"{msg_prefix}s")
+        return send_data_with_info(data, messages.GET_SUCCESS + "fuel logs")
     except NotFoundError as e:
         return send_client_side_error(
             user_msg=e.detail, status_code=401, dev_msg=e.detail
