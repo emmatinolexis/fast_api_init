@@ -30,6 +30,7 @@ class UpdateUserPayload(BaseModel):
     location: str
     address: str
     phone_number: str
+    country: str
 
     @field_validator("phone_number")
     @classmethod

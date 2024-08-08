@@ -17,7 +17,7 @@ class MQTTDataPayload(BaseModel):
     course: float = None
     altitude: float = None
     milleage: int = None  # Total distance traveled
-    fuel_level: int = None  # Fuel level in liters
+    fuel_level: float = None  # Fuel level in litres
     gsm_mcc: int = None  # Mobile Network Country Code
     gsm_mnc: int = None  # Mobile Network Code
     gsm_lac: str = None  # Mobile Network Location Area Code

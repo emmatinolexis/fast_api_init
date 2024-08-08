@@ -63,6 +63,14 @@ class GasCylinderRepository(BaseRepository):
                 query = query.filter(self.model.status == cylinder_status)
             return query.all()
 
+    def read_all_by_user_uuid(self, user_uuid: str):
+        with self.session_factory() as session:
+            return (
+                session.query(self.model)
+                .filter(self.model.user_uuid == user_uuid)
+                .all()
+            )
+
     def create_gas_cylinder(
         self,
         gas_payload: CreateGasCylinderPayload,
@@ -131,6 +139,14 @@ class GasCylinderRepository(BaseRepository):
         session.commit()
         session.refresh(gas_data)
         return gas_data
+
+    def read_all_by_business_uuid(self, business_uuid: str):
+        with self.session_factory() as session:
+            return (
+                session.query(self.model)
+                .filter(self.model.business_profile_uuid == business_uuid)
+                .all()
+            )
 
     def get_gas_cylinder_by_uuid(self, cylinder_uuid: str):
         with self.session_factory() as session:

@@ -8,10 +8,16 @@ from app.core.dependencies import get_current_user
 from app.model.user import User
 from app.schema.report_schema import SmartReportInput, SmartReportPayload
 from app.service.asset_service import AssetService
+from app.service.gas_cylinder_event_service import GasCylinderEventService
 from app.service.smart_report_service import SmartReportService
 from app.service.user_service import UserService
 from app.util.enums import AccountType
-from app.util.utils import convert_date_format, send_data, send_internal_server_error
+from app.util.utils import (
+    convert_date_format,
+    send_client_side_error,
+    send_data,
+    send_internal_server_error,
+)
 
 router = APIRouter(
     prefix="/reports",
@@ -340,20 +346,43 @@ async def view_smart_report_violations_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        smart_report = smart_report_service.get_by_uuid(smart_report_uuid)
+        return {
+            "assets": [
+                {
+                    "asset_name": "Hyndai Elentra (Black)",
+                    "vehicle_license_no": "GR-8551-23",
+                    "image_url": "https://mvitracking.s3.eu-central-1.amazonaws.com/"
+                    "Er-ist-wieder-da-648x432-49da1694f552880d.jpg",
+                    "driver": {
+                        "first_name": "Joshua ",
+                        "last_name": "Tetteh",
+                        "phone_number": "+233245678024",
+                    },
+                    "date_of_incidence": "20/08/2024",
+                    "last_tracking_event": {
+                        "lat": 5.7582366,
+                        "lng": -0.1398266,
+                    },
+                },
+                {
+                    "asset_name": "Toyota Corolla",
+                    "vehicle_license_no": "GR 3251-23",
+                    "image_url": "https://mvitracking.s3.eu-central-1.amazonaws.com/"
+                    "Er-ist-wieder-da-648x432-49da1694f552880d.jpg",
+                    "driver": {
+                        "first_name": "Joshua ",
+                        "last_name": "Tetteh",
+                        "phone_number": "+233245678024",
+                    },
+                    "date_of_incidence": "20/08/2024",
+                    "last_tracking_event": {
+                        "lat": 5.7582366,
+                        "lng": -0.1398266,
+                    },
+                },
+            ]
+        }
 
-        if not smart_report:
-            usr_msg = "Smart report not found"
-            dev_msg = f"Smart report not found for {smart_report_uuid}"
-            return send_internal_server_error(user_msg=usr_msg, error=dev_msg)
-
-        violations = smart_report_service.generate_violation_report(
-            convert_date_format(smart_report.start_date),
-            convert_date_format(smart_report.end_date),
-            smart_report.asset_group_uuids.get("asset_uuids"),
-            smart_report.asset_type_uuid,
-        )
-        return violations
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -397,3 +426,51 @@ async def get_smart_report_by_user_handler(
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/{user_uuid}")
+@inject
+async def get_gas_report(
+    user_uuid: str,
+    start_date: str,
+    end_date: str,
+    search: str = Query(
+        None, description="Search for gas cylinder by Name or Serial Number"
+    ),
+    service: GasCylinderEventService = Depends(
+        Provide[Container.gas_cylinder_event_service]
+    ),
+    user_service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        user = user_service.get_user_by_uuid(user_uuid)
+
+        if not user:
+            return send_client_side_error(
+                user_msg=messages.USER_NOT_FOUND,
+                dev_msg=f"User with uuid {user_uuid} not found"
+            )
+
+        if user.get("account_type") == AccountType.INDIVIDUAL:
+            return send_data(
+                service.generate_report(
+                    search=search,
+                    user_uuid=user_uuid,
+                    start_date=start_date,
+                    end_date=end_date,
+                )
+            )
+
+        if user.get("account_type") == AccountType.BUSINESS:
+            return send_data(
+                service.generate_report_business(
+                    business_uuid=user.get("business_profile").uuid,
+                    start_date=start_date,
+                    end_date=end_date,
+                    search=search,
+                )
+            )
+
+    except Exception as e:
+        return send_internal_server_error(user_msg="Failed to get gas report", error=e)

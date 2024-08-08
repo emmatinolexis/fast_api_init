@@ -597,3 +597,12 @@ class AssetRepository(BaseRepository):
             maintenance_alerts = base_query.all()
 
             return maintenance_alerts
+
+    def get_asset_by_user_uuid(self, user_uuid: str):
+        with self.session_factory() as session:
+            return (
+                session.query(self.model)
+                .filter(self.model.user_uuid == user_uuid)
+                .first()
+            )
+

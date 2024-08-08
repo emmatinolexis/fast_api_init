@@ -771,6 +771,24 @@ def convert_date_format(date_str):
     return formatted_date
 
 
+def load_bulk_fuel_logs_from_csv(csv_url: str):
+    try:
+        # Attempt to read the CSV file into a pandas DataFrame
+        df = pd.read_csv(csv_url)
+
+        # Extract each row and store it in a list as a dictionary
+        rows_list = df.to_dict("records")
+
+        # Return the list of dictionaries
+        return rows_list
+
+    except Exception as e:
+        # Print the error message
+        print(f"An error occurred while loading the CSV file: {e}")
+        # Raise the exception again if needed
+        raise e
+
+
 def calculate_total_time_by_event(events, event_type):
     total_time = 0
     last_timestamp = None
