@@ -605,4 +605,3 @@ class AssetRepository(BaseRepository):
                 .filter(self.model.user_uuid == user_uuid)
                 .first()
             )
-

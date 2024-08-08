@@ -449,7 +449,7 @@ async def get_gas_report(
         if not user:
             return send_client_side_error(
                 user_msg=messages.USER_NOT_FOUND,
-                dev_msg=f"User with uuid {user_uuid} not found"
+                dev_msg=f"User with uuid {user_uuid} not found",
             )
 
         if user.get("account_type") == AccountType.INDIVIDUAL:
