@@ -215,14 +215,20 @@ class SmartReportService(BaseService):
                 incidents_rate, start_date, end_date, monthly_totals
             )
 
+            geofence = total_incidents.get("geofence", 0)
+            overspeeding = total_incidents.get("overspeeding", 0)
+            rapid_acceleration = total_incidents.get("rapid_acceleration", 0)
+            emergency_braking = total_incidents.get("emergency_braking", 0)
+            total_incidents = total_incidents.get("total_incidents", 0)
+
             # Prepare the final report
             report = {
                 "incidents": {
-                    "geofence": total_incidents.get("geofence", 0),
-                    "overspeeding": total_incidents.get("overspeeding", 0),
-                    "rapid_acceleration": total_incidents.get("rapid_acceleration", 0),
-                    "emergency_braking": total_incidents.get("emergency_braking", 0),
-                    "total_incidents": total_incidents.get("total_incidents", 0),
+                    "geofence": geofence,
+                    "overspeeding": overspeeding,
+                    "rapid_acceleration": rapid_acceleration,
+                    "emergency_braking": emergency_braking,
+                    "total_incidents": total_incidents,
                 },
                 "incidents_by_equipment_type": dict(incidents_by_equipment_type),
                 "incidents_rate": {
