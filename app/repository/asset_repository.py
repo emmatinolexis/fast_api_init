@@ -4,6 +4,7 @@ from typing import Any, Callable, Dict, List
 
 from sqlalchemy import Date, and_, asc, cast, desc, label
 from sqlalchemy.orm import Session, joinedload
+from app.core.settings import get_settings
 
 from app.model.alert_policy import AlertPolicy
 from app.model.alert_policy_violations import AlertPolicyViolation
@@ -396,7 +397,7 @@ class AssetRepository(BaseRepository):
                     AlertPolicy.alert_policy_type_uuid == alert_policy_type_uuid,
                     and_(
                         cast(AlertPolicyViolation.created_at, Date)
-                        >= datetime.strptime(start_date, "%d/%m/%Y"),
+                        >= datetime.strptime(start_date, get_settings().DATE_FORMAT_YEAR),
                         cast(AlertPolicyViolation.created_at, Date)
                         <= datetime.strptime(end_date, "%d/%m/%Y"),
                     ),
@@ -423,9 +424,9 @@ class AssetRepository(BaseRepository):
             filters = [
                 AlertPolicy.alert_policy_type_uuid == alert_policy_type_uuid,
                 cast(AlertPolicyViolation.created_at, Date)
-                >= datetime.strptime(start_date, "%d/%m/%Y"),
+                >= datetime.strptime(start_date, get_settings().DATE_FORMAT_YEAR),
                 cast(AlertPolicyViolation.created_at, Date)
-                <= datetime.strptime(end_date, "%d/%m/%Y"),
+                <= datetime.strptime(end_date, get_settings().DATE_FORMAT_YEAR),
             ]
 
             if user_uuid:
@@ -446,90 +447,43 @@ class AssetRepository(BaseRepository):
 
             return violations
 
-    def get_maintenance_by_alert_type(
+    def get_violations_by_asset(
         self,
-        alert_policy_type_uuid: str,
-        maintenance_type_uuid: str,
+        asset_uuid: str,
         start_date: str,
         end_date: str,
-        user_uuid: str = None,
-        business_uuid: str = None,
-        asset_uuid: str = None,
-        asset_type_uuid: str = None,
     ):
         with self.session_factory() as session:
-            base_query = session.query(MaintenanceAlert).join(
-                AlertPolicy, MaintenanceAlert.alert_policy_uuid == AlertPolicy.uuid
+            # Build the base query
+            base_query = session.query(AlertPolicyViolation).options(
+                joinedload(AlertPolicyViolation.alert_policy).joinedload(
+                    AlertPolicy.alert_policy_type
+                )
             )
 
+            # Define the filters
             filters = [
-                AlertPolicy.alert_policy_type_uuid == alert_policy_type_uuid,
-                AlertPolicy.maintenance_alert_type_uuid == maintenance_type_uuid,
-                cast(MaintenanceAlert.created_at, Date)
-                >= datetime.strptime(start_date, "%d/%m/%Y"),
-                cast(MaintenanceAlert.created_at, Date)
-                <= datetime.strptime(end_date, "%d/%m/%Y"),
+                AlertPolicyViolation.asset_uuid == asset_uuid,
+                and_(
+                    cast(AlertPolicyViolation.created_at, Date)
+                    >= datetime.strptime(start_date, get_settings().DATE_FORMAT_YEAR),
+                    cast(AlertPolicyViolation.created_at, Date)
+                    <= datetime.strptime(end_date, get_settings().DATE_FORMAT_YEAR),
+                ),
             ]
 
-            if user_uuid:
-                filters.append(AlertPolicyViolation.user_uuid == user_uuid)
-            if business_uuid:
-                filters.append(
-                    AlertPolicyViolation.business_profile_uuid == business_uuid
-                )
-            if asset_uuid:
-                filters.append(MaintenanceAlert.asset_uuid == asset_uuid)
-            if asset_type_uuid:
-                base_query = base_query.join(
-                    Asset, MaintenanceAlert.asset_uuid == Asset.uuid
-                )
-                filters.append(Asset.asset_type_uuid == asset_type_uuid)
-
+            # Apply the filters and execute the query
             violations = base_query.filter(and_(*filters)).all()
 
             return violations
-
-    # def get_asset_with_relationships(self, asset_uuid: str, date_from: str, date_to: str):
-    #     # Ensure date_to is inclusive
-    #     date_to = date_to.replace(hour=23, minute=59, second=59)
-    #
-    #     with self.session_factory() as session:
-    #         asset = session.query(self.model).filter_by(uuid=asset_uuid).options(
-    #             joinedload(self.model.asset_type),
-    #             joinedload(self.model.equipment)
-    #         ).first()
-    #
-    #         if asset and asset.device_imei:
-    #             # Get device's tracking events within the specified date range
-    #             last_tracking_events = (
-    #                 session.query(
-    #                     label("lat", TrackingEvent.latitude),
-    #                     label("lng", TrackingEvent.longitude),
-    #                     TrackingEvent.speed,
-    #                     TrackingEvent.course,
-    #                     label("timestamp", TrackingEvent.event_datetime),
-    #                     label("event_type", TrackingEvent.event_type),
-    #                     label("fuel_level", TrackingEvent.fuel_level),
-    #                 )
-    #                 .filter(
-    #                     TrackingEvent.device_imei == asset.device_imei,
-    #                     TrackingEvent.event_datetime.between(date_from, date_to_obj)
-    #                 )
-    #                 .order_by(desc(TrackingEvent.event_datetime))
-    #                 .all()
-    #             )
-    #
-    #             asset.tracking_events = last_tracking_events
-    #
-    #         return asset
 
     def get_asset_with_relationships(
         self, asset_uuid: str, date_from: str, date_to: str
     ):
         try:
             # Parse date_from and date_to from dd/mm/yyyy to datetime objects
-            date_from_obj = datetime.strptime(date_from, "%d/%m/%Y").date()
-            date_to_obj = datetime.strptime(date_to, "%d/%m/%Y").date()
+            date_from_obj = datetime.strptime(date_from, get_settings().DATE_FORMAT_YEAR).date()
+            date_to_obj = datetime.strptime(date_to, get_settings().DATE_FORMAT_YEAR).date()
         except ValueError as e:
             raise ValueError("Date format should be dd/mm/yyyy") from e
 
@@ -581,6 +535,68 @@ class AssetRepository(BaseRepository):
                 ]
 
             return asset
+
+    def get_maintenance_by_alert_type(
+        self,
+        alert_policy_type_uuid: str,
+        maintenance_type_uuid: str,
+        start_date: str,
+        end_date: str,
+        user_uuid: str = None,
+        business_uuid: str = None,
+        asset_uuid: str = None,
+        asset_type_uuid: str = None,
+    ):
+        with self.session_factory() as session:
+            base_query = session.query(MaintenanceAlert).join(
+                AlertPolicy, MaintenanceAlert.alert_policy_uuid == AlertPolicy.uuid
+            )
+
+            filters = [
+                AlertPolicy.alert_policy_type_uuid == alert_policy_type_uuid,
+                AlertPolicy.maintenance_alert_type_uuid == maintenance_type_uuid,
+                cast(MaintenanceAlert.created_at, Date)
+                >= datetime.strptime(start_date, get_settings().DATE_FORMAT_YEAR),
+                cast(MaintenanceAlert.created_at, Date)
+                <= datetime.strptime(end_date, get_settings().DATE_FORMAT_YEAR),
+            ]
+
+            if user_uuid:
+                filters.append(AlertPolicyViolation.user_uuid == user_uuid)
+            if business_uuid:
+                filters.append(
+                    AlertPolicyViolation.business_profile_uuid == business_uuid
+                )
+            if asset_uuid:
+                filters.append(MaintenanceAlert.asset_uuid == asset_uuid)
+            if asset_type_uuid:
+                base_query = base_query.join(
+                    Asset, MaintenanceAlert.asset_uuid == Asset.uuid
+                )
+                filters.append(Asset.asset_type_uuid == asset_type_uuid)
+
+            violations = base_query.filter(and_(*filters)).all()
+
+            return violations
+
+    def get_maintenance_by_asset(self, asset_uuid: str, start_date: str, end_date: str):
+        with self.session_factory() as session:
+            base_query = (
+                session.query(MaintenanceAlert)
+                .options(joinedload(MaintenanceAlert.alert_policy))
+                .filter(
+                    cast(MaintenanceAlert.created_at, Date)
+                    >= datetime.strptime(start_date, get_settings().DATE_FORMAT_YEAR),
+                    cast(MaintenanceAlert.created_at, Date)
+                    <= datetime.strptime(end_date, get_settings().DATE_FORMAT_YEAR),
+                    MaintenanceAlert.asset_uuid == asset_uuid,
+                )
+            )
+
+            # Execute the query and fetch results
+            maintenance_alerts = base_query.all()
+
+            return maintenance_alerts
 
     def get_asset_by_user_uuid(self, user_uuid: str):
         with self.session_factory() as session:

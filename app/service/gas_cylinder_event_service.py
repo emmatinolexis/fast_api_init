@@ -4,7 +4,6 @@ from typing import Optional
 from app.repository.gas_cylinder_event_repository import GasCylinderEventRepository
 from app.repository.gas_cylinder_repository import GasCylinderRepository
 from app.repository.gas_cylinder_type_repository import GasCylinderTypeRepository
-from app.repository.user_repository import UserRepository
 from app.service.base_service import BaseService
 from app.util.utils import calculate_gas_level_percentage
 
