@@ -16,6 +16,7 @@ from app.util.utils import (
     convert_date_format,
     send_client_side_error,
     send_data,
+    send_data_with_info,
     send_internal_server_error,
 )
 
@@ -280,7 +281,7 @@ async def view_smart_report_fleet_performance_handler(
             convert_date_format(smart_report.end_date),
             smart_report.asset_group_uuids.get("asset_uuids"),
         )
-        return violations
+        return send_data_with_info(violations, messages.REPORT_SUCCESS)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
