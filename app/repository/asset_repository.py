@@ -462,8 +462,6 @@ class AssetRepository(BaseRepository):
             # Define the filters
             filters = [
                 AlertPolicyViolation.asset_uuid == asset_uuid,
-                # cast(AlertPolicyViolation.created_at, Date) >= datetime.strptime(start_date, "%d/%m/%Y"),
-                # cast(AlertPolicyViolation.created_at, Date) <= datetime.strptime(end_date, "%d/%m/%Y"),
                 and_(
                     cast(AlertPolicyViolation.created_at, Date)
                     >= datetime.strptime(start_date, "%d/%m/%Y"),

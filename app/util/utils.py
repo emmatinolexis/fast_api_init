@@ -76,7 +76,7 @@ def send_data_with_info(data: Any, info: str, status_code: int = 200):
         status_code=status_code,
         content={
             "info": info,
-            "data": data,
+            "data": jsonable_encoder(data),
         },
     )
 

@@ -22,7 +22,6 @@ class GasCylinder(BaseModel):
     status = Column(
         Enum(ActiveStatus), nullable=False, default=ActiveStatus.ACTIVE, index=True
     )
-    material_type = Column(Enum(GasCylinderMaterialType), nullable=False, index=True)
     user_uuid = Column(
         UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False, index=True
     )
@@ -98,11 +97,6 @@ class GasDevice(BaseModel):
         nullable=True,
         index=True,
     )
-    # cylinders = relationship(
-    #     "GasCylinder",
-    #     primaryjoin="GasDevice.serial_number == foreign(GasCylinder.device_serial_number)",
-    #     back_populates="gas_device",
-    # )
 
 
 class CylinderTypes(BaseModel):
@@ -114,17 +108,15 @@ class CylinderTypes(BaseModel):
         unique=True,
         nullable=False,
     )
-    name = Column(String(length=50), nullable=False, unique=True, index=True)
+    name = Column(FLOAT, nullable=False, unique=True, index=True)
     empty_weight = Column(FLOAT, nullable=False, index=True)
     full_weight = Column(FLOAT, nullable=False, index=True)
+    fiber_type = Column(
+        Enum(GasCylinderMaterialType), nullable=False, index=True
+    )
     status = Column(
         Enum(ActiveStatus), nullable=False, default=ActiveStatus.ACTIVE, index=True
     )
-    # gas_cylinders = relationship(
-    #     "GasCylinder",
-    #     primaryjoin="CylinderTypes.uuid == foreign(GasCylinder.cylinder_type_uuid)",
-    #     back_populates="cylinder_type",
-    # )
 
 
 class OtherCylinderTypes(BaseModel):

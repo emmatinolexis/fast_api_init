@@ -79,3 +79,4 @@ CSV_LOAD_FAILED = "Failed to load csv file"
 
 MUST_BE_ASSIGNED = "You must be assigned to an asset to perform this action"
 REPORT_SUCCESS = "Report successfully generated"
+SUCCESS_MESSAGE = "Successful"

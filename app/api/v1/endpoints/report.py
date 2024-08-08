@@ -66,7 +66,7 @@ async def generate_distance_traveled_report_handler(
                 )
         else:
             msg = f"{messages.USER_NOT_FOUND} {user_uuid}"
-            return send_internal_server_error(user_msg=msg, error=msg)
+            return send_client_side_error(user_msg=msg, dev_msg=msg)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -111,7 +111,7 @@ async def generate_violation_reminders_report_handler(
                 )
         else:
             msg = f"{messages.USER_NOT_FOUND} {user_uuid}"
-            return send_internal_server_error(user_msg=msg, error=msg)
+            return send_client_side_error(user_msg=msg, dev_msg=msg)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -163,7 +163,8 @@ async def create_smart_report_handler(
 
         else:
             msg = f"{messages.USER_NOT_FOUND} {smart_report_payload.user_uuid}"
-            return send_internal_server_error(user_msg=msg, error=msg)
+            return send_client_side_error(user_msg=msg, dev_msg=msg)
+
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -187,7 +188,7 @@ async def view_smart_report_fleet_overview_handler(
         if not smart_report:
             usr_msg = "Smart report not found"
             dev_msg = f"Smart report not found for {smart_report_uuid}"
-            return send_internal_server_error(user_msg=usr_msg, error=dev_msg)
+            return send_client_side_error(user_msg=usr_msg, dev_msg=dev_msg)
 
         user = user_service.get_user_by_uuid(str(smart_report.user_uuid))
 
@@ -236,7 +237,7 @@ async def view_smart_report_total_distance_covered_handler(
         if not smart_report:
             usr_msg = "Smart report not found"
             dev_msg = f"Smart report not found for {smart_report_uuid}"
-            return send_internal_server_error(user_msg=usr_msg, error=dev_msg)
+            return send_client_side_error(user_msg=usr_msg, dev_msg=dev_msg)
 
         user = user_service.get_user_by_uuid(str(smart_report.user_uuid))
         if not user:
@@ -274,7 +275,7 @@ async def view_smart_report_fleet_performance_handler(
         if not smart_report:
             usr_msg = "Smart report not found"
             dev_msg = f"Smart report not found for {smart_report_uuid}"
-            return send_internal_server_error(user_msg=usr_msg, error=dev_msg)
+            return send_client_side_error(user_msg=usr_msg, dev_msg=dev_msg)
 
         violations = smart_report_service.generate_violation_report(
             convert_date_format(smart_report.start_date),
@@ -309,11 +310,11 @@ async def view_smart_report_cost_analysis_handler(
                 "May": 350,
                 "June": 65,
                 "July": 180,
-                "Aug": 360,
-                "Sept": 320,
-                "Oct": 120,
-                "Nov": 130,
-                "Dec": 160,
+                "August": 360,
+                "September": 320,
+                "October": 120,
+                "November": 130,
+                "December": 160,
             },
             "total_fuel": 2890,
             "fuel_cost_by_asset_type": {
