@@ -4,8 +4,8 @@ from typing import Any, Callable, Dict, List
 
 from sqlalchemy import Date, and_, asc, cast, desc, label
 from sqlalchemy.orm import Session, joinedload
-from app.core.settings import get_settings
 
+from app.core.settings import get_settings
 from app.model.alert_policy import AlertPolicy
 from app.model.alert_policy_violations import AlertPolicyViolation
 from app.model.asset import Asset
@@ -397,7 +397,9 @@ class AssetRepository(BaseRepository):
                     AlertPolicy.alert_policy_type_uuid == alert_policy_type_uuid,
                     and_(
                         cast(AlertPolicyViolation.created_at, Date)
-                        >= datetime.strptime(start_date, get_settings().DATE_FORMAT_YEAR),
+                        >= datetime.strptime(
+                            start_date, get_settings().DATE_FORMAT_YEAR
+                        ),
                         cast(AlertPolicyViolation.created_at, Date)
                         <= datetime.strptime(end_date, "%d/%m/%Y"),
                     ),
@@ -482,8 +484,12 @@ class AssetRepository(BaseRepository):
     ):
         try:
             # Parse date_from and date_to from dd/mm/yyyy to datetime objects
-            date_from_obj = datetime.strptime(date_from, get_settings().DATE_FORMAT_YEAR).date()
-            date_to_obj = datetime.strptime(date_to, get_settings().DATE_FORMAT_YEAR).date()
+            date_from_obj = datetime.strptime(
+                date_from, get_settings().DATE_FORMAT_YEAR
+            ).date()
+            date_to_obj = datetime.strptime(
+                date_to, get_settings().DATE_FORMAT_YEAR
+            ).date()
         except ValueError as e:
             raise ValueError("Date format should be dd/mm/yyyy") from e
 

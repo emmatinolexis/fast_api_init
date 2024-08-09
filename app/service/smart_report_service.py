@@ -1,6 +1,7 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
 
+from dateutil import parser
 from dateutil.relativedelta import relativedelta
 
 from app.repository.asset_repository import AssetRepository
@@ -446,6 +447,69 @@ class SmartReportService(BaseService):
             fuel_level_current_range,
             fuel_level_past_range,
         )
+
+    def generate_fuel_usage_report(
+        self,
+        start_date: str,
+        end_date: str,
+        asset_type_uuid: str,
+        asset_uuids: list,
+        user_uuid: str = None,
+        business_uuid: str = None,
+    ):
+        try:
+            assets = []
+            start_date_dt = parser.parse(start_date)
+            end_date_dt = parser.parse(end_date)
+
+            for asset_uuid in asset_uuids:
+                asset = self.asset_repository.get_asset_with_relationships(
+                    asset_uuid, start_date, end_date
+                )
+                assets.append(asset)
+
+            # Initialize the report dictionary with all months in the date range set to 0
+            fuel_usage_report = {}
+            current_date = start_date_dt.replace(day=1)
+            while current_date <= end_date_dt:
+                month_key = current_date.strftime("%B")
+                fuel_usage_report[month_key] = 0
+                # Move to the next month
+                next_month = current_date.month % 12 + 1
+                next_year = current_date.year + (current_date.month // 12)
+                current_date = current_date.replace(
+                    year=next_year, month=next_month, day=1
+                )
+
+            organized_events = defaultdict(list)
+
+            for asset in assets:
+                for event in asset.tracking_events:
+                    event_date = parser.parse(event["timestamp"])
+                    if start_date_dt <= event_date <= end_date_dt:
+                        # Group by month and year
+                        period_key = event_date.strftime("%Y-%m")
+                        organized_events[period_key].append(event)
+
+            for period, events in organized_events.items():
+                # Filter out events that have a fuel level
+                fuel_level_events = [
+                    event for event in events if event["fuel_level"] is not None
+                ]
+                # Calculate total fuel used for this period
+                total_fuel_used = calculate_total_fuel_used(fuel_level_events)
+                # Convert period_key to month name
+                month_name = parser.parse(period + "-01").strftime("%B")
+                # Update the report with actual values
+                fuel_usage_report[month_name] = total_fuel_used
+
+            return {
+                "fuel_usage_report": fuel_usage_report,
+                "total_fuel_used": sum(fuel_usage_report.values()),
+            }
+
+        except Exception as e:
+            raise e
 
     def get_violations_reminders(
         self,
