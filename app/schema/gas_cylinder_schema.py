@@ -93,7 +93,7 @@ class GasCylinderEventResponse(BaseModel):
 
 class CreateSpareGasCylinder(BaseModel):
     cylinder_name: str
-    gas_cylinder_type_uuid: str
+    cylinder_type_uuid: str
     building_uuid: str
 
 
