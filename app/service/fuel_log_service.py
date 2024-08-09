@@ -173,3 +173,14 @@ class FuelLogService(BaseService):
             }
         except Exception as e:
             raise e
+
+    def update_fuel_log_receipt(self, fuel_log_uuid: str, payload: SingleFuelLog):
+        updated_fuel_log = self.fuel_log_repository.update_attr_by_uuid(
+            fuel_log_uuid, "receipt_image", payload.receipt_image
+        )
+
+        return fuel_log_transformer(updated_fuel_log)
+
+    def get_receipt_by_uuid(self, fuel_log_uuid: str):
+        fuel_log = self.fuel_log_repository.read_by_uuid(fuel_log_uuid)
+        return fuel_log_transformer(fuel_log)

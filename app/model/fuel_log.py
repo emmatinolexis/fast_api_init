@@ -8,7 +8,7 @@ from app.model.base_model import BaseModel
 
 class FuelLog(BaseModel):
     __tablename__ = "fuel_logs"
-    fuel_log_id = Column(
+    uuid = Column(
         UUID(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4,

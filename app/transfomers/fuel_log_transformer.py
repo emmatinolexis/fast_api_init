@@ -3,7 +3,7 @@ from app.model.fuel_log import FuelLog
 
 def fuel_log_transformer(fuel_log: FuelLog):
     return {
-        "uuid": fuel_log.fuel_log_id,
+        "uuid": fuel_log.uuid,
         "amount": fuel_log.amount,
         "quantity": fuel_log.quantity,
         "user_uuid": fuel_log.user_uuid,
