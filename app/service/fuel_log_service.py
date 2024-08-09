@@ -11,6 +11,7 @@ from app.schema.fuel_log_schema import (
     SingleFuelLogSchema,
 )
 from app.service.base_service import BaseService
+from app.transfomers.fuel_log_transformer import fuel_log_transformer
 from app.util.utils import load_bulk_fuel_logs_from_csv
 
 
@@ -115,14 +116,22 @@ class FuelLogService(BaseService):
             driver_name=f"{driver.first_name} {driver.last_name}" if driver else None,
         )
 
-        return self.fuel_log_repository.create(full_payload)
+        fuel_log = self.fuel_log_repository.create(full_payload)
+
+        return fuel_log_transformer(fuel_log)
 
     def get_fuel_logs_by_user_uuid(
-        self, user_uuid: str, page: int = 1, page_size: int = 10, search: str = None
+        self,
+        user_uuid: str,
+        page: int = 1,
+        page_size: int = 10,
+        search: str = None,
+        start_date: str = None,
+        end_date: str = None,
     ):
         try:
             fuel_logs = self.fuel_log_repository.get_fuel_logs_by_user_uuid(
-                user_uuid, search
+                user_uuid, search, start_date, end_date
             )
 
             total = len(fuel_logs)
@@ -130,19 +139,26 @@ class FuelLogService(BaseService):
 
             return {
                 "total": total,
-                "page": page,
+                "current_page": page,
                 "page_size": page_size,
-                "data": paginated_fuel_logs,
+                "total_pages": total // page_size + 1,
+                "data": [fuel_log_transformer(log) for log in paginated_fuel_logs],
             }
         except Exception as e:
             raise e
 
     def get_fuel_logs_by_business_uuid(
-        self, business_uuid: str, page: int = 1, page_size: int = 10, search: str = None
+        self,
+        business_uuid: str,
+        page: int = 1,
+        page_size: int = 10,
+        search: str = None,
+        start_date: str = None,
+        end_date: str = None,
     ):
         try:
             fuel_logs = self.fuel_log_repository.get_fuel_logs_by_business_uuid(
-                business_uuid, search
+                business_uuid, search, start_date, end_date
             )
 
             total = len(fuel_logs)
@@ -152,7 +168,19 @@ class FuelLogService(BaseService):
                 "total": total,
                 "page": page,
                 "page_size": page_size,
-                "data": paginated_fuel_logs,
+                "total_pages": total // page_size + 1,
+                "data": [fuel_log_transformer(log) for log in paginated_fuel_logs],
             }
         except Exception as e:
             raise e
+
+    def update_fuel_log_receipt(self, fuel_log_uuid: str, payload: SingleFuelLog):
+        updated_fuel_log = self.fuel_log_repository.update_attr_by_uuid(
+            fuel_log_uuid, "receipt_image", payload.receipt_image
+        )
+
+        return fuel_log_transformer(updated_fuel_log)
+
+    def get_receipt_by_uuid(self, fuel_log_uuid: str):
+        fuel_log = self.fuel_log_repository.read_by_uuid(fuel_log_uuid)
+        return fuel_log_transformer(fuel_log)

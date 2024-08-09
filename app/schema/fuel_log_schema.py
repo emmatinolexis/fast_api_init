@@ -40,3 +40,7 @@ class SingleFuelLogSchema(SingleFuelLog):
     user_uuid: UUID
     driver_name: Optional[str] = None
     business_profile_uuid: Optional[str] = None
+
+
+class UpdateFuelLog(BaseModel):
+    receipt_image: str
