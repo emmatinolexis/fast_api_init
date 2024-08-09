@@ -506,7 +506,7 @@ async def view_smart_report_fuel_usage_handler(
         if not smart_report:
             usr_msg = "Smart report not found"
             dev_msg = f"Smart report not found for {smart_report_uuid}"
-            return send_internal_server_error(user_msg=usr_msg, error=dev_msg)
+            return send_client_side_error(user_msg=usr_msg, dev_msg=dev_msg)
 
         user = user_service.get_user_by_uuid(str(smart_report.user_uuid))
 
@@ -519,7 +519,9 @@ async def view_smart_report_fuel_usage_handler(
                 user_uuid=smart_report.user_uuid,
             )
 
-            return send_data(report_data)
+            return send_data_with_info(
+                data=report_data, info=messages.GET_SUCCESS + "fuel usage report"
+            )
 
         if user.get("account_type") == AccountType.BUSINESS:
             report_data = smart_report_service.generate_fuel_usage_report(
@@ -532,6 +534,57 @@ async def view_smart_report_fuel_usage_handler(
 
             return send_data_with_info(
                 data=report_data, info=messages.GET_SUCCESS + "fuel usage report"
+            )
+
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get(
+    "/smart_report/fuel_utilization/{smart_report_uuid}", response_class=ORJSONResponse
+)
+@inject
+async def view_smart_report_fuel_utilization_handler(
+    smart_report_uuid: str,
+    smart_report_service: SmartReportService = Depends(
+        Provide[Container.smart_report_service]
+    ),
+    user_service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        smart_report = smart_report_service.get_by_uuid(smart_report_uuid)
+
+        if not smart_report:
+            usr_msg = "Smart report not found"
+            dev_msg = f"Smart report not found for {smart_report_uuid}"
+            return send_client_side_error(user_msg=usr_msg, dev_msg=dev_msg)
+
+        user = user_service.get_user_by_uuid(str(smart_report.user_uuid))
+
+        if user.get("account_type") == AccountType.INDIVIDUAL:
+            report_data = smart_report_service.generate_fuel_utilization_report(
+                convert_date_format(smart_report.start_date),
+                convert_date_format(smart_report.end_date),
+                smart_report.asset_type_uuid,
+                smart_report.asset_group_uuids.get("asset_uuids"),
+                user_uuid=smart_report.user_uuid,
+            )
+
+            return send_data_with_info(report_data, messages.GET_SUCCESS)
+
+        if user.get("account_type") == AccountType.BUSINESS:
+            report_data = smart_report_service.generate_fuel_utilization_report(
+                convert_date_format(smart_report.start_date),
+                convert_date_format(smart_report.end_date),
+                smart_report.asset_type_uuid,
+                smart_report.asset_group_uuids.get("asset_uuids"),
+                business_uuid=smart_report.business_profile_uuid,
+            )
+
+            return send_data_with_info(
+                data=report_data, info=messages.GET_SUCCESS + "fuel utilization report"
             )
 
     except Exception as e:
