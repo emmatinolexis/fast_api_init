@@ -590,10 +590,11 @@ async def view_smart_report_fuel_utilization_handler(
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
-    
+
 
 @router.get(
-    "/smart_report/fuel_usage_by_asset_type/{smart_report_uuid}", response_class=ORJSONResponse
+    "/smart_report/fuel_usage_by_asset_type/{smart_report_uuid}",
+    response_class=ORJSONResponse,
 )
 @inject
 async def view_smart_report_fuel_usage_by_asset_type_handler(
@@ -605,40 +606,27 @@ async def view_smart_report_fuel_usage_by_asset_type_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        smart_report = smart_report_service.get_by_uuid(smart_report_uuid)
+        data = [
+            {
+                "vehicle": "Cars",
+                "fuel_usage_liters": 20045,
+                "fuel_usage_percentage": 20,
+            },
+            {
+                "vehicle": "Cranes",
+                "fuel_usage_liters": 20045,
+                "fuel_usage_percentage": 20,
+            },
+            {
+                "vehicle": "Bulldozers",
+                "fuel_usage_liters": 20045,
+                "fuel_usage_percentage": 20,
+            },
+        ]
 
-        if not smart_report:
-            usr_msg = "Smart report not found"
-            dev_msg = f"Smart report not found for {smart_report_uuid}"
-            return send_client_side_error(user_msg=usr_msg, dev_msg=dev_msg)
-
-        user = user_service.get_user_by_uuid(str(smart_report.user_uuid))
-
-        if user.get("account_type") == AccountType.INDIVIDUAL:
-            report_data = smart_report_service.generate_fuel_usage_by_asset_type_report(
-                convert_date_format(smart_report.start_date),
-                convert_date_format(smart_report.end_date),
-                smart_report.asset_type_uuid,
-                smart_report.asset_group_uuids.get("asset_uuids"),
-                user_uuid=smart_report.user_uuid,
-            )
-
-            return send_data_with_info(
-                data=report_data, info=messages.GET_SUCCESS + "fuel usage by asset type report"
-            )
-
-        if user.get("account_type") == AccountType.BUSINESS:
-            report_data = smart_report_service.generate_fuel_usage_by_asset_type_report(
-                convert_date_format(smart_report.start_date),
-                convert_date_format(smart_report.end_date),
-                smart_report.asset_type_uuid,
-                smart_report.asset_group_uuids.get("asset_uuids"),
-                business_uuid=smart_report.business_profile_uuid,
-            )
-
-            return send_data_with_info(
-                data=report_data, info=messages.GET_SUCCESS + "fuel usage by asset type report"
-            )
+        return send_data_with_info(
+            data=data, info=messages.GET_SUCCESS + "fuel usage by asset type report"
+        )
 
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"

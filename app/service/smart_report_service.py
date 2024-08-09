@@ -462,6 +462,7 @@ class SmartReportService(BaseService):
             start_date_dt = parser.parse(start_date)
             end_date_dt = parser.parse(end_date)
 
+            # Retrieve assets and their tracking events
             for asset_uuid in asset_uuids:
                 asset = self.asset_repository.get_asset_with_relationships(
                     asset_uuid, start_date, end_date
@@ -473,7 +474,9 @@ class SmartReportService(BaseService):
             current_date = start_date_dt.replace(day=1)
             while current_date <= end_date_dt:
                 month_key = current_date.strftime("%B")
-                fuel_usage_report[month_key] = 0
+                fuel_usage_report[
+                    month_key
+                ] = 0.0  # Ensure the initial value is a float
                 # Move to the next month
                 next_month = current_date.month % 12 + 1
                 next_year = current_date.year + (current_date.month // 12)
@@ -481,6 +484,7 @@ class SmartReportService(BaseService):
                     year=next_year, month=next_month, day=1
                 )
 
+            # Organize events by month
             organized_events = defaultdict(list)
 
             for asset in assets:
@@ -491,6 +495,7 @@ class SmartReportService(BaseService):
                         period_key = event_date.strftime("%Y-%m")
                         organized_events[period_key].append(event)
 
+            # Calculate fuel usage for each period
             for period, events in organized_events.items():
                 # Filter out events that have a fuel level
                 fuel_level_events = [
@@ -500,12 +505,12 @@ class SmartReportService(BaseService):
                 total_fuel_used = calculate_total_fuel_used(fuel_level_events)
                 # Convert period_key to month name
                 month_name = parser.parse(period + "-01").strftime("%B")
-                # Update the report with actual values
-                fuel_usage_report[month_name] = total_fuel_used
+                # Update the report with actual values, rounded to 2 decimal places
+                fuel_usage_report[month_name] = round(total_fuel_used, 2)
 
             return {
                 "fuel_usage_report": fuel_usage_report,
-                "total_fuel_used": sum(fuel_usage_report.values()),
+                "total_fuel_used": round(sum(fuel_usage_report.values()), 2),
             }
 
         except Exception as e:
@@ -698,10 +703,10 @@ class SmartReportService(BaseService):
                         and event["fuel_level"] is not None
                     ):
                         month = event_date.strftime("%B")
-                        # Aggregate fuel usage by asset and month
-                        monthly_fuel_utilization[month][asset_name] += event[
-                            "fuel_level"
-                        ]
+                        # Aggregate fuel usage by asset and month, rounding to 2 decimal places
+                        monthly_fuel_utilization[month][asset_name] += round(
+                            event["fuel_level"], 2
+                        )
 
             # Prepare the final report structure
             smart_report = []
@@ -711,7 +716,7 @@ class SmartReportService(BaseService):
             ):
                 month_fuel_data = monthly_fuel_utilization[month]
                 fuel_utilization = [
-                    {asset: fuel} for asset, fuel in month_fuel_data.items()
+                    {asset: round(fuel, 2)} for asset, fuel in month_fuel_data.items()
                 ]
                 smart_report.append(
                     {
@@ -726,7 +731,6 @@ class SmartReportService(BaseService):
 
         except Exception as e:
             raise e
-        
 
     def generate_fuel_usage_by_asset_type_report(
         self,
