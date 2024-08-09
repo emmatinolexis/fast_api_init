@@ -397,13 +397,7 @@ class AssetRepository(BaseRepository):
                     AlertPolicy.alert_policy_type_uuid == alert_policy_type_uuid,
                     and_(
                         cast(AlertPolicyViolation.created_at, Date)
-<<<<<<< HEAD
                         >= datetime.strptime(start_date, "%d/%m/%Y"),
-=======
-                        >= datetime.strptime(
-                            start_date, get_settings().DATE_FORMAT_YEAR
-                        ),
->>>>>>> development
                         cast(AlertPolicyViolation.created_at, Date)
                         <= datetime.strptime(end_date, "%d/%m/%Y"),
                     ),
@@ -488,17 +482,15 @@ class AssetRepository(BaseRepository):
     ):
         try:
             # Parse date_from and date_to from dd/mm/yyyy to datetime objects
-<<<<<<< HEAD
             date_from_obj = datetime.strptime(date_from, "%d/%m/%Y").date()
             date_to_obj = datetime.strptime(date_to, "%d/%m/%Y").date()
-=======
+
             date_from_obj = datetime.strptime(
                 date_from, get_settings().DATE_FORMAT_YEAR
             ).date()
             date_to_obj = datetime.strptime(
                 date_to, get_settings().DATE_FORMAT_YEAR
             ).date()
->>>>>>> development
         except ValueError as e:
             raise ValueError("Date format should be dd/mm/yyyy") from e
 

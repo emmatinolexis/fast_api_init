@@ -671,40 +671,6 @@ class SmartReportService(BaseService):
         else:
             return {}
 
-    def generate_heat_map_report(self, date_from: str, date_to: str, asset_uuids: list):
-        try:
-            violations = self.alert_policy_repository.generate_violations_by_asset_uuids_date_range(
-                date_from, date_to, asset_uuids
-            )
-            return violations
-            # for asset_uuid in asset_uuids:
-            #     asset = self.alert_policy_violation.alert_policy() asset_repository.get_asset_with_relationships(
-            #         asset_uuid, date_from, date_to
-            #     )
-            #
-            #     assets.append(asset)
-            #
-            # (
-            #     total_distance_traveled_current_range,
-            #     total_distance_traveled_past_range,
-            #     fuel_level_current_range,
-            #     fuel_level_past_range,
-            # ) = self.calculate_total_distance(assets, date_from, date_to)
-            #
-            # report = {
-            #     "total_distance_covered_current_date": round(
-            #         total_distance_traveled_current_range, 2
-            #     ),
-            #     "total_distance_covered_previous_date": round(
-            #         total_distance_traveled_past_range, 2
-            #     ),
-            #     "total_fuel_recorded_current_date": fuel_level_current_range,
-            #     "total_fuel_recorded_previous_date": fuel_level_past_range,
-            #     "total_fuel_saved": fuel_level_past_range - fuel_level_current_range,
-            # }
-            #
-            # return report
-
     def generate_fuel_utilization_report(
         self,
         start_date: str,

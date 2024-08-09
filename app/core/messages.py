@@ -82,7 +82,4 @@ CREATE_SUCCESS = "Successfully created "
 GET_SUCCESS = "Successfully retrieved "
 WRONG_DRIVER_EMAIL = "No Driver Was Found With The Given Email : "
 DRIVER_NOT_ASSIGNED = "Driver with {driver_email} is not assigned to any asset"
-<<<<<<< HEAD
-=======
 FUEL_LOG_NOT_FOUND = "No fuel log was found with the given uuid : "
->>>>>>> development
