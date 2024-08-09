@@ -391,16 +391,10 @@ async def view_smart_report_cost_analysis_handler(
             },
             "total_fuel": 2890,
             "fuel_cost_by_asset_type": {
-                "trucks": 0,
-                "cars": 0,
-                "bulldozers": 0,
-                "cranes": 0,
-            },
-            "fuel_cost_by_asset_type_in_percentage": {
-                "trucks": 20,
-                "cars": 30,
-                "bulldozers": 30,
-                "cranes": 80,
+                "trucks": [0, 20],
+                "cars": [0, 50],
+                "bulldozers": [0, 70],
+                "cranes": [0, 90],
             },
         }
         return send_data_with_info(report, messages.SUCCESS_MESSAGE)
