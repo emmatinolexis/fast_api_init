@@ -5,6 +5,7 @@ from typing import Callable
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
+from app.core.settings import settings
 from app.model.fuel_log import FuelLog
 from app.repository.base_repository import BaseRepository
 
@@ -21,8 +22,8 @@ class FuelLogRepository(BaseRepository):
                 search_numeric = float(search)
                 query = query.filter(
                     or_(
-                        FuelLog.driver_name.ilike(search_pattern),
                         FuelLog.amount == search_numeric,
+                        FuelLog.driver_name.ilike(search_pattern),
                     )
                 )
             except ValueError:
@@ -30,14 +31,16 @@ class FuelLogRepository(BaseRepository):
 
         if start_date:
             # Convert start_date to the same string format as the purchase_date in the database
-            start_date_str = datetime.strptime(start_date, "%d/%m/%Y").strftime(
-                "%d/%m/%Y"
-            )
+            start_date_str = datetime.strptime(
+                start_date, settings.PURCHASE_DATE_FORMAT
+            ).strftime(settings.PURCHASE_DATE_FORMAT)
             query = query.filter(FuelLog.purchase_date >= start_date_str)
 
         if end_date:
             # Convert end_date to the same string format as the purchase_date in the database
-            end_date_str = datetime.strptime(end_date, "%d/%m/%Y").strftime("%d/%m/%Y")
+            end_date_str = datetime.strptime(
+                end_date, settings.PURCHASE_DATE_FORMAT
+            ).strftime(settings.PURCHASE_DATE_FORMAT)
             query = query.filter(FuelLog.purchase_date <= end_date_str)
 
         return query
