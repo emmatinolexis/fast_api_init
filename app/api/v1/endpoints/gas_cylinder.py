@@ -308,6 +308,7 @@ async def create_spare_gas_cylinder_handler(
 ):
     try:
         user = user_service.get_user_by_uuid(user_uuid)
+
         if not user:
             return send_client_side_error(
                 user_msg=messages.USER_NOT_FOUND + user_uuid,
