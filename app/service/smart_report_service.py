@@ -498,7 +498,6 @@ class SmartReportService(BaseService):
                 ]
                 # Calculate total fuel used for this period
                 total_fuel_used = calculate_total_fuel_used(fuel_level_events)
-                print(f"Total fuel used for {period}: {total_fuel_used}")
                 # Convert period_key to month name
                 month_name = parser.parse(period + "-01").strftime("%B")
                 # Update the report with actual values
