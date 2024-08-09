@@ -243,6 +243,11 @@ async def view_smart_report_total_distance_covered_handler(
     try:
         smart_report = smart_report_service.get_by_uuid(smart_report_uuid)
 
+        if not smart_report:
+            usr_msg = "Smart report not found"
+            dev_msg = f"Smart report not found for {smart_report_uuid}"
+            return send_client_side_error(user_msg=usr_msg, dev_msg=dev_msg)
+
         report = {
             "total_distance_covered_current_date": 4500,
             "total_distance_covered_previous_date": 3500,
@@ -277,12 +282,60 @@ async def view_smart_report_fleet_performance_handler(
             dev_msg = f"Smart report not found for {smart_report_uuid}"
             return send_client_side_error(user_msg=usr_msg, dev_msg=dev_msg)
 
-        violations = smart_report_service.generate_violation_report(
-            convert_date_format(smart_report.start_date),
-            convert_date_format(smart_report.end_date),
-            smart_report.asset_group_uuids.get("asset_uuids"),
-        )
-        return send_data_with_info(violations, messages.REPORT_SUCCESS)
+        report = {
+            "incidents": {
+                "geofence": 64,
+                "overspeeding": 20,
+                "rapid_acceleration": 33,
+                "emergency_braking": 21,
+                "total_incidents": 138,
+            },
+            "incidents_by_equipment_type": {"Cars": 138},
+            "incidents_rate": {
+                "January": {
+                    "Geofence": 23,
+                    "Over Speeding": 13,
+                    "emergency_braking": 20,
+                },
+                "February": {
+                    "Geofence": 23,
+                    "Over Speeding": 13,
+                    "emergency_braking": 20,
+                },
+                "March": {"Geofence": 23, "Over Speeding": 13, "emergency_braking": 20},
+                "April": {"Geofence": 23, "Over Speeding": 13, "emergency_braking": 20},
+                "May": {"Geofence": 23, "Over Speeding": 13, "emergency_braking": 20},
+                "June": {"Geofence": 23, "Over Speeding": 13, "emergency_braking": 20},
+                "July": {"Geofence": 23, "Over Speeding": 13, "emergency_braking": 20},
+                "August": {
+                    "Geofence": 23,
+                    "Over Speeding": 13,
+                    "emergency_braking": 20,
+                },
+                "September": {
+                    "Geofence": 23,
+                    "Over Speeding": 13,
+                    "emergency_braking": 20,
+                },
+                "October": {
+                    "Geofence": 23,
+                    "Over Speeding": 13,
+                    "emergency_braking": 20,
+                },
+                "November": {
+                    "Geofence": 23,
+                    "Over Speeding": 13,
+                    "emergency_braking": 20,
+                },
+                "December": {
+                    "Geofence": 23,
+                    "Over Speeding": 13,
+                    "emergency_braking": 20,
+                },
+            },
+        }
+
+        return send_data_with_info(report, messages.REPORT_SUCCESS)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -357,26 +410,22 @@ async def view_smart_report_violations_handler(
             dev_msg = f"Smart report not found for {smart_report_uuid}"
             return send_client_side_error(user_msg=usr_msg, dev_msg=dev_msg)
 
-        report = smart_report_service.generate_heat_map_report(
-            convert_date_format(smart_report.start_date),
-            convert_date_format(smart_report.end_date),
-            smart_report.asset_group_uuids.get("asset_uuids"),
-        )
-
-        return report
-
         report = {
             "assets": [
                 {
                     "asset_name": "Hyndai Elentra (Black)",
                     "vehicle_license_no": "GR-8551-23",
-                    "image_url": "https://mvitracking.s3.eu-central-1.amazonaws.com/"
-                    "Er-ist-wieder-da-648x432-49da1694f552880d.jpg",
-                    "driver": {
-                        "first_name": "Joshua ",
-                        "last_name": "Tetteh",
-                        "phone_number": "+233245678024",
+                    "incident_type": "Geofence",
+                    "date_of_incidence": "20/08/2024",
+                    "last_tracking_event": {
+                        "lat": 5.7197816,
+                        "lng": -0.3111333,
                     },
+                },
+                {
+                    "asset_name": "Hyndai Elentra (Black)",
+                    "vehicle_license_no": "GR-8551-23",
+                    "incident_type": "Geofence",
                     "date_of_incidence": "20/08/2024",
                     "last_tracking_event": {
                         "lat": 5.7582366,
@@ -384,19 +433,93 @@ async def view_smart_report_violations_handler(
                     },
                 },
                 {
-                    "asset_name": "Toyota Corolla",
-                    "vehicle_license_no": "GR 3251-23",
-                    "image_url": "https://mvitracking.s3.eu-central-1.amazonaws.com/"
-                    "Er-ist-wieder-da-648x432-49da1694f552880d.jpg",
-                    "driver": {
-                        "first_name": "Joshua ",
-                        "last_name": "Tetteh",
-                        "phone_number": "+233245678024",
+                    "asset_name": "Toyota Corolla(Sage Company Vehicle)",
+                    "vehicle_license_no": "GR-8551-23",
+                    "incident_type": "Geofence",
+                    "date_of_incidence": "20/08/2024",
+                    "last_tracking_event": {
+                        "lat": 5.720125,
+                        "lng": -0.1711333,
                     },
+                },
+                {
+                    "asset_name": "Hyndai Elentra (Black)",
+                    "vehicle_license_no": "GR-8551-23",
+                    "incident_type": "Geofence",
+                    "date_of_incidence": "20/08/2024",
+                    "last_tracking_event": {
+                        "lat": 5.7202,
+                        "lng": -0.17231,
+                    },
+                },
+                {
+                    "asset_name": "Hyndai Elentra (Black)",
+                    "vehicle_license_no": "GR-8551-23",
+                    "incident_type": "Geofence",
                     "date_of_incidence": "20/08/2024",
                     "last_tracking_event": {
                         "lat": 5.7582366,
                         "lng": -0.1398266,
+                    },
+                },
+                {
+                    "asset_name": "Toyota Corolla(Sage Company Vehicle)",
+                    "vehicle_license_no": "GR-8551-23",
+                    "incident_type": "Geofence",
+                    "date_of_incidence": "20/08/2024",
+                    "last_tracking_event": {
+                        "lat": 5.717965,
+                        "lng": -0.1700766,
+                    },
+                },
+                {
+                    "asset_name": "Hyndai Elentra (Black)",
+                    "vehicle_license_no": "GR-8551-23",
+                    "incident_type": "Geofence",
+                    "date_of_incidence": "20/08/2024",
+                    "last_tracking_event": {
+                        "lat": 5.5852883,
+                        "lng": -0.3075966,
+                    },
+                },
+                {
+                    "asset_name": "Toyota Corolla(Sage Company Vehicle)",
+                    "vehicle_license_no": "GR-8551-23",
+                    "incident_type": "Geofence",
+                    "date_of_incidence": "20/08/2024",
+                    "last_tracking_event": {
+                        "lat": 5.7582366,
+                        "lng": -0.1398266,
+                    },
+                },
+                {
+                    "asset_name": "Hyndai Elentra (Black)",
+                    "vehicle_license_no": "GR-8551-23",
+                    "incident_type": "Geofence",
+                    "date_of_incidence": "20/08/2024",
+                    "last_tracking_event": {
+                        "lat": 5.685115,
+                        "lng": -0.1712316,
+                    },
+                },
+                {
+                    "asset_name": "Toyota Corolla(Sage Company Vehicle)",
+                    "vehicle_license_no": "GR-8551-23",
+                    "incident_type": "Geofence",
+                    "date_of_incidence": "20/08/2024",
+                    "last_tracking_event": {
+                        "lat": 5.7582366,
+                        "lng": -0.1398266,
+                    },
+                },
+                {
+                    "asset_name": "Hyndai Elentra (Black)",
+                    "vehicle_license_no": "GR-8551-23",
+                    "incident_type": "Geofence",
+                    "date_of_incidence": "20/08/2024",
+                    "last_tracking_event": {
+                        "lat": 5.65553,
+                        "lng": -0.076305,
                     },
                 },
             ]
