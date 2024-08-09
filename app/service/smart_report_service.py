@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 
 from dateutil.relativedelta import relativedelta
 
+from app.repository.alert_policy_repository import AlertPolicyRepository
 from app.repository.asset_repository import AssetRepository
 from app.repository.equipment_repository import EquipmentRepository
 from app.repository.smart_report_repository import SmartReportRepository
@@ -25,11 +26,13 @@ class SmartReportService(BaseService):
         asset_repository: AssetRepository,
         tracking_event_repository: TrackingEventRepository,
         equipment_repository: EquipmentRepository,
+        alert_policy_repository: AlertPolicyRepository,
     ):
         self.smart_report_repository = smart_report_repository
         self.asset_repository = asset_repository
         self.tracking_event_repository = tracking_event_repository
         self.equipment_repository = equipment_repository
+        self.alert_policy_repository = alert_policy_repository
         super().__init__(smart_report_repository)
 
     def get_reports(
@@ -248,7 +251,9 @@ class SmartReportService(BaseService):
             raise e
 
     def parse_dates(self, date_from, date_to):
-        date_from_dt = datetime.strptime(date_from, "%d/%m/%Y")
+        date_from_dt = datetime.strptime(
+            date_from, "%d/%m/%Y"
+        )  # Adjust the format according to your input
         date_to_dt = datetime.strptime(date_to, "%d/%m/%Y")
         months = [
             (date_from_dt + timedelta(days=x)).strftime("%B")
@@ -270,9 +275,7 @@ class SmartReportService(BaseService):
         monthly_events = defaultdict(list)
         if asset.tracking_events:
             for event in asset.tracking_events:
-                event_time = datetime.strptime(
-                    event.get("event_datetime"), "%Y-%m-%d %H:%M:%S"
-                )
+                event_time = datetime.strptime(event.get("event_datetime"), "%d/%m/%Y")
                 event_month = event_time.strftime("%B")
                 monthly_events[event_month].append(event)
         return monthly_events
@@ -332,9 +335,12 @@ class SmartReportService(BaseService):
             date_from_dt, date_to_dt, unique_months = self.parse_dates(
                 date_from, date_to
             )
+
             monthly_utilization = {
                 month: {"moving_time": 0, "idle_time": 0} for month in unique_months
             }
+
+            # return monthly_utilization
 
             assets = self.retrieve_assets(asset_uuids, date_from, date_to)
             grouped_assets = {}
@@ -600,3 +606,40 @@ class SmartReportService(BaseService):
             }
         else:
             return {}
+
+    def generate_heat_map_report(self, date_from: str, date_to: str, asset_uuids: list):
+        try:
+            violations = self.alert_policy_repository.generate_violations_by_asset_uuids_date_range(
+                date_from, date_to, asset_uuids
+            )
+            return violations
+            # for asset_uuid in asset_uuids:
+            #     asset = self.alert_policy_violation.alert_policy() asset_repository.get_asset_with_relationships(
+            #         asset_uuid, date_from, date_to
+            #     )
+            #
+            #     assets.append(asset)
+            #
+            # (
+            #     total_distance_traveled_current_range,
+            #     total_distance_traveled_past_range,
+            #     fuel_level_current_range,
+            #     fuel_level_past_range,
+            # ) = self.calculate_total_distance(assets, date_from, date_to)
+            #
+            # report = {
+            #     "total_distance_covered_current_date": round(
+            #         total_distance_traveled_current_range, 2
+            #     ),
+            #     "total_distance_covered_previous_date": round(
+            #         total_distance_traveled_past_range, 2
+            #     ),
+            #     "total_fuel_recorded_current_date": fuel_level_current_range,
+            #     "total_fuel_recorded_previous_date": fuel_level_past_range,
+            #     "total_fuel_saved": fuel_level_past_range - fuel_level_current_range,
+            # }
+            #
+            # return report
+
+        except Exception as e:
+            raise e

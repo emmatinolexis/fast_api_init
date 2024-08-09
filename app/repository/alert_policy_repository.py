@@ -3,7 +3,7 @@ from contextlib import AbstractContextManager
 from datetime import datetime
 from typing import Callable
 
-from sqlalchemy import desc, func
+from sqlalchemy import Date, and_, cast, desc, func
 from sqlalchemy.orm import Session, joinedload
 
 from app.model.alert_policy import AlertPolicy
@@ -760,3 +760,132 @@ class AlertPolicyRepository(BaseRepository):
             msg = "Maintenance alerts check successful"
             logging.info(msg)
             return {"message": msg, "violations": violations}
+
+    def generate_violations_by_asset_uuids_date_range(
+        self, start_date: str, end_date: str, asset_uuids: list
+    ):
+        with self.session_factory() as session:
+            # Query to filter violations by asset UUIDs and date range
+            violations = (
+                session.query(AlertPolicyViolation)
+                .filter(
+                    AlertPolicyViolation.asset_uuid.in_(
+                        asset_uuids
+                    ),  # Filter by list of asset_uuids
+                    and_(
+                        cast(AlertPolicyViolation.created_at, Date)
+                        >= datetime.strptime(start_date, "%d/%m/%Y"),
+                        # Start date filter
+                        cast(AlertPolicyViolation.created_at, Date)
+                        <= datetime.strptime(end_date, "%d/%m/%Y")
+                        # End date filter
+                    ),
+                )
+                .options(
+                    joinedload(AlertPolicyViolation.asset),  # Load the related Asset
+                    joinedload(AlertPolicyViolation.alert_policy).joinedload(
+                        AlertPolicy.alert_policy_type
+                    ),  # Load related AlertPolicyType
+                )
+                .all()  # Fetch all matching violations
+            )
+
+            # Process the violations to extract individual events or coordinates
+            processed_data = []
+
+            for violation in violations:
+                asset_name = (
+                    violation.asset.asset_name
+                )  # Assuming the Asset model has a 'name' attribute
+                date_of_incidence = violation.created_at
+                incident_name = (
+                    violation.alert_policy.policy_name
+                )  # Assuming the AlertPolicy model has a 'name' attribute
+                incident_type = (
+                    violation.alert_policy.geofence_type
+                )  # Assuming the AlertPolicyType model has a 'name' attribute
+
+                incident_coordinate = violation.violation_coordinates
+
+                if "events" in incident_coordinate:
+                    # If there are multiple events (e.g., idling), process each event
+                    for event in incident_coordinate["events"]:
+                        processed_data.append(
+                            {
+                                "asset_name": asset_name,
+                                "date_of_incidence": date_of_incidence,
+                                "incident_name": incident_name,
+                                "incident_type": incident_type,
+                                "incident_coordinate": event[0],
+                            }
+                        )
+                else:
+                    # For incidents with a single coordinate
+                    processed_data.append(
+                        {
+                            "asset_name": asset_name,
+                            "date_of_incidence": date_of_incidence,
+                            "incident_name": incident_name,
+                            "incident_type": incident_type,
+                            "incident_coordinate": incident_coordinate[0],
+                        }
+                    )
+
+            return processed_data
+
+    # def generate_violations_by_asset_uuids_date_range(self, start_date: str, end_date: str, asset_uuids: list):
+    #     with self.session_factory() as session:
+    #
+    #         violations = (
+    #             session.query(AlertPolicyViolation)
+    #             .filter(
+    #                 AlertPolicyViolation.asset_uuid.in_(asset_uuids),  # Filter by list of asset_uuids
+    #                 and_(
+    #                     cast(AlertPolicyViolation.created_at, Date) >= datetime.strptime(start_date, "%d/%m/%Y"),
+    #                     # Start date filter
+    #                     cast(AlertPolicyViolation.created_at, Date) <= datetime.strptime(end_date, "%d/%m/%Y")
+    #                     # End date filter
+    #                 )
+    #             )
+    #             .options(
+    #                 joinedload(AlertPolicyViolation.asset),  # Load the related Asset
+    #                 joinedload(AlertPolicyViolation.alert_policy)
+    #                 .joinedload(AlertPolicy.alert_policy_type)  # Load related AlertPolicyType
+    #             )
+    #             .all()  # Fetch all matching violations
+    #         )
+    #
+    #         return violations
+
+    # [{
+    # "asset_name": "Toyota Corolla (Sage Company Vehicle)",
+    # "date_of_incident": "2024-07-24T16:12:58.145299+00:00",
+    # "policy_name": "Sage Office Geofence ",
+    # "policy_type": "Geofence alert policy",
+    #     "coordinates": [
+    #         {
+    #             "latitude": 5.7229533,
+    #             "longitude": -0.1681583,
+    #             "speed": 0.0,
+    #             "course": 86.0,
+    #             "timestamp": "2024-07-24 15:37:43",
+    #             "event_type": "idle"
+    #         },
+    #         {
+    #             "latitude": 5.7228483,
+    #             "longitude": -0.1676933,
+    #             "speed": 0.0,
+    #             "course": 0.0,
+    #             "timestamp": "2024-07-24 14:02:55",
+    #             "event_type": "stopped"
+    #         },
+    #         {
+    #             "latitude": 5.7233733,
+    #             "longitude": -0.1687883,
+    #             "speed": 50.0,
+    #             "course": 104.0,
+    #             "timestamp": "2024-07-24 15:40:21",
+    #             "event_type": "moving"
+    #         }]
+    # },
+    # ]

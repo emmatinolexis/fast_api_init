@@ -4,7 +4,6 @@ from typing import Any, Callable, Dict, List
 
 from sqlalchemy import Date, and_, asc, cast, desc, label
 from sqlalchemy.orm import Session, joinedload
-from app.core.settings import get_settings
 
 from app.model.alert_policy import AlertPolicy
 from app.model.alert_policy_violations import AlertPolicyViolation
@@ -397,7 +396,7 @@ class AssetRepository(BaseRepository):
                     AlertPolicy.alert_policy_type_uuid == alert_policy_type_uuid,
                     and_(
                         cast(AlertPolicyViolation.created_at, Date)
-                        >= datetime.strptime(start_date, get_settings().DATE_FORMAT_YEAR),
+                        >= datetime.strptime(start_date, "%d/%m/%Y"),
                         cast(AlertPolicyViolation.created_at, Date)
                         <= datetime.strptime(end_date, "%d/%m/%Y"),
                     ),
@@ -424,9 +423,9 @@ class AssetRepository(BaseRepository):
             filters = [
                 AlertPolicy.alert_policy_type_uuid == alert_policy_type_uuid,
                 cast(AlertPolicyViolation.created_at, Date)
-                >= datetime.strptime(start_date, get_settings().DATE_FORMAT_YEAR),
+                >= datetime.strptime(start_date, "%d/%m/%Y"),
                 cast(AlertPolicyViolation.created_at, Date)
-                <= datetime.strptime(end_date, get_settings().DATE_FORMAT_YEAR),
+                <= datetime.strptime(end_date, "%d/%m/%Y"),
             ]
 
             if user_uuid:
@@ -466,9 +465,9 @@ class AssetRepository(BaseRepository):
                 AlertPolicyViolation.asset_uuid == asset_uuid,
                 and_(
                     cast(AlertPolicyViolation.created_at, Date)
-                    >= datetime.strptime(start_date, get_settings().DATE_FORMAT_YEAR),
+                    >= datetime.strptime(start_date, "%d/%m/%Y"),
                     cast(AlertPolicyViolation.created_at, Date)
-                    <= datetime.strptime(end_date, get_settings().DATE_FORMAT_YEAR),
+                    <= datetime.strptime(end_date, "%d/%m/%Y"),
                 ),
             ]
 
@@ -482,8 +481,8 @@ class AssetRepository(BaseRepository):
     ):
         try:
             # Parse date_from and date_to from dd/mm/yyyy to datetime objects
-            date_from_obj = datetime.strptime(date_from, get_settings().DATE_FORMAT_YEAR).date()
-            date_to_obj = datetime.strptime(date_to, get_settings().DATE_FORMAT_YEAR).date()
+            date_from_obj = datetime.strptime(date_from, "%d/%m/%Y").date()
+            date_to_obj = datetime.strptime(date_to, "%d/%m/%Y").date()
         except ValueError as e:
             raise ValueError("Date format should be dd/mm/yyyy") from e
 
@@ -556,9 +555,9 @@ class AssetRepository(BaseRepository):
                 AlertPolicy.alert_policy_type_uuid == alert_policy_type_uuid,
                 AlertPolicy.maintenance_alert_type_uuid == maintenance_type_uuid,
                 cast(MaintenanceAlert.created_at, Date)
-                >= datetime.strptime(start_date, get_settings().DATE_FORMAT_YEAR),
+                >= datetime.strptime(start_date, "%d/%m/%Y"),
                 cast(MaintenanceAlert.created_at, Date)
-                <= datetime.strptime(end_date, get_settings().DATE_FORMAT_YEAR),
+                <= datetime.strptime(end_date, "%d/%m/%Y"),
             ]
 
             if user_uuid:
@@ -586,9 +585,9 @@ class AssetRepository(BaseRepository):
                 .options(joinedload(MaintenanceAlert.alert_policy))
                 .filter(
                     cast(MaintenanceAlert.created_at, Date)
-                    >= datetime.strptime(start_date, get_settings().DATE_FORMAT_YEAR),
+                    >= datetime.strptime(start_date, "%d/%m/%Y"),
                     cast(MaintenanceAlert.created_at, Date)
-                    <= datetime.strptime(end_date, get_settings().DATE_FORMAT_YEAR),
+                    <= datetime.strptime(end_date, "%d/%m/%Y"),
                     MaintenanceAlert.asset_uuid == asset_uuid,
                 )
             )
