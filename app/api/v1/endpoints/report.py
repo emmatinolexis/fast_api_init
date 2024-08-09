@@ -724,3 +724,44 @@ async def view_smart_report_fuel_utilization_handler(
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get(
+    "/smart_report/fuel_usage_by_asset_type/{smart_report_uuid}",
+    response_class=ORJSONResponse,
+)
+@inject
+async def view_smart_report_fuel_usage_by_asset_type_handler(
+    smart_report_uuid: str,
+    smart_report_service: SmartReportService = Depends(
+        Provide[Container.smart_report_service]
+    ),
+    user_service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        data = [
+            {
+                "vehicle": "Cars",
+                "fuel_usage_liters": 20045,
+                "fuel_usage_percentage": 20,
+            },
+            {
+                "vehicle": "Cranes",
+                "fuel_usage_liters": 20045,
+                "fuel_usage_percentage": 20,
+            },
+            {
+                "vehicle": "Bulldozers",
+                "fuel_usage_liters": 20045,
+                "fuel_usage_percentage": 20,
+            },
+        ]
+
+        return send_data_with_info(
+            data=data, info=messages.GET_SUCCESS + "fuel usage by asset type report"
+        )
+
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
