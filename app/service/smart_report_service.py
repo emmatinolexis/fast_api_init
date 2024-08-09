@@ -498,7 +498,6 @@ class SmartReportService(BaseService):
                 ]
                 # Calculate total fuel used for this period
                 total_fuel_used = calculate_total_fuel_used(fuel_level_events)
-                print(f"Total fuel used for {period}: {total_fuel_used}")
                 # Convert period_key to month name
                 month_name = parser.parse(period + "-01").strftime("%B")
                 # Update the report with actual values
@@ -665,3 +664,56 @@ class SmartReportService(BaseService):
             }
         else:
             return {}
+
+
+
+    def generate_fuel_utilization_report(
+        self,
+        start_date: str,
+        end_date: str,
+        asset_type_uuid: str,
+        asset_uuids: list,
+        user_uuid: str = None,
+        business_uuid: str = None,
+    ):
+        try:
+            assets = []
+            start_date_dt = parser.parse(start_date)
+            end_date_dt = parser.parse(end_date)
+
+            # Step 1: Retrieve assets and filter events by date range
+            for asset_uuid in asset_uuids:
+                asset = self.asset_repository.get_asset_with_relationships(
+                    asset_uuid, start_date, end_date
+                )
+                assets.append(asset)
+
+            # Initialize the structure for storing monthly fuel utilization data
+            monthly_fuel_utilization = defaultdict(lambda: defaultdict(float))
+
+            for asset in assets:
+                asset_name = asset.asset_name
+                for event in asset.tracking_events:
+                    event_date = parser.parse(event["timestamp"])
+                    if start_date_dt <= event_date <= end_date_dt and event["fuel_level"] is not None:
+                        month = event_date.strftime("%B")
+                        # Aggregate fuel usage by asset and month
+                        monthly_fuel_utilization[month][asset_name] += event["fuel_level"]
+
+            # Prepare the final report structure
+            smart_report = []
+            for month in sorted(monthly_fuel_utilization.keys(), key=lambda x: parser.parse(x, fuzzy=True).month):
+                month_fuel_data = monthly_fuel_utilization[month]
+                fuel_utilization = [{asset: fuel} for asset, fuel in month_fuel_data.items()]
+                smart_report.append({
+                    "fuel_utilization": fuel_utilization,
+                    "month": month,
+                })
+
+            utilization_data = [{"smart_report": smart_report}]
+
+            return utilization_data
+
+        except Exception as e:
+
+            raise e
