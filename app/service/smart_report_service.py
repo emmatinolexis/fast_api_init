@@ -726,3 +726,31 @@ class SmartReportService(BaseService):
 
         except Exception as e:
             raise e
+        
+
+    def generate_fuel_usage_by_asset_type_report(
+        self,
+        start_date: str,
+        end_date: str,
+        asset_type_uuid: str,
+        asset_uuids: list,
+        user_uuid: str = None,
+        business_uuid: str = None,
+    ):
+        try:
+            assets = []
+            start_date_dt = parser.parse(start_date)
+            end_date_dt = parser.parse(end_date)
+
+            # Step 1: Retrieve assets and filter events by date range
+            for asset_uuid in asset_uuids:
+                asset = self.asset_repository.get_asset_with_relationships(
+                    asset_uuid, start_date, end_date
+                )
+                assets.append(asset)
+
+            # Initialize the structure for storing monthly fuel utilization data
+            return assets
+
+        except Exception as e:
+            raise e
