@@ -41,7 +41,10 @@ class GasCylinder(BaseModel):
         index=True,
     )
     cylinder_type_uuid = Column(
-        UUID(as_uuid=True), ForeignKey("cylinder_types.uuid"), nullable=True, index=True
+        UUID(as_uuid=True),
+        ForeignKey("cylinder_types.uuid"),
+        nullable=False,
+        index=True,
     )
 
     other_cylinder_type_uuid = Column(

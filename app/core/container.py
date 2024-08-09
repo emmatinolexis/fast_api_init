@@ -740,6 +740,7 @@ class Container(containers.DeclarativeContainer):
         asset_repository=asset_repository,
         tracking_event_repository=tracking_event_repository,
         equipment_repository=equipment_repository,
+        alert_policy_repository=alert_policy_repository,
     )
 
     fuel_log_service = providers.Factory(

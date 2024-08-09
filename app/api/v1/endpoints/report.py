@@ -194,29 +194,34 @@ async def view_smart_report_fleet_overview_handler(
             dev_msg = f"Smart report not found for {smart_report_uuid}"
             return send_client_side_error(user_msg=usr_msg, dev_msg=dev_msg)
 
-        user = user_service.get_user_by_uuid(str(smart_report.user_uuid))
+        report = {
+            "fleet": {
+                "total_asset": "45",
+                "good_assets": "30",
+                "poor_assets": "15",
+            },
+            "utilization_rate": {
+                "Trucks": {"hours_worked": 70, "idle_time": 30},
+                "Cars": {"hours_worked": 90, "idle_time": 40},
+                "Bulldozers": {"hours_worked": 30, "idle_time": 70},
+            },
+            "utilization_trend": {
+                "January": {"moving_time": 90, "idle_time": 10},
+                "February": {"moving_time": 90, "idle_time": 10},
+                "March": {"moving_time": 90, "idle_time": 10},
+                "April": {"moving_time": 90, "idle_time": 10},
+                "May": {"moving_time": 40, "idle_time": 60},
+                "June": {"moving_time": 90, "idle_time": 10},
+                "July": {"moving_time": 70, "idle_time": 30},
+                "August": {"moving_time": 70, "idle_time": 30},
+                "September": {"moving_time": 20, "idle_time": 80},
+                "October": {"moving_time": 90, "idle_time": 10},
+                "November": {"moving_time": 30, "idle_time": 70},
+                "December": {"moving_time": 20, "idle_time": 80},
+            },
+        }
 
-        if user.get("account_type") == AccountType.INDIVIDUAL:
-            report_data = smart_report_service.generate_smart_report_fleet_overview(
-                convert_date_format(smart_report.start_date),
-                convert_date_format(smart_report.end_date),
-                smart_report.asset_type_uuid,
-                smart_report.asset_group_uuids.get("asset_uuids"),
-                user_uuid=smart_report.user_uuid,
-            )
-
-            return send_data_with_info(report_data, messages.SUCCESS_MESSAGE)
-
-        if user.get("account_type") == AccountType.BUSINESS:
-            report_data = smart_report_service.generate_smart_report_fleet_overview(
-                convert_date_format(smart_report.start_date),
-                convert_date_format(smart_report.end_date),
-                smart_report.asset_type_uuid,
-                smart_report.asset_group_uuids.get("asset_uuids"),
-                business_uuid=smart_report.business_profile_uuid,
-            )
-
-            return send_data_with_info(report_data, messages.SUCCESS_MESSAGE)
+        return send_data_with_info(report, messages.SUCCESS_MESSAGE)
 
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
@@ -238,24 +243,15 @@ async def view_smart_report_total_distance_covered_handler(
     try:
         smart_report = smart_report_service.get_by_uuid(smart_report_uuid)
 
-        if not smart_report:
-            usr_msg = "Smart report not found"
-            dev_msg = f"Smart report not found for {smart_report_uuid}"
-            return send_client_side_error(user_msg=usr_msg, dev_msg=dev_msg)
+        report = {
+            "total_distance_covered_current_date": 4500,
+            "total_distance_covered_previous_date": 3500,
+            "total_fuel_recorded_current_date": 45,
+            "total_fuel_recorded_previous_date": 35,
+            "total_fuel_saved": 10,
+        }
 
-        user = user_service.get_user_by_uuid(str(smart_report.user_uuid))
-        if not user:
-            usr_msg = "User not found"
-            dev_msg = f"User not found for  {smart_report.user_uuid}"
-            return send_client_side_error(user_msg=usr_msg, dev_msg=dev_msg)
-
-        report_data = smart_report_service.generate_total_distance_report(
-            convert_date_format(smart_report.start_date),
-            convert_date_format(smart_report.end_date),
-            smart_report.asset_group_uuids.get("asset_uuids"),
-        )
-
-        return send_data_with_info(report_data, messages.SUCCESS_MESSAGE)
+        return send_data_with_info(report, messages.SUCCESS_MESSAGE)
 
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
@@ -354,6 +350,21 @@ async def view_smart_report_violations_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
+        smart_report = smart_report_service.get_by_uuid(smart_report_uuid)
+
+        if not smart_report:
+            usr_msg = "Smart report not found"
+            dev_msg = f"Smart report not found for {smart_report_uuid}"
+            return send_client_side_error(user_msg=usr_msg, dev_msg=dev_msg)
+
+        report = smart_report_service.generate_heat_map_report(
+            convert_date_format(smart_report.start_date),
+            convert_date_format(smart_report.end_date),
+            smart_report.asset_group_uuids.get("asset_uuids"),
+        )
+
+        return report
+
         report = {
             "assets": [
                 {
