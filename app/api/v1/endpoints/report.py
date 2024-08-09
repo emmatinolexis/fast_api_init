@@ -537,7 +537,7 @@ async def view_smart_report_fuel_usage_handler(
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
-    
+
 
 @router.get(
     "/smart_report/fuel_utilization/{smart_report_uuid}", response_class=ORJSONResponse

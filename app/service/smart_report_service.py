@@ -665,8 +665,6 @@ class SmartReportService(BaseService):
         else:
             return {}
 
-
-
     def generate_fuel_utilization_report(
         self,
         start_date: str,
@@ -695,25 +693,36 @@ class SmartReportService(BaseService):
                 asset_name = asset.asset_name
                 for event in asset.tracking_events:
                     event_date = parser.parse(event["timestamp"])
-                    if start_date_dt <= event_date <= end_date_dt and event["fuel_level"] is not None:
+                    if (
+                        start_date_dt <= event_date <= end_date_dt
+                        and event["fuel_level"] is not None
+                    ):
                         month = event_date.strftime("%B")
                         # Aggregate fuel usage by asset and month
-                        monthly_fuel_utilization[month][asset_name] += event["fuel_level"]
+                        monthly_fuel_utilization[month][asset_name] += event[
+                            "fuel_level"
+                        ]
 
             # Prepare the final report structure
             smart_report = []
-            for month in sorted(monthly_fuel_utilization.keys(), key=lambda x: parser.parse(x, fuzzy=True).month):
+            for month in sorted(
+                monthly_fuel_utilization.keys(),
+                key=lambda x: parser.parse(x, fuzzy=True).month,
+            ):
                 month_fuel_data = monthly_fuel_utilization[month]
-                fuel_utilization = [{asset: fuel} for asset, fuel in month_fuel_data.items()]
-                smart_report.append({
-                    "fuel_utilization": fuel_utilization,
-                    "month": month,
-                })
+                fuel_utilization = [
+                    {asset: fuel} for asset, fuel in month_fuel_data.items()
+                ]
+                smart_report.append(
+                    {
+                        "fuel_utilization": fuel_utilization,
+                        "month": month,
+                    }
+                )
 
             utilization_data = [{"smart_report": smart_report}]
 
             return utilization_data
 
         except Exception as e:
-
             raise e
