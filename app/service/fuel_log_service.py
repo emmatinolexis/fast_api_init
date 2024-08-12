@@ -191,8 +191,8 @@ class FuelLogService(BaseService):
             fuel_log_uuid, "receipt_image", payload.receipt_image
         )
 
-        return fuel_log_transformer(updated_fuel_log)
+        return fuel_log_transformer(updated_fuel_log,self.driver_repository)
 
     def get_receipt_by_uuid(self, fuel_log_uuid: str):
         fuel_log = self.fuel_log_repository.read_by_uuid(fuel_log_uuid)
-        return fuel_log_transformer(fuel_log)
+        return fuel_log_transformer(fuel_log,self.driver_repository)
