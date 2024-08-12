@@ -24,10 +24,11 @@ class FleetManagerFuelLog(BaseModel):
     amount: float
     quantity: float
     purchase_date: Optional[str] = None
-    driver_name: Optional[str] = None
-    asset_name: Optional[str] = None
+    asset_name: str
     business_profile_uuid: Optional[str] = None
-    user_uuid: Optional[str] = None
+    user_uuid: str
+    asset_uuid: str
+    driver_uuid: str
 
 
 class SingleFuelLog(BaseModel):

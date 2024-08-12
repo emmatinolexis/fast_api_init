@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from app.core import messages
 from app.core.exceptions import NotFoundError
 from app.repository.asset_repository import AssetRepository
@@ -76,12 +78,11 @@ class FuelLogService(BaseService):
                         amount=item.get("amount"),
                         quantity=item.get("litres"),
                         purchase_date=item.get("purchase_date"),
-                        driver_name=driver_details.first_name
-                        + " "
-                        + driver_details.last_name,
                         asset_name=drivers_asset.asset_name,
+                        asset_uuid=str(drivers_asset.uuid),
                         business_profile_uuid=business_profile_uuid,
                         user_uuid=user_uuid,
+                        driver_uuid=str(driver_details.uuid),
                     )
 
                     fuel_logs.append(log_payload)  # Accumulate the log payload
@@ -190,8 +191,8 @@ class FuelLogService(BaseService):
             fuel_log_uuid, "receipt_image", payload.receipt_image
         )
 
-        return fuel_log_transformer(updated_fuel_log)
+        return fuel_log_transformer(updated_fuel_log, self.driver_repository)
 
     def get_receipt_by_uuid(self, fuel_log_uuid: str):
         fuel_log = self.fuel_log_repository.read_by_uuid(fuel_log_uuid)
-        return fuel_log_transformer(fuel_log)
+        return fuel_log_transformer(fuel_log, self.driver_repository)
