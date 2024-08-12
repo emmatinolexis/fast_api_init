@@ -1,7 +1,18 @@
 from app.model.fuel_log import FuelLog
+from app.repository.driver_repository import DriverRepository
 
 
-def fuel_log_transformer(fuel_log: FuelLog):
+def fuel_log_transformer(fuel_log: FuelLog, driver_repo: DriverRepository):
+    driver = driver_repo.read_by_uuid(fuel_log.driver_uuid)
+
+    driver_details = {
+        "uuid": driver.uuid,
+        "full_name": f"{driver.first_name} {driver.last_name}",
+        "phone_number": driver.phone_number,
+        "email": driver.email,
+        "profile_image": driver.profile_picture_url,
+    }
+
     return {
         "uuid": fuel_log.uuid,
         "amount": fuel_log.amount,
@@ -12,8 +23,9 @@ def fuel_log_transformer(fuel_log: FuelLog):
         else None,
         "asset_uuid": fuel_log.asset_uuid if fuel_log.asset_uuid else None,
         "asset_name": fuel_log.asset_name,
-        "driver_name": fuel_log.driver_name,
         "receipt_image": fuel_log.receipt_image if fuel_log.receipt_image else None,
         "purchase_date": fuel_log.purchase_date if fuel_log.purchase_date else None,
+        "payment_method": fuel_log.payment_method,
         "created_at": fuel_log.created_at,
+        "driver_details": driver_details,
     }

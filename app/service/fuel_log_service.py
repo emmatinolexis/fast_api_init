@@ -105,6 +105,9 @@ class FuelLogService(BaseService):
 
         driver = self.asset_repository.get_driver_by_asset_uuid(payload.asset_uuid)
 
+        if not driver:
+            raise NotFoundError(detail=messages.ASSET_MUST_BE_ASSIGNEDD)
+
         full_payload = SingleFuelLogSchema(
             asset_uuid=payload.asset_uuid,
             amount=payload.amount,
@@ -113,12 +116,14 @@ class FuelLogService(BaseService):
             receipt_image=payload.receipt_image,
             user_uuid=user_uuid,
             business_profile_uuid=business_profile_uuid,
-            driver_name=f"{driver.first_name} {driver.last_name}" if driver else None,
+            driver_uuid=driver.uuid,
+            payment_method=payload.payment_method,
+            asset_name=asset.asset_name,
         )
 
         fuel_log = self.fuel_log_repository.create(full_payload)
 
-        return fuel_log_transformer(fuel_log)
+        return fuel_log_transformer(fuel_log, self.driver_repository)
 
     def get_fuel_logs_by_user_uuid(
         self,
@@ -142,7 +147,10 @@ class FuelLogService(BaseService):
                 "current_page": page,
                 "page_size": page_size,
                 "total_pages": total // page_size + 1,
-                "data": [fuel_log_transformer(log) for log in paginated_fuel_logs],
+                "data": [
+                    fuel_log_transformer(log, self.driver_repository)
+                    for log in paginated_fuel_logs
+                ],
             }
         except Exception as e:
             raise e
@@ -169,7 +177,10 @@ class FuelLogService(BaseService):
                 "page": page,
                 "page_size": page_size,
                 "total_pages": total // page_size + 1,
-                "data": [fuel_log_transformer(log) for log in paginated_fuel_logs],
+                "data": [
+                    fuel_log_transformer(log, self.driver_repository)
+                    for log in paginated_fuel_logs
+                ],
             }
         except Exception as e:
             raise e
