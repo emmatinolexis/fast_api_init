@@ -47,6 +47,12 @@ class ActiveStatus(str, Enum):
     DEACTIVATED = "deactivated"
 
 
+class SmartReportStatus(str, Enum):
+    PENDING = "pending"
+    PROCESSING = "processing"
+    PROCESSED = "processed"
+
+
 class GasCylinderMaterialType(str, Enum):
     FIBER = "fiber"
     METAL = "metal"

@@ -11,7 +11,7 @@ from app.service.asset_service import AssetService
 from app.service.gas_cylinder_event_service import GasCylinderEventService
 from app.service.smart_report_service import SmartReportService
 from app.service.user_service import UserService
-from app.util.enums import AccountType
+from app.util.enums import AccountType, SmartReportStatus
 from app.util.utils import (
     convert_date_format,
     send_client_side_error,
@@ -143,6 +143,7 @@ async def create_smart_report_handler(
                     asset_type_uuid=smart_report_payload.asset_type_uuid,
                     user_uuid=smart_report_payload.user_uuid,
                     report_types=smart_report_payload.report_type,
+                    status=SmartReportStatus.PENDING,
                 )
 
                 report = smart_report_service.add(smart_report_input)
@@ -159,6 +160,7 @@ async def create_smart_report_handler(
                     user_uuid=smart_report_payload.user_uuid,
                     business_profile_uuid=user.get("business_profile").uuid,
                     report_types=smart_report_payload.report_type,
+                    status=SmartReportStatus.PENDING,
                 )
 
                 report = smart_report_service.add(smart_report_input)
@@ -169,6 +171,47 @@ async def create_smart_report_handler(
             msg = f"{messages.USER_NOT_FOUND} {smart_report_payload.user_uuid}"
             return send_client_side_error(user_msg=msg, dev_msg=msg)
 
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/smart_report/{user_uuid}", response_class=ORJSONResponse)
+@inject
+async def get_smart_report_by_user_handler(
+    user_uuid: str,
+    page: int = Query(1, ge=1, description="Page number, default is set to 1"),
+    page_size: int = Query(
+        10, ge=1, le=1000, description="Items per page, default is 10"
+    ),
+    smart_report_service: SmartReportService = Depends(
+        Provide[Container.smart_report_service]
+    ),
+    user_service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        user = user_service.get_user_by_uuid(str(user_uuid))
+        if user:
+            if user.get("account_type") == AccountType.INDIVIDUAL:
+                reports = smart_report_service.get_reports(
+                    user_uuid=user_uuid, page=page, page_size=page_size
+                )
+
+                return send_data_with_info(reports, messages.SUCCESS_MESSAGE)
+
+            if user.get("account_type") == AccountType.BUSINESS:
+                reports = smart_report_service.get_reports(
+                    business_profile_uuid=user.get("business_profile").uuid,
+                    page=10,
+                    page_size=page_size,
+                )
+
+                return send_data_with_info(reports, messages.SUCCESS_MESSAGE)
+
+        else:
+            msg = f"{messages.USER_NOT_FOUND} {user_uuid}"
+            return send_internal_server_error(user_msg=msg, error=msg)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -541,47 +584,6 @@ async def view_smart_report_violations_handler(
 
         return send_data_with_info(report, messages.SUCCESS_MESSAGE)
 
-    except Exception as e:
-        msg = messages.GET_FAILED + f"{msg_prefix}s"
-        return send_internal_server_error(user_msg=msg, error=e)
-
-
-@router.get("/smart_report/{user_uuid}", response_class=ORJSONResponse)
-@inject
-async def get_smart_report_by_user_handler(
-    user_uuid: str,
-    page: int = Query(1, ge=1, description="Page number, default is set to 1"),
-    page_size: int = Query(
-        10, ge=1, le=1000, description="Items per page, default is 10"
-    ),
-    smart_report_service: SmartReportService = Depends(
-        Provide[Container.smart_report_service]
-    ),
-    user_service: UserService = Depends(Provide[Container.user_service]),
-    current_user: User = Depends(get_current_user),
-):
-    try:
-        user = user_service.get_user_by_uuid(str(user_uuid))
-        if user:
-            if user.get("account_type") == AccountType.INDIVIDUAL:
-                reports = smart_report_service.get_reports(
-                    user_uuid=user_uuid, page=page, page_size=page_size
-                )
-
-                return send_data_with_info(reports, messages.SUCCESS_MESSAGE)
-
-            if user.get("account_type") == AccountType.BUSINESS:
-                reports = smart_report_service.get_reports(
-                    business_profile_uuid=user.get("business_profile").uuid,
-                    page=10,
-                    page_size=page_size,
-                )
-
-                return send_data_with_info(reports, messages.SUCCESS_MESSAGE)
-
-        else:
-            msg = f"{messages.USER_NOT_FOUND} {user_uuid}"
-            return send_internal_server_error(user_msg=msg, error=msg)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)

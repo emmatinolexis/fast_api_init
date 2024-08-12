@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import HTTPException
 from pydantic import BaseModel, validator
 
-from app.util.enums import SmartReportType
+from app.util.enums import SmartReportStatus, SmartReportType
 
 
 class DateRange(BaseModel):
@@ -46,3 +46,4 @@ class SmartReportInput(BaseModel):
     user_uuid: UUID
     business_profile_uuid: Optional[UUID] = None
     report_types: List[SmartReportType]
+    status: SmartReportStatus

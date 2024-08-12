@@ -749,8 +749,6 @@ class SmartReportService(BaseService):
     ):
         try:
             assets = []
-            start_date_dt = parser.parse(start_date)
-            end_date_dt = parser.parse(end_date)
 
             # Step 1: Retrieve assets and filter events by date range
             for asset_uuid in asset_uuids:
