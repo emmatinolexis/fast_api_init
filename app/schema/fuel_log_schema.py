@@ -41,9 +41,9 @@ class SingleFuelLog(BaseModel):
 
 class SingleFuelLogSchema(SingleFuelLog):
     user_uuid: UUID
-    driver_uuid: Optional[UUID] = None
+    driver_uuid: UUID
     business_profile_uuid: Optional[str] = None
-    asset_name: Optional[str] = None
+    asset_name: str
 
 
 class UpdateFuelLog(BaseModel):
