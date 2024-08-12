@@ -76,10 +76,8 @@ class FuelLogService(BaseService):
                         amount=item.get("amount"),
                         quantity=item.get("litres"),
                         purchase_date=item.get("purchase_date"),
-                        driver_name=driver_details.first_name
-                        + " "
-                        + driver_details.last_name,
                         asset_name=drivers_asset.asset_name,
+                        asset_uuid=drivers_asset.uuid,
                         business_profile_uuid=business_profile_uuid,
                         user_uuid=user_uuid,
                     )

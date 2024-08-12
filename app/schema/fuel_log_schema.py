@@ -28,6 +28,7 @@ class FleetManagerFuelLog(BaseModel):
     asset_name: Optional[str] = None
     business_profile_uuid: Optional[str] = None
     user_uuid: Optional[str] = None
+    asset_uuid: Optional[str] = None
 
 
 class SingleFuelLog(BaseModel):
