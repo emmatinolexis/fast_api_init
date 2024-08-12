@@ -4,6 +4,8 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.util.enums import FuelLogPaymmentMethod
+
 
 class FuelLogSchema(BaseModel):
     amount: float
@@ -33,13 +35,15 @@ class SingleFuelLog(BaseModel):
     amount: float
     quantity: float
     purchase_date: date
+    payment_method: FuelLogPaymmentMethod
     receipt_image: str
 
 
 class SingleFuelLogSchema(SingleFuelLog):
     user_uuid: UUID
-    driver_name: Optional[str] = None
+    driver_uuid: Optional[UUID] = None
     business_profile_uuid: Optional[str] = None
+    asset_name: Optional[str] = None
 
 
 class UpdateFuelLog(BaseModel):

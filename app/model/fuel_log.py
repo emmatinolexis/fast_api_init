@@ -1,9 +1,10 @@
 import uuid
 
-from sqlalchemy import FLOAT, Column, ForeignKey, String
+from sqlalchemy import FLOAT, Column, Enum, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.model.base_model import BaseModel
+from app.util.enums import FuelLogPaymmentMethod
 
 
 class FuelLog(BaseModel):
@@ -17,12 +18,15 @@ class FuelLog(BaseModel):
     )
     amount = Column(FLOAT, nullable=False, index=True)
     quantity = Column(FLOAT, nullable=False, index=True)
+    payment_method = Column(
+        Enum(FuelLogPaymmentMethod), nullable=False, default=FuelLogPaymmentMethod.CASH
+    )
     user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
     business_profile_uuid = Column(
         UUID(as_uuid=True), ForeignKey("business_profiles.uuid"), nullable=True
     )
     asset_uuid = Column(UUID(as_uuid=True), ForeignKey("assets.uuid"), nullable=True)
     asset_name = Column(String(length=100), nullable=True)
-    driver_name = Column(String(length=100), nullable=True)
+    driver_uuid = Column(UUID(as_uuid=True), ForeignKey("drivers.uuid"), nullable=True)
     receipt_image = Column(String(length=255), nullable=True)
     purchase_date = Column(String(length=100), nullable=True)

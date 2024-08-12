@@ -263,3 +263,9 @@ class AlertPolicy(str, Enum):
     TIRE_ROTATION = "a09c4122-c84a-4f9b-9c5c-19d0fc0747fd"
     BRAKE_INSPECTION = "09c74ec5-1de6-4417-aacf-3f3431ba8a63"
     OTHER = "e50fded1-b383-46bc-ba14-41bc51a3683e"
+
+
+class FuelLogPaymmentMethod(str, Enum):
+    CASH = "cash"
+    COUPON = "coupon"
+    CARD = "card"
