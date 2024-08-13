@@ -1,5 +1,3 @@
-from uuid import UUID
-
 from app.core import messages
 from app.core.exceptions import NotFoundError
 from app.repository.asset_repository import AssetRepository
