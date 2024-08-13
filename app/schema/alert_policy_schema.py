@@ -40,6 +40,13 @@ class AlertPolicyPayload(BaseModel):
     maintenance_alert_schedule: Optional[MaintenanceAlertSchedule] = None
 
 
+class AlertPolicyUpdatePayload(BaseModel):
+    policy_name: Optional[str] = None
+    alert_notification_types: Optional[list[str]] = None
+    alert_recipients: Optional[list[str]] = None
+    alert_assets: Optional[list[UUID]] = None
+
+
 class AlertPolicyInput(BaseModel):
     policy_name: str
     alert_policy_type_uuid: UUID
