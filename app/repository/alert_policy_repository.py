@@ -143,20 +143,14 @@ class AlertPolicyRepository(BaseRepository):
                 .options(joinedload(self.model.assets))
                 .options(joinedload(self.model.alert_notification_types))
                 .options(joinedload(self.model.maintenance_alert_type))
-                # .options(joinedload(self.model.alert_recipients))
+                .options(joinedload(self.model.alert_recipients))
                 .all()
             )
 
             formatted_alerts = []
             for alert in alerts:
-                # Create a dictionary to map notification types to their recipients
-                notification_data = {}
-
-                # Iterate over alert_notification_types to initialize the dictionary
-                for notification_type in alert.alert_notification_types:
-                    notification_type_name = notification_type.alert_notification_type
-                    if notification_type_name not in notification_data:
-                        notification_data[notification_type_name] = []
+                # Initialize the notification_data dictionary with empty lists for email and sms
+                notification_data = {"email": [], "sms": []}
 
                 # Populate recipients into their respective notification types
                 for recipient in alert.alert_recipients:
