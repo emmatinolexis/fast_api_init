@@ -340,7 +340,7 @@ class AlertPolicyService(BaseService):
     def _update_alert_assets(self, alert_policy_uuid: str, new_assets: List[str]):
         if new_assets:
             existing_assets = [
-                asset.asset_uuid
+                asset.uuid
                 for asset in self.alert_policy_asset_assignment_repository.read_all_by_alert_policy_uuid(
                     alert_policy_uuid
                 )
