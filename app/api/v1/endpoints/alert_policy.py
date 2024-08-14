@@ -362,22 +362,3 @@ async def update_alert_policy_handler(
     except Exception as e:
         msg = messages.UPDATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
-
-
-@router.get("/recipients/{alert_policy_uuid}", response_class=ORJSONResponse)
-@inject
-async def get_alert_policy_recipients_handler(
-    alert_policy_uuid: str,
-    service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
-    current_user: User = Depends(get_current_user),
-):
-    try:
-        data = service.get_alert_policy_recipients(alert_policy_uuid)
-        return send_data_with_info(
-            info=messages.GET_SUCCESS + "alert policy recipients", data=data
-        )
-    except NotFoundError as e:
-        return send_client_side_error(user_msg=e.detail, dev_msg=e.detail)
-    except Exception as e:
-        msg = messages.GET_FAILED + "alert policy recipients"
-        return send_internal_server_error(user_msg=msg, error=e)
