@@ -387,3 +387,47 @@ class AlertPolicyService(BaseService):
             return alert_policy_transformer(policy)
         except Exception as e:
             raise e
+
+    def get_alert_policy_recipients(self, alert_policy_uuid: str):
+        try:
+            policy = self.alert_policy_repository.read_by_uuid(alert_policy_uuid)
+            if not policy:
+                raise NotFoundError(messages.ALERT_POLICY_NOT_FOUND + alert_policy_uuid)
+
+            alert_types = self.alert_policy_notification_type_assignment_repository.read_all_by_alert_policy_uuid(
+                alert_policy_uuid
+            )
+
+            alert_policy_recipients = {"sms": [], "email": []}
+
+            for alert_type in alert_types:
+                recipients = self.alert_notification_assignment_repository.read_all_by_alert_policy_uuid(
+                    alert_policy_uuid
+                )
+
+                for recipient in recipients:
+                    if (
+                        alert_type.alert_notification_type == "sms"
+                        and recipient.recipient.startswith("+")
+                    ):
+                        alert_policy_recipients["sms"].append(recipient.recipient)
+                    elif (
+                        alert_type.alert_notification_type == "email"
+                        and "@" in recipient.recipient
+                    ):
+                        alert_policy_recipients["email"].append(recipient.recipient)
+
+            results = []
+            for alert_type, recipients in alert_policy_recipients.items():
+                if recipients:
+                    results.append(
+                        {
+                            "alert_notification_type": alert_type,
+                            "recipients": recipients,
+                        }
+                    )
+
+            return results
+
+        except Exception as e:
+            raise e
