@@ -42,9 +42,10 @@ class AlertPolicy(BaseModel):
     maintenance_alert_type = relationship("AlertMaintenanceType", lazy="subquery")
     assets = relationship("Asset", secondary="alert_policy_asset_assignments")
     alert_recipients = relationship(
-        "AlertNotificationAssignment", back_populates="alert_policy"
+        "AlertNotificationAssignment", back_populates="alert_policy",cascade="all, delete-orphan"
     )
     alert_notification_types = relationship(
-        "AlertPolicyNotificationTypeAssignment", back_populates="alert_policy"
+        "AlertPolicyNotificationTypeAssignment", back_populates="alert_policy",
+    cascade="all, delete-orphan"
     )
     alert_policy_violations = relationship("AlertPolicyViolation")

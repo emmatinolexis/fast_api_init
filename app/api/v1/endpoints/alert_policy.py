@@ -5,7 +5,7 @@ from fastapi.responses import ORJSONResponse
 from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
-from app.core.exceptions import NotFoundError
+from app.core.exceptions import NotFoundError,UnAuthorizedError
 from app.model.user import User
 from app.schema.alert_policy_schema import (
     AlertPolicyPayload,
@@ -13,6 +13,7 @@ from app.schema.alert_policy_schema import (
     GeofenceAlertPolicyPayload,
 )
 from app.service.alert_policy_service import AlertPolicyService
+from app.service.user_service import UserService
 from app.util.email import (
     send_alert_policy_violation_email,
     send_maintenance_alert_email,
@@ -22,7 +23,9 @@ from app.util.utils import (
     send_data,
     send_data_with_info,
     send_internal_server_error,
+    send_info
 )
+from app.util.enums import AccountType
 
 router = APIRouter(
     prefix="/alert_policies",
@@ -361,4 +364,29 @@ async def update_alert_policy_handler(
         return send_client_side_error(user_msg=e.detail)
     except Exception as e:
         msg = messages.UPDATE_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+    
+
+
+@router.delete("/{alert_uuid}", response_class=ORJSONResponse)
+@inject
+async def delete_alert_policy_handler(
+    alert_uuid: str,
+    service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
+    user_service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        user = user_service.get_user_by_uuid(current_user.uuid)
+
+        if user.get("account_type") == AccountType.INDIVIDUAL:
+            data = service.delete_alert_policy(alert_policy_uuid=alert_uuid, user_uuid=current_user.uuid)
+        if user.get("account_type") == AccountType.BUSINESS:
+            data = service.delete_alert_policy(alert_policy_uuid=alert_uuid,business_profile_uuid=current_user.business_profile_uuid)
+
+        return send_info(messages.DELETE_SUCCESS + "alert policy")
+    except (NotFoundError,UnAuthorizedError) as e:
+        return send_client_side_error(user_msg=e.detail,status_code=e.status_codes)
+    except Exception as e:
+        msg = messages.DELETE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
