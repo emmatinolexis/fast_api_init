@@ -309,6 +309,7 @@ class AssetService(BaseService):
         asset_type_uuid: str = None,
         page=1,
         page_size=10,
+        search: str = None,
     ):
         try:
             return self.asset_repository.read_all_assets_by_uuid(
@@ -316,6 +317,7 @@ class AssetService(BaseService):
                 page_size=page_size,
                 page=page,
                 asset_type_uuid=asset_type_uuid,
+                search_query=search,
             )
         except Exception as e:
             raise e
