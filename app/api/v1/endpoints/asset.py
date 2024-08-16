@@ -8,7 +8,7 @@ from app.core import messages
 from app.core.constants import ENGINE_SHUTDOWN_PASSWORD, ENGINE_SHUTDOWN_USERNAME
 from app.core.container import Container
 from app.core.dependencies import get_current_user
-from app.core.exceptions import NotFoundError
+from app.core.exceptions import NotFoundError, UnAuthorizedError
 from app.model.user import User
 from app.schema.asset_schema import (
     AssetDeviceRequest,
@@ -17,6 +17,7 @@ from app.schema.asset_schema import (
     BuildingInput,
     EngineOnPayload,
     ImmobilizerPayload,
+    PatchAssetPayload,
     TheftIncidencePayload,
     TheftReportPayload,
     ThirdPartyAssetPayload,
@@ -39,6 +40,7 @@ from app.util.sms import send_sms
 from app.util.utils import (
     send_client_side_error,
     send_data,
+    send_data_with_info,
     send_info,
     send_internal_server_error,
 )
@@ -133,6 +135,34 @@ async def create_asset_handler(
         return send_client_side_error(str(e.detail))
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.patch("/{uuid}", response_class=ORJSONResponse)
+@inject
+async def patch_asset_handler(
+    uuid: str,
+    payload: PatchAssetPayload,
+    service: AssetService = Depends(Provide[Container.asset_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        if current_user.account_type == AccountType.INDIVIDUAL:
+            data = service.edit_asset(
+                asset_uuid=uuid, payload=payload, user_uuid=current_user.uuid
+            )
+        if current_user.account_type == AccountType.BUSINESS:
+            data = service.edit_asset(
+                asset_uuid=uuid,
+                payload=payload,
+                business_uuid=current_user.business_profile.uuid,
+            )
+
+        return send_data_with_info(data, messages.UPDATE_SUCCESS + "asset")
+    except (NotFoundError, UnAuthorizedError) as e:
+        return send_client_side_error(user_msg=str(e.detail), status_code=e.status_code)
+    except Exception as e:
+        msg = messages.UPDATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
 
 

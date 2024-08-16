@@ -379,11 +379,11 @@ async def delete_alert_policy_handler(
         user = user_service.get_user_by_uuid(current_user.uuid)
 
         if user.get("account_type") == AccountType.INDIVIDUAL:
-            data = service.delete_alert_policy(
+            service.delete_alert_policy(
                 alert_policy_uuid=alert_uuid, user_uuid=current_user.uuid
             )
         if user.get("account_type") == AccountType.BUSINESS:
-            data = service.delete_alert_policy(
+            service.delete_alert_policy(
                 alert_policy_uuid=alert_uuid,
                 business_profile_uuid=current_user.business_profile_uuid,
             )
