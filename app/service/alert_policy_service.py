@@ -1,7 +1,7 @@
 from typing import List
 
 from app.core import messages
-from app.core.exceptions import NotFoundError,UnAuthorizedError
+from app.core.exceptions import NotFoundError, UnAuthorizedError
 from app.repository.alert_maintenance_type_repository import (
     AlertMaintenanceTypeRepository,
 )
@@ -387,20 +387,26 @@ class AlertPolicyService(BaseService):
             return alert_policy_transformer(policy)
         except Exception as e:
             raise e
-        
 
-    def delete_alert_policy(self, alert_policy_uuid: str,user_uuid: str = None,business_profile_uuid: str = None):
+    def delete_alert_policy(
+        self,
+        alert_policy_uuid: str,
+        user_uuid: str = None,
+        business_profile_uuid: str = None,
+    ):
         try:
             alert_policy = self.alert_policy_repository.read_by_uuid(alert_policy_uuid)
             if not alert_policy:
                 raise NotFoundError(messages.ALERT_POLICY_NOT_FOUND + alert_policy_uuid)
-            
+
             if user_uuid and alert_policy.user_uuid != user_uuid:
                 raise UnAuthorizedError(messages.ACTION_NOT_ALLOWED)
-            
-            if business_profile_uuid and alert_policy.business_profile_uuid != business_profile_uuid:
+
+            if (
+                business_profile_uuid
+                and alert_policy.business_profile_uuid != business_profile_uuid
+            ):
                 raise UnAuthorizedError(messages.ACTION_NOT_ALLOWED)
-            
 
             self.alert_policy_repository.delete_by_uuid(alert_policy_uuid)
         except Exception as e:

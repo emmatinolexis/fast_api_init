@@ -77,6 +77,11 @@ class AssetPayload(BaseModel):
         orm_model = True
 
 
+class PatchAssetPayload(BaseModel):
+    asset_name: Optional[str] = None
+    image_url: Optional[str] = None
+
+
 class ThirdPartyAssetPayload(BaseModel):
     usage_type: AssetUsageType
     vin: str
