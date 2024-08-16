@@ -17,7 +17,9 @@ class AlertNotificationAssignment(BaseModel):
         nullable=False,
     )
     alert_policy_uuid = Column(
-        UUID(as_uuid=True), ForeignKey("alert_policies.uuid",ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True),
+        ForeignKey("alert_policies.uuid", ondelete="CASCADE"),
+        nullable=False,
     )
     recipient = Column(String(length=100), nullable=False, index=True)
     alert_policy = relationship("AlertPolicy", back_populates="alert_recipients")

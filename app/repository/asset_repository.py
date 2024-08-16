@@ -2,7 +2,7 @@ from contextlib import AbstractContextManager
 from datetime import datetime
 from typing import Any, Callable, Dict, List
 
-from sqlalchemy import Date, and_, asc, cast, desc, label,or_
+from sqlalchemy import Date, and_, asc, cast, desc, label, or_
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.settings import get_settings
@@ -81,8 +81,6 @@ class AssetRepository(BaseRepository):
 
             return []
 
-
-
     def read_all_assets_by_uuid(
         self,
         user_uuid: str = None,
@@ -104,17 +102,21 @@ class AssetRepository(BaseRepository):
                 base_query = base_query.filter(self.model.user_uuid == user_uuid)
 
             if business_uuid is not None:
-                base_query = base_query.filter(self.model.business_profile_uuid == business_uuid)
+                base_query = base_query.filter(
+                    self.model.business_profile_uuid == business_uuid
+                )
 
             if asset_type_uuid is not None:
-                base_query = base_query.filter(self.model.asset_type_uuid == asset_type_uuid)
+                base_query = base_query.filter(
+                    self.model.asset_type_uuid == asset_type_uuid
+                )
 
             if search_query:
                 base_query = base_query.filter(
                     or_(
                         self.model.asset_name.ilike(f"%{search_query}%"),
                         self.model.vehicle_license_no.ilike(f"%{search_query}%"),
-                        self.model.vin.ilike(f"%{search_query}%")
+                        self.model.vin.ilike(f"%{search_query}%"),
                     )
                 )
 
@@ -149,7 +151,6 @@ class AssetRepository(BaseRepository):
                 "current_page": page,
                 "page_size": page_size,
             }
-
 
     def process_assets(self, session, assets: List[Any]) -> List[Any]:
         for asset in assets:
