@@ -95,7 +95,7 @@ async def get_asset_by_user_uuid_handler(
 async def get_asset_by_business_uuid_handler(
     business_uuid: str,
     asset_type_uuid: str = None,
-    search :str = Query(None, description="Search by asset name"),
+    search: str = Query(None, description="Search by asset name"),
     page: int = Query(1, ge=1, description="Page number, default is set to 1"),
     page_size: int = Query(
         10, ge=1, le=1000, description="Items per page, default is 10"
@@ -109,7 +109,7 @@ async def get_asset_by_business_uuid_handler(
             asset_type_uuid=asset_type_uuid,
             page=page,
             page_size=page_size,
-            search=search
+            search=search,
         )
 
         return send_data(assets)

@@ -33,3 +33,19 @@ class GasDeviceRepository(BaseRepository):
                     self.model.serial_number.ilike(f"%{serial_number}%")
                 )
             return query.all()
+
+    def get_user_devices(self, user_uuid: str):
+        with self.session_factory() as session:
+            return (
+                session.query(self.model)
+                .filter(self.model.user_uuid == user_uuid)
+                .all()
+            )
+
+    def get_business_devices(self, business_profile_uuid: str):
+        with self.session_factory() as session:
+            return (
+                session.query(self.model)
+                .filter(self.model.business_profile_uuid == business_profile_uuid)
+                .all()
+            )
