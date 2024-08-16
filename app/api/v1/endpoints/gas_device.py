@@ -5,6 +5,7 @@ from fastapi.responses import ORJSONResponse
 from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
+from app.core.exceptions import NotFoundError
 from app.model.user import User
 from app.schema.gas_cylinder_schema import (
     CreateGasDevice,
@@ -18,6 +19,7 @@ from app.util.utils import (
     load_gas_device_serial_number_from_csv,
     send_client_side_error,
     send_data,
+    send_data_with_info,
     send_info,
     send_internal_server_error,
 )
@@ -68,31 +70,21 @@ async def create_gas_device_handler(
 ):
     try:
         user = user_service.get_user_by_uuid(user_id)
-        if user:
-            if user.get("account_type") == AccountType.INDIVIDUAL:
-                return send_data(
-                    service.add(
-                        UserCreateGasDevice(
-                            device_name=payload.device_name,
-                            user_uuid=str(user.get("uuid")),
-                            serial_number=payload.serial_number,
-                        )
-                    )
-                )
-            if user.get("account_type") == AccountType.BUSINESS:
-                return send_data(
-                    service.add(
-                        UserCreateGasDevice(
-                            device_name=payload.device_name,
-                            business_uuid=str(user.get("business_profile").uuid),
-                            user_uuid=str(user.get("uuid")),
-                            serial_number=payload.serial_number,
-                        )
-                    )
-                )
+
+        if user.get("account_type") == AccountType.INDIVIDUAL:
+            data = service.create_device(user_id=user_id, payload=payload)
+        if user.get("account_type") == AccountType.BUSINESS:
+            data = service.create_device(
+                business_profile_uuid=user.get("business_profile").uuid,
+                payload=payload,
+                user_uuid=user_id,
+            )
+            return send_data(data)
         else:
             msg = f"{messages.USER_NOT_FOUND} {user_id}"
             return send_internal_server_error(user_msg=msg, error=msg)
+    except NotFoundError as e:
+        return send_client_side_error(user_msg=e.detail)
     except Exception as e:
         msg = messages.CREATE_FAILED + " gas device"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -114,4 +106,33 @@ async def update_device_handler(
         return send_data(service.patch_by_uuid(device_uuid, payload))
     except Exception as e:
         msg = messages.UPDATE_FAILED + " gas device"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/{user_id}", response_class=ORJSONResponse)
+@inject
+async def get_gas_devices_by_user_handler(
+    user_id: str,
+    service: GasDeviceService = Depends(Provide[Container.gas_device_service]),
+    user_service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        user = user_service.get_user_by_uuid(user_id)
+
+        if not user:
+            msg = f"{messages.USER_NOT_FOUND} {user_id}"
+            return send_client_side_error(user_msg=msg, status_code=404)
+
+        if user.get("account_type") == AccountType.INDIVIDUAL:
+            data = service.get_user_devices(user_id)
+
+        if user.get("account_type") == AccountType.BUSINESS:
+            data = service.get_business_devices(user.get("business_profile").uuid)
+
+            return send_data_with_info(data, messages.GET_SUCCESS + " gas devices")
+    except NotFoundError as e:
+        return send_client_side_error(user_msg=e.detail)
+    except Exception as e:
+        msg = messages.GET_FAILED + " gas devices"
         return send_internal_server_error(user_msg=msg, error=e)
