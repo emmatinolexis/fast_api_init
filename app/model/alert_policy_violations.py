@@ -21,7 +21,7 @@ class AlertPolicyViolation(BaseModel):
         nullable=False,
     )
     alert_policy_uuid = Column(
-        UUID(as_uuid=True), ForeignKey(AlertPolicy.uuid), nullable=False
+        UUID(as_uuid=True), ForeignKey(AlertPolicy.uuid), nullable=True
     )
     asset_uuid = Column(UUID(as_uuid=True), ForeignKey(Asset.uuid), nullable=False)
     business_profile_uuid = Column(

@@ -2,7 +2,7 @@ import uuid
 
 from app.core import messages
 from app.core.constants import FREE_PACKAGE
-from app.core.exceptions import NotFoundError
+from app.core.exceptions import NotFoundError, UnAuthorizedError
 from app.repository.asset_repository import AssetRepository
 from app.repository.asset_type_repository import AssetTypeRepository
 from app.repository.device_repository import DeviceRepository
@@ -29,6 +29,7 @@ from app.schema.asset_schema import (
     VehicleOwnerInput,
 )
 from app.service.base_service import BaseService
+from app.transfomers.asset_transformer import asset_transformer
 from app.util.enums import (
     AccountType,
     AlertPolicy,
@@ -309,6 +310,7 @@ class AssetService(BaseService):
         asset_type_uuid: str = None,
         page=1,
         page_size=10,
+        search: str = None,
     ):
         try:
             return self.asset_repository.read_all_assets_by_uuid(
@@ -316,6 +318,7 @@ class AssetService(BaseService):
                 page_size=page_size,
                 page=page,
                 asset_type_uuid=asset_type_uuid,
+                search_query=search,
             )
         except Exception as e:
             raise e
@@ -910,6 +913,33 @@ class AssetService(BaseService):
             }
 
             return report
+
+        except Exception as e:
+            raise e
+
+    def edit_asset(
+        self,
+        asset_uuid: str,
+        payload: AssetPayload,
+        user_uuid: str = None,
+        business_uuid: str = None,
+    ):
+        try:
+            asset = self.asset_repository.read_by_uuid(asset_uuid)
+            if not asset:
+                raise NotFoundError(detail=messages.ASSET_NOT_FOUND + str(asset_uuid))
+
+            if user_uuid and asset.user_uuid != user_uuid:
+                raise UnAuthorizedError(messages.ACTION_NOT_ALLOWED)
+
+            if business_uuid and asset.business_profile_uuid != business_uuid:
+                print(type(business_uuid))
+                print(type(asset.business_profile_uuid))
+                raise UnAuthorizedError(messages.ACTION_NOT_ALLOWED)
+
+            update_asset = self.asset_repository.update_by_uuid(asset_uuid, payload)
+
+            return asset_transformer(update_asset)
 
         except Exception as e:
             raise e

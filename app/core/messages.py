@@ -16,6 +16,7 @@ DEVICE_NOT_FOUND = "No device was found with the given uuid : "
 DEVICE_MANUFACTURER_NOT_FOUND = (
     "No device manufacturer was found with the given uuid : "
 )
+ALERT_POLICY_NOT_FOUND = "No alert policy was found with the given uuid : "
 ASSET_DEVICE_REQUEST_ALREADY_EXISTS = "Asset device request already exists"
 ASSET_DEVICE_REQUEST_CREATED = "Asset device request created successfully"
 SUBSCRIPTION_NOT_FOUND = "No subscription was found with the given uuid : "
@@ -66,6 +67,7 @@ GAS_CYLINDER_CREATED = "Gas cylinder created successfully"
 
 
 DEVICE_ALREADY_ASSIGNED = "Device is already assigned"
+DEVICE_DOES_NOT_EXIST = "Device does not Exist"
 LINK_FAILED = "Failed to link "
 UNLINK_FAILED = "Failed to unlink "
 INTERNAL_SERVER_ERROR = "Internal server error"
@@ -80,6 +82,9 @@ REPORT_SUCCESS = "Report successfully generated"
 SUCCESS_MESSAGE = "Successful"
 CREATE_SUCCESS = "Successfully created "
 GET_SUCCESS = "Successfully retrieved "
-WRONG_DRIVER_EMAIL = "No Driver Was Found With The Given Email : "
+WRONG_DRIVER_EMAIL = "No driver was found with the given email : "
 DRIVER_NOT_ASSIGNED = "Driver with {driver_email} is not assigned to any asset"
 FUEL_LOG_NOT_FOUND = "No fuel log was found with the given uuid : "
+
+
+ASSET_MUST_BE_ASSIGNED = "Asset must be assigned to a driver to perform this action"

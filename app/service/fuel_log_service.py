@@ -76,12 +76,11 @@ class FuelLogService(BaseService):
                         amount=item.get("amount"),
                         quantity=item.get("litres"),
                         purchase_date=item.get("purchase_date"),
-                        driver_name=driver_details.first_name
-                        + " "
-                        + driver_details.last_name,
                         asset_name=drivers_asset.asset_name,
+                        asset_uuid=str(drivers_asset.uuid),
                         business_profile_uuid=business_profile_uuid,
                         user_uuid=user_uuid,
+                        driver_uuid=str(driver_details.uuid),
                     )
 
                     fuel_logs.append(log_payload)  # Accumulate the log payload
@@ -105,6 +104,9 @@ class FuelLogService(BaseService):
 
         driver = self.asset_repository.get_driver_by_asset_uuid(payload.asset_uuid)
 
+        if not driver:
+            raise NotFoundError(detail=messages.ASSET_MUST_BE_ASSIGNEDD)
+
         full_payload = SingleFuelLogSchema(
             asset_uuid=payload.asset_uuid,
             amount=payload.amount,
@@ -113,12 +115,14 @@ class FuelLogService(BaseService):
             receipt_image=payload.receipt_image,
             user_uuid=user_uuid,
             business_profile_uuid=business_profile_uuid,
-            driver_name=f"{driver.first_name} {driver.last_name}" if driver else None,
+            driver_uuid=driver.uuid,
+            payment_method=payload.payment_method,
+            asset_name=asset.asset_name,
         )
 
         fuel_log = self.fuel_log_repository.create(full_payload)
 
-        return fuel_log_transformer(fuel_log)
+        return fuel_log_transformer(fuel_log, self.driver_repository)
 
     def get_fuel_logs_by_user_uuid(
         self,
@@ -135,14 +139,17 @@ class FuelLogService(BaseService):
             )
 
             total = len(fuel_logs)
-            paginated_fuel_logs = fuel_logs[(page - 1) * page_size: page * page_size]
+            paginated_fuel_logs = fuel_logs[(page - 1) * page_size : page * page_size]
 
             return {
                 "total": total,
                 "current_page": page,
                 "page_size": page_size,
                 "total_pages": total // page_size + 1,
-                "data": [fuel_log_transformer(log) for log in paginated_fuel_logs],
+                "data": [
+                    fuel_log_transformer(log, self.driver_repository)
+                    for log in paginated_fuel_logs
+                ],
             }
         except Exception as e:
             raise e
@@ -162,14 +169,17 @@ class FuelLogService(BaseService):
             )
 
             total = len(fuel_logs)
-            paginated_fuel_logs = fuel_logs[(page - 1) * page_size: page * page_size]
+            paginated_fuel_logs = fuel_logs[(page - 1) * page_size : page * page_size]
 
             return {
                 "total": total,
                 "page": page,
                 "page_size": page_size,
                 "total_pages": total // page_size + 1,
-                "data": [fuel_log_transformer(log) for log in paginated_fuel_logs],
+                "data": [
+                    fuel_log_transformer(log, self.driver_repository)
+                    for log in paginated_fuel_logs
+                ],
             }
         except Exception as e:
             raise e
@@ -179,8 +189,8 @@ class FuelLogService(BaseService):
             fuel_log_uuid, "receipt_image", payload.receipt_image
         )
 
-        return fuel_log_transformer(updated_fuel_log)
+        return fuel_log_transformer(updated_fuel_log, self.driver_repository)
 
     def get_receipt_by_uuid(self, fuel_log_uuid: str):
         fuel_log = self.fuel_log_repository.read_by_uuid(fuel_log_uuid)
-        return fuel_log_transformer(fuel_log)
+        return fuel_log_transformer(fuel_log, self.driver_repository)

@@ -21,3 +21,20 @@ class AlertPolicyAssetAssignmentRepository(BaseRepository):
                 .filter_by(alert_policy_uuid=uuid)
                 .all()
             )
+
+    def read_all_by_alert_policy_uuid(self, alert_policy_uuid):
+        with self.session_factory() as session:
+            return (
+                session.query(Asset)
+                .join(self.model, Asset.uuid == self.model.asset_uuid)
+                .filter_by(alert_policy_uuid=alert_policy_uuid)
+                .all()
+            )
+
+    def delete_by_asset(self, alert_policy_uuid, asset_uuid):
+        with self.session_factory() as session:
+            session.query(self.model).filter_by(
+                alert_policy_uuid=alert_policy_uuid, asset_uuid=asset_uuid
+            ).delete()
+            session.commit()
+            return True

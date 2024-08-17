@@ -1,3 +1,7 @@
+from typing import List
+
+from app.core import messages
+from app.core.exceptions import NotFoundError, UnAuthorizedError
 from app.repository.alert_maintenance_type_repository import (
     AlertMaintenanceTypeRepository,
 )
@@ -19,10 +23,12 @@ from app.schema.alert_policy_schema import (
     AlertPolicyInput,
     AlertPolicyNotificationTypeAssignment,
     AlertPolicyPayload,
+    AlertPolicyUpdatePayload,
     GeofenceAlertPolicyInput,
     GeofenceAlertPolicyPayload,
 )
 from app.service.base_service import BaseService
+from app.transfomers.alert_policy_transformer import alert_policy_transformer
 from app.util.enums import ActiveStatus, GeofenceShapeType
 
 
@@ -271,3 +277,137 @@ class AlertPolicyService(BaseService):
             self.alert_policy_asset_assignment_repository.create(
                 AlertPolicyAssetAssignment(**alert_assets_data)
             )
+
+    def _get_alert_policy(self, alert_policy_uuid: str):
+        return self.alert_policy_repository.read_by_uuid(
+            alert_policy_uuid, eager=["alert_notification_types", "alert_recipients"]
+        )
+
+    def _update_alert_recipients(
+        self, alert_policy_uuid: str, new_recipients: List[str]
+    ):
+        if new_recipients:
+            existing_recipients = [
+                recipient.recipient
+                for recipient in self.alert_notification_assignment_repository.read_all_by_alert_policy_uuid(
+                    alert_policy_uuid
+                )
+            ]
+
+            for recipient in new_recipients:
+                if recipient not in existing_recipients:
+                    alert_recipients_data = {
+                        "alert_policy_uuid": alert_policy_uuid,
+                        "recipient": recipient,
+                    }
+                    self.alert_notification_assignment_repository.create(
+                        AlertNotificationAssignment(**alert_recipients_data)
+                    )
+
+            for recipient in existing_recipients:
+                if recipient not in new_recipients:
+                    self.alert_notification_assignment_repository.delete_by_recipient(
+                        alert_policy_uuid, recipient
+                    )
+
+    def _update_alert_notification_types(
+        self, alert_policy_uuid: str, new_notification_types: List[str]
+    ):
+        if new_notification_types:
+            existing_notification_types = [
+                notification.alert_notification_type
+                for notification in self.alert_policy_notification_type_assignment_repository.read_all_by_alert_policy_uuid(
+                    alert_policy_uuid
+                )
+            ]
+
+            for notification_type in new_notification_types:
+                if notification_type not in existing_notification_types:
+                    alert_types_data = {
+                        "alert_policy_uuid": alert_policy_uuid,
+                        "alert_notification_type": notification_type,
+                    }
+                    self.alert_policy_notification_type_assignment_repository.create(
+                        AlertPolicyNotificationTypeAssignment(**alert_types_data)
+                    )
+
+            for notification_type in existing_notification_types:
+                if notification_type not in new_notification_types:
+                    self.alert_policy_notification_type_assignment_repository.delete_by_notification_type(
+                        alert_policy_uuid, notification_type
+                    )
+
+    def _update_alert_assets(self, alert_policy_uuid: str, new_assets: List[str]):
+        if new_assets:
+            existing_assets = [
+                asset.uuid
+                for asset in self.alert_policy_asset_assignment_repository.read_all_by_alert_policy_uuid(
+                    alert_policy_uuid
+                )
+            ]
+
+            for asset in new_assets:
+                if asset not in existing_assets:
+                    alert_assets_data = {
+                        "alert_policy_uuid": alert_policy_uuid,
+                        "asset_uuid": asset,
+                    }
+                    self.alert_policy_asset_assignment_repository.create(
+                        AlertPolicyAssetAssignment(**alert_assets_data)
+                    )
+
+            for asset in existing_assets:
+                if asset not in new_assets:
+                    self.alert_policy_asset_assignment_repository.delete_by_asset(
+                        alert_policy_uuid, asset
+                    )
+
+    def _update_policy_name(self, alert_policy_uuid: str, new_policy_name: str):
+        if new_policy_name:
+            self.alert_policy_repository.update_attr_by_uuid(
+                alert_policy_uuid, "policy_name", new_policy_name
+            )
+
+    def update_alert_policy(
+        self, alert_policy_uuid: str, payload: AlertPolicyUpdatePayload
+    ):
+        try:
+            alert_policy = self._get_alert_policy(alert_policy_uuid)
+            if not alert_policy:
+                raise NotFoundError(messages.ALERT_POLICY_NOT_FOUND + alert_policy_uuid)
+
+            self._update_alert_recipients(alert_policy_uuid, payload.alert_recipients)
+            self._update_alert_notification_types(
+                alert_policy_uuid, payload.alert_notification_types
+            )
+            self._update_alert_assets(alert_policy_uuid, payload.alert_assets)
+            self._update_policy_name(alert_policy_uuid, payload.policy_name)
+
+            policy = self.alert_policy_repository.read_by_uuid(alert_policy_uuid)
+            return alert_policy_transformer(policy)
+        except Exception as e:
+            raise e
+
+    def delete_alert_policy(
+        self,
+        alert_policy_uuid: str,
+        user_uuid: str = None,
+        business_profile_uuid: str = None,
+    ):
+        try:
+            alert_policy = self.alert_policy_repository.read_by_uuid(alert_policy_uuid)
+            if not alert_policy:
+                raise NotFoundError(messages.ALERT_POLICY_NOT_FOUND + alert_policy_uuid)
+
+            if user_uuid and alert_policy.user_uuid != user_uuid:
+                raise UnAuthorizedError(messages.ACTION_NOT_ALLOWED)
+
+            if (
+                business_profile_uuid
+                and alert_policy.business_profile_uuid != business_profile_uuid
+            ):
+                raise UnAuthorizedError(messages.ACTION_NOT_ALLOWED)
+
+            self.alert_policy_repository.delete_by_uuid(alert_policy_uuid)
+        except Exception as e:
+            raise e

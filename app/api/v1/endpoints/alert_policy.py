@@ -5,18 +5,27 @@ from fastapi.responses import ORJSONResponse
 from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
-from app.core.exceptions import NotFoundError
+from app.core.exceptions import NotFoundError, UnAuthorizedError
 from app.model.user import User
 from app.schema.alert_policy_schema import (
     AlertPolicyPayload,
+    AlertPolicyUpdatePayload,
     GeofenceAlertPolicyPayload,
 )
 from app.service.alert_policy_service import AlertPolicyService
+from app.service.user_service import UserService
 from app.util.email import (
     send_alert_policy_violation_email,
     send_maintenance_alert_email,
 )
-from app.util.utils import send_client_side_error, send_data, send_internal_server_error
+from app.util.enums import AccountType
+from app.util.utils import (
+    send_client_side_error,
+    send_data,
+    send_data_with_info,
+    send_info,
+    send_internal_server_error,
+)
 
 router = APIRouter(
     prefix="/alert_policies",
@@ -335,4 +344,53 @@ async def toggle_alert_violations_status_handler(
         return send_data(service.toggle_alert_violation_status(alert_violation_uuid))
     except Exception as e:
         msg = messages.GET_FAILED + "alert policies"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.patch("/{alert_uuid}", response_class=ORJSONResponse)
+@inject
+async def update_alert_policy_handler(
+    alert_uuid: str,
+    payload: AlertPolicyUpdatePayload,
+    service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        data = service.update_alert_policy(alert_uuid, payload)
+        return send_data_with_info(
+            data=data, info=messages.UPDATE_SUCCESS + "alert policy"
+        )
+    except NotFoundError as e:
+        return send_client_side_error(user_msg=e.detail)
+    except Exception as e:
+        msg = messages.UPDATE_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.delete("/{alert_uuid}", response_class=ORJSONResponse)
+@inject
+async def delete_alert_policy_handler(
+    alert_uuid: str,
+    service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
+    user_service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        user = user_service.get_user_by_uuid(current_user.uuid)
+
+        if user.get("account_type") == AccountType.INDIVIDUAL:
+            service.delete_alert_policy(
+                alert_policy_uuid=alert_uuid, user_uuid=current_user.uuid
+            )
+        if user.get("account_type") == AccountType.BUSINESS:
+            service.delete_alert_policy(
+                alert_policy_uuid=alert_uuid,
+                business_profile_uuid=current_user.business_profile_uuid,
+            )
+
+        return send_info(messages.DELETE_SUCCESS + "alert policy")
+    except (NotFoundError, UnAuthorizedError) as e:
+        return send_client_side_error(user_msg=e.detail, status_code=e.status_codes)
+    except Exception as e:
+        msg = messages.DELETE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)

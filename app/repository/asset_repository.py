@@ -2,7 +2,7 @@ from contextlib import AbstractContextManager
 from datetime import datetime
 from typing import Any, Callable, Dict, List
 
-from sqlalchemy import Date, and_, asc, cast, desc, label
+from sqlalchemy import Date, and_, asc, cast, desc, label, or_
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.settings import get_settings
@@ -88,6 +88,7 @@ class AssetRepository(BaseRepository):
         asset_type_uuid: str = None,
         page=1,
         page_size=10,
+        search_query: str = None,
     ) -> Dict[str, Any]:
         with self.session_factory() as session:
             # Calculate the offset based on the page and per_page values
@@ -96,20 +97,27 @@ class AssetRepository(BaseRepository):
             # Start with a base query
             base_query = session.query(self.model)
 
+            # Apply filters first before limit and offset
             if user_uuid is not None:
-                # Add filter for user UUID
                 base_query = base_query.filter(self.model.user_uuid == user_uuid)
 
             if business_uuid is not None:
-                # Add filter for business UUID
                 base_query = base_query.filter(
                     self.model.business_profile_uuid == business_uuid
                 )
 
             if asset_type_uuid is not None:
-                # Add filter for asset type UUID
                 base_query = base_query.filter(
                     self.model.asset_type_uuid == asset_type_uuid
+                )
+
+            if search_query:
+                base_query = base_query.filter(
+                    or_(
+                        self.model.asset_name.ilike(f"%{search_query}%"),
+                        self.model.vehicle_license_no.ilike(f"%{search_query}%"),
+                        self.model.vin.ilike(f"%{search_query}%"),
+                    )
                 )
 
             # Query to get the total count of assets
@@ -118,7 +126,7 @@ class AssetRepository(BaseRepository):
             # Calculate total pages
             total_pages = (total_assets + page_size - 1) // page_size
 
-            # Apply ordering and pagination
+            # Apply ordering and pagination after filtering
             paginated_query = (
                 base_query.order_by(asc(self.model.created_at))
                 .offset(offset)

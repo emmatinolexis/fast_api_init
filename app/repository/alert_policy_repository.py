@@ -143,11 +143,42 @@ class AlertPolicyRepository(BaseRepository):
                 .options(joinedload(self.model.assets))
                 .options(joinedload(self.model.alert_notification_types))
                 .options(joinedload(self.model.maintenance_alert_type))
+                .options(joinedload(self.model.alert_recipients))
                 .all()
             )
 
+            formatted_alerts = []
+            for alert in alerts:
+                # Initialize the notification_data dictionary with empty lists for email and sms
+                notification_data = {"email": [], "sms": []}
+
+                # Populate recipients into their respective notification types
+                for recipient in alert.alert_recipients:
+                    if "@" in recipient.recipient:
+                        notification_data["email"].append(recipient.recipient)
+                    else:
+                        notification_data["sms"].append(recipient.recipient)
+
+                # Prepare the final structure for the alert
+                alert_data = {
+                    **alert.__dict__,
+                    "alert_notification_types": [
+                        {
+                            "alert_notification_type": notification_type,
+                            "recipients": recipients,
+                        }
+                        for notification_type, recipients in notification_data.items()
+                    ],
+                }
+
+                # Remove SQLAlchemy internal state (if any)
+                alert_data.pop("_sa_instance_state", None)
+
+                formatted_alerts.append(alert_data)
+
+            # Return the final structure
             return {
-                "alerts": alerts,
+                "alerts": formatted_alerts,
                 "total_alert_policies": total_alert_policies,
                 "total_pages": total_pages,
                 "current_page": page,
