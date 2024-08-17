@@ -2,6 +2,7 @@ import uuid
 
 from sqlalchemy import FLOAT, Column, Enum, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 from app.model.base_model import BaseModel
 from app.util.enums import FuelLogPaymmentMethod
@@ -30,3 +31,4 @@ class FuelLog(BaseModel):
     driver_uuid = Column(UUID(as_uuid=True), ForeignKey("drivers.uuid"), nullable=True)
     receipt_image = Column(String(length=255), nullable=True)
     purchase_date = Column(String(length=100), nullable=True)
+    asset = relationship("Asset")

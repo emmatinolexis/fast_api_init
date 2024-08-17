@@ -2,6 +2,7 @@ import uuid
 
 from sqlalchemy import JSON, Column, Enum, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 from app.model.base_model import BaseModel
 from app.util.enums import SmartReportStatus
@@ -30,3 +31,4 @@ class SmartReport(BaseModel):
     )
     status = Column(Enum(SmartReportStatus), nullable=False, index=True)
     result_url = Column(String(length=200), nullable=True, index=True)
+    user = relationship("User", uselist=False)

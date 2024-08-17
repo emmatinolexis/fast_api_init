@@ -1,22 +1,36 @@
+import logging
 from collections import defaultdict
 from datetime import datetime, timedelta
 
+import requests
 from dateutil import parser
 from dateutil.relativedelta import relativedelta
 
 from app.repository.alert_policy_repository import AlertPolicyRepository
 from app.repository.asset_repository import AssetRepository
 from app.repository.equipment_repository import EquipmentRepository
+from app.repository.fuel_log_repository import FuelLogRepository
 from app.repository.smart_report_repository import SmartReportRepository
 from app.repository.tracking_event_repository import TrackingEventRepository
+from app.repository.user_repository import UserRepository
 from app.service.base_service import BaseService
-from app.util.enums import AlertPolicy, GeofenceTypeUuid
+from app.util.enums import (
+    AccountType,
+    AlertPolicy,
+    GeofenceTypeUuid,
+    SmartReportStatus,
+    SmartReportType,
+)
 from app.util.utils import (
     calculate_time_traveled,
     calculate_total_fuel_used,
     calculate_total_idle_time_and_movement,
+    convert_date_format,
+    convert_iso_datetime_format,
     get_distance_travelled_by_coordinates,
     get_status,
+    sort_events_by_timestamp,
+    to_snake_case
 )
 
 
@@ -28,12 +42,16 @@ class SmartReportService(BaseService):
         tracking_event_repository: TrackingEventRepository,
         equipment_repository: EquipmentRepository,
         alert_policy_repository: AlertPolicyRepository,
+        user_repository: UserRepository,
+        fuel_log_repository: FuelLogRepository,
     ):
         self.smart_report_repository = smart_report_repository
         self.asset_repository = asset_repository
         self.tracking_event_repository = tracking_event_repository
         self.equipment_repository = equipment_repository
         self.alert_policy_repository = alert_policy_repository
+        self.user_repository = user_repository
+        self.fuel_log_repository = fuel_log_repository
         super().__init__(smart_report_repository)
 
     def get_reports(
@@ -92,11 +110,7 @@ class SmartReportService(BaseService):
         except Exception as e:
             raise e
 
-    def process_asset(self, asset_uuid, date_from, date_to):
-        asset = self.asset_repository.get_asset_with_relationships(
-            asset_uuid, date_from, date_to
-        )
-
+    def process_asset(self, asset, start_date, end_date):
         # Retrieve equipment name
         equipment_name = asset.equipment.name if asset.equipment else "Unknown"
 
@@ -104,6 +118,7 @@ class SmartReportService(BaseService):
         rapid_acceleration_count = calculate_total_idle_time_and_movement(
             asset.tracking_events
         )
+
         rapid_acceleration = rapid_acceleration_count.get("rapid_acceleration_count", 0)
         emergency_braking = rapid_acceleration_count.get("emergency_braking_count", 0)
 
@@ -112,7 +127,7 @@ class SmartReportService(BaseService):
     def calculate_incidents_by_month(self, violations, incidents_rate, monthly_totals):
         required_keys = [
             "geofence",
-            "overspeeding",
+            "over_speeding",
             "rapid_acceleration",
             "emergency_braking",
         ]
@@ -133,7 +148,7 @@ class SmartReportService(BaseService):
     ):
         required_keys = [
             "geofence",
-            "overspeeding",
+            "over_speeding",
             "rapid_acceleration",
             "emergency_braking",
         ]
@@ -155,101 +170,155 @@ class SmartReportService(BaseService):
 
             current_date += relativedelta(months=1)
 
-    def generate_violation_report(
-        self, date_from: str, date_to: str, asset_uuids: list
-    ):
+    def generate_violation_fleet_performance_report(self, date_from: str, date_to: str, assets: list):
         try:
             # Initialize data structures
-            incidents_by_equipment_type = defaultdict(int)
-            total_incidents = defaultdict(int)
-            incidents_rate = defaultdict(lambda: defaultdict(int))
-            monthly_totals = defaultdict(int)  # Track totals for each month
-            total_rapid_acceleration = 0
-            total_emergency_braking = 0
+            data = self.initialize_data_structures()
 
-            # Parse the date strings to datetime objects
-            start_date = datetime.strptime(date_from, "%d/%m/%Y")
-            end_date = datetime.strptime(date_to, "%d/%m/%Y")
+            # Process each asset
+            for asset in assets:
+                self.process_assets(asset, date_from, date_to, data)
 
-            for asset_uuid in asset_uuids:
-                (
-                    asset,
-                    equipment_name,
-                    rapid_acceleration,
-                    emergency_braking,
-                ) = self.process_asset(asset_uuid, date_from, date_to)
+            # Calculate KMPG for each make
+            data["fuel_utilization_mpg"] = self.calculate_kmpg(data)
 
-                total_rapid_acceleration += rapid_acceleration
-                total_emergency_braking += emergency_braking
-
-                # Get violations for the asset
-                asset_violations = self.asset_repository.get_violations_by_asset(
-                    asset_uuid, date_from, date_to
-                )
-
-                # Calculate incidents by month and update monthly totals
-                self.calculate_incidents_by_month(
-                    asset_violations, incidents_rate, monthly_totals
-                )
-
-                # Update incidents counts
-                for violation in asset_violations:
-                    alert_policy_type = (
-                        violation.alert_policy.alert_policy_type.name.lower()
-                    )
-                    total_incidents[alert_policy_type] += 1
-
-            # Add rapid acceleration and emergency braking to the total incidents
-            total_incidents["rapid_acceleration"] = total_rapid_acceleration
-            total_incidents["emergency_braking"] = total_emergency_braking
-
-            # Calculate the total number of incidents
-            total_incidents["total_incidents"] = sum(total_incidents.values())
-
-            # Update incidents by equipment type
-            incidents_by_equipment_type[equipment_name] = total_incidents[
-                "total_incidents"
-            ]
-            incidents_by_equipment_type["total"] = sum(
-                incidents_by_equipment_type.values()
-            )
+            # Process violations
+            if data["asset_violations"]:
+                self.process_violations(data)
 
             # Ensure all months are present in the incidents_rate
-            self.ensure_all_months_present(
-                incidents_rate, start_date, end_date, monthly_totals
-            )
-
-            geofence = total_incidents.get("geofence", 0)
-            overspeeding = total_incidents.get("overspeeding", 0)
-            rapid_acceleration = total_incidents.get("rapid_acceleration", 0)
-            emergency_braking = total_incidents.get("emergency_braking", 0)
-            total_incidents = total_incidents.get("total_incidents", 0)
+            self.ensure_all_months_present(data["incidents_rate"], date_from, date_to, data["monthly_totals"])
 
             # Prepare the final report
-            report = {
-                "incidents": {
-                    "geofence": geofence,
-                    "overspeeding": overspeeding,
-                    "rapid_acceleration": rapid_acceleration,
-                    "emergency_braking": emergency_braking,
-                    "total_incidents": total_incidents,
-                },
-                "incidents_by_equipment_type": dict(incidents_by_equipment_type),
-                "incidents_rate": {
-                    month: dict(data) for month, data in incidents_rate.items()
-                },
-            }
-
-            # Verify that the sum of all monthly incidents matches the total incidents
-            # sum_of_monthly_totals = sum(sum(data.values()) for data in incidents_rate.values())
-            # assert sum_of_monthly_totals == total_incidents[
-            #     'total_incidents'], "Monthly totals do not match total incidents"
+            report = self.prepare_final_report(data)
 
             return report
 
         except Exception as e:
             # Ensure you log or handle exceptions appropriately
             raise e
+
+    def initialize_data_structures(self):
+        return {
+            "incidents_by_equipment_type": defaultdict(int),
+            "incidents": defaultdict(int),
+            "incidents_rate": defaultdict(lambda: defaultdict(int)),
+            "monthly_totals": defaultdict(int),
+            "total_rapid_acceleration": 0,
+            "total_emergency_braking": 0,
+            "policy_type_counts": defaultdict(int),
+            "asset_violations": [],
+            "violated_assets": [],
+            "fuel_purchased": [],
+            "fuel_usage_by_month": defaultdict(lambda: {"total_litres": 0.0}),
+            "fuel_usage_by_equipment": defaultdict(lambda: defaultdict(lambda: {"total_litres": 0.0})),
+            "total_litres_all_months": 0.0,
+            "fuel_usage_by_make": defaultdict(lambda: defaultdict(float)),
+            "distance_by_make": defaultdict(lambda: defaultdict(float))
+        }
+
+    def process_assets(self, asset, date_from, date_to, data):
+        asset, equipment_name, rapid_acceleration, emergency_braking = self.process_asset(asset, start_date=date_from,
+                                                                                          end_date=date_to)
+
+        data["total_rapid_acceleration"] += rapid_acceleration
+        data["total_emergency_braking"] += emergency_braking
+
+        total_distance_traveled = get_distance_travelled_by_coordinates(asset.tracking_events)
+        asset_make = asset.make
+
+        asset_violations_data = self.asset_repository.get_violations_by_asset(asset.uuid, date_from, date_to)
+        data["asset_violations"].extend(asset_violations_data)
+
+        fuel_purchase = self.fuel_log_repository.get_fuel_log_by_asset(asset.uuid, date_from, date_to)
+        data["fuel_purchased"].extend(fuel_purchase)
+
+        # Aggregate fuel data
+        self.aggregate_fuel_data(fuel_purchase, data, total_distance_traveled, asset_make)
+
+    def aggregate_fuel_data(self, fuel_purchase, data, total_distance_traveled, asset_make):
+        for purchase in fuel_purchase:
+            purchase_date = datetime.strptime(purchase.purchase_date, "%Y-%m-%d")
+            month_year = purchase_date.strftime("%Y-%m")
+            equipment_name = purchase.asset.equipment.name
+
+            data["fuel_usage_by_month"][month_year]["total_litres"] += purchase.quantity
+            data["total_litres_all_months"] += purchase.quantity
+            data["fuel_usage_by_equipment"][equipment_name][month_year]["total_litres"] += purchase.quantity
+            data["fuel_usage_by_make"][asset_make][month_year] += purchase.quantity
+            data["distance_by_make"][asset_make][month_year] += total_distance_traveled
+
+    def calculate_kmpg(self, data):
+        fuel_utilization_mpg = []
+        for month_year in sorted(data["fuel_usage_by_month"].keys()):
+            month_utilization = []
+            for make in data["fuel_usage_by_make"].keys():
+                total_fuel_consumed = data["fuel_usage_by_make"][make][month_year]
+                total_distance = data["distance_by_make"][make][month_year]
+                kmpg = total_distance / total_fuel_consumed if total_fuel_consumed > 0 and total_distance > 0 else 0
+                month_utilization.append({"model": make, "utilization": round(kmpg, 2)})
+
+            fuel_utilization_mpg.append({"year_month": month_year, "fuel_utilization_by_month": month_utilization})
+
+        return fuel_utilization_mpg
+
+    def process_violations(self, data):
+        for violation in data["asset_violations"]:
+            policy_type_name = to_snake_case(
+                violation.alert_policy.alert_policy_type.name.replace("alert policy", "violations"))
+            data["policy_type_counts"][policy_type_name] += 1
+
+            equipment_name = violation.asset.equipment.name
+            data["incidents_by_equipment_type"][equipment_name] += 1
+
+            month_year = violation.created_at.strftime("%Y-%m")
+            data["incidents_rate"][month_year][policy_type_name] += 1
+
+            violated_asset = []
+            for violation_coordinate in violation.violation_coordinates:
+                for event in violation_coordinate.get("events"):
+                    asset = {
+                        "asset_name": violation.asset.asset_name,
+                        "violation_date": violation.created_at,
+                        "violation_type": to_snake_case(
+                            violation.alert_policy.alert_policy_type.name.replace("alert policy", "violations")),
+                        "longitude": event.get("longitude"),
+                        "latitude": event.get("latitude"),
+                    }
+                    violated_asset.append(asset)
+
+            data["violated_assets"].extend(violated_asset)
+
+    def prepare_final_report(self, data):
+        return {
+            "fuel_usage": {
+                "total_litres_all_months": data["total_litres_all_months"],
+                "fuel_usage_by_month": [
+                    {
+                        "year_month": month,
+                        "quantity": {"total_quantity": month_data["total_litres"]},
+                    }
+                    for month, month_data in data["fuel_usage_by_month"].items()
+                ],
+                "fuel_usage_by_asset_type": {
+                    "assets": [
+                        {
+                            "type": equipment_name,
+                            "quantity": sum(month_data["total_litres"] for month_data in monthly_data.values()),
+                            "fuel_percentage": round((sum(
+                                month_data["total_litres"] for month_data in monthly_data.values()) / data[
+                                                          "total_litres_all_months"]) * 100, 2),
+                        }
+                        for equipment_name, monthly_data in data["fuel_usage_by_equipment"].items()
+                    ]
+                },
+            },
+            "fuel_utilization_mpg": data["fuel_utilization_mpg"],
+            "incidents": data["incidents"],
+            "incidents_by_equipment_type": data["incidents_by_equipment_type"],
+            "incidents_rate": data["incidents_rate"],
+            "violated_assets": data["violated_assets"],
+        }
 
     def parse_dates(self, date_from, date_to):
         date_from_dt = datetime.strptime(
@@ -276,42 +345,35 @@ class SmartReportService(BaseService):
         monthly_events = defaultdict(list)
         if asset.tracking_events:
             for event in asset.tracking_events:
-                event_time = datetime.strptime(event.get("event_datetime"), "%d/%m/%Y")
+                event_time = datetime.strptime(
+                    event.get("timestamp"), "%Y-%m-%d %H:%M:%S"
+                )
                 event_month = event_time.strftime("%B")
                 monthly_events[event_month].append(event)
         return monthly_events
 
     def calculate_times(self, events):
         if events:
-            moving_time = calculate_time_traveled(events)
-            idling_time = calculate_total_idle_time_and_movement(events)
-            return moving_time, idling_time.get("total_idle_time", 0)
+            moving_time = calculate_time_traveled(events, unit="hours")
+            idling_time = calculate_total_idle_time_and_movement(
+                events, idle_time_unit="hours"
+            )
+            return round(moving_time, 2), round(
+                idling_time.get("total_idle_time", 0), 2
+            )
         return 0, 0
 
-    def generate_report(
+    def generate_report_fleet_overview(
         self,
-        assets,
+        no_of_assets: int,
         grouped_assets,
         good_asset_count,
         poor_asset_count,
         monthly_utilization,
     ):
-        for equipment_name, times in grouped_assets.items():
-            total_time = times["moving_time"] + times["idling_time"]
-            if total_time > 0:
-                times["moving_time_percentage"] = round(
-                    (times["moving_time"] / total_time) * 100, 2
-                )
-                times["idling_time_percentage"] = round(
-                    (times["idling_time"] / total_time) * 100, 2
-                )
-            else:
-                times["moving_time_percentage"] = 0
-                times["idling_time_percentage"] = 0
-
         report = {
             "fleet": {
-                "total_asset": len(assets),
+                "total_asset": no_of_assets,
                 "good_assets": good_asset_count,
                 "poor_assets": poor_asset_count,
             },
@@ -325,7 +387,7 @@ class SmartReportService(BaseService):
         date_from: str,
         date_to: str,
         asset_type_uuid: str,
-        asset_uuids: list,
+        assets: list,
         user_uuid: str = None,
         business_uuid: str = None,
     ):
@@ -338,24 +400,22 @@ class SmartReportService(BaseService):
             )
 
             monthly_utilization = {
-                month: {"moving_time": 0, "idle_time": 0} for month in unique_months
+                month: {"hours_worked": 0, "idle_time": 0} for month in unique_months
             }
 
-            # return monthly_utilization
-
-            assets = self.retrieve_assets(asset_uuids, date_from, date_to)
             grouped_assets = {}
 
             for asset in assets:
                 asset_violation = self.asset_repository.get_violations_by_alert_type(
                     GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
-                    date_from,
-                    date_to,
+                    date_from_dt,
+                    date_to_dt,
                     business_uuid=business_uuid,
                     asset_uuid=asset.uuid,
                     asset_type_uuid=asset_type_uuid,
                     user_uuid=user_uuid,
                 )
+
                 if asset_violation:
                     poor_asset_count += 1
                 else:
@@ -364,25 +424,29 @@ class SmartReportService(BaseService):
                 equipment_name = asset.equipment.name
                 if equipment_name not in grouped_assets:
                     grouped_assets[equipment_name] = {
-                        "moving_time": 0,
-                        "idling_time": 0,
+                        "hours_worked": 0,
+                        "idle_time": 0,
                     }
 
                 monthly_events = self.group_events_by_month(asset)
 
                 for month, events in monthly_events.items():
                     moving_time, idle_time = self.calculate_times(events)
-                    monthly_utilization[month]["moving_time"] += moving_time
-                    monthly_utilization[month]["idle_time"] += idle_time
+                    monthly_utilization[month]["hours_worked"] += round(moving_time, 2)
+                    monthly_utilization[month]["idle_time"] += round(idle_time, 2)
 
                 overall_moving_time, overall_idle_time = self.calculate_times(
                     asset.tracking_events
                 )
-                grouped_assets[equipment_name]["moving_time"] += overall_moving_time
-                grouped_assets[equipment_name]["idling_time"] += overall_idle_time
+                grouped_assets[equipment_name]["hours_worked"] += round(
+                    overall_moving_time, 2
+                )
+                grouped_assets[equipment_name]["idle_time"] += round(
+                    overall_idle_time, 2
+                )
 
-            report = self.generate_report(
-                assets,
+            report = self.generate_report_fleet_overview(
+                len(assets),
                 grouped_assets,
                 good_asset_count,
                 poor_asset_count,
@@ -458,10 +522,7 @@ class SmartReportService(BaseService):
         self,
         start_date: str,
         end_date: str,
-        asset_type_uuid: str,
         asset_uuids: list,
-        user_uuid: str = None,
-        business_uuid: str = None,
     ):
         try:
             assets = []
@@ -680,10 +741,7 @@ class SmartReportService(BaseService):
         self,
         start_date: str,
         end_date: str,
-        asset_type_uuid: str,
         asset_uuids: list,
-        user_uuid: str = None,
-        business_uuid: str = None,
     ):
         try:
             assets = []
@@ -742,10 +800,7 @@ class SmartReportService(BaseService):
         self,
         start_date: str,
         end_date: str,
-        asset_type_uuid: str,
         asset_uuids: list,
-        user_uuid: str = None,
-        business_uuid: str = None,
     ):
         try:
             assets = []
@@ -760,5 +815,286 @@ class SmartReportService(BaseService):
             # Initialize the structure for storing monthly fuel utilization data
             return assets
 
+        except Exception as e:
+            raise e
+
+    def get_unprocessed_smart_report_by_uuid(self):
+        try:
+            report = self.smart_report_repository.get_unprocessed_report()
+            return report
+        except Exception as e:
+            raise e
+
+    def get_processed_smart_report(self, smart_report):
+        try:
+            url = smart_report.result_url
+
+            # Fetch the content from the URL
+            response = requests.get(url)
+            response.raise_for_status()  # Check if the request was successful
+
+            # Parse the JSON content
+            smart_report = response.json()
+
+            return smart_report
+        except Exception as e:
+            raise e
+
+    def update_smart_report_status(
+        self, smart_report_uuid: str, status: SmartReportStatus, url: str = None
+    ):
+        try:
+            report = self.smart_report_repository.update_smart_report_status(
+                smart_report_uuid, status, url
+            )
+            return report
+        except Exception as e:
+            raise e
+
+    def generate_smart_report(self, report):
+        try:
+            if report:
+                asset_uuids = report.get("asset_group_uuids").get("asset_uuids")
+                start_date = convert_date_format(report.get("start_date"))
+                end_date = convert_date_format(report.get("end_date"))
+                report_types = report.get("report_types")
+                user_uuid = report.get("user_uuid")
+                asset_type_uuid = report.get("asset_type_uuid")
+                business_uuid = report.get("business_profile_uuid")
+                business_name = report.get("business_name")
+                created_by = report.get("created_by")
+                report_title_header = (report.get("title"),)
+                report_date = convert_iso_datetime_format(report.get("created_at"))
+
+                smart_report_fleet_overview = {}
+                smart_report_fleet_performance = {}
+                cost_analysis = {}
+
+                # get user account
+                user = self.user_repository.get_user_by_uuid(user_uuid)
+
+                assets = []
+
+                # load smart report assets
+                for asset_uuid in asset_uuids:
+                    asset = self.asset_repository.get_asset_with_relationships(
+                        asset_uuid, start_date, end_date
+                    )
+
+                    assets.append(asset)
+
+                (
+                    total_distance_traveled_current_range,
+                    total_distance_traveled_past_range,
+                    fuel_level_current_range,
+                    fuel_level_past_range,
+                ) = self.calculate_total_distance(assets, start_date, end_date)
+
+                # calculate for smart report fleet overview
+                if SmartReportType.FLEET_OVERVIEW in report_types:
+                    if user.get("account_type") == AccountType.INDIVIDUAL:
+                        smart_report_fleet_overview = (
+                            self.generate_smart_report_fleet_overview(
+                                start_date,
+                                end_date,
+                                asset_type_uuid,
+                                assets,
+                                user_uuid=user_uuid,
+                            )
+                        )
+
+                    if user.get("account_type") == AccountType.BUSINESS:
+                        smart_report_fleet_overview = (
+                            self.generate_smart_report_fleet_overview(
+                                start_date,
+                                end_date,
+                                asset_type_uuid,
+                                assets,
+                                business_uuid=business_uuid,
+                            )
+                        )
+
+                if SmartReportType.FLEET_PERFORMANCE in report_types:
+                    smart_report_fleet_performance = (
+                        self.generate_violation_fleet_performance_report(
+                            start_date, end_date, assets
+                        )
+                    )
+
+                if SmartReportType.FLEET_OVERVIEW in report_types:
+                    cost_analysis = self.generate_cost_analysis_report(
+                        start_date, end_date, assets
+                    )
+
+                report = {
+                    "report_header": {
+                        "report_date": report_date,
+                        "report_title": report_title_header[0],
+                        "created_by": created_by,
+                        "business_name": business_name,
+                        "fuel_efficiency_current_date": 140,
+                        "fuel_efficiency_previous_date": 180,
+                        "total_distance_covered_current_date": round(
+                            total_distance_traveled_current_range, 2
+                        ),
+                        "total_distance_covered_previous_date": round(
+                            total_distance_traveled_past_range, 2
+                        ),
+                        "total_fuel_recorded_current_date": round(
+                            fuel_level_current_range, 2
+                        ),
+                        "total_fuel_recorded_previous_date": round(
+                            fuel_level_past_range, 2
+                        ),
+                        "total_fuel_saved": round(
+                            fuel_level_past_range - fuel_level_current_range, 2
+                        ),
+                    },
+                    "smart_report_fleet_overview": smart_report_fleet_overview,
+                    "smart_report_fleet_performance": smart_report_fleet_performance,
+                    "cost_analysis": cost_analysis,
+                }
+
+                return report
+            else:
+                logging.info("No smart report to process")
+                pass
+
+        except Exception as e:
+            raise e
+
+    def filter_events_by_date_range(self, events, start_date, end_date):
+        if start_date:
+            if isinstance(start_date, str):
+                start_date = datetime.fromisoformat(start_date)
+            events = [
+                event
+                for event in events
+                if datetime.fromisoformat(event["timestamp"]) >= start_date
+            ]
+
+        if end_date:
+            if isinstance(end_date, str):
+                end_date = datetime.fromisoformat(end_date)
+            events = [
+                event
+                for event in events
+                if datetime.fromisoformat(event["timestamp"]) <= end_date
+            ]
+
+        return events
+
+    def calculate_rapid_events_by_month(
+        self, events, accel_threshold=10, brake_threshold=-10
+    ):
+        # Initialize counters for rapid acceleration and emergency braking by month
+        rapid_acceleration_by_month = defaultdict(int)
+        emergency_braking_by_month = defaultdict(int)
+
+        # Sort events by timestamp
+        events_sorted = sort_events_by_timestamp(events)
+
+        # Initialize variables to keep track of previous event data
+        prev_event = None
+
+        for event in events_sorted:
+            # Convert timestamp to datetime and extract month
+            event_timestamp = datetime.fromisoformat(event["timestamp"])
+            month_year = event_timestamp.strftime("%Y-%m")
+
+            if prev_event:
+                # Calculate speed change between events
+                speed_change = event["speed"] - prev_event["speed"]
+
+                # Check for rapid acceleration
+                if speed_change >= accel_threshold:
+                    rapid_acceleration_by_month[month_year] += 1
+
+                # Check for rapid braking
+                if speed_change <= brake_threshold:
+                    emergency_braking_by_month[month_year] += 1
+
+            # Update previous event
+            prev_event = event
+
+        return rapid_acceleration_by_month, emergency_braking_by_month
+
+    def generate_cost_analysis_report(self, date_from: str, date_to: str, assets: list):
+        try:
+            fuel_purchased = []
+            fuel_usage_by_month = defaultdict(
+                lambda: {"total_amount": 0.0, "total_litres": 0.0}
+            )
+            fuel_usage_by_equipment = defaultdict(
+                lambda: defaultdict(lambda: {"total_amount": 0.0, "total_litres": 0.0})
+            )
+            total_amount_all_months = 0.0
+            total_litres_all_months = 0.0
+
+            # Fetch fuel purchase logs for each asset
+            for asset in assets:
+                fuel_purchase = self.fuel_log_repository.get_fuel_log_by_asset(
+                    asset.uuid, date_from, date_to
+                )
+                fuel_purchased.extend(fuel_purchase)
+
+            # Process each purchase
+            for purchase in fuel_purchased:
+                purchase_date = datetime.strptime(purchase.purchase_date, "%Y-%m-%d")
+                month_year = purchase_date.strftime("%Y-%m")
+                equipment_name = purchase.asset.equipment.name
+
+                # Aggregate fuel data by month and by equipment
+                fuel_usage_by_month[month_year]["total_amount"] += purchase.amount
+                fuel_usage_by_month[month_year]["total_litres"] += purchase.quantity
+                total_amount_all_months += purchase.amount
+                total_litres_all_months += purchase.quantity
+
+                fuel_usage_by_equipment[equipment_name][month_year][
+                    "total_amount"
+                ] += purchase.amount
+                fuel_usage_by_equipment[equipment_name][month_year][
+                    "total_litres"
+                ] += purchase.quantity
+
+            # Reformat fuel usage by month
+            fuel_amount_by_month = [
+                {
+                    "year_month": month_year,
+                    "amount": {
+                        "total_amount": month_data["total_amount"],
+                    },
+                }
+                for month_year, month_data in fuel_usage_by_month.items()
+            ]
+
+            # Calculate the percentage and total fuel amount for each equipment type
+            fuel_cost_by_asset_type = []
+            for equipment_name, monthly_data in fuel_usage_by_equipment.items():
+                total_fuel_amount = sum(
+                    data["total_amount"] for data in monthly_data.values()
+                )
+                fuel_percentage = (
+                    (total_fuel_amount / total_amount_all_months) * 100
+                    if total_amount_all_months > 0
+                    else 0
+                )
+                fuel_cost_by_asset_type.append(
+                    {
+                        "type": equipment_name,
+                        "fuel_amount": total_fuel_amount,
+                        "fuel_percentage": round(fuel_percentage, 2),
+                    }
+                )
+
+            # Prepare the final result in the desired format
+            result = {
+                "total_amount_all_months": total_amount_all_months,
+                "total_litres_all_months": total_litres_all_months,
+                "fuel_amount_by_month": fuel_amount_by_month,
+                "fuel_cost_by_asset_type": {"assets": fuel_cost_by_asset_type},
+            }
+
+            return result
         except Exception as e:
             raise e
