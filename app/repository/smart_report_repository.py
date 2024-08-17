@@ -25,7 +25,7 @@ class SmartReportRepository(BaseRepository):
     ) -> Dict[str, Any]:
         with self.session_factory() as session:
             # offset = (page - 1) * page_size
-
+            smart_reports = []
             if user_uuid:
                 total_reports = (
                     session.query(func.count(self.model.id))
@@ -56,9 +56,10 @@ class SmartReportRepository(BaseRepository):
                         "result_url": report.result_url,
                         "created_by": f"{report.user.first_name} {report.user.last_name}",
                     }
+                    smart_reports.append(report_data)
 
                 return {
-                    "reports": report_data,
+                    "reports": smart_reports,
                     "total_assets": total_reports,
                     "total_pages": total_pages,
                     "current_page": page,
@@ -95,9 +96,10 @@ class SmartReportRepository(BaseRepository):
                         "result_url": report.result_url,
                         "created_by": f"{report.user.first_name} {report.user.last_name}",
                     }
+                    smart_reports.append(report_data)
 
                 return {
-                    "reports": report_data,
+                    "reports": smart_reports,
                     "total_assets": total_reports,
                     "total_pages": total_pages,
                     "current_page": page,
