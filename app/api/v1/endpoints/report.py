@@ -1,3 +1,6 @@
+import json
+import logging
+
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
@@ -11,13 +14,14 @@ from app.service.asset_service import AssetService
 from app.service.gas_cylinder_event_service import GasCylinderEventService
 from app.service.smart_report_service import SmartReportService
 from app.service.user_service import UserService
-from app.util.enums import AccountType, SmartReportStatus
+from app.util.enums import AccountType, FileFormat, SmartReportStatus
 from app.util.utils import (
-    convert_date_format,
+    get_content_type,
     send_client_side_error,
     send_data,
     send_data_with_info,
     send_internal_server_error,
+    upload_to_s3,
 )
 
 router = APIRouter(
@@ -217,378 +221,6 @@ async def get_smart_report_by_user_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get(
-    "/smart_report/fleet_overview/{smart_report_uuid}", response_class=ORJSONResponse
-)
-@inject
-async def view_smart_report_fleet_overview_handler(
-    smart_report_uuid: str,
-    smart_report_service: SmartReportService = Depends(
-        Provide[Container.smart_report_service]
-    ),
-    current_user: User = Depends(get_current_user),
-    user_service: UserService = Depends(Provide[Container.user_service]),
-):
-    try:
-        smart_report = smart_report_service.get_by_uuid(smart_report_uuid)
-
-        if not smart_report:
-            usr_msg = "Smart report not found"
-            dev_msg = f"Smart report not found for {smart_report_uuid}"
-            return send_client_side_error(user_msg=usr_msg, dev_msg=dev_msg)
-
-        report = {
-            "fleet": {
-                "total_asset": "45",
-                "good_assets": "30",
-                "poor_assets": "15",
-            },
-            "utilization_rate": {
-                "Trucks": {"hours_worked": 70, "idle_time": 30},
-                "Cars": {"hours_worked": 90, "idle_time": 40},
-                "Bulldozers": {"hours_worked": 30, "idle_time": 70},
-            },
-            "utilization_trend": {
-                "January": {"moving_time": 90, "idle_time": 10},
-                "February": {"moving_time": 90, "idle_time": 10},
-                "March": {"moving_time": 90, "idle_time": 10},
-                "April": {"moving_time": 90, "idle_time": 10},
-                "May": {"moving_time": 40, "idle_time": 60},
-                "June": {"moving_time": 90, "idle_time": 10},
-                "July": {"moving_time": 70, "idle_time": 30},
-                "August": {"moving_time": 70, "idle_time": 30},
-                "September": {"moving_time": 20, "idle_time": 80},
-                "October": {"moving_time": 90, "idle_time": 10},
-                "November": {"moving_time": 30, "idle_time": 70},
-                "December": {"moving_time": 20, "idle_time": 80},
-            },
-        }
-
-        return send_data_with_info(report, messages.SUCCESS_MESSAGE)
-
-    except Exception as e:
-        msg = messages.GET_FAILED + f"{msg_prefix}s"
-        return send_internal_server_error(user_msg=msg, error=e)
-
-
-@router.get(
-    "/smart_report/total_distance/{smart_report_uuid}", response_class=ORJSONResponse
-)
-@inject
-async def view_smart_report_total_distance_covered_handler(
-    smart_report_uuid: str,
-    smart_report_service: SmartReportService = Depends(
-        Provide[Container.smart_report_service]
-    ),
-    current_user: User = Depends(get_current_user),
-    user_service: UserService = Depends(Provide[Container.user_service]),
-):
-    try:
-        smart_report = smart_report_service.get_by_uuid(smart_report_uuid)
-
-        if not smart_report:
-            usr_msg = "Smart report not found"
-            dev_msg = f"Smart report not found for {smart_report_uuid}"
-            return send_client_side_error(user_msg=usr_msg, dev_msg=dev_msg)
-
-        report = {
-            "total_distance_covered_current_date": 4500,
-            "total_distance_covered_previous_date": 3500,
-            "total_fuel_recorded_current_date": 45,
-            "total_fuel_recorded_previous_date": 35,
-            "total_fuel_saved": 10,
-        }
-
-        return send_data_with_info(report, messages.SUCCESS_MESSAGE)
-
-    except Exception as e:
-        msg = messages.GET_FAILED + f"{msg_prefix}s"
-        return send_internal_server_error(user_msg=msg, error=e)
-
-
-@router.get(
-    "/smart_report/fleet_performance/{smart_report_uuid}", response_class=ORJSONResponse
-)
-@inject
-async def view_smart_report_fleet_performance_handler(
-    smart_report_uuid: str,
-    smart_report_service: SmartReportService = Depends(
-        Provide[Container.smart_report_service]
-    ),
-    current_user: User = Depends(get_current_user),
-):
-    try:
-        smart_report = smart_report_service.get_by_uuid(smart_report_uuid)
-
-        if not smart_report:
-            usr_msg = "Smart report not found"
-            dev_msg = f"Smart report not found for {smart_report_uuid}"
-            return send_client_side_error(user_msg=usr_msg, dev_msg=dev_msg)
-
-        report = {
-            "incidents": {
-                "geofence": 64,
-                "overspeeding": 20,
-                "rapid_acceleration": 33,
-                "emergency_braking": 21,
-                "total_incidents": 138,
-            },
-            "incidents_by_equipment_type": {"Cars": 138},
-            "incidents_rate": {
-                "January": {
-                    "geofence_violations": 126,
-                    "overspeeding": 54,
-                    "emergency_braking": 35,
-                },
-                "February": {
-                    "geofence_violations": 0,
-                    "overspeeding": 0,
-                    "emergency_braking": 0,
-                },
-                "March": {
-                    "geofence_violations": 126,
-                    "overspeeding": 54,
-                    "emergency_braking": 35,
-                },
-                "April": {
-                    "geofence_violations": 0,
-                    "overspeeding": 0,
-                    "emergency_braking": 0,
-                },
-                "May": {
-                    "geofence_violations": 126,
-                    "overspeeding": 54,
-                    "emergency_braking": 35,
-                },
-                "June": {
-                    "geofence_violations": 0,
-                    "overspeeding": 0,
-                    "emergency_braking": 0,
-                },
-                "July": {
-                    "geofence_violations": 0,
-                    "overspeeding": 0,
-                    "emergency_braking": 0,
-                },
-                "August": {
-                    "geofence_violations": 126,
-                    "overspeeding": 54,
-                    "emergency_braking": 35,
-                },
-                "September": {
-                    "geofence_violations": 0,
-                    "overspeeding": 0,
-                    "emergency_braking": 0,
-                },
-                "October": {
-                    "geofence_violations": 126,
-                    "overspeeding": 54,
-                    "emergency_braking": 35,
-                },
-                "November": {
-                    "geofence_violations": 0,
-                    "overspeeding": 0,
-                    "emergency_braking": 0,
-                },
-                "December": {
-                    "geofence_violations": 126,
-                    "overspeeding": 54,
-                    "emergency_braking": 35,
-                },
-            },
-        }
-
-        return send_data_with_info(report, messages.REPORT_SUCCESS)
-    except Exception as e:
-        msg = messages.GET_FAILED + f"{msg_prefix}s"
-        return send_internal_server_error(user_msg=msg, error=e)
-
-
-@router.get(
-    "/smart_report/cost_analysis/{smart_report_uuid}", response_class=ORJSONResponse
-)
-@inject
-async def view_smart_report_cost_analysis_handler(
-    smart_report_uuid: str,
-    asset_service: AssetService = Depends(Provide[Container.asset_service]),
-    smart_report_service: SmartReportService = Depends(
-        Provide[Container.smart_report_service]
-    ),
-    current_user: User = Depends(get_current_user),
-):
-    try:
-        report = {
-            "fuel_cost": {
-                "January": 550,
-                "February": 230,
-                "March": 129,
-                "April": 110,
-                "May": 350,
-                "June": 65,
-                "July": 180,
-                "August": 360,
-                "September": 320,
-                "October": 120,
-                "November": 130,
-                "December": 160,
-            },
-            "total_fuel": 2890,
-            "fuel_cost_by_asset_type": {
-                "trucks": [0, 20],
-                "cars": [0, 50],
-                "bulldozers": [0, 70],
-                "cranes": [0, 90],
-            },
-        }
-        return send_data_with_info(report, messages.SUCCESS_MESSAGE)
-
-    except Exception as e:
-        msg = messages.GET_FAILED + f"{msg_prefix}s"
-        return send_internal_server_error(user_msg=msg, error=e)
-
-
-@router.get(
-    "/smart_report/violations/{smart_report_uuid}", response_class=ORJSONResponse
-)
-@inject
-async def view_smart_report_violations_handler(
-    smart_report_uuid: str,
-    asset_service: AssetService = Depends(Provide[Container.asset_service]),
-    smart_report_service: SmartReportService = Depends(
-        Provide[Container.smart_report_service]
-    ),
-    current_user: User = Depends(get_current_user),
-):
-    try:
-        smart_report = smart_report_service.get_by_uuid(smart_report_uuid)
-
-        if not smart_report:
-            usr_msg = "Smart report not found"
-            dev_msg = f"Smart report not found for {smart_report_uuid}"
-            return send_client_side_error(user_msg=usr_msg, dev_msg=dev_msg)
-
-        report = {
-            "assets": [
-                {
-                    "asset_name": "Hyndai Elentra (Black)",
-                    "vehicle_license_no": "GR-8551-23",
-                    "incident_type": "Geofence",
-                    "date_of_incidence": "20/08/2024",
-                    "last_tracking_event": {
-                        "lat": 5.7197816,
-                        "lng": -0.3111333,
-                    },
-                },
-                {
-                    "asset_name": "Hyndai Elentra (Black)",
-                    "vehicle_license_no": "GR-8551-23",
-                    "incident_type": "Geofence",
-                    "date_of_incidence": "20/08/2024",
-                    "last_tracking_event": {
-                        "lat": 5.7582366,
-                        "lng": -0.1398266,
-                    },
-                },
-                {
-                    "asset_name": "Toyota Corolla(Sage Company Vehicle)",
-                    "vehicle_license_no": "GR-8551-23",
-                    "incident_type": "Geofence",
-                    "date_of_incidence": "20/08/2024",
-                    "last_tracking_event": {
-                        "lat": 5.720125,
-                        "lng": -0.1711333,
-                    },
-                },
-                {
-                    "asset_name": "Hyndai Elentra (Black)",
-                    "vehicle_license_no": "GR-8551-23",
-                    "incident_type": "Geofence",
-                    "date_of_incidence": "20/08/2024",
-                    "last_tracking_event": {
-                        "lat": 5.7202,
-                        "lng": -0.17231,
-                    },
-                },
-                {
-                    "asset_name": "Hyndai Elentra (Black)",
-                    "vehicle_license_no": "GR-8551-23",
-                    "incident_type": "Geofence",
-                    "date_of_incidence": "20/08/2024",
-                    "last_tracking_event": {
-                        "lat": 5.7582366,
-                        "lng": -0.1398266,
-                    },
-                },
-                {
-                    "asset_name": "Toyota Corolla(Sage Company Vehicle)",
-                    "vehicle_license_no": "GR-8551-23",
-                    "incident_type": "Geofence",
-                    "date_of_incidence": "20/08/2024",
-                    "last_tracking_event": {
-                        "lat": 5.717965,
-                        "lng": -0.1700766,
-                    },
-                },
-                {
-                    "asset_name": "Hyndai Elentra (Black)",
-                    "vehicle_license_no": "GR-8551-23",
-                    "incident_type": "Geofence",
-                    "date_of_incidence": "20/08/2024",
-                    "last_tracking_event": {
-                        "lat": 5.5852883,
-                        "lng": -0.3075966,
-                    },
-                },
-                {
-                    "asset_name": "Toyota Corolla(Sage Company Vehicle)",
-                    "vehicle_license_no": "GR-8551-23",
-                    "incident_type": "Geofence",
-                    "date_of_incidence": "20/08/2024",
-                    "last_tracking_event": {
-                        "lat": 5.7582366,
-                        "lng": -0.1398266,
-                    },
-                },
-                {
-                    "asset_name": "Hyndai Elentra (Black)",
-                    "vehicle_license_no": "GR-8551-23",
-                    "incident_type": "Geofence",
-                    "date_of_incidence": "20/08/2024",
-                    "last_tracking_event": {
-                        "lat": 5.685115,
-                        "lng": -0.1712316,
-                    },
-                },
-                {
-                    "asset_name": "Toyota Corolla(Sage Company Vehicle)",
-                    "vehicle_license_no": "GR-8551-23",
-                    "incident_type": "Geofence",
-                    "date_of_incidence": "20/08/2024",
-                    "last_tracking_event": {
-                        "lat": 5.7582366,
-                        "lng": -0.1398266,
-                    },
-                },
-                {
-                    "asset_name": "Hyndai Elentra (Black)",
-                    "vehicle_license_no": "GR-8551-23",
-                    "incident_type": "Geofence",
-                    "date_of_incidence": "20/08/2024",
-                    "last_tracking_event": {
-                        "lat": 5.65553,
-                        "lng": -0.076305,
-                    },
-                },
-            ]
-        }
-
-        return send_data_with_info(report, messages.SUCCESS_MESSAGE)
-
-    except Exception as e:
-        msg = messages.GET_FAILED + f"{msg_prefix}s"
-        return send_internal_server_error(user_msg=msg, error=e)
-
-
 @router.get("/{user_uuid}")
 @inject
 async def get_gas_report(
@@ -639,145 +271,74 @@ async def get_gas_report(
 
 
 @router.get(
-    "/smart_report/fuel_usage/{smart_report_uuid}", response_class=ORJSONResponse
+    "/smart_report_generate_result/generate_result", response_class=ORJSONResponse
 )
 @inject
-async def view_smart_report_fuel_usage_handler(
-    smart_report_uuid: str,
+async def generate_smart_report_handler(
     smart_report_service: SmartReportService = Depends(
         Provide[Container.smart_report_service]
     ),
-    user_service: UserService = Depends(Provide[Container.user_service]),
-    current_user: User = Depends(get_current_user),
 ):
     try:
-        smart_report = smart_report_service.get_by_uuid(smart_report_uuid)
+        smart_report = smart_report_service.get_unprocessed_smart_report_by_uuid()
 
         if not smart_report:
-            usr_msg = "Smart report not found"
-            dev_msg = f"Smart report not found for {smart_report_uuid}"
-            return send_client_side_error(user_msg=usr_msg, dev_msg=dev_msg)
+            msg = "There are no smart report to process"
+            logging.info(msg)
+            send_client_side_error(user_msg=msg)
 
-        user = user_service.get_user_by_uuid(str(smart_report.user_uuid))
-
-        if user.get("account_type") == AccountType.INDIVIDUAL:
-            report_data = smart_report_service.generate_fuel_usage_report(
-                convert_date_format(smart_report.start_date),
-                convert_date_format(smart_report.end_date),
-                smart_report.asset_type_uuid,
-                smart_report.asset_group_uuids.get("asset_uuids"),
-                user_uuid=smart_report.user_uuid,
+        if smart_report:
+            smart_report_service.update_smart_report_status(
+                smart_report.get("uuid"), SmartReportStatus.PROCESSING
             )
 
-            return send_data_with_info(
-                data=report_data, info=messages.GET_SUCCESS + "fuel usage report"
-            )
+            report = smart_report_service.generate_smart_report(smart_report)
 
-        if user.get("account_type") == AccountType.BUSINESS:
-            report_data = smart_report_service.generate_fuel_usage_report(
-                convert_date_format(smart_report.start_date),
-                convert_date_format(smart_report.end_date),
-                smart_report.asset_type_uuid,
-                smart_report.asset_group_uuids.get("asset_uuids"),
-                business_uuid=smart_report.business_profile_uuid,
-            )
+            if report:
+                report_json = json.dumps(report, indent=4, default=str)
+                file_format = FileFormat.JSON
+                content_type = get_content_type(file_format)
+                file_content = report_json.encode("utf-8")
 
-            return send_data_with_info(
-                data=report_data, info=messages.GET_SUCCESS + "fuel usage report"
-            )
+                url = await upload_to_s3(
+                    file_name=f"{smart_report.get('uuid')}.{file_format}",
+                    file_content=file_content,
+                    content_type=content_type,
+                    folder_name="smart_reports",
+                )
+
+                if url:
+                    smart_report_service.update_smart_report_status(
+                        smart_report.get("uuid"), SmartReportStatus.PROCESSED, url
+                    )
+            logging.info("Smart report generated successfully")
 
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
+        logging.info(e)
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get(
-    "/smart_report/fuel_utilization/{smart_report_uuid}", response_class=ORJSONResponse
-)
+@router.get("/smart_report/get/{smart_report_uuid}", response_class=ORJSONResponse)
 @inject
-async def view_smart_report_fuel_utilization_handler(
+async def get_processed_smart_report_handler(
     smart_report_uuid: str,
     smart_report_service: SmartReportService = Depends(
         Provide[Container.smart_report_service]
     ),
-    user_service: UserService = Depends(Provide[Container.user_service]),
-    current_user: User = Depends(get_current_user),
 ):
     try:
         smart_report = smart_report_service.get_by_uuid(smart_report_uuid)
+        if smart_report:
+            if smart_report.status != SmartReportStatus.PROCESSED:
+                msg = "Smart report not processed"
+                send_client_side_error(msg)
 
-        if not smart_report:
-            usr_msg = "Smart report not found"
-            dev_msg = f"Smart report not found for {smart_report_uuid}"
-            return send_client_side_error(user_msg=usr_msg, dev_msg=dev_msg)
+            smart_report = smart_report_service.get_processed_smart_report(smart_report)
 
-        user = user_service.get_user_by_uuid(str(smart_report.user_uuid))
-
-        if user.get("account_type") == AccountType.INDIVIDUAL:
-            report_data = smart_report_service.generate_fuel_utilization_report(
-                convert_date_format(smart_report.start_date),
-                convert_date_format(smart_report.end_date),
-                smart_report.asset_type_uuid,
-                smart_report.asset_group_uuids.get("asset_uuids"),
-                user_uuid=smart_report.user_uuid,
-            )
-
-            return send_data_with_info(report_data, messages.GET_SUCCESS)
-
-        if user.get("account_type") == AccountType.BUSINESS:
-            report_data = smart_report_service.generate_fuel_utilization_report(
-                convert_date_format(smart_report.start_date),
-                convert_date_format(smart_report.end_date),
-                smart_report.asset_type_uuid,
-                smart_report.asset_group_uuids.get("asset_uuids"),
-                business_uuid=smart_report.business_profile_uuid,
-            )
-
-            return send_data_with_info(
-                data=report_data, info=messages.GET_SUCCESS + "fuel utilization report"
-            )
+            return smart_report
 
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
-        return send_internal_server_error(user_msg=msg, error=e)
-
-
-@router.get(
-    "/smart_report/fuel_usage_by_asset_type/{smart_report_uuid}",
-    response_class=ORJSONResponse,
-)
-@inject
-async def view_smart_report_fuel_usage_by_asset_type_handler(
-    smart_report_uuid: str,
-    smart_report_service: SmartReportService = Depends(
-        Provide[Container.smart_report_service]
-    ),
-    user_service: UserService = Depends(Provide[Container.user_service]),
-    current_user: User = Depends(get_current_user),
-):
-    try:
-        data = [
-            {
-                "vehicle": "Cars",
-                "fuel_usage_liters": 20045,
-                "fuel_usage_percentage": 20,
-            },
-            {
-                "vehicle": "Cranes",
-                "fuel_usage_liters": 20045,
-                "fuel_usage_percentage": 20,
-            },
-            {
-                "vehicle": "Bulldozers",
-                "fuel_usage_liters": 20045,
-                "fuel_usage_percentage": 20,
-            },
-        ]
-
-        return send_data_with_info(
-            data=data, info=messages.GET_SUCCESS + "fuel usage by asset type report"
-        )
-
-    except Exception as e:
-        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        logging.info(e)
         return send_internal_server_error(user_msg=msg, error=e)

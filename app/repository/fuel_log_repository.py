@@ -2,10 +2,11 @@ from contextlib import AbstractContextManager
 from datetime import datetime
 from typing import Callable
 
-from sqlalchemy import or_
-from sqlalchemy.orm import Session
+from sqlalchemy import Date, and_, cast, or_
+from sqlalchemy.orm import Session, joinedload
 
-from app.core.settings import settings
+from app.core.settings import get_settings, settings
+from app.model.asset import Asset
 from app.model.fuel_log import FuelLog
 from app.repository.base_repository import BaseRepository
 
@@ -70,3 +71,36 @@ class FuelLogRepository(BaseRepository):
             )
             query = self._apply_common_filters(query, search, start_date, end_date)
             return query.all()
+
+    def get_fuel_log_by_asset(
+        self,
+        asset_uuid: str,
+        start_date: str,
+        end_date: str,
+    ):
+        with self.session_factory() as session:
+            date_from_obj = datetime.strptime(
+                start_date, get_settings().DATE_FORMAT_YEAR
+            ).date()
+            date_to_obj = datetime.strptime(
+                end_date, get_settings().DATE_FORMAT_YEAR
+            ).date()
+
+            # Build the base query
+            base_query = session.query(self.model).options(
+                joinedload(self.model.asset).joinedload(Asset.equipment)
+            )
+
+            # Define the filters
+            filters = [
+                self.model.asset_uuid == asset_uuid,
+                and_(
+                    cast(self.model.purchase_date, Date) >= date_from_obj,
+                    cast(self.model.purchase_date, Date) <= date_to_obj,
+                ),
+            ]
+
+            # Apply the filters and execute the query
+            violations = base_query.filter(and_(*filters)).all()
+
+            return violations

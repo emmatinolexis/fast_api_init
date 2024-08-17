@@ -409,8 +409,8 @@ class AssetRepository(BaseRepository):
     def get_violations_by_alert_type(
         self,
         alert_policy_type_uuid: str,
-        start_date: str,
-        end_date: str,
+        start_date,
+        end_date,
         user_uuid: str = None,
         business_uuid: str = None,
         asset_uuid: str = None,
@@ -423,10 +423,10 @@ class AssetRepository(BaseRepository):
 
             filters = [
                 AlertPolicy.alert_policy_type_uuid == alert_policy_type_uuid,
-                cast(AlertPolicyViolation.created_at, Date)
-                >= datetime.strptime(start_date, "%d/%m/%Y"),
-                cast(AlertPolicyViolation.created_at, Date)
-                <= datetime.strptime(end_date, "%d/%m/%Y"),
+                and_(
+                    cast(AlertPolicyViolation.created_at, Date) >= start_date,
+                    cast(AlertPolicyViolation.created_at, Date) <= end_date,
+                ),
             ]
 
             if user_uuid:
@@ -454,21 +454,27 @@ class AssetRepository(BaseRepository):
         end_date: str,
     ):
         with self.session_factory() as session:
+            date_from_obj = datetime.strptime(
+                start_date, get_settings().DATE_FORMAT_YEAR
+            ).date()
+            date_to_obj = datetime.strptime(
+                end_date, get_settings().DATE_FORMAT_YEAR
+            ).date()
+
             # Build the base query
             base_query = session.query(AlertPolicyViolation).options(
                 joinedload(AlertPolicyViolation.alert_policy).joinedload(
                     AlertPolicy.alert_policy_type
-                )
+                ),
+                joinedload(AlertPolicyViolation.asset).joinedload(Asset.equipment),
             )
 
             # Define the filters
             filters = [
                 AlertPolicyViolation.asset_uuid == asset_uuid,
                 and_(
-                    cast(AlertPolicyViolation.created_at, Date)
-                    >= datetime.strptime(start_date, "%d/%m/%Y"),
-                    cast(AlertPolicyViolation.created_at, Date)
-                    <= datetime.strptime(end_date, "%d/%m/%Y"),
+                    cast(AlertPolicyViolation.created_at, Date) >= date_from_obj,
+                    cast(AlertPolicyViolation.created_at, Date) <= date_to_obj,
                 ),
             ]
 
@@ -481,10 +487,6 @@ class AssetRepository(BaseRepository):
         self, asset_uuid: str, date_from: str, date_to: str
     ):
         try:
-            # Parse date_from and date_to from dd/mm/yyyy to datetime objects
-            date_from_obj = datetime.strptime(date_from, "%d/%m/%Y").date()
-            date_to_obj = datetime.strptime(date_to, "%d/%m/%Y").date()
-
             date_from_obj = datetime.strptime(
                 date_from, get_settings().DATE_FORMAT_YEAR
             ).date()

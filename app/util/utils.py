@@ -1,10 +1,14 @@
+import json
 import math
+import re
 import secrets
 import uuid
 from datetime import datetime, timedelta
 from typing import Any, List, Union
 
+import boto3
 import pandas as pd
+from dateutil import parser
 from fastapi import Depends
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import ORJSONResponse
@@ -197,6 +201,9 @@ def get_distance_travelled_by_coordinates(coordinates: Union[List[dict], List[tu
     :param coordinates: List of dictionaries or list of tuples where each dictionary contains "latitude" and "longitude"
     :return: Total distance traveled as float
     """
+
+    coordinates = sort_events_by_timestamp(coordinates)
+
     if not coordinates:
         return 0.0
 
@@ -370,7 +377,7 @@ def calculate_time_traveled(asset_coordinates_events, unit="minutes"):
     asset_coordinates_events: list of dictionaries
         List of asset coordinates in the format [{"lat": lat1, "lng": lon1, "speed": speed1}, ...].
     unit: str
-        Unit of time to return the result in ('minutes' or 'seconds').
+        Unit of time to return the result in ('minutes', 'seconds', or 'hours').
 
     Returns:
     float
@@ -378,10 +385,12 @@ def calculate_time_traveled(asset_coordinates_events, unit="minutes"):
     """
     total_time_hours = 0.0
 
+    events_sorted = sort_events_by_timestamp(asset_coordinates_events)
+
     # Calculate the time for each segment and sum them
-    for i in range(len(asset_coordinates_events) - 1):
-        point1 = asset_coordinates_events[i]
-        point2 = asset_coordinates_events[i + 1]
+    for i in range(len(events_sorted) - 1):
+        point1 = events_sorted[i]
+        point2 = events_sorted[i + 1]
 
         # Extract coordinates and speeds
         lat1, lon1, speed1 = point1["latitude"], point1["longitude"], point1["speed"]
@@ -405,11 +414,13 @@ def calculate_time_traveled(asset_coordinates_events, unit="minutes"):
         total_time = total_time_hours * 60
     elif unit == "seconds":
         total_time = total_time_hours * 3600
+    elif unit == "hours":
+        total_time = total_time_hours
     else:
-        raise ValueError("Invalid unit. Use 'minutes' or 'seconds'.")
+        raise ValueError("Invalid unit. Use 'minutes', 'seconds', or 'hours'.")
 
-    # Round the total time to the nearest whole number
-    total_time_rounded = round(total_time)
+    # Round the total time to 2 decimal places
+    total_time_rounded = round(total_time, 2)
 
     return total_time_rounded
 
@@ -452,6 +463,7 @@ def get_content_type(file_format: FileFormat) -> str:
         "png": "image/png",
         "pdf": "application/pdf",
         "csv": "text/csv",
+        "json": "application/json",
     }
     content_type = content_types.get(file_format.value)
     return content_type
@@ -594,7 +606,7 @@ def calculate_total_idle_time_and_movement(
         )
 
     events_sorted = sort_events_by_timestamp(events)
-    total_idle_time_seconds = calculate_idle_time(events_sorted)
+    total_idle_time_seconds = calculate_idle_time(events_sorted, unit="seconds")
     rapid_acceleration_count, rapid_braking_count = detect_rapid_events(
         events_sorted, accel_threshold, brake_threshold
     )
@@ -605,7 +617,7 @@ def calculate_total_idle_time_and_movement(
 
     return {
         "events_sorted": events_sorted,
-        "total_idle_time": total_idle_time,
+        "total_idle_time": round(total_idle_time, 2),
         "idle_time_unit": idle_time_unit,
         "rapid_acceleration_count": rapid_acceleration_count,
         "rapid_braking_count": rapid_braking_count,
@@ -629,17 +641,60 @@ def sort_events_by_timestamp(events):
     )
 
 
-def calculate_idle_time(events_sorted):
+# def calculate_idle_time(events_sorted):
+#     """
+#     Calculate total idle time from sorted events.
+#
+#     Parameters:
+#     events_sorted: list of dictionaries
+#         Sorted list of events.
+#
+#     Returns:
+#     float
+#         Total idle time in seconds.
+#     """
+#     total_idle_time_seconds = 0
+#     idle_start_time = None
+#
+#     for event in events_sorted:
+#         if event["event_type"] == "idle":
+#             if idle_start_time is None:
+#                 idle_start_time = datetime.strptime(
+#                     event["timestamp"], "%Y-%m-%d %H:%M:%S"
+#                 )
+#         else:
+#             if idle_start_time is not None:
+#                 idle_end_time = datetime.strptime(
+#                     event["timestamp"], "%Y-%m-%d %H:%M:%S"
+#                 )
+#                 total_idle_time_seconds += (
+#                     idle_end_time - idle_start_time
+#                 ).total_seconds()
+#                 idle_start_time = None
+#
+#     # Check for any remaining idle period after the loop
+#     if idle_start_time is not None:
+#         idle_end_time = datetime.strptime(
+#             events_sorted[-1]["timestamp"], "%Y-%m-%d %H:%M:%S"
+#         )
+#         total_idle_time_seconds += (idle_end_time - idle_start_time).total_seconds()
+#
+#     return round(total_idle_time_seconds, 2)
+
+
+def calculate_idle_time(events_sorted, unit="seconds"):
     """
     Calculate total idle time from sorted events.
 
     Parameters:
     events_sorted: list of dictionaries
         Sorted list of events.
+    unit: str
+        Unit of time to return the result in ('seconds', 'minutes', 'hours').
 
     Returns:
     float
-        Total idle time in seconds.
+        Total idle time in the specified unit, rounded to two decimal places.
     """
     total_idle_time_seconds = 0
     idle_start_time = None
@@ -667,7 +722,17 @@ def calculate_idle_time(events_sorted):
         )
         total_idle_time_seconds += (idle_end_time - idle_start_time).total_seconds()
 
-    return total_idle_time_seconds
+    # Convert total idle time to the specified unit
+    if unit == "minutes":
+        total_idle_time = total_idle_time_seconds / 60
+    elif unit == "hours":
+        total_idle_time = total_idle_time_seconds / 3600
+    elif unit == "seconds":
+        total_idle_time = total_idle_time_seconds
+    else:
+        raise ValueError("Invalid unit. Use 'seconds', 'minutes', or 'hours'.")
+
+    return round(total_idle_time, 2)
 
 
 def detect_rapid_events(events_sorted, accel_threshold, brake_threshold):
@@ -710,13 +775,17 @@ def detect_rapid_events(events_sorted, accel_threshold, brake_threshold):
     return rapid_acceleration_count, rapid_braking_count
 
 
-async def upload_to_s3(file_name: str, file_content: bytes, content_type: str) -> str:
+async def upload_to_s3(
+    file_name: str, file_content: bytes, content_type: str, folder_name: str = None
+) -> str:
     s3_client = S3Client(
         aws_access_key=settings.AWS_ACCESS_KEY_ID,
         aws_secret_key=settings.AWS_SECRET_ACCESS_KEY,
         bucket_name=settings.S3_BUCKET,
     )
-    return await s3_client.upload_file(file_name, file_content, content_type)
+    return await s3_client.upload_file(
+        file_name, file_content, content_type, folder_name
+    )
 
 
 def calculate_gas_level_percentage(
@@ -771,6 +840,19 @@ def convert_date_format(date_str):
     return formatted_date
 
 
+def convert_iso_datetime_format(datetime_input):
+    # Convert the input to a string if it's not already a string
+    if not isinstance(datetime_input, str):
+        datetime_input = str(datetime_input)
+
+    # Parse the datetime string into a datetime object using dateutil.parser
+    dt = parser.isoparse(datetime_input)
+
+    # Format the datetime object into the desired format
+    formatted_date = dt.strftime("%d-%m-%Y")
+    return formatted_date
+
+
 def load_bulk_fuel_logs_from_csv(csv_url: str):
     try:
         # Attempt to read the CSV file into a pandas DataFrame
@@ -807,3 +889,29 @@ def calculate_total_time_by_event(events, event_type):
                 total_time += duration
             last_timestamp = event_timestamp
     return total_time
+
+
+def to_snake_case(name):
+    # Convert 'Geofence violations' to 'geofence_violations'
+    name = name.replace("alert policy", "violations")
+    return re.sub(r"[\s]", "_", name.lower())
+
+
+def upload_report_to_s3(report, bucket_name, file_name):
+    # Convert the report dictionary to a JSON string
+    report_json = json.dumps(
+        report, indent=4, default=str
+    )  # `default=str` to handle non-serializable objects like datetime
+
+    # Create an S3 client
+    s3 = boto3.client("s3")
+
+    # Upload the JSON string as a file to S3
+    s3.put_object(
+        Bucket=bucket_name,
+        Key=file_name,
+        Body=report_json,
+        ContentType="application/json",
+    )
+
+    print(f"Report uploaded to s3://{bucket_name}/{file_name}")

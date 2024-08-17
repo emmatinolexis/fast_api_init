@@ -8,6 +8,7 @@ from app.api.v1.endpoints.alert_policy import (
     check_idling_violation_handler,
     check_over_speeding_violation_handler,
 )
+from app.api.v1.endpoints.report import generate_smart_report_handler
 from app.api.v1.routes import routers as v1_routers
 from app.core.container import Container
 from app.core.logger import get_logger, init_logger
@@ -100,6 +101,14 @@ async def startup_event():
         "interval",
         minutes=4,
         id="check_idling_violation",
+    )
+
+    # get new smart reports and generate report
+    scheduler.add_job(
+        generate_smart_report_handler,
+        "interval",
+        minutes=5,
+        id="smart_report_generation",
     )
 
 
