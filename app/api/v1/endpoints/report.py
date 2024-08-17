@@ -336,7 +336,7 @@ async def get_processed_smart_report_handler(
 
             smart_report = smart_report_service.get_processed_smart_report(smart_report)
 
-            return smart_report
+            return send_data_with_info(smart_report, "Report fetched successfully")
 
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
