@@ -42,7 +42,7 @@ class GasCylinder(BaseModel):
     )
     cylinder_type_uuid = Column(
         UUID(as_uuid=True),
-        ForeignKey("cylinder_types.uuid"),
+        ForeignKey("cylinder_types.uuid",ondelete="RESTRICT"),
         nullable=False,
         index=True,
     )
@@ -61,6 +61,8 @@ class GasCylinder(BaseModel):
         primaryjoin="GasCylinder.gas_device_serial_number == foreign(GasDevice.serial_number)",
         # back_populates="cylinders",
         uselist=False,
+        cascade="none",
+        passive_deletes=True,
     )
 
     cylinder_type = relationship(
@@ -68,6 +70,8 @@ class GasCylinder(BaseModel):
         primaryjoin="GasCylinder.cylinder_type_uuid == foreign(CylinderTypes.uuid)",
         uselist=False,
         # back_populates="gas_cylinders",
+        cascade="none",
+        passive_deletes=True,
     )
 
 
