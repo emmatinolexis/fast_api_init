@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.model.buildings import Building
 from app.model.gas_cylinders import GasCylinder
 from app.repository.base_repository import BaseRepository
+from app.util.enums import BuildingStatus
 from app.util.utils import calculate_gas_level_percentage
 
 
@@ -184,14 +185,15 @@ class BuildingRepository(BaseRepository):
         return {}
 
     def _build_building_info(self, asset, building_cylinders):
-        status = "Safe"
-
-        if building_cylinders:
+        # Check if there are no cylinders
+        if not building_cylinders:
+            status = BuildingStatus.PENDING_INSTALLATION
+        else:
+            status = BuildingStatus.SAFE
+            # Loop through cylinders to check for low gas levels
             for cylinder in building_cylinders:
-                if (
-                    cylinder["gas_level_in_percentage"] < 25
-                ):  # Assuming the status is stored in a field called 'status'
-                    status = "Attention Needed"
+                if cylinder["gas_level_in_percentage"] < 25:
+                    status = BuildingStatus.ATTENTION_NEEDED
                     break
 
         return {
