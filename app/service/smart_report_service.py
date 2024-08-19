@@ -152,8 +152,9 @@ class SmartReportService(BaseService):
             "rapid_acceleration",
             "emergency_braking",
         ]
+        current_date = datetime.strptime(start_date, "%d/%m/%Y")
+        end_date = datetime.strptime(end_date, "%d/%m/%Y")
 
-        current_date = start_date
         while current_date <= end_date:
             month_name = current_date.strftime("%B")
             if month_name not in incidents_rate:
@@ -971,7 +972,7 @@ class SmartReportService(BaseService):
                         )
                     )
 
-                if SmartReportType.FLEET_OVERVIEW in report_types:
+                if SmartReportType.COST_ANALYSIS in report_types:
                     cost_analysis = self.generate_cost_analysis_report(
                         start_date, end_date, assets
                     )

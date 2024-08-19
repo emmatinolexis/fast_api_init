@@ -9,6 +9,7 @@ from app.model.smart_report import SmartReport
 from app.model.user import User
 from app.repository.base_repository import BaseRepository
 from app.util.enums import SmartReportStatus
+from app.util.utils import convert_iso_datetime_format
 
 
 class SmartReportRepository(BaseRepository):
@@ -54,6 +55,7 @@ class SmartReportRepository(BaseRepository):
                         "report_types": report.report_type,
                         "status": report.status,
                         "result_url": report.result_url,
+                        "created_at": convert_iso_datetime_format(report.created_at),
                         "created_by": f"{report.user.first_name} {report.user.last_name}",
                     }
                     smart_reports.append(report_data)
@@ -93,6 +95,7 @@ class SmartReportRepository(BaseRepository):
                         "end_date": report.end_date,
                         "report_types": report.report_types,
                         "status": report.status,
+                        "created_at": convert_iso_datetime_format(report.created_at),
                         "result_url": report.result_url,
                         "created_by": f"{report.user.first_name} {report.user.last_name}",
                     }
@@ -110,7 +113,7 @@ class SmartReportRepository(BaseRepository):
         try:
             with self.session_factory() as session:
                 logging.info("Generating smart report")
-
+                report_data = []
                 report = (
                     session.query(self.model)
                     .filter(self.model.status == SmartReportStatus.PENDING)
@@ -120,6 +123,9 @@ class SmartReportRepository(BaseRepository):
                     .order_by(desc(self.model.created_at))
                     .first()
                 )
+
+                if not report:
+                    return report_data
 
                 report_data = {
                     "uuid": report.uuid,

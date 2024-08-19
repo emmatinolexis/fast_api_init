@@ -3,10 +3,7 @@ from typing import List
 from app.core import messages
 from app.core.exceptions import NotFoundError
 from app.repository.gas_device_repository import GasDeviceRepository
-from app.schema.gas_cylinder_schema import (
-    CreateGasDevice,
-    UploadGasDeviceCSV,
-)
+from app.schema.gas_cylinder_schema import CreateGasDevice, UploadGasDeviceCSV
 from app.service.base_service import BaseService
 from app.transfomers.gas_device_transformer import gas_device_transformer
 

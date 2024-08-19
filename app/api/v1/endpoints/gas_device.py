@@ -7,10 +7,7 @@ from app.core.container import Container
 from app.core.dependencies import get_current_user
 from app.core.exceptions import NotFoundError
 from app.model.user import User
-from app.schema.gas_cylinder_schema import (
-    CreateGasDevice,
-    UpdateGasDevice,
-)
+from app.schema.gas_cylinder_schema import CreateGasDevice, UpdateGasDevice
 from app.service.gas_device_service import GasDeviceService
 from app.service.user_service import UserService
 from app.util.enums import AccountType

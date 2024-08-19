@@ -20,6 +20,7 @@ from app.util.utils import (
     send_client_side_error,
     send_data,
     send_data_with_info,
+    send_info,
     send_internal_server_error,
     upload_to_s3,
 )
@@ -285,8 +286,7 @@ async def generate_smart_report_handler(
         if not smart_report:
             msg = "There are no smart report to process"
             logging.info(msg)
-            send_client_side_error(user_msg=msg)
-
+            return send_client_side_error(user_msg=msg)
         if smart_report:
             smart_report_service.update_smart_report_status(
                 smart_report.get("uuid"), SmartReportStatus.PROCESSING
@@ -306,12 +306,12 @@ async def generate_smart_report_handler(
                     content_type=content_type,
                     folder_name="smart_reports",
                 )
-
-                if url:
-                    smart_report_service.update_smart_report_status(
-                        smart_report.get("uuid"), SmartReportStatus.PROCESSED, url
-                    )
-            logging.info("Smart report generated successfully")
+                smart_report_service.update_smart_report_status(
+                    smart_report.get("uuid"), SmartReportStatus.PROCESSED, url
+                )
+                msg = "Smart report generated successfully"
+                logging.info(msg)
+                return send_info(msg)
 
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
