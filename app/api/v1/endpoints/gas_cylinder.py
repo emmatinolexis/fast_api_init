@@ -250,16 +250,18 @@ async def create_gas_cylinder_only_handler(
             )
 
         if user.get("account_type") == AccountType.BUSINESS:
-            return service.create_gas_cylinder_without_device(
+            gas_cylinder = service.create_gas_cylinder_without_device(
                 gas_cylinder_payload,
                 user_uuid,
                 business_uuid=user.get("business_profile").uuid,
             )
+            return send_data_with_info(gas_cylinder, "Cylinder updated successfully")
 
         if user.get("account_type") == AccountType.INDIVIDUAL:
-            return service.create_gas_cylinder_without_device(
+            gas_cylinder = service.create_gas_cylinder_without_device(
                 gas_cylinder_payload, user_uuid
             )
+            return send_data_with_info(gas_cylinder, "Cylinder updated successfully")
 
     except Exception as e:
         msg = f"{messages.CREATE_FAILED} - {str(e)}"
