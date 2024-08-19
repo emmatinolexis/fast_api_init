@@ -78,29 +78,16 @@ class GasCylinderRepository(BaseRepository):
         business_uuid: str = None,
     ):
         with self.session_factory() as session:
-            existing_gas = self._find_existing_gas(
-                session, gas_payload.gas_device_serial_number
-            )
-
-            if existing_gas:
-                self._deactivate_existing_gas(existing_gas)
-
-                if gas_payload.gas_cylinder_uuid:
-                    return self._link_existing_gas_cylinder(session, gas_payload)
-                else:
-                    return self._create_new_gas_cylinder(
-                        session, gas_payload, user_uuid, business_uuid
-                    )
+            if gas_payload.gas_cylinder_uuid:
+                return self._link_existing_gas_cylinder(session, gas_payload)
             else:
                 return self._create_new_gas_cylinder(
                     session, gas_payload, user_uuid, business_uuid
                 )
 
-    def _find_existing_gas(self, session, gas_device_serial_number):
+    def _find_existing_gas(self, session, cylinder_uuid):
         return (
-            session.query(self.model)
-            .filter(self.model.gas_device_serial_number == gas_device_serial_number)
-            .first()
+            session.query(self.model).filter(self.model.uuid == cylinder_uuid).first()
         )
 
     def _deactivate_existing_gas(self, existing_gas):
