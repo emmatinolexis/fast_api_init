@@ -128,7 +128,6 @@ class GasCylinderRepository(BaseRepository):
     def _create_new_gas_cylinder(self, session, gas_payload, user_uuid, business_uuid):
         gas_data = GasCylinder(
             cylinder_name=gas_payload.cylinder_name,
-            material_type=gas_payload.material_type,
             gas_device_serial_number=gas_payload.gas_device_serial_number,
             cylinder_type_uuid=gas_payload.cylinder_type_uuid,
             building_uuid=gas_payload.building_uuid,
