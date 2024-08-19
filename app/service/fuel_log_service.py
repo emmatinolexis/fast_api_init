@@ -17,10 +17,10 @@ from app.util.utils import load_bulk_fuel_logs_from_csv
 
 class FuelLogService(BaseService):
     def __init__(
-            self,
-            fuel_log_repository: FuelLogRepository,
-            asset_repository: AssetRepository,
-            driver_repository: DriverRepository,
+        self,
+        fuel_log_repository: FuelLogRepository,
+        asset_repository: AssetRepository,
+        driver_repository: DriverRepository,
     ):
         self.fuel_log_repository = fuel_log_repository
         self.asset_repository = asset_repository
@@ -28,7 +28,7 @@ class FuelLogService(BaseService):
         super().__init__(fuel_log_repository)
 
     def create_individual_fuel_log(
-            self, payload: FuelLogSchema, user_uuid: str, business_profile_uuid: str = None
+        self, payload: FuelLogSchema, user_uuid: str, business_profile_uuid: str = None
     ):
         assigned_asset = self.asset_repository.get_asset_by_user_uuid(user_uuid)
 
@@ -47,7 +47,7 @@ class FuelLogService(BaseService):
         return self.fuel_log_repository.create(log_payload)
 
     def create_bulk_fuel_logs(
-            self, user_uuid: str, csv_url: str, business_profile_uuid: str = None
+        self, user_uuid: str, csv_url: str, business_profile_uuid: str = None
     ):
         try:
             with self.fuel_log_repository.session_factory() as session:
@@ -96,7 +96,7 @@ class FuelLogService(BaseService):
             raise e
 
     def create_fleet_manager_single_fuel_log(
-            self, payload: SingleFuelLog, user_uuid: str, business_profile_uuid: str = None
+        self, payload: SingleFuelLog, user_uuid: str, business_profile_uuid: str = None
     ):
         asset = self.asset_repository.read_by_uuid(payload.asset_uuid)
         if not asset:
@@ -125,13 +125,13 @@ class FuelLogService(BaseService):
         return fuel_log_transformer(fuel_log, self.driver_repository)
 
     def get_fuel_logs_by_user_uuid(
-            self,
-            user_uuid: str,
-            page: int = 1,
-            page_size: int = 10,
-            search: str = None,
-            start_date: str = None,
-            end_date: str = None,
+        self,
+        user_uuid: str,
+        page: int = 1,
+        page_size: int = 10,
+        search: str = None,
+        start_date: str = None,
+        end_date: str = None,
     ):
         try:
             fuel_logs = self.fuel_log_repository.get_fuel_logs_by_user_uuid(
@@ -155,13 +155,13 @@ class FuelLogService(BaseService):
             raise e
 
     def get_fuel_logs_by_business_uuid(
-            self,
-            business_uuid: str,
-            page: int = 1,
-            page_size: int = 10,
-            search: str = None,
-            start_date: str = None,
-            end_date: str = None,
+        self,
+        business_uuid: str,
+        page: int = 1,
+        page_size: int = 10,
+        search: str = None,
+        start_date: str = None,
+        end_date: str = None,
     ):
         try:
             fuel_logs = self.fuel_log_repository.get_fuel_logs_by_business_uuid(

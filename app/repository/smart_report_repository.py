@@ -95,7 +95,7 @@ class SmartReportRepository(BaseRepository):
                         "end_date": report.end_date,
                         "report_types": report.report_types,
                         "status": report.status,
-                        "created_at": convert_iso_datetime_format(report.created_at),
+                        "created_at": report.created_at,
                         "result_url": report.result_url,
                         "created_by": f"{report.user.first_name} {report.user.last_name}",
                     }

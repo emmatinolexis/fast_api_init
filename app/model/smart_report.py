@@ -17,9 +17,9 @@ class SmartReport(BaseModel):
         unique=True,
         nullable=False,
     )
-    title = Column(String(length=100), nullable=False, unique=True, index=True)
+    title = Column(String(length=100), nullable=False, index=True)
     start_date = Column(String(length=100), nullable=False, index=True)
-    end_date = Column(String(length=100), nullable=False, unique=True, index=True)
+    end_date = Column(String(length=100), nullable=False, index=True)
     asset_group_uuids = Column(JSON, nullable=False)
     report_types = Column(JSON, nullable=False)
     asset_type_uuid = Column(
