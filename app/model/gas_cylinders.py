@@ -68,7 +68,6 @@ class GasCylinder(BaseModel):
         primaryjoin="GasCylinder.cylinder_type_uuid == foreign(CylinderTypes.uuid)",
         uselist=False,
         # back_populates="gas_cylinders",
-        cascade="all, delete-orphan",
     )
 
 
