@@ -99,6 +99,12 @@ class PaymentStatus(str, Enum):
     FAILED = "failed"
 
 
+class BuildingStatus(str, Enum):
+    PENDING_INSTALLATION = "Pending Installation"
+    SAFE = "Safe"
+    ATTENTION_NEEDED = "Attention Needed"
+
+
 class SubscriptionTypes(str, Enum):
     INDIVIDUAL_PACKAGE_SUBSCRIPTION = "individual_package_subscription"
     BUSINESS_PACKAGE_SUBSCRIPTION = "business_package_subscription"
