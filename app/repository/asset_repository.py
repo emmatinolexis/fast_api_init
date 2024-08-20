@@ -432,8 +432,10 @@ class AssetRepository(BaseRepository):
             filters = [
                 AlertPolicy.alert_policy_type_uuid == alert_policy_type_uuid,
                 and_(
-                    cast(AlertPolicyViolation.created_at, Date) >= start_date,
-                    cast(AlertPolicyViolation.created_at, Date) <= end_date,
+                    cast(AlertPolicyViolation.created_at, Date)
+                    >= datetime.strptime(start_date, get_settings().DATE_FORMAT_YEAR),
+                    cast(AlertPolicyViolation.created_at, Date)
+                    <= datetime.strptime(end_date, get_settings().DATE_FORMAT_YEAR),
                 ),
             ]
 
