@@ -90,3 +90,10 @@ class GasDeviceService(BaseService):
             return [gas_device_transformer(device) for device in devices]
         except Exception as e:
             raise e
+
+    def get_building_devices(self, building_uuid: str):
+        try:
+            devices = self.gas_device_repository.get_building_devices(building_uuid)
+            return [gas_device_transformer(device) for device in devices]
+        except Exception as e:
+            raise e

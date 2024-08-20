@@ -68,6 +68,9 @@ class GasCylinderService(BaseService):
                 self.gas_device_repository.update_attr_by_uuid(
                     gas_device.uuid, "status", DeviceStatus.ASSIGNED
                 )
+                self.gas_device_repository.update_attr_by_uuid(
+                    gas_device.uuid, "building_uuid", payload.building_uuid
+                )
 
             return cylinder
 
