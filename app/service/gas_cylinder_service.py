@@ -58,9 +58,19 @@ class GasCylinderService(BaseService):
         business_uuid: str = None,
     ):
         try:
-            return self.gas_cylinder_repository.create_gas_cylinder(
+            cylinder = self.gas_cylinder_repository.create_gas_cylinder(
                 payload, user_uuid, business_uuid
             )
+            if payload.gas_cylinder_uuid and payload.gas_device_serial_number:
+                gas_device = self.gas_device_repository.get_device_by_serial_no(
+                    payload.gas_device_serial_number
+                )
+                self.gas_device_repository.update_attr_by_uuid(
+                    gas_device.uuid, "status", DeviceStatus.ASSIGNED
+                )
+
+            return cylinder
+
         except Exception as e:
             raise e
 
@@ -93,7 +103,16 @@ class GasCylinderService(BaseService):
             ):
                 raise AuthError(messages.ACTION_NOT_ALLOWED)
 
+            device = self.gas_device_repository.get_device_by_serial_no(
+                cylinder.gas_device_serial_number
+            )
+            if device:
+                self.gas_device_repository.update_attr_by_uuid(
+                    device.uuid, "status", DeviceStatus.NOT_ASSIGNED
+                )
+
             self.gas_cylinder_repository.delete_by_uuid(cylinder_uuid)
+
         except Exception as e:
             raise Exception(f"An unexpected error occurred: {str(e)}")
 
