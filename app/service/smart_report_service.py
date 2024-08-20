@@ -983,6 +983,8 @@ class SmartReportService(BaseService):
                         "report_title": report_title_header[0],
                         "created_by": created_by,
                         "business_name": business_name,
+                        "end_date": end_date,
+                        "start_date": start_date,
                         "fuel_efficiency_current_date": 140,
                         "fuel_efficiency_previous_date": 180,
                         "total_distance_covered_current_date": round(
