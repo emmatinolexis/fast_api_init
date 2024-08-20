@@ -80,25 +80,30 @@ class AlertPolicyRepository(BaseRepository):
 
             return violation
 
-    def read_all_alert_policies_by_user(self, user_uuid: str, page=1, page_size=10):
+    def read_all_alert_policies_by_user(
+        self, user_uuid: str, alert_policy_type_uuid: str = None, page=1, page_size=10
+    ):
         with self.session_factory() as session:
             offset = (page - 1) * page_size
 
+            # Start building the query
+            query = session.query(self.model).filter(self.model.user_uuid == user_uuid)
+
+            # Apply the asset_type_uuid filter if provided
+            if alert_policy_type_uuid:
+                query = query.filter(
+                    self.model.alert_policy_type_uuid == alert_policy_type_uuid
+                )
+
             # Query to get the total count of alert policies
-            total_alert_policies = (
-                session.query(func.count(self.model.id))
-                .filter(self.model.user_uuid == user_uuid)
-                .scalar()
-            )
+            total_alert_policies = query.count()
 
             # Calculate total pages
             total_pages = (total_alert_policies + page_size - 1) // page_size
 
-            # Fetch paginated results
+            # Fetch paginated results with ordering and relationships loaded
             alerts = (
-                session.query(self.model)
-                .filter(self.model.user_uuid == user_uuid)
-                .order_by(desc(self.model.created_at))
+                query.order_by(desc(self.model.created_at))
                 .offset(offset)
                 .limit(page_size)
                 .options(joinedload(self.model.alert_policy_type))
@@ -117,26 +122,35 @@ class AlertPolicyRepository(BaseRepository):
             }
 
     def read_all_alert_policies_by_business(
-        self, business_uuid: str, page=1, page_size=10
+        self,
+        business_uuid: str,
+        alert_policy_type_uuid: str = None,
+        page=1,
+        page_size=10,
     ):
         with self.session_factory() as session:
             offset = (page - 1) * page_size
 
-            # Query to get the total count of alert policies
-            total_alert_policies = (
-                session.query(func.count(self.model.id))
-                .filter(self.model.business_profile_uuid == business_uuid)
-                .scalar()
+            # Start building the query
+            query = session.query(self.model).filter(
+                self.model.business_profile_uuid == business_uuid
             )
+
+            # Apply the asset_type_uuid filter if provided
+            if alert_policy_type_uuid:
+                query = query.filter(
+                    self.model.alert_policy_type_uuid == alert_policy_type_uuid
+                )
+
+            # Query to get the total count of alert policies
+            total_alert_policies = query.count()
 
             # Calculate total pages
             total_pages = (total_alert_policies + page_size - 1) // page_size
 
-            # Fetch paginated results
+            # Fetch paginated results with ordering and relationships loaded
             alerts = (
-                session.query(self.model)
-                .filter(self.model.business_profile_uuid == business_uuid)
-                .order_by(desc(self.model.created_at))
+                query.order_by(desc(self.model.created_at))
                 .offset(offset)
                 .limit(page_size)
                 .options(joinedload(self.model.alert_policy_type))

@@ -55,6 +55,7 @@ async def get_alert_policies_handler(
 @inject
 async def get_alert_policies_by_user_handler(
     user_uuid: str,
+    alert_policy_type_uuid: str = None,
     service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
     page: int = Query(1, ge=1, description="Page number, default is set to 1"),
     page_size: int = Query(
@@ -64,7 +65,9 @@ async def get_alert_policies_by_user_handler(
 ):
     try:
         return send_data(
-            service.get_all_alert_policies_by_user(user_uuid, page, page_size)
+            service.get_all_alert_policies_by_user(
+                user_uuid, alert_policy_type_uuid, page, page_size
+            )
         )
     except Exception as e:
         msg = messages.GET_FAILED + "alert policies"
@@ -75,6 +78,7 @@ async def get_alert_policies_by_user_handler(
 @inject
 async def get_alert_policies_by_business_handler(
     business_uuid: str,
+    alert_policy_type_uuid: str = None,
     service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
     page: int = Query(1, ge=1, description="Page number, default is set to 1"),
     page_size: int = Query(
@@ -84,7 +88,9 @@ async def get_alert_policies_by_business_handler(
 ):
     try:
         return send_data(
-            service.get_all_alert_policies_by_business(business_uuid, page, page_size)
+            service.get_all_alert_policies_by_business(
+                business_uuid, alert_policy_type_uuid, page, page_size
+            )
         )
     except Exception as e:
         msg = messages.GET_FAILED + "alert policies"
