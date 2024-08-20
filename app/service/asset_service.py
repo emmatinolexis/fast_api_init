@@ -559,6 +559,7 @@ class AssetService(BaseService):
                     report.append(
                         {
                             "asset_name": asset.asset_name,
+                            "asset_type_uuid": asset.asset_type_uuid,
                             "distance_traveled": distance_traveled,
                             "average_speed": average_speed,
                             "time_traveled": time_traveled,
