@@ -104,6 +104,9 @@ class GasDevice(BaseModel):
         nullable=True,
         index=True,
     )
+    building_uuid = Column(
+        UUID(as_uuid=True), ForeignKey("buildings.uuid"), nullable=True, index=True
+    )
 
 
 class CylinderTypes(BaseModel):
