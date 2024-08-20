@@ -871,6 +871,8 @@ class AssetService(BaseService):
                 asset_type_uuid,
             )
 
+            if not violations:
+                violations = {}
             # Initialize assets as an empty list
             assets = []
 

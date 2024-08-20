@@ -840,6 +840,17 @@ def convert_date_format(date_str):
     return formatted_date
 
 
+def convert_date_format_to_iso(date_str):
+    # Parse the date string into a datetime object
+    date_object = datetime.strptime(date_str, "%d/%m/%Y")
+    # Convert to the desired format
+    formatted_date = date_object.strftime("%Y-%m-%d %H:%M:%S.%f %z")
+
+    # Add the timezone information
+    formatted_date_with_timezone = formatted_date[:-6] + " +0000"
+    return formatted_date_with_timezone
+
+
 def convert_iso_datetime_format(datetime_input):
     # Convert the input to a string if it's not already a string
     if not isinstance(datetime_input, str):
@@ -850,6 +861,19 @@ def convert_iso_datetime_format(datetime_input):
 
     # Format the datetime object into the desired format
     formatted_date = dt.strftime("%d-%m-%Y")
+    return formatted_date
+
+
+def convert_iso_datetime_format_slash(datetime_input):
+    # Convert the input to a string if it's not already a string
+    if not isinstance(datetime_input, str):
+        datetime_input = str(datetime_input)
+
+    # Parse the datetime string into a datetime object using dateutil.parser
+    dt = parser.isoparse(datetime_input)
+
+    # Format the datetime object into the desired format
+    formatted_date = dt.strftime("%d/%m/%Y")
     return formatted_date
 
 
