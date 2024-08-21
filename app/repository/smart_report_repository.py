@@ -9,10 +9,7 @@ from app.model.smart_report import SmartReport
 from app.model.user import User
 from app.repository.base_repository import BaseRepository
 from app.util.enums import SmartReportStatus
-from app.util.utils import (
-    convert_smart_report_status_user,
-    convert_smart_report_status
-)
+from app.util.utils import convert_smart_report_status, convert_smart_report_status_user
 
 
 class SmartReportRepository(BaseRepository):

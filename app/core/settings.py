@@ -110,6 +110,11 @@ class Settings(BaseSettings):
         "Please use the button link below to reset your password",
     )
 
+    SMART_REPORT_SHARE_URL: str = os.getenv(
+        "SMART_REPORT_SHARE_URL",
+        "https://mvi-frontend-uat.sageinfrastructure.net/smart-report?smartId= ",
+    )
+
     # aws
     S3_BUCKET: str = os.getenv("S3_BUCKET", "")
     AWS_ACCESS_KEY_ID: str = os.getenv("AWS_ACCESS_KEY_ID", "aws_access_key_id")

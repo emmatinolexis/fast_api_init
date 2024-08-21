@@ -8,13 +8,25 @@ from fastapi.responses import ORJSONResponse
 from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
+from app.core.settings import settings
 from app.model.user import User
-from app.schema.report_schema import SmartReportInput, SmartReportPayload
+from app.schema.report_schema import (
+    SmartReportInput,
+    SmartReportPayload,
+    SmartReportSharePayload,
+)
 from app.service.asset_service import AssetService
 from app.service.gas_cylinder_event_service import GasCylinderEventService
 from app.service.smart_report_service import SmartReportService
 from app.service.user_service import UserService
-from app.util.enums import AccountType, FileFormat, SmartReportStatus, SmartReportUser
+from app.util.email import send_email_verification
+from app.util.enums import (
+    AccountType,
+    EmailPurpose,
+    FileFormat,
+    SmartReportStatus,
+    SmartReportUser,
+)
 from app.util.utils import (
     get_content_type,
     send_client_side_error,
@@ -348,6 +360,67 @@ async def get_processed_smart_report_handler(
             smart_report = smart_report_service.get_processed_smart_report(smart_report)
 
             return send_data_with_info(smart_report, "Report fetched successfully")
+
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        logging.info(e)
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.post("/smart_report/share/{smart_report_uuid}", response_class=ORJSONResponse)
+@inject
+async def share_smart_report_handler(
+    smart_report_share_payload: SmartReportSharePayload,
+    smart_report_uuid: str,
+    smart_report_service: SmartReportService = Depends(
+        Provide[Container.smart_report_service]
+    ),
+    user_service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        # get the smart report
+        smart_report = smart_report_service.get_by_uuid(smart_report_uuid)
+
+        # throw an error if smart report not found
+        if not smart_report:
+            return send_client_side_error(messages.SMART_REPORT_NOT_FOUND)
+
+        users = []
+        report_link = f"{settings.SMART_REPORT_SHARE_URL}{smart_report.uuid}"
+
+        # get all the users to share
+        for user_uuid in smart_report_share_payload.user_uuids:
+            user = user_service.get_by_uuid(str(user_uuid))
+
+            if not user:
+                return send_client_side_error(
+                    user_msg="User not found",
+                    dev_msg=f"messages.USER_NOT_FOUND {user_uuid}",
+                )
+
+            user = {
+                "email": user.email_address,
+                "name": f"{user.first_name} {user.last_name}",
+            }
+
+            users.append(user)
+
+        # send emails to recipients
+        for user in users:
+            report_message = (f"Hello {user.get('name')}, we wanted to inform you that your report for June is now ready. "
+                              f"<br> Login to your account to view report")
+
+            await send_email_verification(
+                recipient_name=user.get("name"),
+                email=user.get("email"),
+                message=report_message,
+                url=report_link,
+                btn="View Smart Report",
+                email_purpose=EmailPurpose.PASSWORD_RESET,
+            )
+
+        return send_info("Smart Report Shared successfully")
 
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
