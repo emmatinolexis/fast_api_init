@@ -10,6 +10,7 @@ from app.util.enums import ActiveStatus, DeviceStatus, GasCylinderMaterialType
 class CreateGasDevice(BaseModel):
     device_name: str
     serial_number: str
+    building_uuid: str
 
 
 class UploadGasDeviceCSV(BaseModel):

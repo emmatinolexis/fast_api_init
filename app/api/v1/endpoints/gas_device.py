@@ -132,3 +132,18 @@ async def get_gas_devices_by_user_handler(
     except Exception as e:
         msg = messages.GET_FAILED + " gas devices"
         return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/building/{building_uuid}", response_class=ORJSONResponse)
+@inject
+async def get_gas_devices_by_building_handler(
+    building_uuid: str,
+    service: GasDeviceService = Depends(Provide[Container.gas_device_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        data = service.get_building_devices(building_uuid)
+        return send_data_with_info(data, messages.GET_SUCCESS + " gas devices")
+    except Exception as e:
+        msg = messages.GET_FAILED + " gas devices"
+        return send_internal_server_error(user_msg=msg, error=e)

@@ -12,7 +12,7 @@ from app.schema.fuel_log_schema import (
 )
 from app.service.base_service import BaseService
 from app.transfomers.fuel_log_transformer import fuel_log_transformer
-from app.util.utils import load_bulk_fuel_logs_from_csv
+from app.util.utils import load_bulk_fuel_logs_from_csv, parse_date
 
 
 class FuelLogService(BaseService):
@@ -75,12 +75,13 @@ class FuelLogService(BaseService):
                     log_payload = FleetManagerFuelLog(
                         amount=item.get("amount"),
                         quantity=item.get("litres"),
-                        purchase_date=item.get("purchase_date"),
+                        purchase_date=parse_date(item.get("purchase_date")),
                         asset_name=drivers_asset.asset_name,
                         asset_uuid=str(drivers_asset.uuid),
                         business_profile_uuid=business_profile_uuid,
                         user_uuid=user_uuid,
                         driver_uuid=str(driver_details.uuid),
+                        fuel_type=item.get("fuel_type").lower(),
                     )
 
                     fuel_logs.append(log_payload)  # Accumulate the log payload
@@ -105,7 +106,7 @@ class FuelLogService(BaseService):
         driver = self.asset_repository.get_driver_by_asset_uuid(payload.asset_uuid)
 
         if not driver:
-            raise NotFoundError(detail=messages.ASSET_MUST_BE_ASSIGNEDD)
+            raise NotFoundError(detail=messages.ASSET_MUST_BE_ASSIGNED)
 
         full_payload = SingleFuelLogSchema(
             asset_uuid=payload.asset_uuid,
@@ -118,6 +119,7 @@ class FuelLogService(BaseService):
             driver_uuid=driver.uuid,
             payment_method=payload.payment_method,
             asset_name=asset.asset_name,
+            fuel_type=payload.fuel_type,
         )
 
         fuel_log = self.fuel_log_repository.create(full_payload)
@@ -139,7 +141,7 @@ class FuelLogService(BaseService):
             )
 
             total = len(fuel_logs)
-            paginated_fuel_logs = fuel_logs[(page - 1) * page_size: page * page_size]
+            paginated_fuel_logs = fuel_logs[(page - 1) * page_size : page * page_size]
 
             return {
                 "total": total,
@@ -169,7 +171,7 @@ class FuelLogService(BaseService):
             )
 
             total = len(fuel_logs)
-            paginated_fuel_logs = fuel_logs[(page - 1) * page_size: page * page_size]
+            paginated_fuel_logs = fuel_logs[(page - 1) * page_size : page * page_size]
 
             return {
                 "total": total,

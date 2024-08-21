@@ -67,6 +67,9 @@ class GasDeviceService(BaseService):
                 self.gas_device_repository.update_attr_by_uuid(
                     existing_device.uuid, "business_profile_uuid", business_profile_uuid
                 )
+                self.gas_device_repository.update_attr_by_uuid(
+                    existing_device.uuid, "building_uuid", payload.building_uuid
+                )
                 return gas_device_transformer(existing_device)
             else:
                 raise NotFoundError(messages.DEVICE_DOES_NOT_EXIST)
@@ -87,6 +90,13 @@ class GasDeviceService(BaseService):
             devices = self.gas_device_repository.get_business_devices(
                 business_profile_uuid
             )
+            return [gas_device_transformer(device) for device in devices]
+        except Exception as e:
+            raise e
+
+    def get_building_devices(self, building_uuid: str):
+        try:
+            devices = self.gas_device_repository.get_building_devices(building_uuid)
             return [gas_device_transformer(device) for device in devices]
         except Exception as e:
             raise e

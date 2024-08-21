@@ -49,3 +49,11 @@ class GasDeviceRepository(BaseRepository):
                 .filter(self.model.business_profile_uuid == business_profile_uuid)
                 .all()
             )
+
+    def get_building_devices(self, building_uuid: str):
+        with self.session_factory() as session:
+            return (
+                session.query(self.model)
+                .filter(self.model.building_uuid == building_uuid)
+                .all()
+            )
