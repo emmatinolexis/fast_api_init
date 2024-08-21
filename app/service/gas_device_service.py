@@ -67,6 +67,9 @@ class GasDeviceService(BaseService):
                 self.gas_device_repository.update_attr_by_uuid(
                     existing_device.uuid, "business_profile_uuid", business_profile_uuid
                 )
+                self.gas_device_repository.update_attr_by_uuid(
+                    existing_device.uuid, "building_uuid", payload.building_uuid
+                )
                 return gas_device_transformer(existing_device)
             else:
                 raise NotFoundError(messages.DEVICE_DOES_NOT_EXIST)
