@@ -19,7 +19,7 @@ from app.core.constants import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE, THIRD_PARTY_
 from app.core.logger import get_logger
 from app.core.security import JWTBearer
 from app.core.settings import settings
-from app.util.enums import ActiveStatus, FileFormat
+from app.util.enums import ActiveStatus, FileFormat, SmartReportStatus, SmartReportUser
 
 log = get_logger()
 
@@ -941,6 +941,22 @@ def upload_report_to_s3(report, bucket_name, file_name):
     print(f"Report uploaded to s3://{bucket_name}/{file_name}")
 
 
+def convert_smart_report_status_user(status: SmartReportUser):
+    if status == SmartReportUser.PENDING:
+        return SmartReportStatus.PENDING
+    if status == SmartReportUser.READY:
+        return SmartReportStatus.PROCESSED
+
+
+def convert_smart_report_status(status: SmartReportStatus):
+    if (
+        status == SmartReportStatus.PENDING
+        and SmartReportStatus.PROCESSING
+        and SmartReportStatus.FAILED
+    ):
+        return SmartReportUser.PENDING
+    return SmartReportUser.READY
+
 def parse_date(date_str):
     # List of potential date formats
     date_formats = ["%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y", "%d-%m-%Y"]
@@ -955,3 +971,4 @@ def parse_date(date_str):
 
     # Raise an exception if none of the formats matched
     raise ValueError(f"Date format for '{date_str}' not recognized")
+
