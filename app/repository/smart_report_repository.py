@@ -2,14 +2,16 @@ import logging
 from contextlib import AbstractContextManager
 from typing import Any, Callable, Dict
 
-from sqlalchemy import desc, func
+from sqlalchemy import desc
 from sqlalchemy.orm import Session, joinedload
 
 from app.model.smart_report import SmartReport
 from app.model.user import User
 from app.repository.base_repository import BaseRepository
 from app.util.enums import SmartReportStatus
-from app.util.utils import convert_iso_datetime_format
+from app.util.utils import (
+    convert_smart_report_status_user,
+)
 
 
 class SmartReportRepository(BaseRepository):
@@ -21,93 +23,75 @@ class SmartReportRepository(BaseRepository):
         self,
         user_uuid: str = None,
         business_uuid: str = None,
+        name: str = None,
+        status: str = None,
+        created_by: str = None,
         page: int = 1,
         page_size: int = 10,
     ) -> Dict[str, Any]:
         with self.session_factory() as session:
-            # offset = (page - 1) * page_size
-            smart_reports = []
+            # Initialize the query and filters
+            query = session.query(self.model)
             if user_uuid:
-                total_reports = (
-                    session.query(func.count(self.model.id))
-                    .filter(self.model.user_uuid == user_uuid)
-                    .scalar()
-                )
-
-                total_pages = (total_reports + page_size - 1) // page_size
-
-                reports = (
-                    session.query(self.model)
-                    .filter(self.model.user_uuid == user_uuid)
-                    .options(joinedload(self.model.user))
-                    .order_by(desc(self.model.created_at))
-                    # .offset(offset)
-                    # .limit(page_size)
-                    .all()
-                )
-
-                for report in reports:
-                    report_data = {
-                        "uuid": report.uuid,
-                        "title": report.title,
-                        "start_date": report.start_date,
-                        "end_date": report.end_date,
-                        "report_types": report.report_type,
-                        "status": report.status,
-                        "result_url": report.result_url,
-                        "created_at": convert_iso_datetime_format(report.created_at),
-                        "created_by": f"{report.user.first_name} {report.user.last_name}",
-                    }
-                    smart_reports.append(report_data)
-
-                return {
-                    "reports": smart_reports,
-                    "total_assets": total_reports,
-                    "total_pages": total_pages,
-                    "current_page": page,
-                    "page_size": page_size,
-                }
-
+                query = query.filter(self.model.user_uuid == user_uuid)
             if business_uuid:
-                total_reports = (
-                    session.query(func.count(self.model.id))
-                    .filter(self.model.business_profile_uuid == business_uuid)
-                    .scalar()
+                query = query.filter(self.model.business_profile_uuid == business_uuid)
+            if name:
+                query = query.filter(self.model.title.ilike(f"%{name}%"))
+            if status:
+                query = query.filter(
+                    self.model.status == convert_smart_report_status_user(status)
                 )
+            if created_by:
+                # Join with the user model to filter by creator's name
+                query = query.filter(self.model.user_uuid == created_by)
 
-                total_pages = (total_reports + page_size - 1) // page_size
+            # Query to get the total count of reports based on filters
+            total_reports = query.count()
 
-                reports = (
-                    session.query(self.model)
-                    .filter(self.model.business_profile_uuid == business_uuid)
-                    .options(joinedload(self.model.user))
-                    .order_by(desc(self.model.created_at))
-                    # .offset(offset)
-                    # .limit(page_size)
-                    .all()
-                )
+            # Calculate total pages
+            total_pages = (total_reports + page_size - 1) // page_size
 
-                for report in reports:
-                    report_data = {
-                        "uuid": report.uuid,
-                        "title": report.title,
-                        "start_date": report.start_date,
-                        "end_date": report.end_date,
-                        "report_types": report.report_types,
-                        "status": report.status,
-                        "created_at": report.created_at,
-                        "result_url": report.result_url,
-                        "created_by": f"{report.user.first_name} {report.user.last_name}",
-                    }
-                    smart_reports.append(report_data)
+            # Ensure page is within valid range
+            if page < 1:
+                page = 1
+            elif page > total_pages:
+                page = total_pages
 
-                return {
-                    "reports": smart_reports,
-                    "total_assets": total_reports,
-                    "total_pages": total_pages,
-                    "current_page": page,
-                    "page_size": page_size,
+            # Calculate offset
+            offset = (page - 1) * page_size
+
+            # Fetch paginated results with ordering and relationships loaded
+            reports = (
+                query.order_by(desc(self.model.created_at))
+                .offset(offset)
+                .limit(page_size)
+                .options(joinedload(self.model.user))
+                .all()
+            )
+
+            smart_reports = []
+            for report in reports:
+                report_data = {
+                    "uuid": report.uuid,
+                    "title": report.title,
+                    "start_date": report.start_date,
+                    "end_date": report.end_date,
+                    "report_types": report.report_types,
+                    "status": convert_smart_report_status_user(report.status),
+                    "created_at": report.created_at,
+                    "result_url": report.result_url,
+                    "created_by": f"{report.user.first_name} {report.user.last_name}",
                 }
+                smart_reports.append(report_data)
+
+            return {
+                "reports": smart_reports,
+                "total_assets": total_reports,
+                "total_pages": total_pages,
+                "current_page": page,
+                "page_size": page_size,
+            }
 
     def get_unprocessed_report(self):
         try:

@@ -54,6 +54,11 @@ class SmartReportStatus(str, Enum):
     FAILED = "failed"
 
 
+class SmartReportUser(str, Enum):
+    PENDING = "pending"
+    READY = "ready"
+
+
 class GasCylinderMaterialType(str, Enum):
     FIBER = "fiber"
     METAL = "metal"

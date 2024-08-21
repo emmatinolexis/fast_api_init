@@ -14,7 +14,7 @@ from app.service.asset_service import AssetService
 from app.service.gas_cylinder_event_service import GasCylinderEventService
 from app.service.smart_report_service import SmartReportService
 from app.service.user_service import UserService
-from app.util.enums import AccountType, FileFormat, SmartReportStatus
+from app.util.enums import AccountType, FileFormat, SmartReportStatus, SmartReportUser
 from app.util.utils import (
     get_content_type,
     send_client_side_error,
@@ -185,6 +185,9 @@ async def create_smart_report_handler(
 @inject
 async def get_smart_report_by_user_handler(
     user_uuid: str,
+    name: str = None,
+    created_by: str = None,
+    status: SmartReportUser = None,
     page: int = Query(1, ge=1, description="Page number, default is set to 1"),
     page_size: int = Query(
         10, ge=1, le=1000, description="Items per page, default is 10"
@@ -200,7 +203,12 @@ async def get_smart_report_by_user_handler(
         if user:
             if user.get("account_type") == AccountType.INDIVIDUAL:
                 reports = smart_report_service.get_reports(
-                    user_uuid=user_uuid, page=page, page_size=page_size
+                    user_uuid=user_uuid,
+                    name=name,
+                    created_by=created_by,
+                    status=status,
+                    page=page,
+                    page_size=page_size,
                 )
 
                 return send_data_with_info(reports, messages.SUCCESS_MESSAGE)
@@ -208,6 +216,9 @@ async def get_smart_report_by_user_handler(
             if user.get("account_type") == AccountType.BUSINESS:
                 reports = smart_report_service.get_reports(
                     business_profile_uuid=user.get("business_profile").uuid,
+                    name=name,
+                    created_by=created_by,
+                    status=status,
                     page=10,
                     page_size=page_size,
                 )
