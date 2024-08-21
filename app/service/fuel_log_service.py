@@ -81,7 +81,7 @@ class FuelLogService(BaseService):
                         business_profile_uuid=business_profile_uuid,
                         user_uuid=user_uuid,
                         driver_uuid=str(driver_details.uuid),
-                        fuel_type=item.get("fuel_type"),
+                        fuel_type=item.get("fuel_type").lower(),
                     )
 
                     fuel_logs.append(log_payload)  # Accumulate the log payload
