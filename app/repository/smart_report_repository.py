@@ -11,6 +11,7 @@ from app.repository.base_repository import BaseRepository
 from app.util.enums import SmartReportStatus
 from app.util.utils import (
     convert_smart_report_status_user,
+    convert_smart_report_status
 )
 
 
@@ -78,7 +79,7 @@ class SmartReportRepository(BaseRepository):
                     "start_date": report.start_date,
                     "end_date": report.end_date,
                     "report_types": report.report_types,
-                    "status": convert_smart_report_status_user(report.status),
+                    "status": convert_smart_report_status(report.status),
                     "created_at": report.created_at,
                     "result_url": report.result_url,
                     "created_by": f"{report.user.first_name} {report.user.last_name}",
