@@ -38,7 +38,7 @@ async def get_all_equipments_handler(
 
 
 @router.get(
-    "/get_equipment_by_asset_type/{asset_type_id}", response_class=ORJSONResponse
+    "/get_equipment_by_asset_type/{asset_type_uuid}", response_class=ORJSONResponse
 )
 @inject
 async def get_all_equipments_by_asset_type_handler(
