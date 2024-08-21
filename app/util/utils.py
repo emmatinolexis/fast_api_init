@@ -939,3 +939,19 @@ def upload_report_to_s3(report, bucket_name, file_name):
     )
 
     print(f"Report uploaded to s3://{bucket_name}/{file_name}")
+
+
+def parse_date(date_str):
+    # List of potential date formats
+    date_formats = ["%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y", "%d-%m-%Y"]
+
+    for fmt in date_formats:
+        try:
+            # Try to parse the date with the current format
+            return datetime.strptime(date_str, fmt).strftime("%Y-%m-%d")
+        except ValueError:
+            # Continue to the next format if this one fails
+            continue
+
+    # Raise an exception if none of the formats matched
+    raise ValueError(f"Date format for '{date_str}' not recognized")

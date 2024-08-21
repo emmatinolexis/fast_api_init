@@ -283,3 +283,10 @@ class FuelLogPaymmentMethod(str, Enum):
     CASH = "cash"
     COUPON = "coupon"
     CARD = "card"
+
+
+class FuelType(str, Enum):
+    DIESEL = "diesel"
+    PETROL = "petrol"
+    GAS = "gas"
+    KEROSENE = "kerosene"

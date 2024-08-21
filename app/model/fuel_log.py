@@ -5,7 +5,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from app.model.base_model import BaseModel
-from app.util.enums import FuelLogPaymmentMethod
+from app.util.enums import FuelLogPaymmentMethod, FuelType
 
 
 class FuelLog(BaseModel):
@@ -29,6 +29,7 @@ class FuelLog(BaseModel):
     asset_uuid = Column(UUID(as_uuid=True), ForeignKey("assets.uuid"), nullable=True)
     asset_name = Column(String(length=100), nullable=True)
     driver_uuid = Column(UUID(as_uuid=True), ForeignKey("drivers.uuid"), nullable=True)
+    fuel_type = Column(Enum(FuelType), nullable=True)
     receipt_image = Column(String(length=255), nullable=True)
     purchase_date = Column(String(length=100), nullable=True)
     asset = relationship("Asset")

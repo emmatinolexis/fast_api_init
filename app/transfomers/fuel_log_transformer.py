@@ -26,6 +26,7 @@ def fuel_log_transformer(fuel_log: FuelLog, driver_repo: DriverRepository):
         "receipt_image": fuel_log.receipt_image if fuel_log.receipt_image else None,
         "purchase_date": fuel_log.purchase_date if fuel_log.purchase_date else None,
         "payment_method": fuel_log.payment_method,
+        "fuel_type": fuel_log.fuel_type if fuel_log.fuel_type else None,
         "created_at": fuel_log.created_at,
         "driver_details": driver_details,
     }

@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.util.enums import FuelLogPaymmentMethod
+from app.util.enums import FuelLogPaymmentMethod, FuelType
 
 
 class FuelLogSchema(BaseModel):
@@ -29,6 +29,7 @@ class FleetManagerFuelLog(BaseModel):
     user_uuid: str
     asset_uuid: str
     driver_uuid: str
+    fuel_type: FuelType
 
 
 class SingleFuelLog(BaseModel):
@@ -38,6 +39,7 @@ class SingleFuelLog(BaseModel):
     purchase_date: date
     payment_method: FuelLogPaymmentMethod
     receipt_image: str
+    fuel_type: FuelType
 
 
 class SingleFuelLogSchema(SingleFuelLog):
