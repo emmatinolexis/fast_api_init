@@ -14,10 +14,16 @@ class BaseService:
         return self._repository.read_all_by_uuid(uuid)
 
     def get_by_id(self, id: int):
-        return self._repository.read_by_id(id)
+        try:
+            return self._repository.read_by_id(id)
+        except Exception as e:
+            raise e
 
     def get_by_uuid(self, uuid: str):
-        return self._repository.read_by_uuid(uuid)
+        try:
+            return self._repository.read_by_uuid(uuid)
+        except Exception as e:
+            raise e
 
     def add(self, schema):
         try:

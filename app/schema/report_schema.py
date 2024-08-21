@@ -37,6 +37,10 @@ class SmartReportPayload(BaseModel):
     report_type: List[SmartReportType]
 
 
+class SmartReportSharePayload(BaseModel):
+    user_uuids: List[UUID]
+
+
 class SmartReportInput(BaseModel):
     title: str
     start_date: date

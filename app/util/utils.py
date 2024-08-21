@@ -957,6 +957,7 @@ def convert_smart_report_status(status: SmartReportStatus):
         return SmartReportUser.PENDING
     return SmartReportUser.READY
 
+
 def parse_date(date_str):
     # List of potential date formats
     date_formats = ["%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y", "%d-%m-%Y"]
@@ -971,4 +972,3 @@ def parse_date(date_str):
 
     # Raise an exception if none of the formats matched
     raise ValueError(f"Date format for '{date_str}' not recognized")
-
