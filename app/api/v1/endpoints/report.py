@@ -25,7 +25,6 @@ from app.util.enums import (
     EmailPurpose,
     FileFormat,
     SmartReportStatus,
-    SmartReportUser,
 )
 from app.util.utils import (
     get_content_type,
@@ -197,9 +196,8 @@ async def create_smart_report_handler(
 @inject
 async def get_smart_report_by_user_handler(
     user_uuid: str,
-    name: str = None,
+    query_parameter: str = None,
     created_by: str = None,
-    status: SmartReportUser = None,
     page: int = Query(1, ge=1, description="Page number, default is set to 1"),
     page_size: int = Query(
         10, ge=1, le=1000, description="Items per page, default is 10"
@@ -216,9 +214,8 @@ async def get_smart_report_by_user_handler(
             if user.get("account_type") == AccountType.INDIVIDUAL:
                 reports = smart_report_service.get_reports(
                     user_uuid=user_uuid,
-                    name=name,
+                    query_parameter=query_parameter,
                     created_by=created_by,
-                    status=status,
                     page=page,
                     page_size=page_size,
                 )
@@ -228,9 +225,8 @@ async def get_smart_report_by_user_handler(
             if user.get("account_type") == AccountType.BUSINESS:
                 reports = smart_report_service.get_reports(
                     business_profile_uuid=user.get("business_profile").uuid,
-                    name=name,
+                    query_parameter=query_parameter,
                     created_by=created_by,
-                    status=status,
                     page=10,
                     page_size=page_size,
                 )
@@ -334,7 +330,8 @@ async def generate_smart_report_handler(
                 )
 
                 report_message = (
-                    f"Hello {smart_report.get('created_by')}, we want to inform you that your {smart_report.get('title')}."
+                    f"Hello {smart_report.get('created_by')}, "
+                    f"we want to inform you that your {smart_report.get('title')} is ready."
                     f"<br> Login to your account to view report"
                 )
 
