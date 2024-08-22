@@ -332,6 +332,21 @@ async def generate_smart_report_handler(
                 smart_report_service.update_smart_report_status(
                     smart_report.get("uuid"), SmartReportStatus.PROCESSED, url
                 )
+
+                report_message = (
+                    f"Hello {smart_report.get('created_by')}, we want to inform you that your {smart_report.get('title')}."
+                    f"<br> Login to your account to view report"
+                )
+
+                await send_smart_report_email(
+                    email=smart_report.get("email"),
+                    message=report_message,
+                    title=f"{smart_report.get('title')}",
+                    btn_url=settings.SMART_REPORT_URL,
+                    btn_text="View Smart Report",
+                    email_purpose=EmailPurpose.SMART_REPORT_ALERT,
+                )
+
                 msg = "Smart report generated successfully"
                 logging.info(msg)
                 return send_info(msg)
