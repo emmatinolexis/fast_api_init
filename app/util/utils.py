@@ -951,8 +951,8 @@ def convert_smart_report_status_user(status: SmartReportUser):
 def convert_smart_report_status(status: SmartReportStatus):
     if (
         status == SmartReportStatus.PENDING
-        and SmartReportStatus.PROCESSING
-        and SmartReportStatus.FAILED
+        or SmartReportStatus.PROCESSING
+        or SmartReportStatus.FAILED
     ):
         return SmartReportUser.PENDING
     return SmartReportUser.READY
