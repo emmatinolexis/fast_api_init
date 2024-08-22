@@ -112,7 +112,7 @@ class Settings(BaseSettings):
 
     SMART_REPORT_SHARE_URL: str = os.getenv(
         "SMART_REPORT_SHARE_URL",
-        "https://mvi-frontend-uat.sageinfrastructure.net/smart-report?smartId= ",
+        "https://mvi-frontend-uat.sageinfrastructure.net/smart-report?smartId=",
     )
 
     # aws
