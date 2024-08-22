@@ -19,7 +19,7 @@ from app.service.asset_service import AssetService
 from app.service.gas_cylinder_event_service import GasCylinderEventService
 from app.service.smart_report_service import SmartReportService
 from app.service.user_service import UserService
-from app.util.email import send_email_verification
+from app.util.email import send_smart_report_email
 from app.util.enums import (
     AccountType,
     EmailPurpose,
@@ -388,6 +388,7 @@ async def share_smart_report_handler(
 
         users = []
         report_link = f"{settings.SMART_REPORT_SHARE_URL}{smart_report.uuid}"
+        sender_name = f"{current_user.first_name} {current_user.last_name}"
 
         # get all the users to share
         for user_uuid in smart_report_share_payload.user_uuids:
@@ -408,16 +409,18 @@ async def share_smart_report_handler(
 
         # send emails to recipients
         for user in users:
-            report_message = (f"Hello {user.get('name')}, we wanted to inform you that your report for June is now ready. "
-                              f"<br> Login to your account to view report")
+            report_message = (
+                f"Hello {user.get('name')}, {sender_name} want to share their smart report from MVI with you. "
+                f"Please click on the link below to view smart report"
+            )
 
-            await send_email_verification(
-                recipient_name=user.get("name"),
+            await send_smart_report_email(
                 email=user.get("email"),
                 message=report_message,
-                url=report_link,
-                btn="View Smart Report",
-                email_purpose=EmailPurpose.PASSWORD_RESET,
+                title=f"{smart_report.title}",
+                btn_url=report_link,
+                btn_text="View Smart Report",
+                email_purpose=EmailPurpose.SMART_REPORT_ALERT,
             )
 
         return send_info("Smart Report Shared successfully")
