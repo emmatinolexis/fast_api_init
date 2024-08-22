@@ -124,6 +124,7 @@ class SmartReportRepository(BaseRepository):
                     "user_uuid": report.user_uuid,
                     "business_profile_uuid": report.business_profile_uuid,
                     "created_by": f"{report.user.first_name} {report.user.last_name}",
+                    "created_by_email": report.user.email_address
                 }
 
                 return report_data

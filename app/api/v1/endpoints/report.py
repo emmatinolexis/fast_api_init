@@ -339,7 +339,7 @@ async def generate_smart_report_handler(
                 )
 
                 await send_smart_report_email(
-                    email=smart_report.get("email"),
+                    email=smart_report.get("created_by_email"),
                     message=report_message,
                     title=f"{smart_report.get('title')}",
                     btn_url=settings.SMART_REPORT_URL,
