@@ -141,6 +141,7 @@ class Settings(BaseSettings):
     SENDER_NAME: str = os.getenv("SENDER_NAME", "MVI Tracking")
 
     GAS_DEVICE_DEFAULT: str = "Gas Device"
+    FIRE_DETECT_DEVICE_DEFAULT: str = "Fire Detection Device"
     PURCHASE_DATE_FORMAT: str = "%d/%m/%Y"
 
     # find query
