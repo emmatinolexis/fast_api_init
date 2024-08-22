@@ -21,6 +21,7 @@ from app.schema.asset_schema import (
     TheftIncidencePayload,
     TheftReportPayload,
     ThirdPartyAssetPayload,
+    UpdateBuildingPayload
 )
 from app.service.asset_device_request_service import AssetDeviceRequestService
 from app.service.asset_service import AssetService
@@ -659,4 +660,21 @@ async def get_building_cylinder_assets_handler(
         return send_data(cylinders)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix} theft report"
+        return send_internal_server_error(user_msg=msg, error=e)
+    
+
+
+@router.patch("/building/{building_uuid}", response_class=ORJSONResponse)
+@inject
+async def patch_building_handler(
+    building_uuid: str,
+    payload: UpdateBuildingPayload,
+    building_service: BuildingService = Depends(Provide[Container.building_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        data = building_service.update_building(building_uuid, payload)
+        return send_data_with_info(data, messages.UPDATE_SUCCESS + "building")
+    except Exception as e:
+        msg = messages.UPDATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)

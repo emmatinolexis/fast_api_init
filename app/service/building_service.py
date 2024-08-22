@@ -7,8 +7,12 @@ from app.schema.asset_schema import (
     BuildingInput,
     CreateBuildingInput,
     GasCylinderPayload,
+    UpdateBuildingPayload
 )
 from app.service.base_service import BaseService
+from app.core.exceptions import NotFoundError
+from app.core import messages
+from app.transfomers.building_transformers import building_transformer
 
 
 class BuildingService(BaseService):
@@ -124,5 +128,17 @@ class BuildingService(BaseService):
                 "page_size": page_size,
             }
 
+        except Exception as e:
+            raise e
+        
+
+    def update_building(self, building_uuid: str, payload: UpdateBuildingPayload):
+        try:
+            building = self.building_repository.read_by_uuid(building_uuid)
+            if not building:
+                raise NotFoundError(messages.BUILDING_NOT_FOUND + building_uuid)
+
+            building = self.building_repository.update_by_uuid(building_uuid,payload)
+            return building_transformer(building)
         except Exception as e:
             raise e
