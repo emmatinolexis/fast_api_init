@@ -57,9 +57,8 @@ class SmartReportService(BaseService):
     def get_reports(
         self,
         user_uuid: str = None,
-        name: str = None,
+        query_parameter: str = None,
         created_by: str = None,
-        status: str = None,
         business_profile_uuid: str = None,
         page=1,
         page_size=10,
@@ -68,9 +67,8 @@ class SmartReportService(BaseService):
             return self.smart_report_repository.read_all_reports(
                 user_uuid=user_uuid,
                 business_uuid=business_profile_uuid,
-                name=name,
+                query_parameter=query_parameter,
                 created_by=created_by,
-                status=status,
                 page=page,
                 page_size=page_size,
             )
