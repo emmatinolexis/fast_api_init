@@ -1,5 +1,7 @@
 from typing import Optional
 
+from app.core import messages
+from app.core.exceptions import NotFoundError
 from app.repository.building_repository import BuildingRepository
 from app.repository.gas_cylinder_repository import GasCylinderRepository
 from app.repository.gas_device_repository import GasDeviceRepository
@@ -7,11 +9,9 @@ from app.schema.asset_schema import (
     BuildingInput,
     CreateBuildingInput,
     GasCylinderPayload,
-    UpdateBuildingPayload
+    UpdateBuildingPayload,
 )
 from app.service.base_service import BaseService
-from app.core.exceptions import NotFoundError
-from app.core import messages
 from app.transfomers.building_transformers import building_transformer
 
 
@@ -130,7 +130,6 @@ class BuildingService(BaseService):
 
         except Exception as e:
             raise e
-        
 
     def update_building(self, building_uuid: str, payload: UpdateBuildingPayload):
         try:
@@ -138,7 +137,7 @@ class BuildingService(BaseService):
             if not building:
                 raise NotFoundError(messages.BUILDING_NOT_FOUND + building_uuid)
 
-            building = self.building_repository.update_by_uuid(building_uuid,payload)
+            building = self.building_repository.update_by_uuid(building_uuid, payload)
             return building_transformer(building)
         except Exception as e:
             raise e

@@ -21,7 +21,7 @@ from app.schema.asset_schema import (
     TheftIncidencePayload,
     TheftReportPayload,
     ThirdPartyAssetPayload,
-    UpdateBuildingPayload
+    UpdateBuildingPayload,
 )
 from app.service.asset_device_request_service import AssetDeviceRequestService
 from app.service.asset_service import AssetService
@@ -661,7 +661,6 @@ async def get_building_cylinder_assets_handler(
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix} theft report"
         return send_internal_server_error(user_msg=msg, error=e)
-    
 
 
 @router.patch("/building/{building_uuid}", response_class=ORJSONResponse)

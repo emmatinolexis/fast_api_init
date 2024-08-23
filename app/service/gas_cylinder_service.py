@@ -10,7 +10,7 @@ from app.schema.gas_cylinder_schema import (
 )
 from app.service.base_service import BaseService
 from app.transfomers.gas_cylinder_transformers import gas_cylinder_transformer
-from app.util.enums import AccountType, DeviceStatus
+from app.util.enums import AccountType, ActiveStatus, DeviceStatus
 
 
 class GasCylinderService(BaseService):
@@ -58,23 +58,70 @@ class GasCylinderService(BaseService):
         business_uuid: str = None,
     ):
         try:
-            cylinder = self.gas_cylinder_repository.create_gas_cylinder(
-                payload, user_uuid, business_uuid
-            )
+            # Initialize the cylinder variable to None
+            cylinder = None
+
+            # Create a gas cylinder if cylinder_name is provided
+            if payload.cylinder_name:
+                cylinder = self.gas_cylinder_repository.create_gas_cylinder(
+                    payload, user_uuid, business_uuid
+                )
+
+            # If a gas_cylinder_uuid and gas_device_serial_number are provided, handle device linking
             if payload.gas_cylinder_uuid and payload.gas_device_serial_number:
+                # Fetch the gas device by serial number
                 gas_device = self.gas_device_repository.get_device_by_serial_no(
                     payload.gas_device_serial_number
                 )
+                # If the device is not found, raise an error
+                if not gas_device:
+                    raise NotFoundError(
+                        messages.GAS_DEVICE_NOT_FOUND + payload.gas_device_serial_number
+                    )
+
+                # Check if there is already a cylinder associated with this gas device
+                cylinder_with_given_gas_device = (
+                    self.gas_cylinder_repository.get_cylinder_by_device_serial_number(
+                        payload.gas_device_serial_number
+                    )
+                )
+
+                # If a cylinder is associated with the device, dissociate the device from it
+                if cylinder_with_given_gas_device:
+                    self.gas_cylinder_repository.update_attr_by_uuid(
+                        cylinder_with_given_gas_device.uuid,
+                        "gas_device_serial_number",
+                        None,
+                    )
+                    self.gas_cylinder_repository.update_attr_by_uuid(
+                        cylinder_with_given_gas_device.uuid,
+                        "status",
+                        ActiveStatus.INACTIVE,
+                    )
+
+                # Now associate the gas device with the specified cylinder
+                self.gas_cylinder_repository.update_attr_by_uuid(
+                    payload.gas_cylinder_uuid,
+                    "gas_device_serial_number",
+                    payload.gas_device_serial_number,
+                )
+
+                # Update the gas device status and its associated building
                 self.gas_device_repository.update_attr_by_uuid(
                     gas_device.uuid, "status", DeviceStatus.ASSIGNED
+                )
+                self.gas_cylinder_repository.update_attr_by_uuid(
+                    payload.gas_cylinder_uuid, "status", ActiveStatus.ACTIVE
                 )
                 self.gas_device_repository.update_attr_by_uuid(
                     gas_device.uuid, "building_uuid", payload.building_uuid
                 )
 
+            # Return the created or modified cylinder, or None if no cylinder was created
             return cylinder
 
         except Exception as e:
+            # Handle exceptions and raise as needed
             raise e
 
     def get_cylinder_by_uuid(
