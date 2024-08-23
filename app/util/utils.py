@@ -880,15 +880,17 @@ def convert_iso_datetime_format_slash(datetime_input):
 def load_bulk_fuel_logs(file_url: str):
     try:
         # Check the file extension to determine how to read the file
-        if file_url.endswith('.csv'):
+        if file_url.endswith(".csv"):
             # Read the CSV file into a pandas DataFrame
             df = pd.read_csv(file_url)
-        elif file_url.endswith(('.xls', '.xlsx')):
+        elif file_url.endswith((".xls", ".xlsx")):
             # Read the Excel file into a pandas DataFrame
             df = pd.read_excel(file_url)
         else:
-            raise ValueError("Unsupported file format. Only CSV and Excel files are supported.")
-        
+            raise ValueError(
+                "Unsupported file format. Only CSV and Excel files are supported."
+            )
+
         # Extract each row and store it in a list as a dictionary
         rows_list = df.to_dict("records")
 
@@ -967,7 +969,14 @@ def convert_smart_report_status(status: SmartReportStatus):
 
 def parse_date(date_str):
     # List of potential date formats including date and time
-    date_formats = ["%Y-%m-%d", "%Y-%m-%d %H:%M:%S", "%d/%m/%Y", "%m/%d/%Y", "%d-%m-%Y", "%d-%m-%Y %H:%M:%S"]
+    date_formats = [
+        "%Y-%m-%d",
+        "%Y-%m-%d %H:%M:%S",
+        "%d/%m/%Y",
+        "%m/%d/%Y",
+        "%d-%m-%Y",
+        "%d-%m-%Y %H:%M:%S",
+    ]
 
     for fmt in date_formats:
         try:

@@ -436,3 +436,26 @@ async def share_smart_report_handler(
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         logging.info(e)
         return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/cylinder_report/{cylinder_uuid}", response_class=ORJSONResponse)
+@inject
+async def get_cylinder_report(
+    cylinder_uuid: str,
+    start_date: str,
+    end_date: str,
+    service: GasCylinderEventService = Depends(
+        Provide[Container.gas_cylinder_event_service]
+    ),
+    user_service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        data = service.generate_report_single_cylinder(
+            cylinder_uuid=cylinder_uuid, start_date=start_date, end_date=end_date
+        )
+        return send_data_with_info(data, messages.GET_SUCCESS + "Cylinder Report")
+    except Exception as e:
+        return send_internal_server_error(
+            user_msg="Failed to get cylinder report", error=e
+        )
