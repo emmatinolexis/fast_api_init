@@ -417,8 +417,8 @@ async def share_smart_report_handler(
         # send emails to recipients
         for user in users:
             report_message = (
-                f"Hello {user.get('name')}, {sender_name} want to share their smart report from MVI with you. "
-                f"Please click on the link below to view smart report"
+                f"Hello {user.get('name')}, we wanted to inform you that your report for June is now ready. "
+                f"<br> Login to your account to view report"
             )
 
             await send_smart_report_email(

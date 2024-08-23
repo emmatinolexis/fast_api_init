@@ -175,3 +175,11 @@ class GasCylinderRepository(BaseRepository):
             }
 
             return cylinder
+
+    def get_cylinder_by_device_serial_number(self, serial_number: str):
+        with self.session_factory() as session:
+            return (
+                session.query(self.model)
+                .filter(self.model.gas_device_serial_number == serial_number)
+                .first()
+            )
