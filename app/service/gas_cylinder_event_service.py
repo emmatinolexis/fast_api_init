@@ -241,3 +241,73 @@ class GasCylinderEventService(BaseService):
             )
 
         return all_devices_daily_usage
+
+    def generate_report_single_cylinder(
+        self, cylinder_uuid: str, start_date: str, end_date: str
+    ):
+        # Fetch the cylinder by its UUID
+        cylinder = self.gas_cylinder_repository.read_by_uuid(cylinder_uuid)
+
+        if not cylinder or cylinder.gas_device_serial_number is None:
+            return None  # Cylinder does not exist or has no device serial number
+
+        device_serial_number = cylinder.gas_device_serial_number
+        device_name = cylinder.cylinder_name
+
+        # Query events between the specified dates
+        events = self.query_between_dates(
+            device_serial_number=device_serial_number,
+            start_date=start_date,
+            end_date=end_date,
+        )
+
+        # Arrange events by datetime in ascending order
+        events.sort(key=lambda x: x.event_timestamp)
+
+        # Group events by date
+        daily_events = defaultdict(list)
+        for event in events:
+            date_str = event.event_timestamp.date().isoformat()
+            daily_events[date_str].append(event)
+
+        # Calculate daily usage
+        daily_usage = []
+        for date_str, events in daily_events.items():
+            if len(events) >= 2:
+                first_event = events[0]
+                last_event = events[-1]
+                usage = last_event.current_weight - first_event.current_weight
+                daily_usage.append({"date": date_str, "usage": int(usage)})
+
+        # Query the current weight of the device
+        current_weight = events[-1].current_weight if events else None
+
+        # Retrieve the cylinder type details
+        cylinder_type_uuid = cylinder.cylinder_type_uuid
+        if cylinder_type_uuid:
+            cylinder_type = self.gas_cylinder_type_repository.read_by_uuid(
+                cylinder_type_uuid
+            )
+            empty_weight = cylinder_type.empty_weight
+            full_weight = cylinder_type.full_weight
+
+            # Calculate gas level percentage
+            gas_percentage = (
+                calculate_gas_level_percentage(
+                    empty_weight, full_weight, current_weight
+                )
+                if current_weight is not None
+                else None
+            )
+
+            if gas_percentage is not None:
+                gas_percentage = abs(int(gas_percentage))  # Convert to positive integer
+        else:
+            gas_percentage = 0
+
+        # Construct and return the report for the single cylinder
+        return {
+            "name": device_name,
+            "daily_usage": daily_usage,
+            "current_gas_percentage": gas_percentage,
+        }
