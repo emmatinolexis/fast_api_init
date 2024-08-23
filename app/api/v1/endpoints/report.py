@@ -20,12 +20,7 @@ from app.service.gas_cylinder_event_service import GasCylinderEventService
 from app.service.smart_report_service import SmartReportService
 from app.service.user_service import UserService
 from app.util.email import send_smart_report_email
-from app.util.enums import (
-    AccountType,
-    EmailPurpose,
-    FileFormat,
-    SmartReportStatus,
-)
+from app.util.enums import AccountType, EmailPurpose, FileFormat, SmartReportStatus
 from app.util.utils import (
     get_content_type,
     send_client_side_error,

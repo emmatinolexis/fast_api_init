@@ -121,13 +121,14 @@ class SmartReportRepository(BaseRepository):
                     "asset_type_uuid": report.asset_type_uuid,
                     "asset_group_uuids": report.asset_group_uuids,
                     "created_at": report.created_at,
-                    "business_name": report.user.business_profile.business_name,
+                    "business_name": report.user.business_profile.business_name
+                    if report.user.business_profile
+                    else None,
                     "user_uuid": report.user_uuid,
                     "business_profile_uuid": report.business_profile_uuid,
                     "created_by": f"{report.user.first_name} {report.user.last_name}",
                     "created_by_email": report.user.email_address,
                 }
-
                 return report_data
 
         except Exception as e:
