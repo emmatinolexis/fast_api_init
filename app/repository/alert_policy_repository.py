@@ -386,9 +386,6 @@ class AlertPolicyRepository(BaseRepository):
         )
 
     def extract_coordinates_and_events(self, asset_points):
-        asset_coordinates = [
-            (point.latitude, point.longitude) for point in asset_points
-        ]
         asset_coordinates_events = [
             {
                 "latitude": point.latitude,
@@ -400,7 +397,7 @@ class AlertPolicyRepository(BaseRepository):
             }
             for point in asset_points
         ]
-        return asset_coordinates, asset_coordinates_events
+        return asset_coordinates_events
 
     def check_violations(
         self, asset_coordinates_events, geofence_points, geofence_type
@@ -626,16 +623,18 @@ class AlertPolicyRepository(BaseRepository):
                     last_checked_time = self.get_last_checked_over_speeding_time(
                         session, geofence_asset.device_imei, today_date
                     )
+                    # if not last_checked_time:
+                    #     return geofence_asset
+                    # return last_checked_time
 
                     # Query the database for tracking events that occurred after the last checked time
                     asset_points = self.get_asset_points(
                         session, geofence_asset.device_imei, last_checked_time
                     )
 
-                    (
-                        asset_coordinates,
-                        asset_coordinates_events,
-                    ) = self.extract_coordinates_and_events(asset_points)
+                    asset_coordinates_events = self.extract_coordinates_and_events(
+                        asset_points
+                    )
 
                     # Check for geofence violations
                     violated_asset_coordinates = self.check_over_speeding(
@@ -646,8 +645,9 @@ class AlertPolicyRepository(BaseRepository):
                         violation_time = calculate_time_traveled(
                             violated_asset_coordinates
                         )
+
                         violation_distance = get_distance_travelled_by_coordinates(
-                            asset_coordinates
+                            asset_coordinates_events
                         )
 
                         violations.append(
