@@ -12,7 +12,7 @@ from app.schema.fuel_log_schema import (
 )
 from app.service.base_service import BaseService
 from app.transfomers.fuel_log_transformer import fuel_log_transformer
-from app.util.utils import load_bulk_fuel_logs_from_csv, parse_date
+from app.util.utils import load_bulk_fuel_logs, parse_date
 
 
 class FuelLogService(BaseService):
@@ -51,7 +51,7 @@ class FuelLogService(BaseService):
     ):
         try:
             with self.fuel_log_repository.session_factory() as session:
-                data = load_bulk_fuel_logs_from_csv(csv_url)
+                data = load_bulk_fuel_logs(csv_url)
                 fuel_logs = []  # Accumulate all fuel logs here
 
                 for item in data:
@@ -75,13 +75,14 @@ class FuelLogService(BaseService):
                     log_payload = FleetManagerFuelLog(
                         amount=item.get("amount"),
                         quantity=item.get("litres"),
-                        purchase_date=parse_date(item.get("purchase_date")),
+                        purchase_date=parse_date(str(item.get("purchase_date"))),
                         asset_name=drivers_asset.asset_name,
                         asset_uuid=str(drivers_asset.uuid),
                         business_profile_uuid=business_profile_uuid,
                         user_uuid=user_uuid,
                         driver_uuid=str(driver_details.uuid),
                         fuel_type=item.get("fuel_type").lower(),
+                        payment_method=item.get("payment_method").lower(),
                     )
 
                     fuel_logs.append(log_payload)  # Accumulate the log payload

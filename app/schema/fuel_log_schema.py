@@ -30,6 +30,7 @@ class FleetManagerFuelLog(BaseModel):
     asset_uuid: str
     driver_uuid: str
     fuel_type: FuelType
+    payment_method: FuelLogPaymmentMethod
 
 
 class SingleFuelLog(BaseModel):

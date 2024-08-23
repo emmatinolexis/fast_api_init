@@ -2,14 +2,13 @@ import logging
 from contextlib import AbstractContextManager
 from typing import Any, Callable, Dict
 
-from sqlalchemy import desc
+from sqlalchemy import String, cast, desc, or_
 from sqlalchemy.orm import Session, joinedload
 
 from app.model.smart_report import SmartReport
 from app.model.user import User
 from app.repository.base_repository import BaseRepository
 from app.util.enums import SmartReportStatus
-from app.util.utils import convert_smart_report_status, convert_smart_report_status_user
 
 
 class SmartReportRepository(BaseRepository):
@@ -21,8 +20,7 @@ class SmartReportRepository(BaseRepository):
         self,
         user_uuid: str = None,
         business_uuid: str = None,
-        name: str = None,
-        status: str = None,
+        query_parameter: str = None,
         created_by: str = None,
         page: int = 1,
         page_size: int = 10,
@@ -30,15 +28,18 @@ class SmartReportRepository(BaseRepository):
         with self.session_factory() as session:
             # Initialize the query and filters
             query = session.query(self.model)
+
             if user_uuid:
                 query = query.filter(self.model.user_uuid == user_uuid)
             if business_uuid:
                 query = query.filter(self.model.business_profile_uuid == business_uuid)
-            if name:
-                query = query.filter(self.model.title.ilike(f"%{name}%"))
-            if status:
+            if query_parameter:
+                # Add filters for both title and status using the query parameter
                 query = query.filter(
-                    self.model.status == convert_smart_report_status_user(status)
+                    or_(
+                        self.model.title.ilike(f"%{query_parameter}%"),
+                        cast(self.model.status, String).ilike(f"%{query_parameter}%"),
+                    )
                 )
             if created_by:
                 # Join with the user model to filter by creator's name
@@ -76,7 +77,7 @@ class SmartReportRepository(BaseRepository):
                     "start_date": report.start_date,
                     "end_date": report.end_date,
                     "report_types": report.report_types,
-                    "status": convert_smart_report_status(report.status),
+                    "status": report.status,
                     "created_at": report.created_at,
                     "result_url": report.result_url,
                     "created_by": f"{report.user.first_name} {report.user.last_name}",
@@ -120,12 +121,14 @@ class SmartReportRepository(BaseRepository):
                     "asset_type_uuid": report.asset_type_uuid,
                     "asset_group_uuids": report.asset_group_uuids,
                     "created_at": report.created_at,
-                    "business_name": report.user.business_profile.business_name,
+                    "business_name": report.user.business_profile.business_name
+                    if report.user.business_profile
+                    else None,
                     "user_uuid": report.user_uuid,
                     "business_profile_uuid": report.business_profile_uuid,
                     "created_by": f"{report.user.first_name} {report.user.last_name}",
+                    "created_by_email": report.user.email_address,
                 }
-
                 return report_data
 
         except Exception as e:

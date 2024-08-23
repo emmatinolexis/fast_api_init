@@ -19,14 +19,8 @@ from app.service.asset_service import AssetService
 from app.service.gas_cylinder_event_service import GasCylinderEventService
 from app.service.smart_report_service import SmartReportService
 from app.service.user_service import UserService
-from app.util.email import send_email_verification
-from app.util.enums import (
-    AccountType,
-    EmailPurpose,
-    FileFormat,
-    SmartReportStatus,
-    SmartReportUser,
-)
+from app.util.email import send_smart_report_email
+from app.util.enums import AccountType, EmailPurpose, FileFormat, SmartReportStatus
 from app.util.utils import (
     get_content_type,
     send_client_side_error,
@@ -197,9 +191,8 @@ async def create_smart_report_handler(
 @inject
 async def get_smart_report_by_user_handler(
     user_uuid: str,
-    name: str = None,
+    query_parameter: str = None,
     created_by: str = None,
-    status: SmartReportUser = None,
     page: int = Query(1, ge=1, description="Page number, default is set to 1"),
     page_size: int = Query(
         10, ge=1, le=1000, description="Items per page, default is 10"
@@ -216,9 +209,8 @@ async def get_smart_report_by_user_handler(
             if user.get("account_type") == AccountType.INDIVIDUAL:
                 reports = smart_report_service.get_reports(
                     user_uuid=user_uuid,
-                    name=name,
+                    query_parameter=query_parameter,
                     created_by=created_by,
-                    status=status,
                     page=page,
                     page_size=page_size,
                 )
@@ -228,9 +220,8 @@ async def get_smart_report_by_user_handler(
             if user.get("account_type") == AccountType.BUSINESS:
                 reports = smart_report_service.get_reports(
                     business_profile_uuid=user.get("business_profile").uuid,
-                    name=name,
+                    query_parameter=query_parameter,
                     created_by=created_by,
-                    status=status,
                     page=10,
                     page_size=page_size,
                 )
@@ -332,6 +323,22 @@ async def generate_smart_report_handler(
                 smart_report_service.update_smart_report_status(
                     smart_report.get("uuid"), SmartReportStatus.PROCESSED, url
                 )
+
+                report_message = (
+                    f"Hello {smart_report.get('created_by')}, "
+                    f"we want to inform you that your {smart_report.get('title')} is ready."
+                    f"<br> Login to your account to view report"
+                )
+
+                await send_smart_report_email(
+                    email=smart_report.get("created_by_email"),
+                    message=report_message,
+                    title=f"{smart_report.get('title')}",
+                    btn_url=settings.SMART_REPORT_URL,
+                    btn_text="View Smart Report",
+                    email_purpose=EmailPurpose.SMART_REPORT_ALERT,
+                )
+
                 msg = "Smart report generated successfully"
                 logging.info(msg)
                 return send_info(msg)
@@ -388,6 +395,7 @@ async def share_smart_report_handler(
 
         users = []
         report_link = f"{settings.SMART_REPORT_SHARE_URL}{smart_report.uuid}"
+        sender_name = f"{current_user.first_name} {current_user.last_name}"
 
         # get all the users to share
         for user_uuid in smart_report_share_payload.user_uuids:
@@ -413,13 +421,13 @@ async def share_smart_report_handler(
                 f"<br> Login to your account to view report"
             )
 
-            await send_email_verification(
-                recipient_name=user.get("name"),
+            await send_smart_report_email(
                 email=user.get("email"),
                 message=report_message,
-                url=report_link,
-                btn="View Smart Report",
-                email_purpose=EmailPurpose.PASSWORD_RESET,
+                title=f"{smart_report.title}",
+                btn_url=report_link,
+                btn_text="View Smart Report",
+                email_purpose=EmailPurpose.SMART_REPORT_ALERT,
             )
 
         return send_info("Smart Report Shared successfully")

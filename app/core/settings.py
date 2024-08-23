@@ -112,7 +112,12 @@ class Settings(BaseSettings):
 
     SMART_REPORT_SHARE_URL: str = os.getenv(
         "SMART_REPORT_SHARE_URL",
-        "https://mvi-frontend-uat.sageinfrastructure.net/smart-report?smartId= ",
+        "https://mvi-frontend-uat.sageinfrastructure.net/smart-report?smartId=",
+    )
+
+    SMART_REPORT_URL: str = os.getenv(
+        "SMART_REPORT_URL",
+        "https://mvi-frontend-uat.sageinfrastructure.net/dashboard/reports/smart-report",
     )
 
     # aws
@@ -141,6 +146,7 @@ class Settings(BaseSettings):
     SENDER_NAME: str = os.getenv("SENDER_NAME", "MVI Tracking")
 
     GAS_DEVICE_DEFAULT: str = "Gas Device"
+    FIRE_DETECT_DEVICE_DEFAULT: str = "Fire Detection Device"
     PURCHASE_DATE_FORMAT: str = "%d/%m/%Y"
 
     # find query

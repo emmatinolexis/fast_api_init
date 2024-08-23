@@ -877,11 +877,18 @@ def convert_iso_datetime_format_slash(datetime_input):
     return formatted_date
 
 
-def load_bulk_fuel_logs_from_csv(csv_url: str):
+def load_bulk_fuel_logs(file_url: str):
     try:
-        # Attempt to read the CSV file into a pandas DataFrame
-        df = pd.read_csv(csv_url)
-
+        # Check the file extension to determine how to read the file
+        if file_url.endswith('.csv'):
+            # Read the CSV file into a pandas DataFrame
+            df = pd.read_csv(file_url)
+        elif file_url.endswith(('.xls', '.xlsx')):
+            # Read the Excel file into a pandas DataFrame
+            df = pd.read_excel(file_url)
+        else:
+            raise ValueError("Unsupported file format. Only CSV and Excel files are supported.")
+        
         # Extract each row and store it in a list as a dictionary
         rows_list = df.to_dict("records")
 
@@ -890,7 +897,7 @@ def load_bulk_fuel_logs_from_csv(csv_url: str):
 
     except Exception as e:
         # Print the error message
-        print(f"An error occurred while loading the CSV file: {e}")
+        print(f"An error occurred while loading the file: {e}")
         # Raise the exception again if needed
         raise e
 
@@ -951,16 +958,16 @@ def convert_smart_report_status_user(status: SmartReportUser):
 def convert_smart_report_status(status: SmartReportStatus):
     if (
         status == SmartReportStatus.PENDING
-        and SmartReportStatus.PROCESSING
-        and SmartReportStatus.FAILED
+        or SmartReportStatus.PROCESSING
+        or SmartReportStatus.FAILED
     ):
         return SmartReportUser.PENDING
     return SmartReportUser.READY
 
 
 def parse_date(date_str):
-    # List of potential date formats
-    date_formats = ["%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y", "%d-%m-%Y"]
+    # List of potential date formats including date and time
+    date_formats = ["%Y-%m-%d", "%Y-%m-%d %H:%M:%S", "%d/%m/%Y", "%m/%d/%Y", "%d-%m-%Y", "%d-%m-%Y %H:%M:%S"]
 
     for fmt in date_formats:
         try:

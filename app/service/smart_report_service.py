@@ -57,9 +57,8 @@ class SmartReportService(BaseService):
     def get_reports(
         self,
         user_uuid: str = None,
-        name: str = None,
+        query_parameter: str = None,
         created_by: str = None,
-        status: str = None,
         business_profile_uuid: str = None,
         page=1,
         page_size=10,
@@ -68,9 +67,8 @@ class SmartReportService(BaseService):
             return self.smart_report_repository.read_all_reports(
                 user_uuid=user_uuid,
                 business_uuid=business_profile_uuid,
-                name=name,
+                query_parameter=query_parameter,
                 created_by=created_by,
-                status=status,
                 page=page,
                 page_size=page_size,
             )
@@ -489,18 +487,40 @@ class SmartReportService(BaseService):
 
                 for month, events in monthly_events.items():
                     moving_time, idle_time = self.calculate_times(events)
-                    monthly_utilization[month]["hours_worked"] += round(moving_time, 2)
-                    monthly_utilization[month]["idle_time"] += round(idle_time, 2)
+                    # total_time = moving_time + idle_time
+                    # if total_time > 0:
+                    #     hours_worked_percentage = round((moving_time / total_time) * 100, 2)
+                    #     idle_time_percentage = round((idle_time / total_time) * 100, 2)
+                    # else:
+                    #     hours_worked_percentage = 0
+                    #     idle_time_percentage = 0
 
+                    monthly_utilization[month]["hours_worked"] += moving_time
+                    monthly_utilization[month]["idle_time"] += idle_time
+
+                # Calculate overall percentages
                 overall_moving_time, overall_idle_time = self.calculate_times(
                     asset.tracking_events
                 )
-                grouped_assets[equipment_name]["hours_worked"] += round(
-                    overall_moving_time, 2
-                )
-                grouped_assets[equipment_name]["idle_time"] += round(
-                    overall_idle_time, 2
-                )
+                total_overall_time = overall_moving_time + overall_idle_time
+                if total_overall_time > 0:
+                    overall_hours_worked_percentage = round(
+                        (overall_moving_time / total_overall_time) * 100, 2
+                    )
+                    overall_idle_time_percentage = round(
+                        (overall_idle_time / total_overall_time) * 100, 2
+                    )
+                else:
+                    overall_hours_worked_percentage = 0
+                    overall_idle_time_percentage = 0
+
+                # Update grouped_assets with percentage values under the original labels
+                grouped_assets[equipment_name][
+                    "hours_worked"
+                ] += overall_hours_worked_percentage
+                grouped_assets[equipment_name][
+                    "idle_time"
+                ] += overall_idle_time_percentage
 
             report = self.generate_report_fleet_overview(
                 len(assets),
@@ -917,8 +937,6 @@ class SmartReportService(BaseService):
                 report_types = report.get("report_types")
                 user_uuid = report.get("user_uuid")
                 asset_type_uuid = report.get("asset_type_uuid")
-                business_uuid = report.get("business_profile_uuid")
-                business_name = report.get("business_name")
                 created_by = report.get("created_by")
                 report_title_header = (report.get("title"),)
                 report_date = convert_iso_datetime_format(report.get("created_at"))
@@ -929,6 +947,17 @@ class SmartReportService(BaseService):
 
                 # get user account
                 user = self.user_repository.get_user_by_uuid(user_uuid)
+
+                business_uuid = (
+                    report.get("business_profile_uuid")
+                    if user.get("account_type") == AccountType.BUSINESS
+                    else None
+                )
+                business_name = (
+                    report.get("business_name")
+                    if user.get("account_type") == AccountType.BUSINESS
+                    else None
+                )
 
                 assets = []
 

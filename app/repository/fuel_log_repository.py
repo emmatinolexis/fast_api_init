@@ -56,6 +56,8 @@ class FuelLogRepository(BaseRepository):
         with self.session_factory() as session:
             query = session.query(FuelLog).filter(FuelLog.user_uuid == user_uuid)
             query = self._apply_common_filters(query, search, start_date, end_date)
+
+            query = query.order_by(FuelLog.created_at.desc())
             return query.all()
 
     def get_fuel_logs_by_business_uuid(
@@ -70,6 +72,8 @@ class FuelLogRepository(BaseRepository):
                 FuelLog.business_profile_uuid == business_uuid
             )
             query = self._apply_common_filters(query, search, start_date, end_date)
+
+            query = query.order_by(FuelLog.created_at.desc())
             return query.all()
 
     def get_fuel_log_by_asset(
