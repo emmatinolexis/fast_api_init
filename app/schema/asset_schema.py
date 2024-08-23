@@ -154,6 +154,11 @@ class BuildingInput(BaseModel):
     gas_cylinder: Optional[GasCylinderInput] = None
 
 
+class UpdateBuildingPayload(BaseModel):
+    building_name: Optional[str] = None
+    image_url: Optional[str] = None
+
+
 class AssetInput(BaseModel):
     user_uuid: UUID
     business_profile_uuid: Optional[UUID] = None
