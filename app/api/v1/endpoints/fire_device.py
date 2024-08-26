@@ -1,0 +1,44 @@
+from fastapi import APIRouter,Depends
+from fastapi.responses import ORJSONResponse
+from dependency_injector.wiring import Provide, inject
+from app.service.gas_device_service import GasDeviceService
+from app.model.user import User
+from app.core.dependencies import get_current_user
+from app.util.utils import load_fire_device_serial_number_from_file
+from app.util.utils import (
+    send_client_side_error,
+    send_data,
+    send_data_with_info,
+    send_info,
+    send_internal_server_error,
+)
+from app.core.container import Container
+
+
+
+
+router = APIRouter(
+    prefix="/fire_device",
+    tags=["fire_device"],
+)
+
+
+
+@router.post("/load_csv", response_class=ORJSONResponse)
+@inject
+async def bulk_upload_fire_devices(
+    file_url: str,
+    service: GasDeviceService = Depends(Provide[Container.gas_device_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        serial_numbers = load_fire_device_serial_number_from_file(file_url=file_url)
+        message = service.load_fire_devices(serial_numbers, current_user)
+        return send_info(message)
+    except ValueError as e:
+        return send_client_side_error(user_msg=str(e), dev_msg=str(e))
+    except Exception as e:
+        msg = "Failed to load fire devices"
+        return send_internal_server_error(user_msg=msg, error=e)
+    
+    

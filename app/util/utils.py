@@ -828,6 +828,23 @@ def load_gas_device_serial_number_from_csv(csv_url: str):
         return df["device_serial_number"].tolist()
     except Exception as e:
         raise e
+    
+
+def load_fire_device_serial_number_from_file(file_url: str):
+    try:
+        # Check the file extension to determine if it's an Excel or CSV file
+        if file_url.endswith('.csv'):
+            df = pd.read_csv(file_url)
+        elif file_url.endswith(('.xls', '.xlsx')):
+            df = pd.read_excel(file_url)
+        else:
+            raise ValueError("Unsupported file format. Please provide a CSV or Excel file.")
+        
+        # Return the device serial numbers as a list
+        return df["device_serial_number"].tolist()
+    
+    except Exception as e:
+        raise e
 
 
 def convert_date_format(date_str):
