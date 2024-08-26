@@ -189,7 +189,7 @@ def calculate_total_fuel_used(fuel_level_events):
             if fuel_used > 0:
                 total_fuel_used += fuel_used
 
-    return total_fuel_used
+    return round(total_fuel_used, 2)
 
 
 # Example usage:
