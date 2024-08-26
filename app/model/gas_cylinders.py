@@ -97,7 +97,7 @@ class GasDevice(BaseModel):
         default=DeviceStatus.NOT_ASSIGNED,
         index=True,
     )
-    user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
+    user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=True)
     business_profile_uuid = Column(
         UUID(as_uuid=True),
         ForeignKey("business_profiles.uuid"),

@@ -6,6 +6,7 @@ from app.repository.gas_device_repository import GasDeviceRepository
 from app.schema.gas_cylinder_schema import CreateGasDevice, UploadGasDeviceCSV
 from app.service.base_service import BaseService
 from app.transfomers.gas_device_transformer import gas_device_transformer
+from app.schema.fire_device_schema import UploadFireDevice
 
 
 class GasDeviceService(BaseService):
@@ -36,6 +37,39 @@ class GasDeviceService(BaseService):
 
             return "Gas Devices uploaded successfully"
         except Exception as e:
+            raise e
+        
+    def load_fire_devices(self, serial_numbers: List[str], user):
+        try:
+            with self.gas_device_repository.session_factory() as session:
+                # Start a transaction
+                for serial_number in serial_numbers:
+
+                    existing_device = self.gas_device_repository.get_device_by_serial_no(
+                       str(serial_number)
+                    )
+
+                    if existing_device:
+                        raise ValueError(
+                            f"Device with serial number {serial_number} already exists"
+                        )
+                    schema = UploadFireDevice(
+                        device_name="Fire Device",
+                        serial_number=str(serial_number),
+                    )
+                    self.gas_device_repository.create(schema)
+
+                # Commit the transaction only after all devices are processed successfully
+                session.commit()
+
+            return "Fire Devices uploaded successfully"
+        except ValueError as e:
+            # Roll back the transaction in case of any error
+            session.rollback()
+            raise e
+        except Exception as e:
+            # Roll back the transaction in case of any error
+            session.rollback()
             raise e
 
     def get_all_devices(self, serial_number: str = None):

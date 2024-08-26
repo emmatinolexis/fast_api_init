@@ -45,6 +45,7 @@ from app.api.v1.endpoints.tracking import router as tracking_router
 from app.api.v1.endpoints.upload import router as upload_router
 from app.api.v1.endpoints.users import router as users_router
 from app.api.v1.endpoints.vehicle_make import router as vehicle_make_router
+from app.api.v1.endpoints.fire_device import router as fire_device_router
 
 routers = APIRouter()
 router_list = [
@@ -85,6 +86,7 @@ router_list = [
     gas_device_router,
     gas_cylinder_type_router,
     fuel_log_router,
+    fire_device_router,
 ]
 
 for router in router_list:
