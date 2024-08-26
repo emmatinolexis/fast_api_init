@@ -150,29 +150,28 @@ class SmartReportService(BaseService):
     def ensure_all_months_present(
         self, incidents_rate, start_date, end_date, monthly_totals
     ):
-        required_keys = [
-            "geofence",
-            "over_speeding",
-            "rapid_acceleration",
-            "emergency_braking",
-        ]
+        # Convert date strings to datetime objects
         current_date = datetime.strptime(start_date, "%d/%m/%Y")
         end_date = datetime.strptime(end_date, "%d/%m/%Y")
 
         while current_date <= end_date:
-            month_name = current_date.strftime("%B")
-            if month_name not in incidents_rate:
-                incidents_rate[month_name] = {key: 0 for key in required_keys}
+            month_year = current_date.strftime("%Y-%m")
+
+            if month_year not in incidents_rate:
+                # If the month is not in incidents_rate, initialize it as an empty dictionary
+                incidents_rate[month_year] = {}
             else:
-                # Ensure all required keys are present with a value of 0 if missing
-                for key in required_keys:
-                    if key not in incidents_rate[month_name]:
-                        incidents_rate[month_name][key] = 0
+                # Ensure all detected violation types have an entry in each month
+                for violation_type in incidents_rate.values():
+                    for key in violation_type.keys():
+                        if key not in incidents_rate[month_year]:
+                            incidents_rate[month_year][key] = 0
 
             # Ensure monthly_totals has an entry for every month
-            if month_name not in monthly_totals:
-                monthly_totals[month_name] = 0
+            if month_year not in monthly_totals:
+                monthly_totals[month_year] = 0
 
+            # Move to the next month
             current_date += relativedelta(months=1)
 
     def generate_violation_fleet_performance_report(
@@ -299,36 +298,47 @@ class SmartReportService(BaseService):
         return fuel_utilization_mpg
 
     def process_violations(self, data):
+        # Initialize or reset the total_incidents count
+        # data["incidents"] = defaultdict(int)
+
         for violation in data["asset_violations"]:
+            # Automatically append '_violations' to the policy type name
             policy_type_name = to_snake_case(
                 violation.alert_policy.alert_policy_type.name.replace(
                     "alert policy", "violations"
                 )
             )
+
+            # Increment the count for this policy type
             data["policy_type_counts"][policy_type_name] += 1
 
+            # Increment the count for the equipment type
             equipment_name = violation.asset.equipment.name
             data["incidents_by_equipment_type"][equipment_name] += 1
 
+            # Track the incident rate by month and policy type
             month_year = violation.created_at.strftime("%Y-%m")
             data["incidents_rate"][month_year][policy_type_name] += 1
 
+            # Increment the count for this policy type in incidents
+            data["incidents"][policy_type_name] += 1
+
+            # Increment the total incident count
+            data["incidents"]["total_violations"] += 1
+
+            # Prepare the violated asset details
             violated_asset = []
             for violation_coordinate in violation.violation_coordinates:
-                for event in violation_coordinate.get("events"):
-                    asset = {
-                        "asset_name": violation.asset.asset_name,
-                        "violation_date": violation.created_at,
-                        "violation_type": to_snake_case(
-                            violation.alert_policy.alert_policy_type.name.replace(
-                                "alert policy", "violations"
-                            )
-                        ),
-                        "longitude": event.get("longitude"),
-                        "latitude": event.get("latitude"),
-                    }
-                    violated_asset.append(asset)
+                asset = {
+                    "asset_name": violation.asset.asset_name,
+                    "violation_date": violation.created_at,
+                    "violation_type": policy_type_name,
+                    "longitude": violation_coordinate.get("longitude"),
+                    "latitude": violation_coordinate.get("latitude"),
+                }
+                violated_asset.append(asset)
 
+            # Add to violated assets list
             data["violated_assets"].extend(violated_asset)
 
     def prepare_final_report(self, data):
@@ -438,37 +448,24 @@ class SmartReportService(BaseService):
         return report
 
     def generate_smart_report_fleet_overview(
-        self,
-        date_from: str,
-        date_to: str,
-        asset_type_uuid: str,
-        assets: list,
-        user_uuid: str = None,
-        business_uuid: str = None,
+            self,
+            date_from: str,
+            date_to: str,
+            asset_type_uuid: str,
+            assets: list,
+            user_uuid: str = None,
+            business_uuid: str = None,
     ):
         try:
-            good_asset_count = 0
-            poor_asset_count = 0
+            date_from_dt, date_to_dt, unique_months = self.parse_dates(date_from, date_to)
 
-            date_from_dt, date_to_dt, unique_months = self.parse_dates(
-                date_from, date_to
-            )
-
-            monthly_utilization = {
-                month: {"hours_worked": 0, "idle_time": 0} for month in unique_months
-            }
-
+            monthly_utilization = self.initialize_monthly_utilization(unique_months)
             grouped_assets = {}
+            good_asset_count, poor_asset_count = 0, 0
 
             for asset in assets:
-                asset_violation = self.asset_repository.get_violations_by_alert_type(
-                    GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
-                    date_from_dt,
-                    date_to_dt,
-                    business_uuid=business_uuid,
-                    asset_uuid=asset.uuid,
-                    asset_type_uuid=asset_type_uuid,
-                    user_uuid=user_uuid,
+                asset_violation = self.get_asset_violation(
+                    asset, date_from_dt, date_to_dt, business_uuid, asset_type_uuid, user_uuid
                 )
 
                 if asset_violation:
@@ -478,49 +475,13 @@ class SmartReportService(BaseService):
 
                 equipment_name = asset.equipment.name
                 if equipment_name not in grouped_assets:
-                    grouped_assets[equipment_name] = {
-                        "hours_worked": 0,
-                        "idle_time": 0,
-                    }
+                    grouped_assets[equipment_name] = {"hours_worked": 0, "idle_time": 0}
 
-                monthly_events = self.group_events_by_month(asset)
+                self.update_monthly_utilization(monthly_utilization, asset)
+                self.update_grouped_assets(grouped_assets, asset)
 
-                for month, events in monthly_events.items():
-                    moving_time, idle_time = self.calculate_times(events)
-                    # total_time = moving_time + idle_time
-                    # if total_time > 0:
-                    #     hours_worked_percentage = round((moving_time / total_time) * 100, 2)
-                    #     idle_time_percentage = round((idle_time / total_time) * 100, 2)
-                    # else:
-                    #     hours_worked_percentage = 0
-                    #     idle_time_percentage = 0
-
-                    monthly_utilization[month]["hours_worked"] += moving_time
-                    monthly_utilization[month]["idle_time"] += idle_time
-
-                # Calculate overall percentages
-                overall_moving_time, overall_idle_time = self.calculate_times(
-                    asset.tracking_events
-                )
-                total_overall_time = overall_moving_time + overall_idle_time
-                if total_overall_time > 0:
-                    overall_hours_worked_percentage = round(
-                        (overall_moving_time / total_overall_time) * 100, 2
-                    )
-                    overall_idle_time_percentage = round(
-                        (overall_idle_time / total_overall_time) * 100, 2
-                    )
-                else:
-                    overall_hours_worked_percentage = 0
-                    overall_idle_time_percentage = 0
-
-                # Update grouped_assets with percentage values under the original labels
-                grouped_assets[equipment_name][
-                    "hours_worked"
-                ] += overall_hours_worked_percentage
-                grouped_assets[equipment_name][
-                    "idle_time"
-                ] += overall_idle_time_percentage
+            self.normalize_grouped_assets(grouped_assets)
+            self.round_monthly_utilization(monthly_utilization)
 
             report = self.generate_report_fleet_overview(
                 len(assets),
@@ -533,6 +494,71 @@ class SmartReportService(BaseService):
 
         except Exception as e:
             raise e
+
+    def initialize_monthly_utilization(self, unique_months):
+        return {month: {"hours_worked": 0, "idle_time": 0} for month in unique_months}
+
+    def get_asset_violation(self, asset, date_from_dt, date_to_dt, business_uuid, asset_type_uuid, user_uuid):
+        return self.asset_repository.get_violations_by_alert_type(
+            GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
+            date_from_dt,
+            date_to_dt,
+            business_uuid=business_uuid,
+            asset_uuid=asset.uuid,
+            asset_type_uuid=asset_type_uuid,
+            user_uuid=user_uuid,
+        )
+
+    def update_monthly_utilization(self, monthly_utilization, asset):
+        monthly_events = self.group_events_by_month(asset)
+        for month, events in monthly_events.items():
+            moving_time, idle_time = self.calculate_times(events)
+            total_time = moving_time + idle_time
+
+            if total_time > 0:
+                hours_worked_percentage = round((moving_time / total_time) * 100, 2)
+                idle_time_percentage = round((idle_time / total_time) * 100, 2)
+            else:
+                hours_worked_percentage = 0
+                idle_time_percentage = 0
+
+            monthly_utilization[month]["hours_worked"] += hours_worked_percentage
+            monthly_utilization[month]["idle_time"] += idle_time_percentage
+
+    def update_grouped_assets(self, grouped_assets, asset):
+        overall_moving_time, overall_idle_time = self.calculate_times(asset.tracking_events)
+        total_overall_time = overall_moving_time + overall_idle_time
+
+        if total_overall_time > 0:
+            overall_hours_worked_percentage = round((overall_moving_time / total_overall_time) * 100, 2)
+            overall_idle_time_percentage = round((overall_idle_time / total_overall_time) * 100, 2)
+        else:
+            overall_hours_worked_percentage = 0
+            overall_idle_time_percentage = 0
+
+        equipment_name = asset.equipment.name
+        grouped_assets[equipment_name]["hours_worked"] += overall_hours_worked_percentage
+        grouped_assets[equipment_name]["idle_time"] += overall_idle_time_percentage
+
+    def normalize_grouped_assets(self, grouped_assets):
+        for equipment_name, utilization in grouped_assets.items():
+            total_percentage = utilization["hours_worked"] + utilization["idle_time"]
+            if total_percentage > 0:
+                grouped_assets[equipment_name]["hours_worked"] = round(
+                    (utilization["hours_worked"] / total_percentage) * 100, 2
+                )
+                grouped_assets[equipment_name]["idle_time"] = round(
+                    (utilization["idle_time"] / total_percentage) * 100, 2
+                )
+
+    def round_monthly_utilization(self, monthly_utilization):
+        for month, utilization in monthly_utilization.items():
+            monthly_utilization[month]["hours_worked"] = round(
+                monthly_utilization[month]["hours_worked"], 2
+            )
+            monthly_utilization[month]["idle_time"] = round(
+                monthly_utilization[month]["idle_time"], 2
+            )
 
     def calculate_total_distance(self, assets, start_date, end_date):
         total_distance_traveled_current_range = 0
