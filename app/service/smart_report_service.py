@@ -154,18 +154,19 @@ class SmartReportService(BaseService):
         current_date = datetime.strptime(start_date, "%d/%m/%Y")
         end_date = datetime.strptime(end_date, "%d/%m/%Y")
 
+        months_to_remove = []
+
         while current_date <= end_date:
             month_year = current_date.strftime("%Y-%m")
 
             if month_year not in incidents_rate:
-                # If the month is not in incidents_rate, initialize it as an empty dictionary
-                incidents_rate[month_year] = {}
+                # If the month is not in incidents_rate, do nothing
+                pass
             else:
-                # Ensure all detected violation types have an entry in each month
-                for violation_type in incidents_rate.values():
-                    for key in violation_type.keys():
-                        if key not in incidents_rate[month_year]:
-                            incidents_rate[month_year][key] = 0
+                # If the month exists, check if it has any non-zero incidents
+                if not any(incidents_rate[month_year].values()):
+                    # Mark the month for removal if it has no incidents
+                    months_to_remove.append(month_year)
 
             # Ensure monthly_totals has an entry for every month
             if month_year not in monthly_totals:
@@ -173,6 +174,10 @@ class SmartReportService(BaseService):
 
             # Move to the next month
             current_date += relativedelta(months=1)
+
+        # Remove months that have no incidents
+        for month in months_to_remove:
+            del incidents_rate[month]
 
     def generate_violation_fleet_performance_report(
         self, date_from: str, date_to: str, assets: list
@@ -448,16 +453,18 @@ class SmartReportService(BaseService):
         return report
 
     def generate_smart_report_fleet_overview(
-            self,
-            date_from: str,
-            date_to: str,
-            asset_type_uuid: str,
-            assets: list,
-            user_uuid: str = None,
-            business_uuid: str = None,
+        self,
+        date_from: str,
+        date_to: str,
+        asset_type_uuid: str,
+        assets: list,
+        user_uuid: str = None,
+        business_uuid: str = None,
     ):
         try:
-            date_from_dt, date_to_dt, unique_months = self.parse_dates(date_from, date_to)
+            date_from_dt, date_to_dt, unique_months = self.parse_dates(
+                date_from, date_to
+            )
 
             monthly_utilization = self.initialize_monthly_utilization(unique_months)
             grouped_assets = {}
@@ -465,7 +472,12 @@ class SmartReportService(BaseService):
 
             for asset in assets:
                 asset_violation = self.get_asset_violation(
-                    asset, date_from_dt, date_to_dt, business_uuid, asset_type_uuid, user_uuid
+                    asset,
+                    date_from_dt,
+                    date_to_dt,
+                    business_uuid,
+                    asset_type_uuid,
+                    user_uuid,
                 )
 
                 if asset_violation:
@@ -498,7 +510,9 @@ class SmartReportService(BaseService):
     def initialize_monthly_utilization(self, unique_months):
         return {month: {"hours_worked": 0, "idle_time": 0} for month in unique_months}
 
-    def get_asset_violation(self, asset, date_from_dt, date_to_dt, business_uuid, asset_type_uuid, user_uuid):
+    def get_asset_violation(
+        self, asset, date_from_dt, date_to_dt, business_uuid, asset_type_uuid, user_uuid
+    ):
         return self.asset_repository.get_violations_by_alert_type(
             GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
             date_from_dt,
@@ -526,19 +540,29 @@ class SmartReportService(BaseService):
             monthly_utilization[month]["idle_time"] += idle_time_percentage
 
     def update_grouped_assets(self, grouped_assets, asset):
-        overall_moving_time, overall_idle_time = self.calculate_times(asset.tracking_events)
+        overall_moving_time, overall_idle_time = self.calculate_times(
+            asset.tracking_events
+        )
         total_overall_time = overall_moving_time + overall_idle_time
 
         if total_overall_time > 0:
-            overall_hours_worked_percentage = round((overall_moving_time / total_overall_time) * 100, 2)
-            overall_idle_time_percentage = round((overall_idle_time / total_overall_time) * 100, 2)
-        else:
-            overall_hours_worked_percentage = 0
-            overall_idle_time_percentage = 0
+            overall_hours_worked_percentage = round(
+                (overall_moving_time / total_overall_time) * 100, 2
+            )
+            overall_idle_time_percentage = round(
+                (overall_idle_time / total_overall_time) * 100, 2
+            )
 
-        equipment_name = asset.equipment.name
-        grouped_assets[equipment_name]["hours_worked"] += overall_hours_worked_percentage
-        grouped_assets[equipment_name]["idle_time"] += overall_idle_time_percentage
+            equipment_name = asset.equipment.name
+            grouped_assets[equipment_name][
+                "hours_worked"
+            ] += overall_hours_worked_percentage
+            grouped_assets[equipment_name]["idle_time"] += overall_idle_time_percentage
+        else:
+            # If there are no incidents, return an empty dictionary
+            return {}
+
+        return grouped_assets
 
     def normalize_grouped_assets(self, grouped_assets):
         for equipment_name, utilization in grouped_assets.items():
