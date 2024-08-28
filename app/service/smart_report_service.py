@@ -154,18 +154,19 @@ class SmartReportService(BaseService):
         current_date = datetime.strptime(start_date, "%d/%m/%Y")
         end_date = datetime.strptime(end_date, "%d/%m/%Y")
 
+        months_to_remove = []
+
         while current_date <= end_date:
             month_year = current_date.strftime("%Y-%m")
 
             if month_year not in incidents_rate:
-                # If the month is not in incidents_rate, initialize it as an empty dictionary
-                incidents_rate[month_year] = {}
+                # If the month is not in incidents_rate, do nothing
+                pass
             else:
-                # Ensure all detected violation types have an entry in each month
-                for violation_type in incidents_rate.values():
-                    for key in violation_type.keys():
-                        if key not in incidents_rate[month_year]:
-                            incidents_rate[month_year][key] = 0
+                # If the month exists, check if it has any non-zero incidents
+                if not any(incidents_rate[month_year].values()):
+                    # Mark the month for removal if it has no incidents
+                    months_to_remove.append(month_year)
 
             # Ensure monthly_totals has an entry for every month
             if month_year not in monthly_totals:
@@ -173,6 +174,10 @@ class SmartReportService(BaseService):
 
             # Move to the next month
             current_date += relativedelta(months=1)
+
+        # Remove months that have no incidents
+        for month in months_to_remove:
+            del incidents_rate[month]
 
     def generate_violation_fleet_performance_report(
         self, date_from: str, date_to: str, assets: list
@@ -547,15 +552,17 @@ class SmartReportService(BaseService):
             overall_idle_time_percentage = round(
                 (overall_idle_time / total_overall_time) * 100, 2
             )
-        else:
-            overall_hours_worked_percentage = 0
-            overall_idle_time_percentage = 0
 
-        equipment_name = asset.equipment.name
-        grouped_assets[equipment_name][
-            "hours_worked"
-        ] += overall_hours_worked_percentage
-        grouped_assets[equipment_name]["idle_time"] += overall_idle_time_percentage
+            equipment_name = asset.equipment.name
+            grouped_assets[equipment_name][
+                "hours_worked"
+            ] += overall_hours_worked_percentage
+            grouped_assets[equipment_name]["idle_time"] += overall_idle_time_percentage
+        else:
+            # If there are no incidents, return an empty dictionary
+            return {}
+
+        return grouped_assets
 
     def normalize_grouped_assets(self, grouped_assets):
         for equipment_name, utilization in grouped_assets.items():
