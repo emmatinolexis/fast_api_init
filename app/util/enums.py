@@ -16,6 +16,8 @@ class AccountType(str, Enum):
 class DeviceType(str, Enum):
     TRACKING_DEVICE = "tracking_device"
     DASHCAM = "dashcam"
+    FIRE_DETECTOR = "fire_detector"
+    GAS_DEVICE = "gas_device"
 
 
 class FreePlan(str, Enum):
@@ -296,8 +298,3 @@ class FuelType(str, Enum):
     PETROL = "petrol"
     GAS = "gas"
     KEROSENE = "kerosene"
-
-
-class DeviceType(str, Enum):
-    FIRE_DETECTOR = "fire_detector"
-    GAS_DEVICE = "gas_device"
