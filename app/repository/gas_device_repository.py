@@ -50,10 +50,11 @@ class GasDeviceRepository(BaseRepository):
                 .all()
             )
 
-    def get_building_devices(self, building_uuid: str):
+    def get_building_devices(self, building_uuid: str, device_type: str = None):
         with self.session_factory() as session:
-            return (
-                session.query(self.model)
-                .filter(self.model.building_uuid == building_uuid)
-                .all()
+            query = session.query(self.model).filter(
+                self.model.building_uuid == building_uuid
             )
+            if device_type:
+                query = query.filter(self.model.device_type == device_type)
+            return query.all()

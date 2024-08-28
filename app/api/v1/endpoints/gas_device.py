@@ -10,7 +10,7 @@ from app.model.user import User
 from app.schema.gas_cylinder_schema import CreateGasDevice, UpdateGasDevice
 from app.service.gas_device_service import GasDeviceService
 from app.service.user_service import UserService
-from app.util.enums import AccountType
+from app.util.enums import AccountType, DeviceType
 from app.util.utils import (
     load_gas_device_serial_number_from_csv,
     send_client_side_error,
@@ -138,11 +138,12 @@ async def get_gas_devices_by_user_handler(
 @inject
 async def get_gas_devices_by_building_handler(
     building_uuid: str,
+    device_type: DeviceType = Query(None, description="Type of device"),
     service: GasDeviceService = Depends(Provide[Container.gas_device_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        data = service.get_building_devices(building_uuid)
+        data = service.get_building_devices(building_uuid, device_type)
         return send_data_with_info(data, messages.GET_SUCCESS + " gas devices")
     except Exception as e:
         msg = messages.GET_FAILED + " gas devices"
