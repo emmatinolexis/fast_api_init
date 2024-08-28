@@ -10,7 +10,7 @@ from app.model.user import User
 from app.schema.gas_cylinder_schema import CreateGasDevice, UpdateGasDevice
 from app.service.gas_device_service import GasDeviceService
 from app.service.user_service import UserService
-from app.util.enums import AccountType
+from app.util.enums import AccountType, DeviceType
 from app.util.utils import (
     load_gas_device_serial_number_from_csv,
     send_client_side_error,
@@ -19,7 +19,6 @@ from app.util.utils import (
     send_info,
     send_internal_server_error,
 )
-from app.util.enums import DeviceType
 
 router = APIRouter(
     prefix="/gas_device",
