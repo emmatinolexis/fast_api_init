@@ -233,6 +233,7 @@ class SmartReportService(BaseService):
         }
 
     def process_assets(self, asset, date_from, date_to, data):
+        # return asset
         (
             asset,
             equipment_name,
@@ -246,7 +247,7 @@ class SmartReportService(BaseService):
         total_distance_traveled = get_distance_travelled_by_coordinates(
             asset.tracking_events
         )
-        asset_make = asset.make
+        # asset_make = asset.make
 
         asset_violations_data = self.asset_repository.get_violations_by_asset(
             asset.uuid, date_from, date_to
@@ -259,25 +260,51 @@ class SmartReportService(BaseService):
         data["fuel_purchased"].extend(fuel_purchase)
 
         # Aggregate fuel data
-        self.aggregate_fuel_data(
-            fuel_purchase, data, total_distance_traveled, asset_make
-        )
+        self.aggregate_fuel_data(asset, data, total_distance_traveled)
 
-    def aggregate_fuel_data(
-        self, fuel_purchase, data, total_distance_traveled, asset_make
-    ):
-        for purchase in fuel_purchase:
-            purchase_date = datetime.strptime(purchase.purchase_date, "%Y-%m-%d")
-            month_year = purchase_date.strftime("%Y-%m")
-            equipment_name = purchase.asset.equipment.name
+    def aggregate_fuel_data(self, asset, data, total_distance_traveled):
+        # Calculate the total fuel used for the given asset and update the overall total
+        total_fuel_used = calculate_total_fuel_used(asset.tracking_events)
+        # data["total_litres_all_months"] += total_fuel_used
+        total_fuel_used_all_months = 0.0
 
-            data["fuel_usage_by_month"][month_year]["total_litres"] += purchase.quantity
-            data["total_litres_all_months"] += purchase.quantity
+        # Extract the necessary data from the asset
+        equipment_name = asset.equipment.name
+        asset_make = asset.make
+
+        # Iterate over each tracking event to aggregate data by month
+        events_by_month = {}
+
+        for event in asset.tracking_events:
+            event_date = datetime.strptime(event["timestamp"], "%Y-%m-%d %H:%M:%S")
+            month_year = event_date.strftime("%Y-%m")
+
+            if month_year not in events_by_month:
+                events_by_month[month_year] = []
+
+            events_by_month[month_year].append(event)
+
+        for month_year, events in events_by_month.items():
+            # Calculate the fuel used for the current month
+            monthly_fuel_used = calculate_total_fuel_used(events)
+            total_fuel_used_all_months += monthly_fuel_used
+
+            # Update fuel usage by month
+            data["fuel_usage_by_month"][month_year]["total_litres"] += monthly_fuel_used
+
+            # Update fuel usage by equipment type and month
             data["fuel_usage_by_equipment"][equipment_name][month_year][
                 "total_litres"
-            ] += purchase.quantity
-            data["fuel_usage_by_make"][asset_make][month_year] += purchase.quantity
+            ] += monthly_fuel_used
+
+            # Update fuel usage by make and month
+            data["fuel_usage_by_make"][asset_make][month_year] += monthly_fuel_used
+
+            # Update distance traveled by make and month
             data["distance_by_make"][asset_make][month_year] += total_distance_traveled
+
+        # Update the total litres for all months
+        data["total_litres_all_months"] += total_fuel_used
 
     def calculate_kmpg(self, data):
         fuel_utilization_mpg = []
@@ -372,6 +399,8 @@ class SmartReportService(BaseService):
                                         for month_data in monthly_data.values()
                                     )
                                     / data["total_litres_all_months"]
+                                    if data["total_litres_all_months"] > 0
+                                    else 0  # Avoid division by zero
                                 )
                                 * 100,
                                 2,
@@ -1056,7 +1085,7 @@ class SmartReportService(BaseService):
                             start_date, end_date, assets
                         )
                     )
-
+                #
                 if SmartReportType.COST_ANALYSIS in report_types:
                     cost_analysis = self.generate_cost_analysis_report(
                         start_date, end_date, assets
