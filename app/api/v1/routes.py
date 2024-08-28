@@ -19,6 +19,7 @@ from app.api.v1.endpoints.equipment_type import router as equipment_type_router
 from app.api.v1.endpoints.external_app import router as external_app_router
 from app.api.v1.endpoints.feature import router as feature_router
 from app.api.v1.endpoints.fine_report import router as fine_report_router
+from app.api.v1.endpoints.fire_device import router as fire_device_router
 from app.api.v1.endpoints.fuel_log import router as fuel_log_router
 from app.api.v1.endpoints.gas_cylinder import router as gas_cylinder_router
 from app.api.v1.endpoints.gas_cylinder_type import router as gas_cylinder_type_router
@@ -45,7 +46,6 @@ from app.api.v1.endpoints.tracking import router as tracking_router
 from app.api.v1.endpoints.upload import router as upload_router
 from app.api.v1.endpoints.users import router as users_router
 from app.api.v1.endpoints.vehicle_make import router as vehicle_make_router
-from app.api.v1.endpoints.fire_device import router as fire_device_router
 
 routers = APIRouter()
 router_list = [

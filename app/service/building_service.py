@@ -8,11 +8,13 @@ from app.repository.gas_device_repository import GasDeviceRepository
 from app.schema.asset_schema import (
     BuildingInput,
     CreateBuildingInput,
+    CreateFireDeviceInput,
     GasCylinderPayload,
     UpdateBuildingPayload,
 )
 from app.service.base_service import BaseService
 from app.transfomers.building_transformers import building_transformer
+from app.util.enums import DeviceStatus, DeviceType
 
 
 class BuildingService(BaseService):
@@ -29,8 +31,8 @@ class BuildingService(BaseService):
 
     def create_building(self, payload: BuildingInput):
         try:
+            # Handle building creation
             if payload.building:
-                # Create new building
                 building_data = CreateBuildingInput(
                     building_name=payload.building.building_name,
                     longitude=payload.building.longitude,
@@ -40,11 +42,9 @@ class BuildingService(BaseService):
                     user_uuid=payload.building.user_uuid,
                     business_profile_uuid=payload.building.business_profile_uuid,
                 )
-
                 building = self.building_repository.create(building_data)
                 building_uuid = building.uuid
             elif payload.building_uuid:
-                # Use existing building UUID
                 building_uuid = payload.building_uuid
                 building = self.building_repository.read_by_uuid(building_uuid)
                 if not building:
@@ -54,8 +54,8 @@ class BuildingService(BaseService):
                     "Either 'building' or 'building_uuid' must be provided"
                 )
 
-            if payload.create_gas:
-                # Create gas cylinder
+            # Conditionally create gas cylinder if required
+            if payload.create_gas and payload.gas_cylinder:
                 cylinder_data = GasCylinderPayload(
                     cylinder_name=payload.gas_cylinder.cylinder_name,
                     material_type=payload.gas_cylinder.material_type,
@@ -65,12 +65,33 @@ class BuildingService(BaseService):
                     user_uuid=building.user_uuid,
                     business_profile_uuid=building.business_profile_uuid,
                 )
-
                 self.gas_cylinder_repository.create(cylinder_data)
+
+            # Conditionally create fire device if required
+            if payload.create_fire_device and payload.fire_device:
+                fire_device_data = CreateFireDeviceInput(
+                    serial_number=payload.fire_device.serial_number,
+                    building_uuid=building_uuid,
+                    user_uuid=building.user_uuid,
+                    business_profile_uuid=building.business_profile_uuid,
+                    location=payload.fire_device.location,
+                    device_type=DeviceType.FIRE_DETECTOR,
+                )
+                device = self.gas_device_repository.get_device_by_serial_no(
+                    fire_device_data.serial_number
+                )
+                if device:
+                    self.gas_device_repository.update_by_uuid(
+                        device.uuid, fire_device_data
+                    )
+                    self.gas_device_repository.update_attr_by_uuid(
+                        device.uuid, "status", DeviceStatus.ASSIGNED
+                    )
 
             return building
 
         except Exception as e:
+            # Rollback building creation if necessary
             if payload.building and "building" in locals():
                 self.building_repository.delete_by_uuid(building.uuid)
             raise e

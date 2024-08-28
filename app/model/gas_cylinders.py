@@ -6,7 +6,12 @@ from sqlalchemy.orm import relationship
 
 from app.core.settings import settings
 from app.model.base_model import BaseModel
-from app.util.enums import ActiveStatus, DeviceStatus, GasCylinderMaterialType
+from app.util.enums import (
+    ActiveStatus,
+    DeviceStatus,
+    DeviceType,
+    GasCylinderMaterialType,
+)
 
 
 class GasCylinder(BaseModel):
@@ -107,6 +112,8 @@ class GasDevice(BaseModel):
     building_uuid = Column(
         UUID(as_uuid=True), ForeignKey("buildings.uuid"), nullable=True, index=True
     )
+    location = Column(String(length=50), nullable=True, index=True)
+    device_type = Column(Enum(DeviceType), nullable=False, index=True)
 
 
 class CylinderTypes(BaseModel):

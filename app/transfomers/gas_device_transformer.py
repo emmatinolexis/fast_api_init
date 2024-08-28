@@ -12,6 +12,8 @@ def gas_device_transformer(gas_device: GasDevice):
         if gas_device.business_profile_uuid
         else None,
         "building_uuid": gas_device.building_uuid if gas_device.building_uuid else None,
+        "location": gas_device.location if gas_device.location else None,
+        "device_type": gas_device.device_type,
         "created_at": gas_device.created_at,
         "updated_at": gas_device.updated_at,
     }

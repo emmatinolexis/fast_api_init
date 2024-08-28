@@ -3,10 +3,11 @@ from typing import List
 from app.core import messages
 from app.core.exceptions import NotFoundError
 from app.repository.gas_device_repository import GasDeviceRepository
+from app.schema.fire_device_schema import UploadFireDevice
 from app.schema.gas_cylinder_schema import CreateGasDevice, UploadGasDeviceCSV
 from app.service.base_service import BaseService
 from app.transfomers.gas_device_transformer import gas_device_transformer
-from app.schema.fire_device_schema import UploadFireDevice
+from app.util.enums import DeviceType
 
 
 class GasDeviceService(BaseService):
@@ -38,24 +39,27 @@ class GasDeviceService(BaseService):
             return "Gas Devices uploaded successfully"
         except Exception as e:
             raise e
-        
+
     def load_fire_devices(self, serial_numbers: List[str], user):
         try:
             with self.gas_device_repository.session_factory() as session:
                 # Start a transaction
                 for serial_number in serial_numbers:
-
-                    existing_device = self.gas_device_repository.get_device_by_serial_no(
-                       str(serial_number)
+                    existing_device = (
+                        self.gas_device_repository.get_device_by_serial_no(
+                            str(serial_number)
+                        )
                     )
 
                     if existing_device:
                         raise ValueError(
                             f"Device with serial number {serial_number} already exists"
                         )
+
                     schema = UploadFireDevice(
                         device_name="Fire Device",
                         serial_number=str(serial_number),
+                        device_type=DeviceType.FIRE_DETECTOR,  # Explicitly set enum value
                     )
                     self.gas_device_repository.create(schema)
 

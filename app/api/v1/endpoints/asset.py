@@ -566,7 +566,11 @@ async def create_building_handler(
             return send_data(building)
 
         # validate gas device serial_no
-        gas_serial_no = payload.gas_cylinder.device_serial_number
+        gas_serial_no = (
+            payload.gas_cylinder.device_serial_number
+            if payload.gas_cylinder
+            else payload.fire_device.serial_number
+        )
         gas_device = gas_device_service.get_gas_device_by_serial_no(gas_serial_no)
 
         if not gas_device:
@@ -577,7 +581,7 @@ async def create_building_handler(
 
         return send_data(building)
     except Exception as e:
-        msg = messages.GET_FAILED + f"{msg_prefix} theft report"
+        msg = messages.CREATE_FAILED + "building"
         return send_internal_server_error(user_msg=msg, error=e)
 
 

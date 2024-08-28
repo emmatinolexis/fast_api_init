@@ -12,6 +12,7 @@ from app.util.enums import (
     AssetDeviceRequestStatus,
     AssetStatus,
     AssetUsageType,
+    DeviceType,
     DriverType,
     GasCylinderMaterialType,
     ImmobilizerReason,
@@ -146,12 +147,28 @@ class CreateBuildingInput(BaseModel):
     business_profile_uuid: Optional[UUID] = None
 
 
+class CreateFireDeviceInput(BaseModel):
+    serial_number: str
+    building_uuid: UUID
+    user_uuid: UUID
+    business_profile_uuid: Optional[UUID] = None
+    location: str
+    device_type: DeviceType
+
+
+class CreateFireDeviceInputAsset(BaseModel):
+    serial_number: str
+    location: str
+
+
 class BuildingInput(BaseModel):
     building: Optional[CreateBuildingInput] = None
     building_uuid: Optional[UUID] = None
-    create_gas: bool
-    create_building_without_cylinder: bool
+    create_gas: Optional[bool] = False
+    create_building_without_cylinder: Optional[bool] = False
     gas_cylinder: Optional[GasCylinderInput] = None
+    create_fire_device: bool
+    fire_device: Optional[CreateFireDeviceInputAsset] = None
 
 
 class UpdateBuildingPayload(BaseModel):

@@ -296,3 +296,8 @@ class FuelType(str, Enum):
     PETROL = "petrol"
     GAS = "gas"
     KEROSENE = "kerosene"
+
+
+class DeviceType(str, Enum):
+    FIRE_DETECTOR = "fire_detector"
+    GAS_DEVICE = "gas_device"
