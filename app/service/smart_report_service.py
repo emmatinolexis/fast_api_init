@@ -448,16 +448,18 @@ class SmartReportService(BaseService):
         return report
 
     def generate_smart_report_fleet_overview(
-            self,
-            date_from: str,
-            date_to: str,
-            asset_type_uuid: str,
-            assets: list,
-            user_uuid: str = None,
-            business_uuid: str = None,
+        self,
+        date_from: str,
+        date_to: str,
+        asset_type_uuid: str,
+        assets: list,
+        user_uuid: str = None,
+        business_uuid: str = None,
     ):
         try:
-            date_from_dt, date_to_dt, unique_months = self.parse_dates(date_from, date_to)
+            date_from_dt, date_to_dt, unique_months = self.parse_dates(
+                date_from, date_to
+            )
 
             monthly_utilization = self.initialize_monthly_utilization(unique_months)
             grouped_assets = {}
@@ -465,7 +467,12 @@ class SmartReportService(BaseService):
 
             for asset in assets:
                 asset_violation = self.get_asset_violation(
-                    asset, date_from_dt, date_to_dt, business_uuid, asset_type_uuid, user_uuid
+                    asset,
+                    date_from_dt,
+                    date_to_dt,
+                    business_uuid,
+                    asset_type_uuid,
+                    user_uuid,
                 )
 
                 if asset_violation:
@@ -498,7 +505,9 @@ class SmartReportService(BaseService):
     def initialize_monthly_utilization(self, unique_months):
         return {month: {"hours_worked": 0, "idle_time": 0} for month in unique_months}
 
-    def get_asset_violation(self, asset, date_from_dt, date_to_dt, business_uuid, asset_type_uuid, user_uuid):
+    def get_asset_violation(
+        self, asset, date_from_dt, date_to_dt, business_uuid, asset_type_uuid, user_uuid
+    ):
         return self.asset_repository.get_violations_by_alert_type(
             GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
             date_from_dt,
@@ -526,18 +535,26 @@ class SmartReportService(BaseService):
             monthly_utilization[month]["idle_time"] += idle_time_percentage
 
     def update_grouped_assets(self, grouped_assets, asset):
-        overall_moving_time, overall_idle_time = self.calculate_times(asset.tracking_events)
+        overall_moving_time, overall_idle_time = self.calculate_times(
+            asset.tracking_events
+        )
         total_overall_time = overall_moving_time + overall_idle_time
 
         if total_overall_time > 0:
-            overall_hours_worked_percentage = round((overall_moving_time / total_overall_time) * 100, 2)
-            overall_idle_time_percentage = round((overall_idle_time / total_overall_time) * 100, 2)
+            overall_hours_worked_percentage = round(
+                (overall_moving_time / total_overall_time) * 100, 2
+            )
+            overall_idle_time_percentage = round(
+                (overall_idle_time / total_overall_time) * 100, 2
+            )
         else:
             overall_hours_worked_percentage = 0
             overall_idle_time_percentage = 0
 
         equipment_name = asset.equipment.name
-        grouped_assets[equipment_name]["hours_worked"] += overall_hours_worked_percentage
+        grouped_assets[equipment_name][
+            "hours_worked"
+        ] += overall_hours_worked_percentage
         grouped_assets[equipment_name]["idle_time"] += overall_idle_time_percentage
 
     def normalize_grouped_assets(self, grouped_assets):
