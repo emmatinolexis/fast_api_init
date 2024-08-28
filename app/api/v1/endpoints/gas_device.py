@@ -19,6 +19,7 @@ from app.util.utils import (
     send_info,
     send_internal_server_error,
 )
+from app.util.enums import DeviceType
 
 router = APIRouter(
     prefix="/gas_device",
@@ -138,11 +139,12 @@ async def get_gas_devices_by_user_handler(
 @inject
 async def get_gas_devices_by_building_handler(
     building_uuid: str,
+    device_type: DeviceType = Query(None, description="Type of device"),
     service: GasDeviceService = Depends(Provide[Container.gas_device_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        data = service.get_building_devices(building_uuid)
+        data = service.get_building_devices(building_uuid, device_type)
         return send_data_with_info(data, messages.GET_SUCCESS + " gas devices")
     except Exception as e:
         msg = messages.GET_FAILED + " gas devices"
