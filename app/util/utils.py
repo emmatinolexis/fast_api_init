@@ -154,6 +154,8 @@ def calculate_total_fuel_used(fuel_level_events):
     if not fuel_level_events:
         return 0.0
 
+    fuel_level_events = sort_events_by_timestamp(fuel_level_events)
+
     if len(fuel_level_events) < 2:
         return (
             fuel_level_events[0]["fuel_level"]
@@ -163,36 +165,28 @@ def calculate_total_fuel_used(fuel_level_events):
         )
 
     total_fuel_used = 0.0
-
-    # Sort events by timestamp to ensure they are in chronological order
-    fuel_level_events.sort(key=lambda event: event["timestamp"])
+    previous_fuel_level = None
 
     # Iterate through events and calculate fuel used between consecutive events
-    for i in range(1, len(fuel_level_events)):
-        previous_event = fuel_level_events[i - 1]
-        current_event = fuel_level_events[i]
+    for event in fuel_level_events:
+        current_fuel_level = event.get("fuel_level")
 
-        # Ensure that fuel levels are present and not None
-        if (
-            "fuel_level" in previous_event
-            and "fuel_level" in current_event
-            and previous_event["fuel_level"] is not None
-            and current_event["fuel_level"] is not None
-        ):
-            previous_fuel_level = previous_event["fuel_level"]
-            current_fuel_level = current_event["fuel_level"]
+        # Ensure that the current fuel level is present and not None
+        if current_fuel_level is not None:
+            if previous_fuel_level is not None:
+                # Calculate the difference in fuel level between two events
+                fuel_difference = previous_fuel_level - current_fuel_level
 
-            # Calculate the fuel used between the two events
-            fuel_used = previous_fuel_level - current_fuel_level
+                if fuel_difference > 0:
+                    # If fuel difference is positive, it indicates fuel used
+                    total_fuel_used += fuel_difference
+                # If fuel difference is negative, it indicates refueling,
+                # and we simply ignore it for fuel used calculation
 
-            # Add to total fuel used, ensure that we are not adding negative values
-            if fuel_used > 0:
-                total_fuel_used += fuel_used
+            # Update the previous fuel level for the next iteration
+            previous_fuel_level = current_fuel_level
 
     return round(total_fuel_used, 2)
-
-
-# Example usage:
 
 
 def get_distance_travelled_by_coordinates(coordinates: Union[List[dict], List[tuple]]):
@@ -639,47 +633,6 @@ def sort_events_by_timestamp(events):
     return sorted(
         events, key=lambda x: datetime.strptime(x["timestamp"], "%Y-%m-%d %H:%M:%S")
     )
-
-
-# def calculate_idle_time(events_sorted):
-#     """
-#     Calculate total idle time from sorted events.
-#
-#     Parameters:
-#     events_sorted: list of dictionaries
-#         Sorted list of events.
-#
-#     Returns:
-#     float
-#         Total idle time in seconds.
-#     """
-#     total_idle_time_seconds = 0
-#     idle_start_time = None
-#
-#     for event in events_sorted:
-#         if event["event_type"] == "idle":
-#             if idle_start_time is None:
-#                 idle_start_time = datetime.strptime(
-#                     event["timestamp"], "%Y-%m-%d %H:%M:%S"
-#                 )
-#         else:
-#             if idle_start_time is not None:
-#                 idle_end_time = datetime.strptime(
-#                     event["timestamp"], "%Y-%m-%d %H:%M:%S"
-#                 )
-#                 total_idle_time_seconds += (
-#                     idle_end_time - idle_start_time
-#                 ).total_seconds()
-#                 idle_start_time = None
-#
-#     # Check for any remaining idle period after the loop
-#     if idle_start_time is not None:
-#         idle_end_time = datetime.strptime(
-#             events_sorted[-1]["timestamp"], "%Y-%m-%d %H:%M:%S"
-#         )
-#         total_idle_time_seconds += (idle_end_time - idle_start_time).total_seconds()
-#
-#     return round(total_idle_time_seconds, 2)
 
 
 def calculate_idle_time(events_sorted, unit="seconds"):
