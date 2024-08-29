@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 
 from dependency_injector.wiring import Provide, inject
@@ -8,9 +9,16 @@ from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
 from app.model.user import User
+from app.schema.tracking_device_schema import DeviceReportPayload
 from app.service.asset_service import AssetService
+from app.service.device_events_service import DeviceEventService
 from app.service.tracking_event_service import TrackingEventService
-from app.util.utils import send_client_side_error, send_data, send_internal_server_error
+from app.util.utils import (
+    send_client_side_error,
+    send_data,
+    send_info,
+    send_internal_server_error,
+)
 
 router = APIRouter(
     prefix="/tracking",
@@ -118,4 +126,22 @@ async def get_over_speeding_stats_handler(
         return send_data(speeding_data)
     except Exception as e:
         msg = f"{messages.GET_FAILED} {msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.post("/device_event", response_class=ORJSONResponse)
+@inject
+async def create_device_events(
+    device_event_payload: DeviceReportPayload,
+    service: DeviceEventService = Depends(Provide[Container.device_events_service]),
+    # current_user: User = Depends(get_current_app_service),
+):
+    try:
+        service.add(device_event_payload)
+        msg = "device event saved"
+        logging.info(msg)
+        return send_info(msg)
+    except Exception as e:
+        msg = f"{messages.GET_FAILED} {msg_prefix}s"
+        logging.info(msg)
         return send_internal_server_error(user_msg=msg, error=e)

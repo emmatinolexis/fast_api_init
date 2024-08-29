@@ -9,8 +9,6 @@ from app.service.gas_device_service import GasDeviceService
 from app.util.utils import (
     load_fire_device_serial_number_from_file,
     send_client_side_error,
-    send_data,
-    send_data_with_info,
     send_info,
     send_internal_server_error,
 )

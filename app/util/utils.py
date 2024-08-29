@@ -3,7 +3,7 @@ import math
 import re
 import secrets
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, List, Union
 
 import boto3
@@ -960,3 +960,13 @@ def parse_date(date_str):
 
     # Raise an exception if none of the formats matched
     raise ValueError(f"Date format for '{date_str}' not recognized")
+
+
+def convert_unix_timestamp(unix_timestamp):
+    # Convert the timestamp to a datetime object
+    dt = datetime.fromtimestamp(unix_timestamp, tz=timezone.utc)
+
+    # Format the datetime object to the desired format
+    formatted_time = dt.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3] + " +0000"
+
+    return formatted_time

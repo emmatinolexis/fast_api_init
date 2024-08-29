@@ -395,7 +395,6 @@ async def share_smart_report_handler(
 
         users = []
         report_link = f"{settings.SMART_REPORT_SHARE_URL}{smart_report.uuid}"
-        sender_name = f"{current_user.first_name} {current_user.last_name}"
 
         # get all the users to share
         for user_uuid in smart_report_share_payload.user_uuids:
