@@ -18,6 +18,7 @@ from app.repository import (
     building_repository,
     business_profile_repository,
     contact_sale_repository,
+    device_events_repository,
     device_image_repository,
     device_manufacturer_repository,
     device_repository,
@@ -83,6 +84,7 @@ from app.service import (
     building_service,
     business_profile_service,
     contact_sale_service,
+    device_events_service,
     device_image_service,
     device_manufacturer_service,
     device_service,
@@ -452,6 +454,10 @@ class Container(containers.DeclarativeContainer):
         fuel_log_repository.FuelLogRepository,
         session_factory=db.provided.session,
     )
+    device_event_repository = providers.Factory(
+        device_events_repository.DeviceEventRepository,
+        session_factory=db.provided.session,
+    )
 
     # Services
     auth_service = providers.Factory(
@@ -751,4 +757,9 @@ class Container(containers.DeclarativeContainer):
         fuel_log_repository=fuel_log_repository,
         asset_repository=asset_repository,
         driver_repository=driver_repository,
+    )
+
+    device_events_service = providers.Factory(
+        device_events_service.DeviceEventService,
+        device_event_repository=device_event_repository,
     )
