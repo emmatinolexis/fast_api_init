@@ -58,7 +58,6 @@ class GasDeviceRepository(BaseRepository):
             if device_type:
                 query = query.filter(self.model.device_type == device_type)
             return query.all()
-        
 
     def get_all_devices(self, serial_number: str = None, device_type: str = None):
         with self.session_factory() as session:
@@ -77,6 +76,3 @@ class GasDeviceRepository(BaseRepository):
             # Pagination
 
             return query.all()
-
-            
-            

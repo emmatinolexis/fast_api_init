@@ -31,8 +31,9 @@ class GasDeviceService(BaseService):
         try:
             for serial_number in serial_numbers:
                 schema = UploadGasDeviceCSV(
-                    serial_number=serial_number,
+                    serial_number=str(serial_number),
                     user_uuid=user.uuid,
+                    device_type=DeviceType.GAS_DEVICE,
                 )
                 self.gas_device_repository.create(schema)
 
@@ -76,21 +77,28 @@ class GasDeviceService(BaseService):
             session.rollback()
             raise e
 
-    def get_all_devices(self, serial_number: str = None, device_type: DeviceType = None, page: int = 1, limit: int = 10):
+    def get_all_devices(
+        self,
+        serial_number: str = None,
+        device_type: DeviceType = None,
+        page: int = 1,
+        limit: int = 10,
+    ):
         try:
-            devices = self.gas_device_repository.get_all_devices(serial_number=serial_number, device_type=device_type)
+            devices = self.gas_device_repository.get_all_devices(
+                serial_number=serial_number, device_type=device_type
+            )
 
             # Paginate the results
 
             paginated_devices = devices[(page - 1) * limit : page * limit]
             total_devices = len(devices)
 
-
-
-
             return {
                 "total_devices": total_devices,
-                "devices": [gas_device_transformer(device) for device in paginated_devices],
+                "devices": [
+                    gas_device_transformer(device) for device in paginated_devices
+                ],
                 "page": page,
                 "limit": limit,
             }
