@@ -58,3 +58,25 @@ class GasDeviceRepository(BaseRepository):
             if device_type:
                 query = query.filter(self.model.device_type == device_type)
             return query.all()
+        
+
+    def get_all_devices(self, serial_number: str = None, device_type: str = None):
+        with self.session_factory() as session:
+            query = session.query(self.model)
+
+            # Apply filtering based on serial_number if provided
+            if serial_number:
+                query = query.filter(
+                    self.model.serial_number.ilike(f"%{serial_number}%")
+                )
+
+            # Apply filtering based on device_type if provided
+            if device_type:
+                query = query.filter(self.model.device_type == device_type)
+
+            # Pagination
+
+            return query.all()
+
+            
+            

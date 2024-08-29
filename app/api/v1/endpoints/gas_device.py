@@ -45,11 +45,14 @@ async def load_csv_handler(
 @inject
 async def get_gas_devices_handler(
     serial_number: str = Query(None, description="Serial number of the gas device"),
+    device_type: DeviceType = Query(None, description="Type of device"),
+    page: int = Query(1, description="Page number"),
+    limit: int = Query(10, description="Number of items per page"),
     service: GasDeviceService = Depends(Provide[Container.gas_device_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.get_all_devices(serial_number))
+        return send_data(service.get_all_devices(serial_number, device_type, page, limit))
     except Exception as e:
         msg = messages.GET_FAILED + " gas devices"
         return send_internal_server_error(user_msg=msg, error=e)
