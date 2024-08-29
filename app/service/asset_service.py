@@ -894,6 +894,13 @@ class AssetService(BaseService):
                 fuel_level_past_range,
             ) = self.calculate_total_distance(assets, start_date, end_date)
 
+            fuel_efficiency_current_range = round(
+                total_distance_traveled_current_range / fuel_level_current_range, 2
+            )
+            fuel_efficiency_past_range = round(
+                total_distance_traveled_past_range / fuel_level_past_range, 2
+            )
+
             # Construct the report dictionary
             report = {
                 "geofence_violations": len(violations.get("geofence_violations", [])),
@@ -914,6 +921,8 @@ class AssetService(BaseService):
                 ),
                 "total_fuel_used_current_range": fuel_level_current_range,
                 "total_fuel_used_past_range": fuel_level_past_range,
+                "fuel_efficiency_current_range": fuel_efficiency_current_range,
+                "fuel_efficiency_past_range": fuel_efficiency_past_range,
             }
 
             return report

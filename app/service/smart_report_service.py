@@ -1009,126 +1009,136 @@ class SmartReportService(BaseService):
 
     def generate_smart_report(self, report):
         try:
-            if report:
-                asset_uuids = report.get("asset_group_uuids").get("asset_uuids")
-                start_date = convert_date_format(report.get("start_date"))
-                end_date = convert_date_format(report.get("end_date"))
-                report_types = report.get("report_types")
-                user_uuid = report.get("user_uuid")
-                asset_type_uuid = report.get("asset_type_uuid")
-                created_by = report.get("created_by")
-                report_title_header = (report.get("title"),)
-                report_date = convert_iso_datetime_format(report.get("created_at"))
-
-                smart_report_fleet_overview = {}
-                smart_report_fleet_performance = {}
-                cost_analysis = {}
-
-                # get user account
-                user = self.user_repository.get_user_by_uuid(user_uuid)
-
-                business_uuid = (
-                    report.get("business_profile_uuid")
-                    if user.get("account_type") == AccountType.BUSINESS
-                    else None
-                )
-                business_name = (
-                    report.get("business_name")
-                    if user.get("account_type") == AccountType.BUSINESS
-                    else None
-                )
-
-                assets = []
-
-                # load smart report assets
-                for asset_uuid in asset_uuids:
-                    asset = self.asset_repository.get_asset_with_relationships(
-                        asset_uuid, start_date, end_date
-                    )
-
-                    assets.append(asset)
-
-                (
-                    total_distance_traveled_current_range,
-                    total_distance_traveled_past_range,
-                    fuel_level_current_range,
-                    fuel_level_past_range,
-                ) = self.calculate_total_distance(assets, start_date, end_date)
-
-                # calculate for smart report fleet overview
-                if SmartReportType.FLEET_OVERVIEW in report_types:
-                    if user.get("account_type") == AccountType.INDIVIDUAL:
-                        smart_report_fleet_overview = (
-                            self.generate_smart_report_fleet_overview(
-                                start_date,
-                                end_date,
-                                asset_type_uuid,
-                                assets,
-                                user_uuid=user_uuid,
-                            )
-                        )
-
-                    if user.get("account_type") == AccountType.BUSINESS:
-                        smart_report_fleet_overview = (
-                            self.generate_smart_report_fleet_overview(
-                                start_date,
-                                end_date,
-                                asset_type_uuid,
-                                assets,
-                                business_uuid=business_uuid,
-                            )
-                        )
-
-                if SmartReportType.FLEET_PERFORMANCE in report_types:
-                    smart_report_fleet_performance = (
-                        self.generate_violation_fleet_performance_report(
-                            start_date, end_date, assets
-                        )
-                    )
-                #
-                if SmartReportType.COST_ANALYSIS in report_types:
-                    cost_analysis = self.generate_cost_analysis_report(
-                        start_date, end_date, assets
-                    )
-
-                report = {
-                    "report_header": {
-                        "report_date": report_date,
-                        "report_title": report_title_header[0],
-                        "created_by": created_by,
-                        "business_name": business_name,
-                        "end_date": end_date,
-                        "start_date": start_date,
-                        "fuel_efficiency_current_date": 140,
-                        "fuel_efficiency_previous_date": 180,
-                        "total_distance_covered_current_date": round(
-                            total_distance_traveled_current_range, 2
-                        ),
-                        "total_distance_covered_previous_date": round(
-                            total_distance_traveled_past_range, 2
-                        ),
-                        "total_fuel_recorded_current_date": round(
-                            fuel_level_current_range, 2
-                        ),
-                        "total_fuel_recorded_previous_date": round(
-                            fuel_level_past_range, 2
-                        ),
-                        "total_fuel_saved": round(
-                            fuel_level_past_range - fuel_level_current_range, 2
-                        ),
-                    },
-                    "smart_report_fleet_overview": smart_report_fleet_overview,
-                    "smart_report_fleet_performance": smart_report_fleet_performance,
-                    "cost_analysis": cost_analysis,
-                }
-
-                return report
-            else:
+            if not report:
                 logging.info("No smart report to process")
-                pass
+                return None
+
+            asset_uuids = report.get("asset_group_uuids").get("asset_uuids")
+            start_date = convert_date_format(report.get("start_date"))
+            end_date = convert_date_format(report.get("end_date"))
+            report_types = report.get("report_types")
+            user_uuid = report.get("user_uuid")
+            asset_type_uuid = report.get("asset_type_uuid")
+            created_by = report.get("created_by")
+            report_title_header = report.get("title")
+            report_date = convert_iso_datetime_format(report.get("created_at"))
+
+            # Retrieve user and business details
+            user, business_uuid, business_name = self.get_user_and_business_details(user_uuid, report)
+
+            # Retrieve assets
+            assets = self.get_assets(asset_uuids, start_date, end_date)
+
+            # Calculate distances and fuel efficiency
+            total_distance_traveled_current_range, total_distance_traveled_past_range, \
+                fuel_level_current_range, fuel_level_past_range = self.calculate_total_distance(assets, start_date,
+                                                                                                end_date)
+
+            fuel_efficiency_current_range, fuel_efficiency_past_range = self.calculate_fuel_efficiency(
+                total_distance_traveled_current_range, fuel_level_current_range,
+                total_distance_traveled_past_range, fuel_level_past_range
+            )
+
+            # Generate fleet overview report section
+            smart_report_fleet_overview = {}
+            if SmartReportType.FLEET_OVERVIEW in report_types:
+                if user.get("account_type") == AccountType.INDIVIDUAL:
+                    smart_report_fleet_overview = self.generate_smart_report_fleet_overview(
+                        start_date, end_date, asset_type_uuid, assets, user_uuid=user.get("uuid")
+                    )
+                elif user.get("account_type") == AccountType.BUSINESS:
+                    smart_report_fleet_overview = self.generate_smart_report_fleet_overview(
+                        start_date, end_date, asset_type_uuid, assets, business_uuid=business_uuid
+                    )
+
+            # Generate fleet performance report section
+            smart_report_fleet_performance = {}
+            if SmartReportType.FLEET_PERFORMANCE in report_types:
+                smart_report_fleet_performance = self.generate_violation_fleet_performance_report(
+                    start_date, end_date, assets
+                )
+
+            # Generate cost analysis report section
+            cost_analysis = {}
+            if SmartReportType.COST_ANALYSIS in report_types:
+                cost_analysis = self.generate_cost_analysis_report(start_date, end_date, assets)
+
+            # Assemble the final report
+            return self.assemble_report(
+                report_date, report_title_header, created_by, business_name,
+                start_date, end_date, fuel_efficiency_current_range,
+                fuel_efficiency_past_range, total_distance_traveled_current_range,
+                total_distance_traveled_past_range, fuel_level_current_range,
+                fuel_level_past_range, smart_report_fleet_overview,
+                smart_report_fleet_performance, cost_analysis
+            )
 
         except Exception as e:
             raise e
+
+    def get_user_and_business_details(self, user_uuid, report):
+        user = self.user_repository.get_user_by_uuid(user_uuid)
+        if user.get("account_type") == AccountType.BUSINESS:
+            business_uuid = report.get("business_profile_uuid")
+            business_name = report.get("business_name")
+        else:
+            business_uuid = None
+            business_name = None
+        return user, business_uuid, business_name
+
+    def get_assets(self, asset_uuids, start_date, end_date):
+        assets = []
+        for asset_uuid in asset_uuids:
+            asset = self.asset_repository.get_asset_with_relationships(asset_uuid, start_date, end_date)
+            assets.append(asset)
+        return assets
+
+    def calculate_fuel_efficiency(self, total_distance_traveled_current_range, fuel_level_current_range,
+                                  total_distance_traveled_past_range, fuel_level_past_range):
+        fuel_efficiency_current_range = round(total_distance_traveled_current_range / fuel_level_current_range,
+                                              2) if fuel_level_current_range > 0 else 0.0
+        fuel_efficiency_past_range = round(total_distance_traveled_past_range / fuel_level_past_range,
+                                           2) if fuel_level_past_range > 0 else 0.0
+        return fuel_efficiency_current_range, fuel_efficiency_past_range
+
+    def generate_fleet_overview(self, report_types, user, asset_type_uuid, assets, start_date, end_date, business_uuid):
+        if SmartReportType.FLEET_OVERVIEW not in report_types:
+            return {}
+
+        if user.get("account_type") == AccountType.INDIVIDUAL:
+            return self.generate_smart_report_fleet_overview(start_date, end_date, asset_type_uuid, assets,
+                                                             user_uuid=user.get("uuid"))
+        elif user.get("account_type") == AccountType.BUSINESS:
+            return self.generate_smart_report_fleet_overview(start_date, end_date, asset_type_uuid, assets,
+                                                             business_uuid=business_uuid)
+        else:
+            return {}
+
+    def assemble_report(self, report_date, report_title_header, created_by, business_name, start_date, end_date,
+                        fuel_efficiency_current_range, fuel_efficiency_past_range,
+                        total_distance_traveled_current_range,
+                        total_distance_traveled_past_range, fuel_level_current_range, fuel_level_past_range,
+                        smart_report_fleet_overview, smart_report_fleet_performance, cost_analysis):
+        return {
+            "report_header": {
+                "report_date": report_date,
+                "report_title": report_title_header,
+                "created_by": created_by,
+                "business_name": business_name,
+                "end_date": end_date,
+                "start_date": start_date,
+                "fuel_efficiency_current_date": fuel_efficiency_current_range,
+                "fuel_efficiency_previous_date": fuel_efficiency_past_range,
+                "total_distance_covered_current_date": round(total_distance_traveled_current_range, 2),
+                "total_distance_covered_previous_date": round(total_distance_traveled_past_range, 2),
+                "total_fuel_recorded_current_date": round(fuel_level_current_range, 2),
+                "total_fuel_recorded_previous_date": round(fuel_level_past_range, 2),
+                "total_fuel_saved": round(fuel_level_past_range - fuel_level_current_range, 2),
+            },
+            "smart_report_fleet_overview": smart_report_fleet_overview,
+            "smart_report_fleet_performance": smart_report_fleet_performance,
+            "cost_analysis": cost_analysis,
+        }
 
     def filter_events_by_date_range(self, events, start_date, end_date):
         if start_date:
