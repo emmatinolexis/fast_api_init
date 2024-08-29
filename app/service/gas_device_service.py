@@ -76,12 +76,24 @@ class GasDeviceService(BaseService):
             session.rollback()
             raise e
 
-    def get_all_devices(self, serial_number: str = None):
+    def get_all_devices(self, serial_number: str = None, device_type: DeviceType = None, page: int = 1, limit: int = 10):
         try:
-            if serial_number:
-                return self.gas_device_repository.search(serial_number)
+            devices = self.gas_device_repository.get_all_devices(serial_number=serial_number, device_type=device_type)
 
-            return self.gas_device_repository.read_all()
+            # Paginate the results
+
+            paginated_devices = devices[(page - 1) * limit : page * limit]
+            total_devices = len(devices)
+
+
+
+
+            return {
+                "total_devices": total_devices,
+                "devices": [gas_device_transformer(device) for device in paginated_devices],
+                "page": page,
+                "limit": limit,
+            }
         except Exception as e:
             raise e
 
