@@ -970,3 +970,17 @@ def convert_unix_timestamp(unix_timestamp):
     formatted_time = dt.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3] + " +0000"
 
     return formatted_time
+
+
+def convert_litres_to_gallons(litres):
+    """
+    Convert litres to US gallons.
+
+    Parameters:
+    litres (float): The volume in litres to be converted.
+
+    Returns:
+    float: The volume in gallons.
+    """
+    gallons = litres * 0.264172
+    return round(gallons, 4)

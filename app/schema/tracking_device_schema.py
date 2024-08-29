@@ -33,3 +33,8 @@ class DeviceReportPayload(BaseModel):
             formatted_time = dt.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3] + " +0000"
             values["event_datetime"] = formatted_time
         return values
+
+
+class SSLCertificateRequest(BaseModel):
+    hostname: str
+    port: int = 443

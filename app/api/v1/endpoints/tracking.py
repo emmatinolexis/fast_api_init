@@ -1,4 +1,6 @@
 import logging
+import socket
+import ssl
 from datetime import datetime
 
 from dependency_injector.wiring import Provide, inject
@@ -9,7 +11,7 @@ from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
 from app.model.user import User
-from app.schema.tracking_device_schema import DeviceReportPayload
+from app.schema.tracking_device_schema import DeviceReportPayload, SSLCertificateRequest
 from app.service.asset_service import AssetService
 from app.service.device_events_service import DeviceEventService
 from app.service.tracking_event_service import TrackingEventService
@@ -141,6 +143,37 @@ async def create_device_events(
         msg = "device event saved"
         logging.info(msg)
         return send_info(msg)
+    except Exception as e:
+        msg = f"{messages.GET_FAILED} {msg_prefix}s"
+        logging.info(msg)
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.post("/certificate/get_ssl_certificate")
+@inject
+async def get_ssl_certificate(request: SSLCertificateRequest):
+    hostname = request.hostname
+    port = request.port
+
+    try:
+        # Establish a connection to the server
+        context = ssl.create_default_context()
+        with socket.create_connection((hostname, port)) as sock:
+            with context.wrap_socket(sock, server_hostname=hostname) as ssock:
+                # Get the certificate
+                cert = ssock.getpeercert()
+
+        # Return the certificate information
+        return {
+            "subject": dict(cert["subject"]),
+            "issuer": dict(cert["issuer"]),
+            "version": cert["version"],
+            "serialNumber": cert["serialNumber"],
+            "notBefore": cert["notBefore"],
+            "notAfter": cert["notAfter"],
+            "subjectAltName": cert.get("subjectAltName"),
+        }
+
     except Exception as e:
         msg = f"{messages.GET_FAILED} {msg_prefix}s"
         logging.info(msg)
