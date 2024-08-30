@@ -356,7 +356,7 @@ class SmartReportService(BaseService):
             data["incidents"][policy_type_name] += 1
 
             # Increment the total incident count
-            data["incidents"]["total_violations"] += 1
+            # data["incidents"]["total_violations"] += 1
 
             # Prepare the violated asset details
             violated_asset = []
