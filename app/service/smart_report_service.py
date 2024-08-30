@@ -469,12 +469,16 @@ class SmartReportService(BaseService):
         good_asset_count,
         poor_asset_count,
         monthly_utilization,
+        good_assets,
+        bad_assets,
     ):
         report = {
             "fleet": {
                 "total_asset": no_of_assets,
                 "good_assets": good_asset_count,
                 "poor_assets": poor_asset_count,
+                "good_assets_data": good_assets,
+                "poor_assets_data": bad_assets,
             },
             "utilization_rate": grouped_assets,
             "utilization_trend": monthly_utilization,
@@ -498,6 +502,8 @@ class SmartReportService(BaseService):
             monthly_utilization = self.initialize_monthly_utilization(unique_months)
             grouped_assets = {}
             good_asset_count, poor_asset_count = 0, 0
+            good_assets = []
+            bad_assets = []
 
             for asset in assets:
                 asset_violation = self.get_asset_violation(
@@ -509,14 +515,26 @@ class SmartReportService(BaseService):
                     user_uuid,
                 )
 
+                asset_violation_data = {
+                    "asset_name": asset.asset_name,
+                    "vehicle_license_no": asset.vehicle_license_no,
+                    "last_maintenance_date": "",
+                }
+
                 if asset_violation:
                     poor_asset_count += 1
+                    bad_assets.append(asset_violation_data)
                 else:
                     good_asset_count += 1
+                    good_assets.append(asset_violation_data)
 
                 equipment_name = asset.equipment.name
                 if equipment_name not in grouped_assets:
-                    grouped_assets[equipment_name] = {"hours_worked": 0, "idle_time": 0}
+                    grouped_assets[equipment_name] = {
+                        "hours_worked": 0,
+                        "idle_time": 0,
+                        "assets": [],
+                    }
 
                 self.update_monthly_utilization(monthly_utilization, asset)
                 self.update_grouped_assets(grouped_assets, asset)
@@ -530,6 +548,8 @@ class SmartReportService(BaseService):
                 good_asset_count,
                 poor_asset_count,
                 monthly_utilization,
+                good_assets,
+                bad_assets,
             )
             return report
 
@@ -583,13 +603,27 @@ class SmartReportService(BaseService):
             )
 
             equipment_name = asset.equipment.name
+
+            # Initialize the equipment entry in grouped_assets if not already present
+            if equipment_name not in grouped_assets:
+                grouped_assets[equipment_name] = {
+                    "hours_worked": 0.0,
+                    "idle_time": 0.0,
+                    "assets": [],
+                }
+
             grouped_assets[equipment_name][
                 "hours_worked"
             ] += overall_hours_worked_percentage
             grouped_assets[equipment_name]["idle_time"] += overall_idle_time_percentage
-        else:
-            # If there are no incidents, return an empty dictionary
-            return {}
+
+            asset_data = {
+                "asset_name": asset.asset_name,
+                "hours_worked": round(overall_moving_time, 2),
+                "idle_time": round(overall_idle_time, 2),
+            }
+
+            grouped_assets[equipment_name]["assets"].append(asset_data)
 
         return grouped_assets
 
