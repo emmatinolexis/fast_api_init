@@ -4,7 +4,12 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.util.enums import ActiveStatus, DeviceStatus, GasCylinderMaterialType
+from app.util.enums import (
+    ActiveStatus,
+    DeviceStatus,
+    DeviceType,
+    GasCylinderMaterialType,
+)
 
 
 class CreateGasDevice(BaseModel):
@@ -16,6 +21,7 @@ class CreateGasDevice(BaseModel):
 class UploadGasDeviceCSV(BaseModel):
     serial_number: str
     user_uuid: UUID
+    device_type: DeviceType
 
 
 class CreateGasCylinder(BaseModel):
