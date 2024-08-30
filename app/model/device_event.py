@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import JSON, Boolean, Column, DateTime, String
+from sqlalchemy import JSON, Column, DateTime, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 
@@ -19,7 +19,6 @@ class DeviceEvent(Base):
     node_id = Column(String(100), nullable=False, index=True)
     node_description = Column(String(50), nullable=False, index=True)
     master_id = Column(String(50), nullable=False, index=True)
-    require_attention = Column(Boolean, nullable=False, default=False)
     measurements = Column(JSON, nullable=False)
     event_datetime = Column(DateTime, nullable=False)
     created_at = Column(DateTime(timezone=True), default=func.now())
