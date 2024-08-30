@@ -2,8 +2,13 @@ from typing import List
 
 from app.core import messages
 from app.core.exceptions import NotFoundError
+from app.model.user import User
 from app.repository.gas_device_repository import GasDeviceRepository
-from app.schema.fire_device_schema import UploadFireDevice
+from app.schema.fire_device_schema import (
+    CreateFireDevice,
+    CreateFireDevicePayload,
+    UploadFireDevice,
+)
 from app.schema.gas_cylinder_schema import CreateGasDevice, UploadGasDeviceCSV
 from app.service.base_service import BaseService
 from app.transfomers.gas_device_transformer import gas_device_transformer
@@ -158,5 +163,33 @@ class GasDeviceService(BaseService):
                 building_uuid, device_type
             )
             return [gas_device_transformer(device) for device in devices]
+        except Exception as e:
+            raise e
+
+    def add_fire_device_to_building(
+        self, building_uuid: str, payload: CreateFireDevice, user: User
+    ):
+        try:
+            schema = CreateFireDevicePayload(
+                serial_number=payload.serial_number,
+                location=payload.location,
+                building_uuid=building_uuid,
+                user_uuid=str(user.uuid),
+                business_profile_uuid=str(user.business_profile.uuid)
+                if user.business_profile
+                else None,
+            )
+
+            existing_device = self.gas_device_repository.get_device_by_serial_no(
+                payload.serial_number
+            )
+
+            if not existing_device:
+                raise NotFoundError(messages.DEVICE_DOES_NOT_EXIST)
+
+            existing_device = self.gas_device_repository.update_by_uuid(
+                existing_device.uuid, schema
+            )
+            return gas_device_transformer(existing_device)
         except Exception as e:
             raise e
