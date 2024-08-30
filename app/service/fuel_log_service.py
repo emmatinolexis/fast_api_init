@@ -142,7 +142,7 @@ class FuelLogService(BaseService):
             )
 
             total = len(fuel_logs)
-            paginated_fuel_logs = fuel_logs[(page - 1) * page_size: page * page_size]
+            paginated_fuel_logs = fuel_logs[(page - 1) * page_size : page * page_size]
 
             return {
                 "total": total,
@@ -172,7 +172,7 @@ class FuelLogService(BaseService):
             )
 
             total = len(fuel_logs)
-            paginated_fuel_logs = fuel_logs[(page - 1) * page_size: page * page_size]
+            paginated_fuel_logs = fuel_logs[(page - 1) * page_size : page * page_size]
 
             return {
                 "total": total,
