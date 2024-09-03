@@ -147,7 +147,7 @@ class Settings(BaseSettings):
 
     GAS_DEVICE_DEFAULT: str = "Gas Device"
     FIRE_DETECT_DEVICE_DEFAULT: str = "Fire Detection Device"
-    PURCHASE_DATE_FORMAT: str = "%d/%m/%Y"
+    PURCHASE_DATE_FORMAT: str = "%Y-%m-%d"
 
     # find query
     PAGE: int = 1
