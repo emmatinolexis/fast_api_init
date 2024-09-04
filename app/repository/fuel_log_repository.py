@@ -9,6 +9,7 @@ from app.core.settings import get_settings, settings
 from app.model.asset import Asset
 from app.model.fuel_log import FuelLog
 from app.repository.base_repository import BaseRepository
+from app.model.driver import Driver
 
 
 class FuelLogRepository(BaseRepository):
@@ -16,32 +17,40 @@ class FuelLogRepository(BaseRepository):
         self.session_factory = session_factory
         super().__init__(session_factory, FuelLog)
 
-    def _apply_common_filters(self, query, search, start_date, end_date):
+
+    def _apply_common_filters(self, query, search, start_date, end_date, is_driver_joined=False):
+        # Apply search filter
         if search:
             search_pattern = f"%{search}%"
+
+            if not is_driver_joined:
+                query = query.join(Driver, FuelLog.driver_uuid == Driver.uuid)
+
             try:
                 search_numeric = float(search)
                 query = query.filter(
                     or_(
                         FuelLog.amount == search_numeric,
-                        FuelLog.driver_name.ilike(search_pattern),
+                        FuelLog.quantity == search_numeric,
+                        Driver.first_name.ilike(search_pattern),
+                        Driver.last_name.ilike(search_pattern),
                     )
                 )
             except ValueError:
-                query = query.filter(FuelLog.driver_name.ilike(search_pattern))
+                query = query.filter(
+                    or_(
+                        Driver.first_name.ilike(search_pattern),
+                        Driver.last_name.ilike(search_pattern),
+                    )
+                )
 
+        # Apply date filters
         if start_date:
-            # Convert start_date to the same string format as the purchase_date in the database
-            start_date_str = datetime.strptime(
-                start_date, settings.PURCHASE_DATE_FORMAT
-            ).strftime(settings.PURCHASE_DATE_FORMAT)
+            start_date_str = datetime.strptime(start_date, settings.DATE_FORMAT).strftime(settings.DATE_FORMAT)
             query = query.filter(FuelLog.purchase_date >= start_date_str)
 
         if end_date:
-            # Convert end_date to the same string format as the purchase_date in the database
-            end_date_str = datetime.strptime(
-                end_date, settings.PURCHASE_DATE_FORMAT
-            ).strftime(settings.PURCHASE_DATE_FORMAT)
+            end_date_str = datetime.strptime(end_date, settings.DATE_FORMAT).strftime(settings.DATE_FORMAT)
             query = query.filter(FuelLog.purchase_date <= end_date_str)
 
         return query
@@ -68,10 +77,11 @@ class FuelLogRepository(BaseRepository):
         end_date: str = None,
     ):
         with self.session_factory() as session:
-            query = session.query(FuelLog).filter(
+            query = session.query(FuelLog).join(Driver, FuelLog.driver_uuid == Driver.uuid).filter(
                 FuelLog.business_profile_uuid == business_uuid
             )
-            query = self._apply_common_filters(query, search, start_date, end_date)
+
+            query = self._apply_common_filters(query, search, start_date, end_date, is_driver_joined=True)
 
             query = query.order_by(FuelLog.created_at.desc())
             return query.all()
