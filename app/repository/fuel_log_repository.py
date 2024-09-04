@@ -18,17 +18,20 @@ class FuelLogRepository(BaseRepository):
         super().__init__(session_factory, FuelLog)
 
 
-    def _apply_common_filters(self, query, search, start_date, end_date):
-    # Join FuelLog with Driver if search is being used
+    def _apply_common_filters(self, query, search, start_date, end_date, is_driver_joined=False):
+        # Apply search filter
         if search:
             search_pattern = f"%{search}%"
-            query = query.join(Driver, FuelLog.driver_uuid == Driver.uuid)  # Ensure join
+
+            if not is_driver_joined:
+                query = query.join(Driver, FuelLog.driver_uuid == Driver.uuid)
 
             try:
                 search_numeric = float(search)
                 query = query.filter(
                     or_(
                         FuelLog.amount == search_numeric,
+                        FuelLog.quantity == search_numeric,
                         Driver.first_name.ilike(search_pattern),
                         Driver.last_name.ilike(search_pattern),
                     )
@@ -41,21 +44,16 @@ class FuelLogRepository(BaseRepository):
                     )
                 )
 
+        # Apply date filters
         if start_date:
-            start_date_str = datetime.strptime(
-                start_date, settings.PURCHASE_DATE_FORMAT
-            ).strftime(settings.PURCHASE_DATE_FORMAT)
+            start_date_str = datetime.strptime(start_date, settings.DATE_FORMAT).strftime(settings.DATE_FORMAT)
             query = query.filter(FuelLog.purchase_date >= start_date_str)
 
         if end_date:
-            end_date_str = datetime.strptime(
-                end_date, settings.PURCHASE_DATE_FORMAT
-            ).strftime(settings.PURCHASE_DATE_FORMAT)
+            end_date_str = datetime.strptime(end_date, settings.DATE_FORMAT).strftime(settings.DATE_FORMAT)
             query = query.filter(FuelLog.purchase_date <= end_date_str)
 
         return query
-
-
 
     def get_fuel_logs_by_user_uuid(
         self,
@@ -82,11 +80,11 @@ class FuelLogRepository(BaseRepository):
             query = session.query(FuelLog).join(Driver, FuelLog.driver_uuid == Driver.uuid).filter(
                 FuelLog.business_profile_uuid == business_uuid
             )
-            query = self._apply_common_filters(query, search, start_date, end_date)
+
+            query = self._apply_common_filters(query, search, start_date, end_date, is_driver_joined=True)
 
             query = query.order_by(FuelLog.created_at.desc())
             return query.all()
-
 
     def get_fuel_log_by_asset(
         self,
