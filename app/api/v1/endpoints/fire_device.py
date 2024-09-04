@@ -4,7 +4,7 @@ from fastapi.responses import ORJSONResponse
 
 from app.core.container import Container
 from app.core.dependencies import get_current_user
-from app.core.exceptions import NotFoundError
+from app.core.exceptions import BadRequestError, NotFoundError
 from app.model.user import User
 from app.schema.fire_device_schema import CreateFireDevice
 from app.service.gas_device_service import GasDeviceService
@@ -52,7 +52,7 @@ async def add_fire_device(
             building_uuid, payload, current_user
         )
         return send_info(message)
-    except NotFoundError as e:
+    except (NotFoundError, BadRequestError) as e:
         return send_client_side_error(user_msg=str(e.detail), dev_msg=str(e.detail))
     except Exception as e:
         msg = "Failed to add fire device"

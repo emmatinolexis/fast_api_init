@@ -88,3 +88,5 @@ FUEL_LOG_NOT_FOUND = "No fuel log was found with the given uuid : "
 SMART_REPORT_NOT_FOUND = "Smart Report was not found"
 
 ASSET_MUST_BE_ASSIGNED = "Asset must be assigned to a driver to perform this action"
+
+DEVICE_TYPE_MISMATCH = "Device type mismatch"

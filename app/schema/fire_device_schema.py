@@ -12,6 +12,7 @@ class UploadFireDevice(BaseModel):
 class CreateFireDevice(BaseModel):
     serial_number: str
     location: str
+    device_type: DeviceType
 
 
 class CreateFireDevicePayload(CreateFireDevice):
