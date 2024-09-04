@@ -146,11 +146,21 @@ async def update_user(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        user = service.update_user_by_uuid(uuid, payload)
+        user = service.get_by_uuid(uuid)
         if user is None:
             return send_client_side_error(
-                user_msg=messages.USER_NOT_FOUND + uuid,
+                user_msg=messages.USER_NOT_FOUND_MSG,
             )
+
+        user_by_phone = service.get_user_by_phone_number(payload.phone_number)
+
+        if user_by_phone is not None:
+            return send_client_side_error(
+                user_msg=messages.PHONE_NUMBER_EXISTS,
+            )
+
+        user = service.update_user_by_uuid(uuid, payload)
+
         return send_data(user)
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
@@ -210,6 +220,22 @@ async def get_user_by_email(
                 user_msg=messages.USER_NOT_FOUND + email_address
             )
         return send_data(extract_user_data(user))
+    except Exception as e:
+        msg = messages.GET_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/check_user_by_email/{email_address}", response_class=ORJSONResponse)
+@inject
+async def check_user_exist_by_email(
+    email_address: EmailStr,
+    service: UserService = Depends(Provide[Container.user_service]),
+):
+    try:
+        user = service.get_user_by_email_address(email_address)
+        if user is None:
+            return send_data("false")
+        return send_data("true")
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
