@@ -5,7 +5,7 @@ from fastapi.responses import ORJSONResponse
 from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
-from app.core.exceptions import NotFoundError
+from app.core.exceptions import BadRequestError, NotFoundError
 from app.model.user import User
 from app.schema.gas_cylinder_schema import CreateGasDevice, UpdateGasDevice
 from app.service.gas_device_service import GasDeviceService
@@ -84,7 +84,7 @@ async def create_gas_device_handler(
         else:
             msg = f"{messages.USER_NOT_FOUND} {user_id}"
             return send_internal_server_error(user_msg=msg, error=msg)
-    except NotFoundError as e:
+    except (NotFoundError, BadRequestError) as e:
         return send_client_side_error(user_msg=e.detail)
     except Exception as e:
         msg = messages.CREATE_FAILED + " gas device"

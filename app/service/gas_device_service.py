@@ -1,7 +1,7 @@
 from typing import List
 
 from app.core import messages
-from app.core.exceptions import NotFoundError
+from app.core.exceptions import BadRequestError, NotFoundError
 from app.model.user import User
 from app.repository.gas_device_repository import GasDeviceRepository
 from app.schema.fire_device_schema import (
@@ -117,13 +117,13 @@ class GasDeviceService(BaseService):
         business_profile_uuid: str = None,
     ):
         try:
-            # Retrieve the device by serial number
             existing_device = self.gas_device_repository.get_device_by_serial_no(
                 payload.serial_number
             )
-
-            # If the device exists, update its attributes
             if existing_device:
+                if existing_device.device_type != payload.device_type:
+                    raise BadRequestError(messages.DEVICE_TYPE_MISMATCH)
+
                 self.gas_device_repository.update_attr_by_uuid(
                     existing_device.uuid, "user_uuid", user_uuid
                 )
@@ -133,6 +133,7 @@ class GasDeviceService(BaseService):
                 self.gas_device_repository.update_attr_by_uuid(
                     existing_device.uuid, "building_uuid", payload.building_uuid
                 )
+
                 return gas_device_transformer(existing_device)
             else:
                 raise NotFoundError(messages.DEVICE_DOES_NOT_EXIST)
@@ -178,6 +179,7 @@ class GasDeviceService(BaseService):
                 business_profile_uuid=str(user.business_profile.uuid)
                 if user.business_profile
                 else None,
+                device_type=DeviceType.FIRE_DETECTOR,
             )
 
             existing_device = self.gas_device_repository.get_device_by_serial_no(
@@ -186,6 +188,9 @@ class GasDeviceService(BaseService):
 
             if not existing_device:
                 raise NotFoundError(messages.DEVICE_DOES_NOT_EXIST)
+
+            if existing_device.device_type != payload.device_type:
+                raise BadRequestError(messages.DEVICE_TYPE_MISMATCH)
 
             existing_device = self.gas_device_repository.update_by_uuid(
                 existing_device.uuid, schema

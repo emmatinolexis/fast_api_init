@@ -16,6 +16,7 @@ class CreateGasDevice(BaseModel):
     device_name: str
     serial_number: str
     building_uuid: str
+    device_type: DeviceType
 
 
 class UploadGasDeviceCSV(BaseModel):
