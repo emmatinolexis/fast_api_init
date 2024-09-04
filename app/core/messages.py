@@ -1,6 +1,8 @@
 # Messages
 
 USER_NOT_FOUND = "No user was found with the given  : "
+USER_NOT_FOUND_MSG = "User not found"
+PHONE_NO_EXIST = "Phone number already exists"
 ORGANISATION_CONTACT_NOT_FOUND = (
     "No organisation contact was found with the given uuid : "
 )

@@ -54,7 +54,7 @@ class UserRepository(BaseRepository):
         except Exception as e:
             raise e
 
-    def get_user_by_email_address(self, email: EmailStr) -> User:
+    def get_user_by_email_address(self, email: EmailStr):
         with self.session_factory() as session:
             return (
                 session.query(self.model)
@@ -64,7 +64,19 @@ class UserRepository(BaseRepository):
                 .first()
             )
 
-    def update_user_status(self, uuid: str) -> User:
+    def get_user_by_phone_number(self, phone_number: str):
+        with self.session_factory() as session:
+            user = (
+                session.query(self.model)
+                .filter(self.model.phone_number == phone_number)
+                .options(joinedload(User.business_profile))
+                .options(joinedload(User.user_role).joinedload(Role.permissions))
+                .first()
+            )
+            user_data = extract_user_data(user)
+            return user_data
+
+    def update_user_status(self, uuid: str):
         with self.session_factory() as session:
             user = session.query(self.model).filter(self.model.uuid == uuid).first()
             user.status = toggle_status(user.status)
@@ -96,14 +108,6 @@ class UserRepository(BaseRepository):
                 .first()
             )
             return business_data is not None
-
-    def get_user_by_phone_number(self, phone_number: str):
-        with self.session_factory() as session:
-            return (
-                session.query(self.model)
-                .filter(self.model.phone_number == phone_number)
-                .first()
-            )
 
     def change_password(
         self,
