@@ -298,3 +298,12 @@ class FuelType(str, Enum):
     PETROL = "petrol"
     GAS = "gas"
     KEROSENE = "kerosene"
+
+class CrowdIncidentType(str, Enum):
+    ACCIDENT = "accident"
+    SPEED_RAMP = "speed_ramp"
+    POT_HOLES = "pot_holes"
+    ROAD_BLOCKED = "road_blocked"
+    TRAFFIC_JAM = "traffic_jam"
+
+
