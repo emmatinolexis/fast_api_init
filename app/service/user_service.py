@@ -124,13 +124,12 @@ class UserService(BaseService):
         except Exception as e:
             raise e
 
-    async def change_password(
+    def change_password(
         self,
         user_uuid: str,
         old_password: str,
         new_password: str,
         password_confirmation: str,
-        request,
     ):
         try:
             updated_user = self.user_repository.change_password(
