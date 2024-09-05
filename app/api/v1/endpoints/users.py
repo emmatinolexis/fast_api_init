@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import ORJSONResponse
 from pydantic import EmailStr
 
@@ -288,6 +288,7 @@ async def user_account(
 async def change_password_handler(
     user_uuid: str,
     payload: UserUpdatePassword,
+    request: Request,
     service: UserService = Depends(Provide[Container.user_service]),
     current_user: User = Depends(get_current_user),
 ):
@@ -318,6 +319,7 @@ async def change_password_handler(
             payload.old_password,
             payload.new_password,
             payload.password_confirmation,
+            request=request,
         )
         return send_data(user)
     except Exception as e:

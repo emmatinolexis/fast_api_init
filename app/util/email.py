@@ -182,3 +182,26 @@ async def send_maintenance_alert_email(
     except Exception as e:
         log.error(f"Failed to send alert policy violation email [{email}]")
         raise Exception(str(e))
+
+
+async def send_password_change_email(
+    recipient_name, email, ip_address, user_agent, time_stamp
+):
+    try:
+        response = await send_email(
+            email_purpose=EmailPurpose.PASSWORD_CHANGE,
+            email_body={
+                "recipient_name": recipient_name,
+                "ip_address": ip_address,
+                "user_agent": user_agent,
+                "time_stamp": time_stamp,
+            },
+            email=email,
+        )
+        if response["data"]["status"] == "success":
+            log.info(f"Password change email [{email}] sent successfully")
+            return
+        log.error(f"Failed to send password change email [{email}]")
+    except Exception as e:
+        log.error(f"Failed to send password change email [{email}]")
+        raise Exception(str(e))

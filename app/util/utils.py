@@ -9,7 +9,7 @@ from typing import Any, List, Union
 import boto3
 import pandas as pd
 from dateutil import parser
-from fastapi import Depends
+from fastapi import Depends, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import ORJSONResponse
 from geopy.distance import geodesic
@@ -984,3 +984,30 @@ def convert_litres_to_gallons(litres):
     """
     gallons = litres * 0.264172
     return round(gallons, 4)
+
+
+def resolve_data_from_request(request: Request):
+    # Get the client's IP address
+    client_host = request.client.host
+    if client_host.startswith("::ffff:"):
+        client_host = client_host.split("::ffff:")[1]
+
+    # Try to get the real IP if behind a proxy
+    forwarded_for = request.headers.get("X-Forwarded-For")
+    if forwarded_for:
+        client_host = forwarded_for.split(",")[0]
+
+    # Get the user agent
+    user_agent = request.headers.get("User-Agent", "Unknown")
+
+    # Get the current timestamp
+    timestamp = datetime.now().isoformat()
+
+    # Gather all the data
+    request_data = {
+        "ip_address": client_host,
+        "user_agent": user_agent,
+        "timestamp": timestamp,
+    }
+
+    return request_data
