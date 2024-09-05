@@ -313,13 +313,11 @@ async def change_password_handler(
                 user_msg=user_msg,
             )
 
-        user = service.change_password(
+        service.change_password(
             user_uuid,
-            payload.old_password,
-            payload.new_password,
-            payload.password_confirmation,
+            payload.new_password
         )
-        return send_data(user)
+        return send_info("User password updated successfully")
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)

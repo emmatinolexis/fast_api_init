@@ -127,13 +127,11 @@ class UserService(BaseService):
     def change_password(
         self,
         user_uuid: str,
-        old_password: str,
         new_password: str,
-        password_confirmation: str,
     ):
         try:
             return self.user_repository.change_password(
-                user_uuid, old_password, new_password, password_confirmation
+                user_uuid, new_password
             )
 
         except Exception as e:

@@ -122,13 +122,11 @@ class UserRepository(BaseRepository):
     def change_password(
         self,
         user_uuid: str,
-        old_password: str,
         new_password: str,
-        password_confirmation: str,
     ):
         with self.session_factory() as session:
             user = (
-                session.query(self.model).filter(self.model.uuid == user_uuid).first()
+                session.query(User).filter(User.uuid == user_uuid).first()
             )
 
             user.password = hash_user_password(new_password)
@@ -137,7 +135,7 @@ class UserRepository(BaseRepository):
             session.commit()
             session.refresh(user)
 
-            return extract_user_data(user)
+            return
 
     def update_user_onboard_status(self, uuid):
         with self.session_factory() as session:
