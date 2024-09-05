@@ -268,6 +268,7 @@ class EmailPurpose(str, Enum):
     ACCOUNT_VERIFICATION = "Account_Verification"
     MAINTENANCE_ALERT = "Maintenance_Alert"
     SMART_REPORT_ALERT = "Smart_Report_Alert"
+    PASSWORD_CHANGE = "Password_Change"
 
 
 class FileFormat(str, Enum):

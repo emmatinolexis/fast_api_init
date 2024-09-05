@@ -130,9 +130,7 @@ class UserService(BaseService):
         new_password: str,
     ):
         try:
-            return self.user_repository.change_password(
-                user_uuid, new_password
-            )
+            return self.user_repository.change_password(user_uuid, new_password)
 
         except Exception as e:
             raise e
