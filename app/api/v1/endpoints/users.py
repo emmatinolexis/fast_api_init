@@ -163,7 +163,7 @@ async def update_user(
 
         user = service.update_user_by_uuid(uuid, payload)
 
-        return send_data(user)
+        return send_info("User updated successfully")
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)

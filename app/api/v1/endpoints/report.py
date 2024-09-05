@@ -222,7 +222,7 @@ async def get_smart_report_by_user_handler(
                     business_profile_uuid=user.get("business_profile").uuid,
                     query_parameter=query_parameter,
                     created_by=created_by,
-                    page=10,
+                    page=page,
                     page_size=page_size,
                 )
 
