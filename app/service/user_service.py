@@ -23,9 +23,7 @@ from app.schema.user_schema import (
     UserProfileUdatePayload,
 )
 from app.service.base_service import BaseService
-from app.util.email import send_password_change_email
 from app.util.enums import InvitationStatus
-from app.util.utils import resolve_data_from_request
 
 
 class UserService(BaseService):
@@ -137,16 +135,6 @@ class UserService(BaseService):
         try:
             updated_user = self.user_repository.change_password(
                 user_uuid, old_password, new_password, password_confirmation
-            )
-
-            data = resolve_data_from_request(request)
-
-            await send_password_change_email(
-                recipient_name=updated_user.get("first_name"),
-                email=updated_user.get("email_address"),
-                ip_address=data.get("ip_address", "Unknown"),
-                user_agent=data.get("user_agent", "Unknown"),
-                time_stamp=data.get("timestamp", datetime.now().isoformat()),
             )
 
             return updated_user
