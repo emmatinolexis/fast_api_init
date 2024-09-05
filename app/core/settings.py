@@ -147,7 +147,6 @@ class Settings(BaseSettings):
 
     GAS_DEVICE_DEFAULT: str = "Gas Device"
 
-
     # find query
     PAGE: int = 1
     PAGE_SIZE: int = 20

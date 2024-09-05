@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import ORJSONResponse
 from pydantic import EmailStr
 
@@ -36,6 +36,7 @@ from app.util.email import (
     send_email_invitation,
     send_email_verification,
     send_otp_email,
+    send_password_change_email
 )
 from app.util.enums import AccountType, EmailPurpose
 from app.util.utils import (
@@ -45,6 +46,7 @@ from app.util.utils import (
     send_info,
     send_internal_server_error,
     serialize_datetime,
+    resolve_data_from_request
 )
 
 router = APIRouter(
@@ -288,6 +290,7 @@ async def user_account(
 async def change_password_handler(
     user_uuid: str,
     payload: UserUpdatePassword,
+    request: Request,
     service: UserService = Depends(Provide[Container.user_service]),
     current_user: User = Depends(get_current_user),
 ):
@@ -318,7 +321,19 @@ async def change_password_handler(
             payload.old_password,
             payload.new_password,
             payload.password_confirmation,
+            request=request,
         )
+
+        data = resolve_data_from_request(request=request)
+
+        await send_password_change_email(
+                recipient_name=user.get("first_name"),
+                email=user.get("email_address"),
+                ip_address=data.get("ip_address", "Unknown"),
+                user_agent=data.get("user_agent", "Unknown"),
+                time_stamp=data.get("timestamp", datetime.now().isoformat()),
+            )
+
         return send_data(user)
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
