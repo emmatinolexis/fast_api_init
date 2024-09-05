@@ -320,8 +320,7 @@ async def change_password_handler(
             user_uuid,
             payload.old_password,
             payload.new_password,
-            payload.password_confirmation,
-            request=request,
+            payload.password_confirmation
         )
 
         data = resolve_data_from_request(request=request)
