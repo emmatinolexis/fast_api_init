@@ -997,8 +997,12 @@ def resolve_data_from_request(request: Request):
     if forwarded_for:
         client_host = forwarded_for.split(",")[0]
 
-    # Get the user agent
+    # Get the user agent and shorten it
     user_agent = request.headers.get("User-Agent", "Unknown")
+    
+    # Shorten the user agent to browser and version only
+    shortened_user_agent = re.search(r"([a-zA-Z]+/\d+(\.\d+)?)", user_agent)
+    user_agent = shortened_user_agent.group(0) if shortened_user_agent else user_agent
 
     # Get the current timestamp
     timestamp = datetime.now().isoformat()
