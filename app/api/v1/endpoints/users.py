@@ -316,12 +316,7 @@ async def change_password_handler(
                 user_msg=user_msg,
             )
 
-        user = service.change_password(
-            user_uuid,
-            payload.old_password,
-            payload.new_password,
-            payload.password_confirmation
-        )
+        user = service.change_password(user_uuid, payload.new_password)
 
         data = resolve_data_from_request(request=request)
 
@@ -333,7 +328,8 @@ async def change_password_handler(
             time_stamp=data.get("timestamp", datetime.now().isoformat()),
         )
 
-        return send_data(user)
+        return send_info("Password updated successfully")
+
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)

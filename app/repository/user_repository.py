@@ -121,19 +121,18 @@ class UserRepository(BaseRepository):
 
     def change_password(
         self,
-        user_uuid: str,
-        old_password: str,
+        user_uuid,
         new_password: str,
-        password_confirmation: str,
     ):
         with self.session_factory() as session:
             user = (
                 session.query(self.model).filter(self.model.uuid == user_uuid).first()
             )
 
-            user.password = hash_user_password(new_password)
+            if not user:
+                return None
 
-            # Commit the changes to the database
+            user.password = hash_user_password(new_password)
             session.commit()
             session.refresh(user)
 
