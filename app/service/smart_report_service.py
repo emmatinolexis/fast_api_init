@@ -373,23 +373,23 @@ class SmartReportService(BaseService):
             # Add to violated assets list
             data["violated_assets"].extend(violated_asset)
 
-        data["incidents"]["assets"] = [
-            {
-                "asset_name": "Hyndai Elentra (Black)",
-                "violation_type": "geofence_violation",
-                "violation_count": 50,
-            },
-            {
-                "asset_name": "Hyndai Elentra (Black)",
-                "violation_type": "over_speeding_violations",
-                "violation_count": 50,
-            },
-            {
-                "asset_name": "Hyndai Elentra (Black)",
-                "violation_type": "idling_violations",
-                "violation_count": 50,
-            },
-        ]
+        # data["incident_assets"] = [
+        #     {
+        #         "asset_name": "Hyndai Elentra (Black)",
+        #         "violation_type": "geofence_violation",
+        #         "violation_count": 50,
+        #     },
+        #     {
+        #         "asset_name": "Hyndai Elentra (Black)",
+        #         "violation_type": "over_speeding_violations",
+        #         "violation_count": 50,
+        #     },
+        #     {
+        #         "asset_name": "Hyndai Elentra (Black)",
+        #         "violation_type": "idling_violations",
+        #         "violation_count": 50,
+        #     },
+        # ]
 
     def prepare_final_report(self, data):
         return {
@@ -1379,17 +1379,17 @@ class SmartReportService(BaseService):
                     "amount": {
                         "total_amount": month_data["total_amount"],
                     },
-                    "assets": [
-                        {"asset_name": "Hyndai Elentra (Black)", "amount": 40.38},
-                        {
-                            "asset_name": "Toyota Corolla (Aaron Debrahs' Car)",
-                            "amount": 71.31,
-                        },
-                        {
-                            "asset_name": "Toyota Corolla (Sage Company Vehicle)",
-                            "amount": 30.84,
-                        },
-                    ],
+                    # "assets": [
+                    #     {"asset_name": "Hyndai Elentra (Black)", "amount": 40.38},
+                    #     {
+                    #         "asset_name": "Toyota Corolla (Aaron Debrahs' Car)",
+                    #         "amount": 71.31,
+                    #     },
+                    #     {
+                    #         "asset_name": "Toyota Corolla (Sage Company Vehicle)",
+                    #         "amount": 30.84,
+                    #     },
+                    # ],
                 }
                 for month_year, month_data in fuel_usage_by_month.items()
             ]
@@ -1410,23 +1410,23 @@ class SmartReportService(BaseService):
                         "type": equipment_name,
                         "fuel_amount": total_fuel_amount,
                         "fuel_percentage": round(fuel_percentage, 2),
-                        "assets": [
-                            {
-                                "asset_name": "Hyndai Elentra (Black)",
-                                "amount": 71.38,
-                                "fuel_percentage": 50,
-                            },
-                            {
-                                "asset_name": "Toyota Corolla (Aaron Debrahs' Car)",
-                                "amount": 40.31,
-                                "fuel_percentage": 25,
-                            },
-                            {
-                                "asset_name": "Toyota Corolla (Sage Company Vehicle)",
-                                "amount": 40.31,
-                                "fuel_percentage": 25,
-                            },
-                        ],
+                        # "assets": [
+                        #     {
+                        #         "asset_name": "Hyndai Elentra (Black)",
+                        #         "amount": 71.38,
+                        #         "fuel_percentage": 50,
+                        #     },
+                        #     {
+                        #         "asset_name": "Toyota Corolla (Aaron Debrahs' Car)",
+                        #         "amount": 40.31,
+                        #         "fuel_percentage": 25,
+                        #     },
+                        #     {
+                        #         "asset_name": "Toyota Corolla (Sage Company Vehicle)",
+                        #         "amount": 40.31,
+                        #         "fuel_percentage": 25,
+                        #     },
+                        # ],
                     }
                 )
 

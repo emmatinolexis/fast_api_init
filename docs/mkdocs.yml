@@ -1,0 +1,15 @@
+site_name: "MVI Backend Documentation"
+
+nav:
+  - Home: index.md
+  - API Documentation:
+    - AutoAPI: autoapi/index.md
+
+plugins:
+  - search
+  - autoapi:
+      python:
+        - ../app  # Path to your FastAPI source code directory
+
+theme:
+  name: material  # You can use other themes if preferred
