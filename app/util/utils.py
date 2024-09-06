@@ -635,6 +635,17 @@ def sort_events_by_timestamp(events):
     )
     
 def sort_analytics_by_timestamp(events):
+    """
+    Sort events by timestamp.
+
+    Parameters:
+    events: list of dictionaries
+        List of events with timestamps.
+
+    Returns:
+    list
+        Sorted list of events by timestamp.
+    """
     return sorted(
         events, key=lambda x: x["timestamp"]
         )
