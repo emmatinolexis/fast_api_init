@@ -196,7 +196,7 @@ def get_distance_travelled_by_coordinates(coordinates: Union[List[dict], List[tu
     :return: Total distance traveled as float
     """
 
-    coordinates = sort_events_by_timestamp(coordinates)
+    coordinates = sort_analytics_by_timestamp(coordinates)
 
     if not coordinates:
         return 0.0
@@ -633,6 +633,11 @@ def sort_events_by_timestamp(events):
     return sorted(
         events, key=lambda x: datetime.strptime(x["timestamp"], "%Y-%m-%d %H:%M:%S")
     )
+    
+def sort_analytics_by_timestamp(events):
+    return sorted(
+        events, key=lambda x: x["timestamp"]
+        )
 
 
 def calculate_idle_time(events_sorted, unit="seconds"):
