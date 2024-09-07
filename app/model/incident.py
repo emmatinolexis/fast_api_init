@@ -18,4 +18,3 @@ class Incident(BaseModel):
     incident_type = Column(Enum(CrowdIncidentType),nullable=False,index=True)
     longitude = Column(Double, nullable=False, index=True)
     latitude = Column(Double, nullable=False, index=True)
-    created_at = Column(DateTime(timezone=True),nullable=False)
