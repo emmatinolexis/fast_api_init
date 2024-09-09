@@ -167,7 +167,7 @@ class BuildingInput(BaseModel):
     create_gas: Optional[bool] = False
     create_building_without_cylinder: Optional[bool] = False
     gas_cylinder: Optional[GasCylinderInput] = None
-    create_fire_device: bool
+    create_fire_device: Optional[bool] = False
     fire_device: Optional[CreateFireDeviceInputAsset] = None
 
 

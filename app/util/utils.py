@@ -633,7 +633,8 @@ def sort_events_by_timestamp(events):
     return sorted(
         events, key=lambda x: datetime.strptime(x["timestamp"], "%Y-%m-%d %H:%M:%S")
     )
-    
+
+
 def sort_analytics_by_timestamp(events):
     """
     Sort events by timestamp.
@@ -646,9 +647,7 @@ def sort_analytics_by_timestamp(events):
     list
         Sorted list of events by timestamp.
     """
-    return sorted(
-        events, key=lambda x: x["timestamp"]
-        )
+    return sorted(events, key=lambda x: x["timestamp"])
 
 
 def calculate_idle_time(events_sorted, unit="seconds"):
