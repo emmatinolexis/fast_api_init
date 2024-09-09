@@ -173,3 +173,14 @@ async def get_ssl_certificate(request: SSLCertificateRequest):
         msg = f"{messages.GET_FAILED} {msg_prefix}s"
         logging.info(msg)
         return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.post("/create_device_configuration")
+@inject
+async def get_device_configuration():
+    try:
+        return "okay"
+    except Exception as e:
+        msg = f"{messages.GET_FAILED} {msg_prefix}s"
+        logging.info(msg)
+        return send_internal_server_error(user_msg=msg, error=e)
