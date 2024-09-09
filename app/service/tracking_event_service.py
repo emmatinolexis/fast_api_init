@@ -214,9 +214,12 @@ class TrackingEventService(BaseService):
 
         for event in events:
             coordinates.append(
-                {"latitude": event.latitude, "longitude": event.longitude}
+                {
+                    "latitude": event.latitude,
+                    "longitude": event.longitude,
+                    "timestamp": event.event_datetime,
+                }
             )
-
         distance_travelled = get_distance_travelled_by_coordinates(coordinates)
 
         return f"{distance_travelled} {DISTANCE_UNIT}"

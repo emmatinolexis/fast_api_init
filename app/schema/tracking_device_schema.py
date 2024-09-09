@@ -20,6 +20,9 @@ class DeviceReportPayload(BaseModel):
     node_id: str
     node_description: str
     master_id: str
+    alert_type: str
+    device_type: str
+    alert_description: str
     measurements: List[MeasurementPayload]
     event_datetime: str
 

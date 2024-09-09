@@ -214,6 +214,7 @@ class SmartReportService(BaseService):
     def initialize_data_structures(self):
         return {
             "incidents_by_equipment_type": defaultdict(int),
+            "incidents_by_equipment_type_assets": defaultdict(int),
             "incidents": defaultdict(int),
             "incidents_rate": defaultdict(lambda: defaultdict(int)),
             "monthly_totals": defaultdict(int),
@@ -230,10 +231,10 @@ class SmartReportService(BaseService):
             "total_litres_all_months": 0.0,
             "fuel_usage_by_make": defaultdict(lambda: defaultdict(float)),
             "distance_by_make": defaultdict(lambda: defaultdict(float)),
+            "incidents_assets": defaultdict(int),
         }
 
     def process_assets(self, asset, date_from, date_to, data):
-        # return asset
         (
             asset,
             equipment_name,
@@ -247,7 +248,6 @@ class SmartReportService(BaseService):
         total_distance_traveled = get_distance_travelled_by_coordinates(
             asset.tracking_events
         )
-        # asset_make = asset.make
 
         asset_violations_data = self.asset_repository.get_violations_by_asset(
             asset.uuid, date_from, date_to
@@ -271,6 +271,7 @@ class SmartReportService(BaseService):
         # Extract the necessary data from the asset
         equipment_name = asset.equipment.name
         asset_make = asset.make
+        asset_name = asset.asset_name
 
         # Iterate over each tracking event to aggregate data by month
         events_by_month = {}
@@ -292,10 +293,35 @@ class SmartReportService(BaseService):
             # Update fuel usage by month
             data["fuel_usage_by_month"][month_year]["total_litres"] += monthly_fuel_used
 
+            # Update fuel usage for each asset in the month (fuel_usage_by_month)
+            if "assets" not in data["fuel_usage_by_month"][month_year]:
+                data["fuel_usage_by_month"][month_year] = {
+                    "total_litres": 0.0,
+                    "assets": [],
+                }
+
+            # Update fuel usage for each asset in the month (fuel_usage_by_month)
+            data["fuel_usage_by_month"][month_year]["assets"].append(
+                {"asset_name": asset_name, "fuel_used": monthly_fuel_used}
+            )
+
             # Update fuel usage by equipment type and month
             data["fuel_usage_by_equipment"][equipment_name][month_year][
                 "total_litres"
             ] += monthly_fuel_used
+
+            # Update fuel usage by individual asset for each equipment type
+            if (
+                "assets"
+                not in data["fuel_usage_by_equipment"][equipment_name][month_year]
+            ):
+                data["fuel_usage_by_equipment"][equipment_name][month_year][
+                    "assets"
+                ] = []
+
+            data["fuel_usage_by_equipment"][equipment_name][month_year][
+                "assets"
+            ].append({"asset_name": asset_name, "fuel_used": monthly_fuel_used})
 
             # Update fuel usage by make and month
             data["fuel_usage_by_make"][asset_make][month_year] += monthly_fuel_used
@@ -331,7 +357,6 @@ class SmartReportService(BaseService):
 
     def process_violations(self, data):
         # Initialize or reset the total_incidents count
-        # data["incidents"] = defaultdict(int)
 
         for violation in data["asset_violations"]:
             # Automatically append '_violations' to the policy type name
@@ -355,11 +380,9 @@ class SmartReportService(BaseService):
             # Increment the count for this policy type in incidents
             data["incidents"][policy_type_name] += 1
 
-            # Increment the total incident count
-            # data["incidents"]["total_violations"] += 1
-
             # Prepare the violated asset details
             violated_asset = []
+            asset_name = violation.asset.asset_name
             for violation_coordinate in violation.violation_coordinates:
                 asset = {
                     "asset_name": violation.asset.asset_name,
@@ -373,7 +396,36 @@ class SmartReportService(BaseService):
             # Add to violated assets list
             data["violated_assets"].extend(violated_asset)
 
+            # Track violations per asset and equipment type
+            data["incidents_assets"][(asset_name, policy_type_name)] += 1
+            data["incidents_by_equipment_type_assets"][
+                (asset_name, policy_type_name, equipment_name)
+            ] += 1
+
     def prepare_final_report(self, data):
+        # Prepare the incident reports for assets
+        incidents_assets_report = [
+            {
+                "asset_name": asset_name,
+                "violation_type": violation_type,
+                "violation_count": count,
+            }
+            for (asset_name, violation_type), count in data["incidents_assets"].items()
+        ]
+
+        # Prepare the incident reports for equipment type
+        incidents_by_equipment_type_assets_report = [
+            {
+                "asset_name": asset_name,
+                "violation_type": violation_type,
+                "violation_count": count,
+                "equipment_type": equipment_name,
+            }
+            for (asset_name, violation_type, equipment_name), count in data[
+                "incidents_by_equipment_type_assets"
+            ].items()
+        ]
+
         return {
             "fuel_usage": {
                 "total_litres_all_months": data["total_litres_all_months"],
@@ -381,6 +433,13 @@ class SmartReportService(BaseService):
                     {
                         "year_month": month,
                         "quantity": {"total_quantity": month_data["total_litres"]},
+                        "assets": [
+                            {
+                                "asset_name": asset["asset_name"],
+                                "fuel_used": asset["fuel_used"],
+                            }
+                            for asset in month_data.get("assets", [])
+                        ],
                     }
                     for month, month_data in data["fuel_usage_by_month"].items()
                 ],
@@ -405,6 +464,14 @@ class SmartReportService(BaseService):
                                 * 100,
                                 2,
                             ),
+                            "assets": [
+                                {
+                                    "asset_name": asset["asset_name"],
+                                    "fuel_used": asset["fuel_used"],
+                                }
+                                for month_data in monthly_data.values()
+                                for asset in month_data.get("assets", [])
+                            ],
                         }
                         for equipment_name, monthly_data in data[
                             "fuel_usage_by_equipment"
@@ -417,6 +484,8 @@ class SmartReportService(BaseService):
             "incidents_by_equipment_type": data["incidents_by_equipment_type"],
             "incidents_rate": data["incidents_rate"],
             "violated_assets": data["violated_assets"],
+            "incidents_assets": incidents_assets_report,
+            "incidents_by_equipment_type_assets": incidents_by_equipment_type_assets_report,
         }
 
     def parse_dates(self, date_from, date_to):
@@ -1320,11 +1389,20 @@ class SmartReportService(BaseService):
         try:
             fuel_purchased = []
             fuel_usage_by_month = defaultdict(
-                lambda: {"total_amount": 0.0, "total_litres": 0.0}
+                lambda: {
+                    "total_amount": 0.0,
+                    "total_litres": 0.0,
+                    "assets": defaultdict(lambda: 0.0),
+                }
             )
             fuel_usage_by_equipment = defaultdict(
                 lambda: defaultdict(lambda: {"total_amount": 0.0, "total_litres": 0.0})
             )
+
+            fuel_usage_by_equipment_name = defaultdict(
+                lambda: {"total_amount": 0.0, "assets": defaultdict(lambda: 0.0)}
+            )
+
             total_amount_all_months = 0.0
             total_litres_all_months = 0.0
 
@@ -1340,10 +1418,13 @@ class SmartReportService(BaseService):
                 purchase_date = datetime.strptime(purchase.purchase_date, "%Y-%m-%d")
                 month_year = purchase_date.strftime("%Y-%m")
                 equipment_name = purchase.asset.equipment.name
+                asset_name = purchase.asset.asset_name
 
                 # Aggregate fuel data by month and by equipment
                 fuel_usage_by_month[month_year]["total_amount"] += purchase.amount
                 fuel_usage_by_month[month_year]["total_litres"] += purchase.quantity
+                fuel_usage_by_month[month_year]["assets"][asset_name] += purchase.amount
+
                 total_amount_all_months += purchase.amount
                 total_litres_all_months += purchase.quantity
 
@@ -1354,6 +1435,14 @@ class SmartReportService(BaseService):
                     "total_litres"
                 ] += purchase.quantity
 
+                # Aggregate by equipment name and asset
+                fuel_usage_by_equipment_name[equipment_name][
+                    "total_amount"
+                ] += purchase.amount
+                fuel_usage_by_equipment_name[equipment_name]["assets"][
+                    asset_name
+                ] += purchase.amount
+
             # Reformat fuel usage by month
             fuel_amount_by_month = [
                 {
@@ -1361,26 +1450,47 @@ class SmartReportService(BaseService):
                     "amount": {
                         "total_amount": month_data["total_amount"],
                     },
+                    "assets": [
+                        {"asset_name": asset_name, "amount": amount}
+                        for asset_name, amount in month_data["assets"].items()
+                    ],
                 }
                 for month_year, month_data in fuel_usage_by_month.items()
             ]
 
             # Calculate the percentage and total fuel amount for each equipment type
             fuel_cost_by_asset_type = []
-            for equipment_name, monthly_data in fuel_usage_by_equipment.items():
-                total_fuel_amount = sum(
-                    data["total_amount"] for data in monthly_data.values()
-                )
+
+            for equipment_name, equipment_data in fuel_usage_by_equipment_name.items():
+                total_fuel_amount = equipment_data["total_amount"]
                 fuel_percentage = (
                     (total_fuel_amount / total_amount_all_months) * 100
                     if total_amount_all_months > 0
                     else 0
                 )
+
+                # Calculate the fuel percentage for each asset under this equipment name
+                assets_data = []
+                for asset_name, asset_fuel_amount in equipment_data["assets"].items():
+                    asset_percentage = (
+                        (asset_fuel_amount / total_fuel_amount) * 100
+                        if total_fuel_amount > 0
+                        else 0
+                    )
+                    assets_data.append(
+                        {
+                            "asset_name": asset_name,
+                            "amount": asset_fuel_amount,
+                            "fuel_percentage": round(asset_percentage, 2),
+                        }
+                    )
+
                 fuel_cost_by_asset_type.append(
                     {
                         "type": equipment_name,
                         "fuel_amount": total_fuel_amount,
                         "fuel_percentage": round(fuel_percentage, 2),
+                        "assets": assets_data,
                     }
                 )
 
@@ -1389,7 +1499,7 @@ class SmartReportService(BaseService):
                 "total_amount_all_months": total_amount_all_months,
                 "total_litres_all_months": total_litres_all_months,
                 "fuel_amount_by_month": fuel_amount_by_month,
-                "fuel_cost_by_asset_type": {"assets": fuel_cost_by_asset_type},
+                "fuel_cost_by_asset_type": {"asset_types": fuel_cost_by_asset_type},
             }
 
             return result

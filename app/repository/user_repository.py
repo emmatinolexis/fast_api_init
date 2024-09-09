@@ -1,6 +1,6 @@
 from contextlib import AbstractContextManager
 from datetime import datetime, timedelta
-from typing import Callable
+from typing import Callable, Optional
 
 from pydantic import EmailStr
 from sqlalchemy import desc, func
@@ -34,9 +34,7 @@ class UserRepository(BaseRepository):
     def update_user_by_uuid(self, uuid: str, user: UpdateUserPayload):
         try:
             with self.session_factory() as session:
-                user_to_update = (
-                    session.query(self.model).filter(self.model.uuid == uuid).first()
-                )
+                user_to_update = session.query(User).filter(User.uuid == uuid).first()
                 if user_to_update is None:
                     raise Exception("User not found")
 
@@ -50,7 +48,7 @@ class UserRepository(BaseRepository):
                 session.commit()
                 session.refresh(user_to_update)
 
-                return user_to_update
+                return
         except Exception as e:
             raise e
 
@@ -67,12 +65,16 @@ class UserRepository(BaseRepository):
     def get_user_by_phone_number(self, phone_number: str):
         with self.session_factory() as session:
             user = (
-                session.query(self.model)
-                .filter(self.model.phone_number == phone_number)
+                session.query(User)
+                .filter(User.phone_number == phone_number)
                 .options(joinedload(User.business_profile))
                 .options(joinedload(User.user_role).joinedload(Role.permissions))
                 .first()
             )
+
+            if not user:
+                return None
+
             user_data = extract_user_data(user)
             return user_data
 
@@ -86,14 +88,22 @@ class UserRepository(BaseRepository):
 
     def get_user_by_uuid(self, user_uuid: str):
         with self.session_factory() as session:
-            user = (
+            # Query the user model with necessary joins
+            user: Optional[User] = (
                 session.query(self.model)
-                .filter(self.model.uuid == user_uuid)
+                .filter(User.uuid == user_uuid)
                 .options(joinedload(User.business_profile))
                 .options(joinedload(User.user_role).joinedload(Role.permissions))
                 .first()
             )
+
+            # If the user is not found, return None
+            if not user:
+                return None
+
+            # Process and return user data if user exists
             user_data = extract_user_data(user)
+
             return user_data
 
     def check_business_exists(self, name, email, phone):
@@ -111,19 +121,18 @@ class UserRepository(BaseRepository):
 
     def change_password(
         self,
-        user_uuid: str,
-        old_password: str,
+        user_uuid,
         new_password: str,
-        password_confirmation: str,
     ):
         with self.session_factory() as session:
             user = (
                 session.query(self.model).filter(self.model.uuid == user_uuid).first()
             )
 
-            user.password = hash_user_password(new_password)
+            if not user:
+                return None
 
-            # Commit the changes to the database
+            user.password = hash_user_password(new_password)
             session.commit()
             session.refresh(user)
 

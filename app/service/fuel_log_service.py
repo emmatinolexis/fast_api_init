@@ -30,18 +30,14 @@ class FuelLogService(BaseService):
     def create_individual_fuel_log(
         self, payload: FuelLogSchema, user_uuid: str, business_profile_uuid: str = None
     ):
-        assigned_asset = self.asset_repository.get_asset_by_user_uuid(user_uuid)
-
-        if not assigned_asset:
-            raise NotFoundError(detail=messages.MUST_BE_ASSIGNED)
-
         log_payload = FuelLogCreateSchema(
             amount=payload.amount,
             quantity=payload.quantity,
             user_uuid=user_uuid,
-            asset_uuid=assigned_asset.asset_uuid if assigned_asset else None,
+            asset_uuid=payload.asset_uuid,
             business_profile_uuid=business_profile_uuid,
             receipt_image=payload.receipt_image,
+            payment_method=payload.payment_method,
         )
 
         return self.fuel_log_repository.create(log_payload)

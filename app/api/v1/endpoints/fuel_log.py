@@ -43,7 +43,11 @@ async def create_fuel_log_handler_for_individual(
                 user_msg=messages.USER_NOT_FOUND, status_code=404
             )
 
-        data = service.create_individual_fuel_log(payload, user_uuid)
+        business_profile_uuid = str(user.get("business_profile").uuid)
+
+        data = service.create_individual_fuel_log(
+            payload, user_uuid, business_profile_uuid
+        )
 
         return send_data(data)
     except NotFoundError as e:

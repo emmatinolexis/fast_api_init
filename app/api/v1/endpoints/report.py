@@ -222,7 +222,7 @@ async def get_smart_report_by_user_handler(
                     business_profile_uuid=user.get("business_profile").uuid,
                     query_parameter=query_parameter,
                     created_by=created_by,
-                    page=10,
+                    page=page,
                     page_size=page_size,
                 )
 
@@ -325,9 +325,10 @@ async def generate_smart_report_handler(
                 )
 
                 report_message = (
-                    f"Hello {smart_report.get('created_by')}, "
-                    f"we want to inform you that your {smart_report.get('title')} is ready."
-                    f"<br> Login to your account to view report"
+                    f"Hello {smart_report.get('created_by')},<br> "
+                    f"We are pleased to inform you that your  {smart_report.get('title')} is now available."
+                    f"<br> Please log in to your account to view the report. "
+                    f"Click the button below to access your smart report"
                 )
 
                 await send_smart_report_email(
@@ -416,7 +417,7 @@ async def share_smart_report_handler(
         # send emails to recipients
         for user in users:
             report_message = (
-                f"Hello {user.get('name')}, we wanted to inform you that your report for June is now ready. "
+                f"Hello {user.get('name')}, we wanted to inform you that your {smart_report.title} is now ready. "
                 f"<br> Login to your account to view report"
             )
 

@@ -9,7 +9,7 @@ from typing import Any, List, Union
 import boto3
 import pandas as pd
 from dateutil import parser
-from fastapi import Depends
+from fastapi import Depends, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import ORJSONResponse
 from geopy.distance import geodesic
@@ -19,7 +19,14 @@ from app.core.constants import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE, THIRD_PARTY_
 from app.core.logger import get_logger
 from app.core.security import JWTBearer
 from app.core.settings import settings
-from app.util.enums import ActiveStatus, FileFormat, SmartReportStatus, SmartReportUser
+from app.util.enums import (
+    ActiveStatus,
+    CertificateIndex,
+    CertificateKey,
+    FileFormat,
+    SmartReportStatus,
+    SmartReportUser,
+)
 
 log = get_logger()
 
@@ -196,7 +203,7 @@ def get_distance_travelled_by_coordinates(coordinates: Union[List[dict], List[tu
     :return: Total distance traveled as float
     """
 
-    coordinates = sort_events_by_timestamp(coordinates)
+    coordinates = sort_analytics_by_timestamp(coordinates)
 
     if not coordinates:
         return 0.0
@@ -635,6 +642,21 @@ def sort_events_by_timestamp(events):
     )
 
 
+def sort_analytics_by_timestamp(events):
+    """
+    Sort events by timestamp.
+
+    Parameters:
+    events: list of dictionaries
+        List of events with timestamps.
+
+    Returns:
+    list
+        Sorted list of events by timestamp.
+    """
+    return sorted(events, key=lambda x: x["timestamp"])
+
+
 def calculate_idle_time(events_sorted, unit="seconds"):
     """
     Calculate total idle time from sorted events.
@@ -984,3 +1006,84 @@ def convert_litres_to_gallons(litres):
     """
     gallons = litres * 0.264172
     return round(gallons, 4)
+
+
+def resolve_data_from_request(request: Request):
+    # Get the client's IP address
+    client_host = request.client.host
+    if client_host.startswith("::ffff:"):
+        client_host = client_host.split("::ffff:")[1]
+
+    # Try to get the real IP if behind a proxy
+    forwarded_for = request.headers.get("X-Forwarded-For")
+    if forwarded_for:
+        client_host = forwarded_for.split(",")[0]
+
+    # Get the user agent and shorten it
+    user_agent = request.headers.get("User-Agent", "Unknown")
+
+    # Shorten the user agent to browser and version only
+    shortened_user_agent = re.search(r"([a-zA-Z]+/\d+(\.\d+)?)", user_agent)
+    user_agent = shortened_user_agent.group(0) if shortened_user_agent else user_agent
+
+    # Get the current timestamp
+    timestamp = datetime.now().isoformat()
+
+    # Gather all the data
+    request_data = {
+        "ip_address": client_host,
+        "user_agent": user_agent,
+        "timestamp": timestamp,
+    }
+
+    return request_data
+
+
+def extract_certificate_info(cert_data):
+    certificate_info = {}
+
+    # Extract subject
+    certificate_info[CertificateKey.SUBJECT] = cert_data[CertificateKey.SUBJECT][
+        CertificateIndex.SUBJECT_INDEX
+    ][CertificateIndex.SUBJECT_COMPONENT_INDEX][CertificateIndex.SUBJECT_NAME_INDEX]
+
+    # Extract issuer
+    issuer_info = cert_data[CertificateKey.ISSUER]
+    issuer_components = []
+    for issuer_item in issuer_info:
+        issuer_components.append(
+            issuer_item[CertificateIndex.ISSUER_ITEM_INDEX][
+                CertificateIndex.ISSUER_NAME_INDEX
+            ]
+        )
+    certificate_info[CertificateKey.ISSUER] = ", ".join(issuer_components)
+
+    # Extract version
+    certificate_info[CertificateKey.VERSION] = cert_data[CertificateKey.VERSION]
+
+    # Extract serial number
+    certificate_info[CertificateKey.SERIAL_NUMBER] = cert_data[
+        CertificateKey.SERIAL_NUMBER
+    ]
+
+    # Extract not before and not after dates
+    certificate_info[CertificateKey.NOT_BEFORE] = cert_data[CertificateKey.NOT_BEFORE]
+    certificate_info[CertificateKey.NOT_AFTER] = cert_data[CertificateKey.NOT_AFTER]
+
+    # Extract subject alternative names
+    certificate_info[CertificateKey.SUBJECT_ALT_NAME] = [
+        alt_name[CertificateIndex.ALT_NAME_VALUE_INDEX]
+        for alt_name in cert_data[CertificateKey.SUBJECT_ALT_NAME]
+    ]
+
+    # Extract OCSP url
+    certificate_info[CertificateKey.OCSP] = cert_data[CertificateKey.OCSP][
+        CertificateIndex.OCSP_URL_INDEX
+    ]
+
+    # Extract CA Issuers url
+    certificate_info[CertificateKey.CA_ISSUERS] = cert_data[CertificateKey.CA_ISSUERS][
+        CertificateIndex.CA_ISSUERS_URL_INDEX
+    ]
+
+    return certificate_info
