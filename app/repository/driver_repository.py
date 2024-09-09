@@ -112,3 +112,9 @@ class DriverRepository(BaseRepository):
             query = session.query(self.model)
             driver = query.filter(self.model.email == email).first()
             return driver
+
+    def get_driver_by_asset_uuid(self, asset_uuid):
+        with self.session_factory() as session:
+            query = session.query(self.model)
+            driver = query.filter(self.model.asset_uuid == asset_uuid).first()
+            return driver

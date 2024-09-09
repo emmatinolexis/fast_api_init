@@ -5,7 +5,7 @@ from fastapi.responses import ORJSONResponse
 from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
-from app.core.exceptions import NotFoundError
+from app.core.exceptions import BadRequestError, NotFoundError
 from app.model.user import User
 from app.schema.asset_schema import DriverPayload
 from app.service.driver_service import DriverService
@@ -169,4 +169,22 @@ async def delete_driver_by_uuid_handler(
         )
     except Exception as e:
         msg = messages.DELETE_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.patch("/change")
+@inject
+async def change_rider_asset_handler(
+    asset_uuid: str,
+    driver_uuid: str,
+    service: DriverService = Depends(Provide[Container.driver_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        driver = service.change_rider_asset(asset_uuid, driver_uuid)
+        return send_data(driver)
+    except (NotFoundError, BadRequestError) as e:
+        return send_client_side_error(user_msg=str(e.detail), dev_msg=str(e.detail))
+    except Exception as e:
+        msg = messages.UPDATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
