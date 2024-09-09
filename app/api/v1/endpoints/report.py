@@ -325,9 +325,10 @@ async def generate_smart_report_handler(
                 )
 
                 report_message = (
-                    f"Hello {smart_report.get('created_by')}, "
-                    f"we want to inform you that your {smart_report.get('title')} is ready."
-                    f"<br> Login to your account to view report"
+                    f"Hello {smart_report.get('created_by')},<br> "
+                    f"We are pleased to inform you that your  {smart_report.get('title')} is now available."
+                    f"<br> Please log in to your account to view the report. "
+                    f"Click the button below to access your smart report"
                 )
 
                 await send_smart_report_email(

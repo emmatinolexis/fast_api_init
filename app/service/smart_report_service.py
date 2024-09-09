@@ -231,10 +231,10 @@ class SmartReportService(BaseService):
             "total_litres_all_months": 0.0,
             "fuel_usage_by_make": defaultdict(lambda: defaultdict(float)),
             "distance_by_make": defaultdict(lambda: defaultdict(float)),
+            "incidents_assets": defaultdict(int),
         }
 
     def process_assets(self, asset, date_from, date_to, data):
-        # return asset
         (
             asset,
             equipment_name,
@@ -248,7 +248,6 @@ class SmartReportService(BaseService):
         total_distance_traveled = get_distance_travelled_by_coordinates(
             asset.tracking_events
         )
-        # asset_make = asset.make
 
         asset_violations_data = self.asset_repository.get_violations_by_asset(
             asset.uuid, date_from, date_to
@@ -332,7 +331,6 @@ class SmartReportService(BaseService):
 
     def process_violations(self, data):
         # Initialize or reset the total_incidents count
-        # data["incidents"] = defaultdict(int)
 
         for violation in data["asset_violations"]:
             # Automatically append '_violations' to the policy type name
@@ -361,6 +359,7 @@ class SmartReportService(BaseService):
 
             # Prepare the violated asset details
             violated_asset = []
+            asset_name = violation.asset.asset_name
             for violation_coordinate in violation.violation_coordinates:
                 asset = {
                     "asset_name": violation.asset.asset_name,
@@ -374,18 +373,36 @@ class SmartReportService(BaseService):
             # Add to violated assets list
             data["violated_assets"].extend(violated_asset)
 
-            # Prepare the incident details for equipment type assets
-            # equipment_asset = {
-            #     "asset_name": violation.asset.asset_name,
-            #     "violation_type": policy_type_name,
-            #     "violation_count": data["policy_type_counts"][policy_type_name],
-            #     "equipment_type": equipment_name
-            # }
-            #
-            # # Add each violation to the list for incidents by equipment type
-            # data["incidents_by_equipment_type_assets"][equipment_name].extend(equipment_asset)
+            # Track violations per asset and equipment type
+            data["incidents_assets"][(asset_name, policy_type_name)] += 1
+            data["incidents_by_equipment_type_assets"][
+                (asset_name, policy_type_name, equipment_name)
+            ] += 1
 
     def prepare_final_report(self, data):
+        # Prepare the incident reports for assets
+        incidents_assets_report = [
+            {
+                "asset_name": asset_name,
+                "violation_type": violation_type,
+                "violation_count": count,
+            }
+            for (asset_name, violation_type), count in data["incidents_assets"].items()
+        ]
+
+        # Prepare the incident reports for equipment type
+        incidents_by_equipment_type_assets_report = [
+            {
+                "asset_name": asset_name,
+                "violation_type": violation_type,
+                "violation_count": count,
+                "equipment_type": equipment_name,
+            }
+            for (asset_name, violation_type, equipment_name), count in data[
+                "incidents_by_equipment_type_assets"
+            ].items()
+        ]
+
         return {
             "fuel_usage": {
                 "total_litres_all_months": data["total_litres_all_months"],
@@ -429,6 +446,8 @@ class SmartReportService(BaseService):
             "incidents_by_equipment_type": data["incidents_by_equipment_type"],
             "incidents_rate": data["incidents_rate"],
             "violated_assets": data["violated_assets"],
+            "incidents_assets": incidents_assets_report,
+            "incidents_by_equipment_type_assets": incidents_by_equipment_type_assets_report,
         }
 
     def parse_dates(self, date_from, date_to):
