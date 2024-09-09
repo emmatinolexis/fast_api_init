@@ -271,6 +271,7 @@ class SmartReportService(BaseService):
         # Extract the necessary data from the asset
         equipment_name = asset.equipment.name
         asset_make = asset.make
+        asset_name = asset.asset_name
 
         # Iterate over each tracking event to aggregate data by month
         events_by_month = {}
@@ -292,10 +293,35 @@ class SmartReportService(BaseService):
             # Update fuel usage by month
             data["fuel_usage_by_month"][month_year]["total_litres"] += monthly_fuel_used
 
+            # Update fuel usage for each asset in the month (fuel_usage_by_month)
+            if "assets" not in data["fuel_usage_by_month"][month_year]:
+                data["fuel_usage_by_month"][month_year] = {
+                    "total_litres": 0.0,
+                    "assets": [],
+                }
+
+            # Update fuel usage for each asset in the month (fuel_usage_by_month)
+            data["fuel_usage_by_month"][month_year]["assets"].append(
+                {"asset_name": asset_name, "fuel_used": monthly_fuel_used}
+            )
+
             # Update fuel usage by equipment type and month
             data["fuel_usage_by_equipment"][equipment_name][month_year][
                 "total_litres"
             ] += monthly_fuel_used
+
+            # Update fuel usage by individual asset for each equipment type
+            if (
+                "assets"
+                not in data["fuel_usage_by_equipment"][equipment_name][month_year]
+            ):
+                data["fuel_usage_by_equipment"][equipment_name][month_year][
+                    "assets"
+                ] = []
+
+            data["fuel_usage_by_equipment"][equipment_name][month_year][
+                "assets"
+            ].append({"asset_name": asset_name, "fuel_used": monthly_fuel_used})
 
             # Update fuel usage by make and month
             data["fuel_usage_by_make"][asset_make][month_year] += monthly_fuel_used
@@ -354,9 +380,6 @@ class SmartReportService(BaseService):
             # Increment the count for this policy type in incidents
             data["incidents"][policy_type_name] += 1
 
-            # Increment the total incident count
-            # data["incidents"]["total_violations"] += 1
-
             # Prepare the violated asset details
             violated_asset = []
             asset_name = violation.asset.asset_name
@@ -410,6 +433,13 @@ class SmartReportService(BaseService):
                     {
                         "year_month": month,
                         "quantity": {"total_quantity": month_data["total_litres"]},
+                        "assets": [
+                            {
+                                "asset_name": asset["asset_name"],
+                                "fuel_used": asset["fuel_used"],
+                            }
+                            for asset in month_data.get("assets", [])
+                        ],
                     }
                     for month, month_data in data["fuel_usage_by_month"].items()
                 ],
@@ -434,6 +464,14 @@ class SmartReportService(BaseService):
                                 * 100,
                                 2,
                             ),
+                            "assets": [
+                                {
+                                    "asset_name": asset["asset_name"],
+                                    "fuel_used": asset["fuel_used"],
+                                }
+                                for month_data in monthly_data.values()
+                                for asset in month_data.get("assets", [])
+                            ],
                         }
                         for equipment_name, monthly_data in data[
                             "fuel_usage_by_equipment"
