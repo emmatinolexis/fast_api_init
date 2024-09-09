@@ -301,14 +301,18 @@ class FuelType(str, Enum):
     KEROSENE = "kerosene"
 
 
-class CrowdIncidentType(str, Enum):
+class IncidenceType(str, Enum):
     ACCIDENT = "accident"
     SPEED_RAMP = "speed_ramp"
     POT_HOLES = "pot_holes"
     ROAD_BLOCKED = "road_blocked"
     TRAFFIC_JAM = "traffic_jam"
+    POTENTIAL_ROBBERY = "potential_robbery"
+    BROKEN_DOWN_VEHICLE = "broken_down_vehicle"
+    TREE_IN_THE_ROAD = "tree_in_the_road"
+    CROWD_CELEBRATING = "crowd_celebrating"
 
-    
+
 class CertificateIndex(int, Enum):
     SUBJECT_INDEX = 0
     SUBJECT_COMPONENT_INDEX = 0

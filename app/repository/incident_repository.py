@@ -3,6 +3,7 @@ from typing import Callable
 
 from app.model.incident import Incident
 from app.repository.base_repository import BaseRepository
+from app.util.enums import IncidentType
 
 
 class IncidentRepository(BaseRepository):
@@ -10,8 +11,7 @@ class IncidentRepository(BaseRepository):
         self.session_factory = session_factory
         super().__init__(session_factory, Incident)
 
-
-    def get_all_incidents(self, incident_type: str = None):
+    def get_all_incidents(self, incident_type: IncidentType = None):
         with self.session_factory() as session:
             if incident_type:
                 return (
@@ -19,7 +19,4 @@ class IncidentRepository(BaseRepository):
                     .filter_by(incident_type=incident_type)
                     .all()
                 )
-            return (
-                self.read_all()
-            )
-
+            return self.read_all()
