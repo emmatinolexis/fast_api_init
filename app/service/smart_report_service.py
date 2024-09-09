@@ -1332,11 +1332,20 @@ class SmartReportService(BaseService):
         try:
             fuel_purchased = []
             fuel_usage_by_month = defaultdict(
-                lambda: {"total_amount": 0.0, "total_litres": 0.0}
+                lambda: {
+                    "total_amount": 0.0,
+                    "total_litres": 0.0,
+                    "assets": defaultdict(lambda: 0.0),
+                }
             )
             fuel_usage_by_equipment = defaultdict(
                 lambda: defaultdict(lambda: {"total_amount": 0.0, "total_litres": 0.0})
             )
+
+            fuel_usage_by_equipment_name = defaultdict(
+                lambda: {"total_amount": 0.0, "assets": defaultdict(lambda: 0.0)}
+            )
+
             total_amount_all_months = 0.0
             total_litres_all_months = 0.0
 
@@ -1352,10 +1361,13 @@ class SmartReportService(BaseService):
                 purchase_date = datetime.strptime(purchase.purchase_date, "%Y-%m-%d")
                 month_year = purchase_date.strftime("%Y-%m")
                 equipment_name = purchase.asset.equipment.name
+                asset_name = purchase.asset.asset_name
 
                 # Aggregate fuel data by month and by equipment
                 fuel_usage_by_month[month_year]["total_amount"] += purchase.amount
                 fuel_usage_by_month[month_year]["total_litres"] += purchase.quantity
+                fuel_usage_by_month[month_year]["assets"][asset_name] += purchase.amount
+
                 total_amount_all_months += purchase.amount
                 total_litres_all_months += purchase.quantity
 
@@ -1366,6 +1378,14 @@ class SmartReportService(BaseService):
                     "total_litres"
                 ] += purchase.quantity
 
+                # Aggregate by equipment name and asset
+                fuel_usage_by_equipment_name[equipment_name][
+                    "total_amount"
+                ] += purchase.amount
+                fuel_usage_by_equipment_name[equipment_name]["assets"][
+                    asset_name
+                ] += purchase.amount
+
             # Reformat fuel usage by month
             fuel_amount_by_month = [
                 {
@@ -1374,15 +1394,8 @@ class SmartReportService(BaseService):
                         "total_amount": month_data["total_amount"],
                     },
                     "assets": [
-                        {"asset_name": "Hyndai Elentra (Black)", "amount": 40.38},
-                        {
-                            "asset_name": "Toyota Corolla (Aaron Debrahs' Car)",
-                            "amount": 71.31,
-                        },
-                        {
-                            "asset_name": "Toyota Corolla (Sage Company Vehicle)",
-                            "amount": 30.84,
-                        },
+                        {"asset_name": asset_name, "amount": amount}
+                        for asset_name, amount in month_data["assets"].items()
                     ],
                 }
                 for month_year, month_data in fuel_usage_by_month.items()
@@ -1390,37 +1403,37 @@ class SmartReportService(BaseService):
 
             # Calculate the percentage and total fuel amount for each equipment type
             fuel_cost_by_asset_type = []
-            for equipment_name, monthly_data in fuel_usage_by_equipment.items():
-                total_fuel_amount = sum(
-                    data["total_amount"] for data in monthly_data.values()
-                )
+
+            for equipment_name, equipment_data in fuel_usage_by_equipment_name.items():
+                total_fuel_amount = equipment_data["total_amount"]
                 fuel_percentage = (
                     (total_fuel_amount / total_amount_all_months) * 100
                     if total_amount_all_months > 0
                     else 0
                 )
+
+                # Calculate the fuel percentage for each asset under this equipment name
+                assets_data = []
+                for asset_name, asset_fuel_amount in equipment_data["assets"].items():
+                    asset_percentage = (
+                        (asset_fuel_amount / total_fuel_amount) * 100
+                        if total_fuel_amount > 0
+                        else 0
+                    )
+                    assets_data.append(
+                        {
+                            "asset_name": asset_name,
+                            "amount": asset_fuel_amount,
+                            "fuel_percentage": round(asset_percentage, 2),
+                        }
+                    )
+
                 fuel_cost_by_asset_type.append(
                     {
                         "type": equipment_name,
                         "fuel_amount": total_fuel_amount,
                         "fuel_percentage": round(fuel_percentage, 2),
-                        "assets": [
-                            {
-                                "asset_name": "Hyndai Elentra (Black)",
-                                "amount": 71.38,
-                                "fuel_percentage": 50,
-                            },
-                            {
-                                "asset_name": "Toyota Corolla (Aaron Debrahs' Car)",
-                                "amount": 40.31,
-                                "fuel_percentage": 25,
-                            },
-                            {
-                                "asset_name": "Toyota Corolla (Sage Company Vehicle)",
-                                "amount": 40.31,
-                                "fuel_percentage": 25,
-                            },
-                        ],
+                        "assets": assets_data,
                     }
                 )
 
@@ -1429,7 +1442,7 @@ class SmartReportService(BaseService):
                 "total_amount_all_months": total_amount_all_months,
                 "total_litres_all_months": total_litres_all_months,
                 "fuel_amount_by_month": fuel_amount_by_month,
-                "fuel_cost_by_asset_type": {"assets": fuel_cost_by_asset_type},
+                "fuel_cost_by_asset_type": {"asset_types": fuel_cost_by_asset_type},
             }
 
             return result
