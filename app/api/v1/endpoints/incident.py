@@ -32,7 +32,7 @@ async def create_incident(
 
 @router.get("/",response_class=ORJSONResponse)
 @inject
-async def get_all_incidents(incident_type:str,service: IncidentService = Depends(Provide[Container.incident_service])):
+async def get_all_incidents(incident_type:str = None,service: IncidentService = Depends(Provide[Container.incident_service])):
     try:
         incidents = service.get_all_incidents(incident_type=incident_type)
         return send_data(data=incidents)
