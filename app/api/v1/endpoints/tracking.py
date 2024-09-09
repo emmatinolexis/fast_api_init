@@ -16,11 +16,11 @@ from app.service.asset_service import AssetService
 from app.service.device_events_service import DeviceEventService
 from app.service.tracking_event_service import TrackingEventService
 from app.util.utils import (
+    extract_certificate_info,
     send_client_side_error,
     send_data,
     send_info,
     send_internal_server_error,
-    extract_certificate_info
 )
 
 router = APIRouter(
@@ -163,8 +163,8 @@ async def get_ssl_certificate(request: SSLCertificateRequest):
                 # Get the certificate
                 cert = ssock.getpeercert()
                 extracted_info = extract_certificate_info(cert)
-                key = ssl.get_server_certificate((hostname,443))
-                extracted_info['key'] = key
+                key = ssl.get_server_certificate((hostname, 443))
+                extracted_info["key"] = key
 
         # Return the certificate information
         return extracted_info
