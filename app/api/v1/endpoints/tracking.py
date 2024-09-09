@@ -20,6 +20,7 @@ from app.util.utils import (
     send_data,
     send_info,
     send_internal_server_error,
+    extract_certificate_info
 )
 
 router = APIRouter(
@@ -154,7 +155,6 @@ async def create_device_events(
 async def get_ssl_certificate(request: SSLCertificateRequest):
     hostname = request.hostname
     port = request.port
-
     try:
         # Establish a connection to the server
         context = ssl.create_default_context()
@@ -162,17 +162,12 @@ async def get_ssl_certificate(request: SSLCertificateRequest):
             with context.wrap_socket(sock, server_hostname=hostname) as ssock:
                 # Get the certificate
                 cert = ssock.getpeercert()
+                extracted_info = extract_certificate_info(cert)
+                key = ssl.get_server_certificate((hostname,443))
+                extracted_info['key'] = key
 
         # Return the certificate information
-        return {
-            "subject": dict(cert["subject"]),
-            "issuer": dict(cert["issuer"]),
-            "version": cert["version"],
-            "serialNumber": cert["serialNumber"],
-            "notBefore": cert["notBefore"],
-            "notAfter": cert["notAfter"],
-            "subjectAltName": cert.get("subjectAltName"),
-        }
+        return extracted_info
 
     except Exception as e:
         msg = f"{messages.GET_FAILED} {msg_prefix}s"

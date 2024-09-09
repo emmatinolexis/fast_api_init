@@ -1031,3 +1031,41 @@ def resolve_data_from_request(request: Request):
     }
 
     return request_data
+
+
+def extract_certificate_info(cert_data):
+    certificate_info = {}
+
+    # Extract subject
+    certificate_info['subject'] = cert_data['subject'][0][0][1]
+
+    # Extract issuer
+    issuer_info = cert_data['issuer']
+    issuer_components = []
+    for issuer_item in issuer_info:
+        issuer_components.append(issuer_item[0][1])
+    certificate_info['issuer'] = ', '.join(issuer_components)
+
+    # Extract version
+    certificate_info['version'] = cert_data['version']
+
+    # Extract serial number
+    certificate_info['serialNumber'] = cert_data['serialNumber']
+
+    # Extract not before and not after dates
+    certificate_info['notBefore'] = cert_data['notBefore']
+    certificate_info['notAfter'] = cert_data['notAfter']
+
+    # Extract subject alternative names
+    certificate_info['subjectAltName'] = [alt_name[1] for alt_name in cert_data['subjectAltName']]
+
+    # Extract OCSP url
+    certificate_info['OCSP'] = cert_data['OCSP'][0]
+
+    # Extract CA Issuers url
+    certificate_info['caIssuers'] = cert_data['caIssuers'][0]
+
+    # Extract CRL distribution points
+    # certificate_info['crlDistributionPoints'] = cert_data['crlDistributionPoints'][0]
+
+    return certificate_info
