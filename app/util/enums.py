@@ -299,3 +299,30 @@ class FuelType(str, Enum):
     PETROL = "petrol"
     GAS = "gas"
     KEROSENE = "kerosene"
+
+
+class CertificateIndex(int, Enum):
+    SUBJECT_INDEX = 0
+    SUBJECT_COMPONENT_INDEX = 0
+    SUBJECT_NAME_INDEX = 1
+
+    ISSUER_ITEM_INDEX = 0
+    ISSUER_NAME_INDEX = 1
+
+    ALT_NAME_TYPE_INDEX = 0
+    ALT_NAME_VALUE_INDEX = 1
+
+    OCSP_URL_INDEX = 0
+    CA_ISSUERS_URL_INDEX = 0
+
+
+class CertificateKey(str, Enum):
+    SUBJECT = "subject"
+    ISSUER = "issuer"
+    VERSION = "version"
+    SERIAL_NUMBER = "serialNumber"
+    NOT_BEFORE = "notBefore"
+    NOT_AFTER = "notAfter"
+    SUBJECT_ALT_NAME = "subjectAltName"
+    OCSP = "OCSP"
+    CA_ISSUERS = "caIssuers"

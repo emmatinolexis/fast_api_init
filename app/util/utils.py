@@ -19,7 +19,14 @@ from app.core.constants import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE, THIRD_PARTY_
 from app.core.logger import get_logger
 from app.core.security import JWTBearer
 from app.core.settings import settings
-from app.util.enums import ActiveStatus, FileFormat, SmartReportStatus, SmartReportUser
+from app.util.enums import (
+    ActiveStatus,
+    CertificateIndex,
+    CertificateKey,
+    FileFormat,
+    SmartReportStatus,
+    SmartReportUser,
+)
 
 log = get_logger()
 
@@ -1036,37 +1043,47 @@ def extract_certificate_info(cert_data):
     certificate_info = {}
 
     # Extract subject
-    certificate_info["subject"] = cert_data["subject"][0][0][1]
+    certificate_info[CertificateKey.SUBJECT] = cert_data[CertificateKey.SUBJECT][
+        CertificateIndex.SUBJECT_INDEX
+    ][CertificateIndex.SUBJECT_COMPONENT_INDEX][CertificateIndex.SUBJECT_NAME_INDEX]
 
     # Extract issuer
-    issuer_info = cert_data["issuer"]
+    issuer_info = cert_data[CertificateKey.ISSUER]
     issuer_components = []
     for issuer_item in issuer_info:
-        issuer_components.append(issuer_item[0][1])
-    certificate_info["issuer"] = ", ".join(issuer_components)
+        issuer_components.append(
+            issuer_item[CertificateIndex.ISSUER_ITEM_INDEX][
+                CertificateIndex.ISSUER_NAME_INDEX
+            ]
+        )
+    certificate_info[CertificateKey.ISSUER] = ", ".join(issuer_components)
 
     # Extract version
-    certificate_info["version"] = cert_data["version"]
+    certificate_info[CertificateKey.VERSION] = cert_data[CertificateKey.VERSION]
 
     # Extract serial number
-    certificate_info["serialNumber"] = cert_data["serialNumber"]
+    certificate_info[CertificateKey.SERIAL_NUMBER] = cert_data[
+        CertificateKey.SERIAL_NUMBER
+    ]
 
     # Extract not before and not after dates
-    certificate_info["notBefore"] = cert_data["notBefore"]
-    certificate_info["notAfter"] = cert_data["notAfter"]
+    certificate_info[CertificateKey.NOT_BEFORE] = cert_data[CertificateKey.NOT_BEFORE]
+    certificate_info[CertificateKey.NOT_AFTER] = cert_data[CertificateKey.NOT_AFTER]
 
     # Extract subject alternative names
-    certificate_info["subjectAltName"] = [
-        alt_name[1] for alt_name in cert_data["subjectAltName"]
+    certificate_info[CertificateKey.SUBJECT_ALT_NAME] = [
+        alt_name[CertificateIndex.ALT_NAME_VALUE_INDEX]
+        for alt_name in cert_data[CertificateKey.SUBJECT_ALT_NAME]
     ]
 
     # Extract OCSP url
-    certificate_info["OCSP"] = cert_data["OCSP"][0]
+    certificate_info[CertificateKey.OCSP] = cert_data[CertificateKey.OCSP][
+        CertificateIndex.OCSP_URL_INDEX
+    ]
 
     # Extract CA Issuers url
-    certificate_info["caIssuers"] = cert_data["caIssuers"][0]
-
-    # Extract CRL distribution points
-    # certificate_info['crlDistributionPoints'] = cert_data['crlDistributionPoints'][0]
+    certificate_info[CertificateKey.CA_ISSUERS] = cert_data[CertificateKey.CA_ISSUERS][
+        CertificateIndex.CA_ISSUERS_URL_INDEX
+    ]
 
     return certificate_info
