@@ -1,4 +1,5 @@
-from app.core.exceptions import NotFoundError
+from app.core import messages
+from app.core.exceptions import BadRequestError, NotFoundError
 from app.repository.asset_repository import AssetRepository
 from app.repository.driver_repository import DriverRepository
 from app.schema.asset_schema import DriverPayload
@@ -65,4 +66,37 @@ class DriverService(BaseService):
             driver = self.driver_repository.read_by_uuid(uuid)
             return driver
         except Exception as e:
+            raise e
+
+    def change_rider_asset(self, asset_uuid: str, driver_uuid: str) -> str:
+        try:
+            # Retrieve the asset and driver from the repository
+            asset = self.asset_repository.read_by_uuid(asset_uuid)
+            if asset is None:
+                raise NotFoundError(messages.ASSET_NOT_FOUND + asset_uuid)
+
+            driver = self.driver_repository.read_by_uuid(driver_uuid)
+            if driver is None:
+                raise NotFoundError(messages.DRIVER_NOT_FOUND + driver_uuid)
+
+            # Check if the driver is already assigned to the same asset
+            if str(driver.asset_uuid) == str(asset_uuid):
+                raise BadRequestError(messages.DRIVER_ALREADY_ASSIGNED_SAME_ASSET)
+
+            # Update the old driver's asset UUID to None if it exists
+            old_driver = self.driver_repository.get_driver_by_asset_uuid(asset_uuid)
+            if old_driver:
+                self.driver_repository.update_attr_by_uuid(
+                    old_driver.uuid, "asset_uuid", None
+                )
+
+            # Update the driver's asset UUID
+            self.driver_repository.update_attr_by_uuid(
+                driver.uuid, "asset_uuid", asset_uuid
+            )
+
+            return messages.UPDATE_SUCCESS + " driver asset"
+
+        except Exception as e:
+            # Re-raise the exception to maintain the original error message
             raise e
