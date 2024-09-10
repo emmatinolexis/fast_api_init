@@ -21,6 +21,7 @@ router = APIRouter(
 msg_prefix = "third_party_app"
 
 
+
 @router.get("/", response_class=ORJSONResponse)
 @inject
 async def get_all_third_party_apps_handler(
