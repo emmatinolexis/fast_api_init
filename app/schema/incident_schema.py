@@ -1,9 +1,9 @@
 from pydantic import BaseModel
 
-from app.util.enums import CrowdIncidentType
+from app.util.enums import IncidenceType
 
 
 class IncidentPayload(BaseModel):
-    incident_type: CrowdIncidentType
+    incident_type: IncidenceType
     longitude: float
     latitude: float
