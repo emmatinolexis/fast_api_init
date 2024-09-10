@@ -47,7 +47,8 @@ class FuelLogService(BaseService):
             business_profile_uuid=business_profile_uuid,
             receipt_image=payload.receipt_image,
             payment_method=payload.payment_method,
-            driver_uuid=str(driver.uuid)
+            driver_uuid=str(driver.uuid),
+            asset_name=asset.asset_name
         )
 
         return self.fuel_log_repository.create(log_payload)
