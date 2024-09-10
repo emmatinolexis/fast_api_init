@@ -36,6 +36,7 @@ from app.repository import (
     gas_device_repository,
     geofence_violation_tracker_repository,
     immobilizer_report_repository,
+    incident_repository,
     inventory_repository,
     maintenance_alert_repository,
     marker_icon_repository,
@@ -101,6 +102,7 @@ from app.service import (
     gas_device_service,
     geofence_violation_tracker_service,
     immobilizer_report_service,
+    incident_service,
     inventory_service,
     invitation_service,
     maintenance_alert_service,
@@ -176,6 +178,7 @@ class Container(containers.DeclarativeContainer):
             "app.api.v1.endpoints.gas_cylinder_type",
             "app.api.v1.endpoints.fuel_log",
             "app.api.v1.endpoints.fire_device",
+            "app.api.v1.endpoints.incident",
         ]
     )
 
@@ -457,6 +460,10 @@ class Container(containers.DeclarativeContainer):
     device_event_repository = providers.Factory(
         device_events_repository.DeviceEventRepository,
         session_factory=db.provided.session,
+    )
+
+    incident_repository = providers.Factory(
+        incident_repository.IncidentRepository, session_factory=db.provided.session
     )
 
     # Services
@@ -762,4 +769,9 @@ class Container(containers.DeclarativeContainer):
     device_events_service = providers.Factory(
         device_events_service.DeviceEventService,
         device_event_repository=device_event_repository,
+    )
+
+    incident_service = providers.Factory(
+        incident_service.IncidentService,
+        incident_repository=incident_repository,
     )
