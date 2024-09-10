@@ -20,6 +20,7 @@ class FuelLogCreateSchema(FuelLogSchema):
     asset_uuid: Optional[str] = None
     business_profile_uuid: Optional[str] = None
     receipt_image: Optional[str] = None
+    driver_uuid : Optional[str] = None
 
 
 class FleetManagerFuelLog(BaseModel):
