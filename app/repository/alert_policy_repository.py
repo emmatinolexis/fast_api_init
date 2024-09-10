@@ -470,6 +470,8 @@ class AlertPolicyRepository(BaseRepository):
         violation.asset_coordinates = asset_coordinates_events
         violation.violation_time = violation_time
         violation.violation_distance = violation_distance
+        violation.updated_at = datetime.now()
+
 
     def create_maintenance_alert_record(
         self, session, asset_uuid, alert_policy_uuid, business_profile_uuid, user_uuid
@@ -544,7 +546,7 @@ class AlertPolicyRepository(BaseRepository):
                             violated_asset_coordinates
                         )
                         violation_distance = get_distance_travelled_by_coordinates(
-                            asset_coordinates_events
+                            violated_asset_coordinates
                         )
 
                         violations.append(
@@ -568,16 +570,22 @@ class AlertPolicyRepository(BaseRepository):
                         )
 
                         if saved_violation:
+                            updated_coordinates = violated_asset_coordinates + saved_violation.violation_coordinates
+                            updated_violation_time = calculate_time_traveled(
+                                updated_coordinates
+                            )
+                            updated_violation_distance = get_distance_travelled_by_coordinates(
+                                updated_coordinates
+                            )
                             # update existing violation
                             self.update_violation_record(
                                 session,
                                 alert_policy.uuid,
                                 geofence_asset.uuid,
-                                violated_asset_coordinates,
-                                violation_time,
-                                violation_distance,
+                                updated_coordinates,
+                                updated_violation_time,
+                                updated_violation_distance,
                             )
-
                         else:
                             # Create AlertPolicyViolation instance and persist it
                             self.create_violation_record(

@@ -115,6 +115,15 @@ class GeofenceAlertPolicyPayload(BaseModel):
     circle_geofence_data: Optional[CircleGeofence] = None
 
 
+class GeofenceAlertPolicyUpdatePayload(BaseModel):
+    policy_name: str
+    maximum_speed_limit: Optional[str] = None
+    geofence_location_name: Optional[str] = None
+    geofence_shape_type: GeofenceShapeType
+    geofence_coordinate_data: Optional[list[Coordinates]] = None
+    circle_geofence_data: Optional[CircleGeofence] = None
+
+
 class GeofenceAlertPolicyInput(BaseModel):
     policy_name: str
     alert_policy_type_uuid: UUID
