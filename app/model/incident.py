@@ -4,7 +4,7 @@ from sqlalchemy import Column, DateTime, Double, Enum
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.model.base_model import BaseModel
-from app.util.enums import CrowdIncidentType
+from app.util.enums import IncidenceType
 
 
 class Incident(BaseModel):
@@ -16,6 +16,6 @@ class Incident(BaseModel):
         unique=True,
         nullable=False,
     )
-    incident_type = Column(Enum(CrowdIncidentType), nullable=False, index=True)
+    incident_type = Column(Enum(IncidenceType), nullable=False, index=True)
     longitude = Column(Double, nullable=False, index=True)
     latitude = Column(Double, nullable=False, index=True)
