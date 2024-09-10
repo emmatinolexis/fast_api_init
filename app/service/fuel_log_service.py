@@ -30,6 +30,15 @@ class FuelLogService(BaseService):
     def create_individual_fuel_log(
         self, payload: FuelLogSchema, user_uuid: str, business_profile_uuid: str = None
     ):
+        asset = self.asset_repository.read_by_uuid(payload.asset_uuid)
+        if not asset:
+            raise NotFoundError(detail=messages.ASSET_NOT_FOUND)
+        
+        driver = self.asset_repository.get_driver_by_asset_uuid(payload.asset_uuid)
+        if not driver:
+            raise NotFoundError(detail=messages.ASSET_MUST_BE_ASSIGNED)
+
+
         log_payload = FuelLogCreateSchema(
             amount=payload.amount,
             quantity=payload.quantity,
@@ -38,6 +47,7 @@ class FuelLogService(BaseService):
             business_profile_uuid=business_profile_uuid,
             receipt_image=payload.receipt_image,
             payment_method=payload.payment_method,
+            driver_uuid=str(driver.uuid)
         )
 
         return self.fuel_log_repository.create(log_payload)
@@ -101,6 +111,8 @@ class FuelLogService(BaseService):
             raise NotFoundError(detail=messages.ASSET_NOT_FOUND)
 
         driver = self.asset_repository.get_driver_by_asset_uuid(payload.asset_uuid)
+
+
 
         if not driver:
             raise NotFoundError(detail=messages.ASSET_MUST_BE_ASSIGNED)
