@@ -9,9 +9,9 @@ from fastapi.responses import ORJSONResponse
 
 from app.core import messages
 from app.core.container import Container
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, get_current_app_service
 from app.model.user import User
-from app.schema.tracking_device_schema import DeviceReportPayload, SSLCertificateRequest
+from app.schema.tracking_device_schema import DeviceReportPayload, SSLCertificateRequest, DeviceConfigurationPayload
 from app.service.asset_service import AssetService
 from app.service.device_events_service import DeviceEventService
 from app.service.tracking_event_service import TrackingEventService
@@ -25,9 +25,9 @@ from app.util.utils import (
 
 router = APIRouter(
     prefix="/tracking",
-    tags=["tracking"],
+    tags=["device_events"],
 )
-msg_prefix = "tracking"
+msg_prefix = "device events"
 
 
 @router.get("/", response_class=ORJSONResponse)
@@ -137,7 +137,7 @@ async def get_over_speeding_stats_handler(
 async def create_device_events(
     device_event_payload: DeviceReportPayload,
     service: DeviceEventService = Depends(Provide[Container.device_events_service]),
-    # current_user: User = Depends(get_current_app_service),
+    current_user: User = Depends(get_current_app_service),
 ):
     try:
         service.add(device_event_payload)
@@ -152,7 +152,10 @@ async def create_device_events(
 
 @router.post("/certificate/get_ssl_certificate")
 @inject
-async def get_ssl_certificate(request: SSLCertificateRequest):
+async def get_ssl_certificate(
+        request: SSLCertificateRequest,
+        current_user: User = Depends(get_current_app_service),
+):
     hostname = request.hostname
     port = request.port
     try:
@@ -178,6 +181,20 @@ async def get_ssl_certificate(request: SSLCertificateRequest):
 @router.post("/create_device_configuration")
 @inject
 async def get_device_configuration():
+    try:
+        return "okay"
+    except Exception as e:
+        msg = f"{messages.GET_FAILED} {msg_prefix}s"
+        logging.info(msg)
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.post("/get_device_configuration")
+@inject
+async def get_device_configuration(
+    device_type: DeviceConfigurationPayload,
+    current_user: User = Depends(get_current_app_service),
+):
     try:
         return "okay"
     except Exception as e:

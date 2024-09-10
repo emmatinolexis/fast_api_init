@@ -53,7 +53,7 @@ async def create_app_service_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.post("/generate_third_party_app_otp", response_class=ORJSONResponse)
+@router.post("/generate_third_party_app_token", response_class=ORJSONResponse)
 @inject
 async def generate_app_service_token(
     payload: ExternalAppGenerateTokenPayload,
