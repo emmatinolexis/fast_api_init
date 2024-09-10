@@ -572,7 +572,7 @@ class AlertPolicyRepository(BaseRepository):
                             self.update_violation_record(
                                 session,
                                 alert_policy.uuid,
-                                geofence_asset.asset_name,
+                                geofence_asset.uuid,
                                 violated_asset_coordinates,
                                 violation_time,
                                 violation_distance,
