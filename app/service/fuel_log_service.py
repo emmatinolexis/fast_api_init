@@ -47,6 +47,7 @@ class FuelLogService(BaseService):
             driver_uuid=str(driver.uuid) if driver else None,
             asset_name=asset.asset_name,
             purchase_date=payload.purchase_date,
+            fuel_type=payload.fuel_type
         )
 
         return self.fuel_log_repository.create(log_payload)
