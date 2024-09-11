@@ -25,7 +25,7 @@ class FuelLogRepository(BaseRepository):
             search_pattern = f"%{search}%"
 
             if not is_driver_joined:
-                query = query.join(Driver, FuelLog.driver_uuid == Driver.uuid)
+                query = query.outerjoin(Driver, FuelLog.driver_uuid == Driver.uuid)
 
             try:
                 search_numeric = float(search)
@@ -84,7 +84,7 @@ class FuelLogRepository(BaseRepository):
         with self.session_factory() as session:
             query = (
                 session.query(FuelLog)
-                .join(Driver, FuelLog.driver_uuid == Driver.uuid)
+                .outerjoin(Driver, FuelLog.driver_uuid == Driver.uuid)
                 .filter(FuelLog.business_profile_uuid == business_uuid)
             )
 
