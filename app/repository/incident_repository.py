@@ -1,5 +1,7 @@
 from contextlib import AbstractContextManager
-from typing import Callable
+from typing import Callable, List
+
+from sqlalchemy import text
 
 from app.model.incident import Incident
 from app.repository.base_repository import BaseRepository
@@ -11,7 +13,7 @@ class IncidentRepository(BaseRepository):
         self.session_factory = session_factory
         super().__init__(session_factory, Incident)
 
-    def get_all_incidents(self, incident_type: IncidentType = None):
+    def get_all_incidents(self, incident_type: IncidentType = None) -> List[Incident]:
         with self.session_factory() as session:
             if incident_type:
                 return (
@@ -20,3 +22,26 @@ class IncidentRepository(BaseRepository):
                     .all()
                 )
             return self.read_all()
+
+    def get_incidents_by_location(
+        self, longitude: float, latitude: float, radius: int = 2000
+    ) -> List[Incident]:
+        with self.session_factory() as session:
+            query = text(
+                """
+            SELECT *
+            FROM incident
+            WHERE ST_DWithin(
+                geography(ST_MakePoint(longitude, latitude)),
+                geography(ST_MakePoint(:longitude, :latitude)),
+                :radius
+            )
+            """
+            )
+
+        result = session.execute(
+            query, {"longitude": longitude, "latitude": latitude, "radius": radius}
+        )
+
+        incidents = result.fetchall()
+        return [Incident(**dict(row)) for row in incidents]

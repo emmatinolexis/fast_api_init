@@ -9,9 +9,13 @@ from fastapi.responses import ORJSONResponse
 
 from app.core import messages
 from app.core.container import Container
-from app.core.dependencies import get_current_user, get_current_app_service
+from app.core.dependencies import get_current_app_service, get_current_user
 from app.model.user import User
-from app.schema.tracking_device_schema import DeviceReportPayload, SSLCertificateRequest, DeviceConfigurationPayload
+from app.schema.tracking_device_schema import (
+    DeviceConfigurationPayload,
+    DeviceReportPayload,
+    SSLCertificateRequest,
+)
 from app.service.asset_service import AssetService
 from app.service.device_events_service import DeviceEventService
 from app.service.tracking_event_service import TrackingEventService
@@ -153,8 +157,8 @@ async def create_device_events(
 @router.post("/certificate/get_ssl_certificate")
 @inject
 async def get_ssl_certificate(
-        request: SSLCertificateRequest,
-        current_user: User = Depends(get_current_app_service),
+    request: SSLCertificateRequest,
+    current_user: User = Depends(get_current_app_service),
 ):
     hostname = request.hostname
     port = request.port
