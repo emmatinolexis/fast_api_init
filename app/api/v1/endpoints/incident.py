@@ -49,7 +49,7 @@ async def get_all_incidents(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/", response_class=ORJSONResponse)
+@router.get("/location", response_class=ORJSONResponse)
 @inject
 async def get_incidents_by_location(
     longitude: float,

@@ -43,5 +43,9 @@ class IncidentRepository(BaseRepository):
             query, {"longitude": longitude, "latitude": latitude, "radius": radius}
         )
 
-        incidents = result.fetchall()
-        return [Incident(**dict(row)) for row in incidents]
+        incidents = []
+        for row in result:
+            row_dict = dict(row._mapping)
+            incidents.append(Incident(**row_dict))
+
+        return incidents
