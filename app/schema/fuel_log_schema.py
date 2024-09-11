@@ -14,6 +14,7 @@ class FuelLogSchema(BaseModel):
     payment_method: FuelLogPaymmentMethod
     asset_uuid: str
     purchase_date: date
+    fuel_type : FuelType = FuelType.PETROL
 
 
 class FuelLogCreateSchema(FuelLogSchema):
