@@ -28,6 +28,7 @@ from app.schema.alert_policy_schema import (
     GeofenceAlertPolicyPayload,
     GeofenceAlertPolicyUpdateInput,
     GeofenceAlertPolicyUpdatePayload,
+    AlertPolicyUpdateInputPayload
 )
 from app.service.base_service import BaseService
 from app.transfomers.alert_policy_transformer import alert_policy_transformer
@@ -451,11 +452,18 @@ class AlertPolicyService(BaseService):
                         alert_policy_uuid, asset
                     )
 
-    def _update_policy_name(self, alert_policy_uuid: str, new_policy_name: str):
-        if new_policy_name:
-            self.alert_policy_repository.update_attr_by_uuid(
-                alert_policy_uuid, "policy_name", new_policy_name
-            )
+    def _update_policy(self, alert_policy_uuid: str, alert_policy):
+
+        input_data = AlertPolicyUpdateInputPayload(
+            policy_name=alert_policy.policy_name,
+            minimum_idle_time=alert_policy.minimum_idle_time,
+            maximum_speed_limit=alert_policy.maximum_speed_limit,
+            maintenance_alert_schedule=alert_policy.maintenance_alert_schedule
+        )
+
+        self.alert_policy_repository.update_by_uuid(
+            alert_policy_uuid, input_data
+        )
 
     def update_alert_policy(
         self, alert_policy_uuid: str, payload: AlertPolicyUpdatePayload
@@ -470,7 +478,7 @@ class AlertPolicyService(BaseService):
                 alert_policy_uuid, payload.alert_notification_types
             )
             self._update_alert_assets(alert_policy_uuid, payload.alert_assets)
-            self._update_policy_name(alert_policy_uuid, payload.policy_name)
+            self._update_policy(alert_policy_uuid, payload)
 
             policy = self.alert_policy_repository.read_by_uuid(alert_policy_uuid)
             return alert_policy_transformer(policy)
