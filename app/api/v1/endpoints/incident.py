@@ -9,7 +9,6 @@ from app.service.incident_service import IncidentService
 from app.util.utils import (
     send_data,
     send_data_with_info,
-    send_info,
     send_internal_server_error,
 )
 

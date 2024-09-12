@@ -107,7 +107,6 @@ class GeofenceAlertPolicyPayload(BaseModel):
     alert_types: list[AlertType]
     alert_recipients: list[str] = []
     alert_assets: list[UUID]
-    maximum_speed_limit: Optional[str] = None
     geofence_location_name: Optional[str] = None
     geofence_type: GeofenceType
     geofence_shape_type: GeofenceShapeType
@@ -116,10 +115,11 @@ class GeofenceAlertPolicyPayload(BaseModel):
 
 
 class GeofenceAlertPolicyUpdatePayload(BaseModel):
-    policy_name: str
-    maximum_speed_limit: Optional[str] = None
+    policy_name: Optional[str] = None
+    alert_types: Optional[list[AlertType]] = None
+    alert_recipients: Optional[list[str]] = []
     geofence_location_name: Optional[str] = None
-    geofence_shape_type: GeofenceShapeType
+    geofence_shape_type: Optional[GeofenceShapeType] = None
     geofence_coordinate_data: Optional[list[Coordinates]] = None
     circle_geofence_data: Optional[CircleGeofence] = None
 
@@ -134,3 +134,11 @@ class GeofenceAlertPolicyInput(BaseModel):
     user_uuid: UUID
     business_profile_uuid: UUID
     status: str
+
+
+class GeofenceAlertPolicyUpdateInput(BaseModel):
+    policy_name: Optional[str] = None
+    geofence_location_name: Optional[str] = None
+    geofence_type: Optional[GeofenceType] = None
+    geofence_coordinate_data: Optional[Union[List[Coordinates], CircleGeofence]] = None
+    geofence_shape_type: Optional[GeofenceShapeType] = None
