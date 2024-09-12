@@ -45,6 +45,16 @@ class AlertPolicyUpdatePayload(BaseModel):
     alert_notification_types: Optional[list[str]] = None
     alert_recipients: Optional[list[str]] = None
     alert_assets: Optional[list[UUID]] = None
+    minimum_idle_time: Optional[str] = None
+    maximum_speed_limit: Optional[str] = None
+    maintenance_alert_schedule: Optional[MaintenanceAlertSchedule] = None
+
+
+class AlertPolicyUpdateInputPayload(BaseModel):
+    policy_name: Optional[str] = None
+    minimum_idle_time: Optional[str] = None
+    maximum_speed_limit: Optional[str] = None
+    maintenance_alert_schedule: Optional[MaintenanceAlertSchedule] = None
 
 
 class AlertPolicyInput(BaseModel):
