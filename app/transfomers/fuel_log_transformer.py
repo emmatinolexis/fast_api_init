@@ -6,11 +6,11 @@ def fuel_log_transformer(fuel_log: FuelLog, driver_repo: DriverRepository):
     driver = driver_repo.read_by_uuid(fuel_log.driver_uuid)
 
     driver_details = {
-        "uuid": driver.uuid,
-        "full_name": f"{driver.first_name} {driver.last_name}",
-        "phone_number": driver.phone_number,
-        "email": driver.email,
-        "profile_image": driver.profile_picture_url,
+        "uuid": driver.uuid if driver else None,
+        "full_name": f"{driver.first_name} {driver.last_name}" if driver else None,
+        "phone_number": driver.phone_number if driver else None,
+        "email": driver.email if driver else None,
+        "profile_image": driver.profile_picture_url if driver else None,
     }
 
     return {
@@ -28,5 +28,5 @@ def fuel_log_transformer(fuel_log: FuelLog, driver_repo: DriverRepository):
         "payment_method": fuel_log.payment_method,
         "fuel_type": fuel_log.fuel_type if fuel_log.fuel_type else None,
         "created_at": fuel_log.created_at,
-        "driver_details": driver_details,
+        "driver_details": driver_details if driver else None,
     }

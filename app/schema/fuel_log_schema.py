@@ -13,6 +13,8 @@ class FuelLogSchema(BaseModel):
     receipt_image: Optional[str] = None
     payment_method: FuelLogPaymmentMethod
     asset_uuid: str
+    purchase_date: date
+    fuel_type : FuelType
 
 
 class FuelLogCreateSchema(FuelLogSchema):
@@ -20,6 +22,10 @@ class FuelLogCreateSchema(FuelLogSchema):
     asset_uuid: Optional[str] = None
     business_profile_uuid: Optional[str] = None
     receipt_image: Optional[str] = None
+    driver_uuid: Optional[str] = None
+    asset_name: Optional[str] = None
+    purchase_date: date
+    fuel_type : FuelType = FuelType
 
 
 class FleetManagerFuelLog(BaseModel):

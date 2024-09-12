@@ -472,7 +472,6 @@ class AlertPolicyRepository(BaseRepository):
         violation.violation_distance = violation_distance
         violation.updated_at = datetime.now()
 
-
     def create_maintenance_alert_record(
         self, session, asset_uuid, alert_policy_uuid, business_profile_uuid, user_uuid
     ):
@@ -570,12 +569,17 @@ class AlertPolicyRepository(BaseRepository):
                         )
 
                         if saved_violation:
-                            updated_coordinates = violated_asset_coordinates + saved_violation.violation_coordinates
+                            updated_coordinates = (
+                                violated_asset_coordinates
+                                + saved_violation.violation_coordinates
+                            )
                             updated_violation_time = calculate_time_traveled(
                                 updated_coordinates
                             )
-                            updated_violation_distance = get_distance_travelled_by_coordinates(
-                                updated_coordinates
+                            updated_violation_distance = (
+                                get_distance_travelled_by_coordinates(
+                                    updated_coordinates
+                                )
                             )
                             # update existing violation
                             self.update_violation_record(

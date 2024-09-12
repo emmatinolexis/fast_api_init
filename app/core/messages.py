@@ -47,6 +47,7 @@ DELETE_FAILED = "Failed to delete "
 DELETE_SUCCESS = "Successfully deleted "
 GET_SUCCESS = "Successfully fetched "
 UPDATE_SUCCESS = "Successfully updated "
+CREATE_SUCCESS = "Successfuly created"
 
 PHONE_NUMBER_EXISTS = "Phone number already exists "
 PHONE_OTP_INVALID = "Phone verification token is invalid "

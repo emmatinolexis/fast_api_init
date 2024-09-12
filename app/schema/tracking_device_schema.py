@@ -41,3 +41,7 @@ class DeviceReportPayload(BaseModel):
 class SSLCertificateRequest(BaseModel):
     hostname: str
     port: int = 443
+
+
+class DeviceConfigurationPayload(BaseModel):
+    device_type: str
