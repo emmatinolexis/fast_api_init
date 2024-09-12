@@ -1,6 +1,6 @@
 from contextlib import AbstractContextManager
 from datetime import datetime
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Tuple
 
 from sqlalchemy import Date, and_, asc, cast, desc, label, or_
 from sqlalchemy.orm import Session, joinedload
@@ -82,13 +82,13 @@ class AssetRepository(BaseRepository):
             return []
 
     def read_all_assets_by_uuid(
-        self,
-        user_uuid: str = None,
-        business_uuid: str = None,
-        asset_type_uuid: str = None,
-        page=1,
-        page_size=10,
-        search_query: str = None,
+            self,
+            user_uuid: str = None,
+            business_uuid: str = None,
+            asset_type_uuid: str = None,
+            page=1,
+            page_size=10,
+            search_query: str = None,
     ) -> Dict[str, Any]:
         with self.session_factory() as session:
             # Calculate the offset based on the page and per_page values
@@ -143,26 +143,9 @@ class AssetRepository(BaseRepository):
 
             # Process assets
             processed_assets = self.process_assets(session, assets)
-            moving_asset_count = 0
-            idle_asset_count = 0
-            stopped_asset_count = 0
 
-            for asset in assets:
-                if (
-                    hasattr(asset, "last_tracking_event")
-                    and asset.last_tracking_event is not None
-                ):
-                    tracking_event = asset.last_tracking_event
-                    if "event_type" in tracking_event:
-                        if tracking_event["event_type"] == "Start_Moving":
-                            moving_asset_count += 1
-                        elif (
-                            tracking_event["event_type"]
-                            == "Time_Interval_Tracking_Idling"
-                        ):
-                            idle_asset_count += 1
-                        elif tracking_event["event_type"] == "Stop_Moving":
-                            stopped_asset_count += 1
+            # Get asset status counts (moving, idle, stopped)
+            moving_asset_count, idle_asset_count, stopped_asset_count = self.get_asset_status_counts(assets)
 
             return {
                 "assets": processed_assets,
@@ -174,6 +157,27 @@ class AssetRepository(BaseRepository):
                 "idle_assets": idle_asset_count,
                 "stopped_assets": stopped_asset_count,
             }
+
+    def get_asset_status_counts(self, assets: List[Any]) -> Tuple[int, int, int]:
+        moving_asset_count = 0
+        idle_asset_count = 0
+        stopped_asset_count = 0
+
+        for asset in assets:
+            if (
+                    hasattr(asset, "last_tracking_event")
+                    and asset.last_tracking_event is not None
+            ):
+                tracking_event = asset.last_tracking_event
+                if "event_type" in tracking_event:
+                    if tracking_event["event_type"] == "Start_Moving":
+                        moving_asset_count += 1
+                    elif tracking_event["event_type"] == "Time_Interval_Tracking_Idling":
+                        idle_asset_count += 1
+                    elif tracking_event["event_type"] == "Stop_Moving":
+                        stopped_asset_count += 1
+
+        return moving_asset_count, idle_asset_count, stopped_asset_count
 
     def process_assets(self, session, assets: List[Any]) -> List[Any]:
         for asset in assets:

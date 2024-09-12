@@ -1,6 +1,5 @@
 from contextlib import AbstractContextManager
 from typing import Callable
-from uuid import UUID
 
 from sqlalchemy.orm import Session
 

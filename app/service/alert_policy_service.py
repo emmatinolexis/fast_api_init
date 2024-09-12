@@ -26,6 +26,8 @@ from app.schema.alert_policy_schema import (
     AlertPolicyUpdatePayload,
     GeofenceAlertPolicyInput,
     GeofenceAlertPolicyPayload,
+    GeofenceAlertPolicyUpdateInput,
+    GeofenceAlertPolicyUpdatePayload,
 )
 from app.service.base_service import BaseService
 from app.transfomers.alert_policy_transformer import alert_policy_transformer
@@ -168,10 +170,10 @@ class AlertPolicyService(BaseService):
             self.assign_alert_recipients(alert_policy, created_policy)
 
             # create alert types
-            self.assign_alert_types(alert_policy, created_policy)
+            self.assign_alert_types(alert_policy.alert_types, created_policy.uuid)
 
             # create alert assets
-            self.assign_alert_assets(alert_policy, created_policy)
+            self.assign_alert_assets(alert_policy, created_policy.uuid)
 
             return created_policy
         except Exception as e:
@@ -188,10 +190,52 @@ class AlertPolicyService(BaseService):
             created_policy = self.create_alert_geofence_policy(
                 alert_policy, user_uuid, business_uuid
             )
+
             self.assign_alert_recipients(alert_policy, created_policy)
-            self.assign_alert_types(alert_policy, created_policy)
-            self.assign_alert_assets(alert_policy, created_policy)
+            self.assign_alert_types(alert_policy.alert_types, created_policy.uuid)
+            self.assign_alert_assets(alert_policy.alert_assets, created_policy.uuid)
             return created_policy
+        except Exception as e:
+            raise e
+
+    def update_geofence_alert_policy(
+        self, alert_policy: GeofenceAlertPolicyUpdatePayload, alert_policy_uuid: str
+    ):
+        try:
+            # validate alert policy
+            self.check_if_alert_policy_exist(alert_policy_uuid)
+
+            # update geofence_alert_notifications types
+            if alert_policy.alert_types:
+                self.remove_existing_alert_notification_types(alert_policy_uuid)
+                self.assign_alert_types(alert_policy.alert_types, alert_policy_uuid)
+
+            # update geofence alert recipients
+            if alert_policy.alert_recipients:
+                self.remove_existing_alert_recipients(alert_policy_uuid)
+                self.assign_alert_recipients(
+                    alert_policy.alert_recipients, alert_policy_uuid
+                )
+
+            # update geofence parameters
+            return self.update_alert_geofence_policy(alert_policy, alert_policy_uuid)
+
+        except Exception as e:
+            raise e
+
+    def remove_existing_alert_notification_types(self, alert_policy_uuid):
+        try:
+            self.alert_policy_notification_type_assignment_repository.delete_by_notification_type_by_policy_uuid(
+                alert_policy_uuid
+            )
+        except Exception as e:
+            raise e
+
+    def remove_existing_alert_recipients(self, alert_policy_uuid):
+        try:
+            self.alert_notification_assignment_repository.delete_recipient_by_policy_uuid(
+                alert_policy_uuid
+            )
         except Exception as e:
             raise e
 
@@ -207,6 +251,10 @@ class AlertPolicyService(BaseService):
             if self.asset_repository.read_by_uuid(item) is None:
                 msg = f"Asset: {item} not found"
                 raise Exception(msg)
+
+    def check_if_alert_policy_exist(self, alert_policy_uuid):
+        if self.alert_policy_repository.read_by_uuid(alert_policy_uuid) is None:
+            raise Exception("Alert policy not found")
 
     def create_alert_geofence_policy(
         self, alert_policy, user_uuid: str, business_uuid: str = None
@@ -239,6 +287,33 @@ class AlertPolicyService(BaseService):
             )
         return self.add(alert_policy_data)
 
+    def update_alert_geofence_policy(self, alert_policy, alert_policy_uuid):
+        if alert_policy.geofence_shape_type:
+            if alert_policy.geofence_shape_type == GeofenceShapeType.CIRCULAR:
+                alert_policy_data = GeofenceAlertPolicyUpdateInput(
+                    policy_name=alert_policy.policy_name,
+                    geofence_location_name=alert_policy.geofence_location_name,
+                    geofence_coordinate_data=alert_policy.circle_geofence_data,
+                    geofence_shape_type=alert_policy.geofence_shape_type,
+                )
+            else:
+                geofence_data_wkt = self.create_geofence_data_wkt(alert_policy)
+
+                alert_policy_data = GeofenceAlertPolicyUpdateInput(
+                    policy_name=alert_policy.policy_name,
+                    geofence_location_name=alert_policy.geofence_location_name,
+                    geofence_coordinate_data=geofence_data_wkt,
+                    geofence_shape_type=alert_policy.geofence_shape_type,
+                )
+
+            return self.patch_by_uuid(alert_policy_uuid, alert_policy_data)
+
+        alert_policy_data = GeofenceAlertPolicyUpdateInput(
+            policy_name=alert_policy.policy_name,
+            geofence_location_name=alert_policy.geofence_location_name,
+        )
+        return self.patch_by_uuid(alert_policy_uuid, alert_policy_data)
+
     def create_geofence_data_wkt(self, alert_policy):
         geofence_data_wkt = []
         if alert_policy.geofence_shape_type is not GeofenceShapeType.CIRCULAR:
@@ -250,18 +325,30 @@ class AlertPolicyService(BaseService):
                 geofence_data_wkt.append(point)
         return geofence_data_wkt
 
-    def assign_alert_recipients(self, alert_policy, created_policy):
-        for item in alert_policy.alert_recipients:
+    def assign_alert_recipients(self, alert_recipients, created_policy_uuid):
+        for item in alert_recipients:
             alert_recipients_data = {
-                "alert_policy_uuid": created_policy.uuid,
+                "alert_policy_uuid": created_policy_uuid,
                 "recipient": item,
             }
             self.alert_notification_assignment_repository.create(
                 AlertNotificationAssignment(**alert_recipients_data)
             )
 
-    def assign_alert_types(self, alert_policy, created_policy):
+    def assign_alert_types(self, alert_types, created_policy_uuid):
+        for item in alert_types:
+            alert_types_data = {
+                "alert_policy_uuid": created_policy_uuid,
+                "alert_notification_type": item,
+            }
+            self.alert_policy_notification_type_assignment_repository.create(
+                AlertPolicyNotificationTypeAssignment(**alert_types_data)
+            )
+
+    def update_alert_types(self, created_policy, alert_policy):
         for item in alert_policy.alert_types:
+            # delete previous alert types
+            self.alert_policy_type_repository.read_by_uuid(item)
             alert_types_data = {
                 "alert_policy_uuid": created_policy.uuid,
                 "alert_notification_type": item,
@@ -270,10 +357,10 @@ class AlertPolicyService(BaseService):
                 AlertPolicyNotificationTypeAssignment(**alert_types_data)
             )
 
-    def assign_alert_assets(self, alert_policy, created_policy):
-        for item in alert_policy.alert_assets:
+    def assign_alert_assets(self, alert_assets, created_policy_uuid):
+        for item in alert_assets:
             alert_assets_data = {
-                "alert_policy_uuid": created_policy.uuid,
+                "alert_policy_uuid": created_policy_uuid,
                 "asset_uuid": item,
             }
             self.alert_policy_asset_assignment_repository.create(
