@@ -764,6 +764,7 @@ class Container(containers.DeclarativeContainer):
         fuel_log_repository=fuel_log_repository,
         asset_repository=asset_repository,
         driver_repository=driver_repository,
+        user_repository=user_repository,
     )
 
     device_events_service = providers.Factory(
