@@ -13,7 +13,6 @@ class MeasurementPayload(BaseModel):
     value: str
     type: str
     unit: str
-    requires_attention: bool = False
 
 
 class DeviceReportPayload(BaseModel):
@@ -22,6 +21,7 @@ class DeviceReportPayload(BaseModel):
     master_id: str
     alert_type: str
     device_type: str
+    requires_attention: bool = False
     alert_description: str
     measurements: List[MeasurementPayload]
     event_datetime: str
