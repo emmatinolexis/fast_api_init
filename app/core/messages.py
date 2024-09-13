@@ -10,6 +10,7 @@ ALERT_MAINTENANCE_TYPE_NOT_FOUND = (
     "No alert maintenance type was found with the given uuid : "
 )
 MAINTENANCE_ALERT_NOT_FOUND = "No maintenance alert was found with the given uuid : "
+MAINTENANCE_UPDATED_FAILED = "Failed to update  Could not toggle maintenance status"
 ALERT_POLICY_TYPE_NOT_FOUND = "No alert policy type was found with the given uuid : "
 MARKER_ICON_NOT_FOUND = "No marker icon was found with the given uuid : "
 ASSET_TYPE_NOT_FOUND = "No asset type was found with the given uuid : "

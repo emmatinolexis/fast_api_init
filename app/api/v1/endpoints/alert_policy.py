@@ -414,6 +414,6 @@ async def toggle_maintenance_alert(
         updated_alert = service.toggle_maintenance_status(maintenance_alert_uuid, date)
         return updated_alert
     except Exception as e:
-        msg = messages.UPDATE_FAILED + " Could not toggle maintenance status."
+        msg = messages.MAINTENANCE_UPDATED_FAILED
         return send_internal_server_error(user_msg=msg, error=e)
 

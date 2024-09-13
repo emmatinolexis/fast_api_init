@@ -86,7 +86,6 @@ class AlertPolicyRepository(BaseRepository):
             maintenance_alert = (
                 session.query(self.model).filter(self.model.uuid == alert_uuid).first()
             )
-
       
             if not maintenance_alert:
                 raise NotFoundError(messages.MAINTENANCE_ALERT_NOT_FOUND + alert_uuid)
