@@ -2,10 +2,10 @@ import logging
 from contextlib import AbstractContextManager
 from datetime import datetime
 from typing import Callable
-
+from app.core import messages
 from sqlalchemy import Date, and_, cast, desc, func
 from sqlalchemy.orm import Session, joinedload
-
+from app.core.exceptions import NotFoundError
 from app.model.alert_policy import AlertPolicy
 from app.model.alert_policy_violations import AlertPolicyViolation
 from app.model.asset import Asset
@@ -87,8 +87,9 @@ class AlertPolicyRepository(BaseRepository):
                 session.query(self.model).filter(self.model.uuid == alert_uuid).first()
             )
 
+      
             if not maintenance_alert:
-                raise Exception("Maintenance Alert Not Found")
+                raise NotFoundError(messages.MAINTENANCE_ALERT_NOT_FOUND + alert_uuid)
 
             new_status = toggle_maintenance_status(maintenance_alert.service_status)
             maintenance_alert.service_status = new_status

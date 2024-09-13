@@ -9,6 +9,7 @@ ORGANISATION_CONTACT_NOT_FOUND = (
 ALERT_MAINTENANCE_TYPE_NOT_FOUND = (
     "No alert maintenance type was found with the given uuid : "
 )
+MAINTENANCE_ALERT_NOT_FOUND = "No maintenance alert was found with the given uuid : "
 ALERT_POLICY_TYPE_NOT_FOUND = "No alert policy type was found with the given uuid : "
 MARKER_ICON_NOT_FOUND = "No marker icon was found with the given uuid : "
 ASSET_TYPE_NOT_FOUND = "No asset type was found with the given uuid : "
@@ -95,3 +96,4 @@ DRIVER_ALREADY_ASSIGNED_SAME_ASSET = "Driver is already assigned to the same ass
 
 
 DEVICE_TYPE_MISMATCH = "Device type mismatch"
+

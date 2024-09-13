@@ -112,6 +112,7 @@ class AlertPolicyService(BaseService):
         try:
             if date:
                 date = datetime.strptime(date, "%d/%m/%Y").strftime("%Y-%m-%d")
+                
 
             return self.alert_policy_repository.toggle_maintenance_alert_status(alert_uuid, date)
         except Exception as e:
