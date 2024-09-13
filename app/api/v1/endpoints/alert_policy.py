@@ -402,7 +402,7 @@ async def delete_alert_policy_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.post("/{maintenance_alert_uuid}", response_class=ORJSONResponse)
+@router.patch("/{maintenance_alert_uuid}/toggle_status", response_class=ORJSONResponse)
 @inject
 async def toggle_maintenance_alert(
     maintenance_alert_uuid: str,
