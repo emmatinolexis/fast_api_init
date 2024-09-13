@@ -1,16 +1,25 @@
 from app.model.fuel_log import FuelLog
 from app.repository.driver_repository import DriverRepository
+from app.repository.user_repository import UserRepository
 
 
-def fuel_log_transformer(fuel_log: FuelLog, driver_repo: DriverRepository):
+def fuel_log_transformer(
+    fuel_log: FuelLog, driver_repo: DriverRepository, user_repo: UserRepository
+):
     driver = driver_repo.read_by_uuid(fuel_log.driver_uuid)
+    logged_by = user_repo.read_by_uuid(fuel_log.user_uuid)
 
     driver_details = {
-        "uuid": driver.uuid,
-        "full_name": f"{driver.first_name} {driver.last_name}",
-        "phone_number": driver.phone_number,
-        "email": driver.email,
-        "profile_image": driver.profile_picture_url,
+        "uuid": driver.uuid if driver else None,
+        "full_name": f"{driver.first_name} {driver.last_name}" if driver else None,
+        "phone_number": driver.phone_number if driver else None,
+        "profile_image": driver.profile_picture_url if driver else None,
+    }
+
+    logged_by = {
+        "full_name": f"{logged_by.first_name} {logged_by.last_name}"
+        if logged_by
+        else None,
     }
 
     return {
@@ -28,5 +37,6 @@ def fuel_log_transformer(fuel_log: FuelLog, driver_repo: DriverRepository):
         "payment_method": fuel_log.payment_method,
         "fuel_type": fuel_log.fuel_type if fuel_log.fuel_type else None,
         "created_at": fuel_log.created_at,
-        "driver_details": driver_details,
+        "driver_details": driver_details if driver else None,
+        "logged_by": logged_by if logged_by else None,
     }

@@ -6,6 +6,7 @@ from starlette.middleware.cors import CORSMiddleware
 from app.api.v1.endpoints.alert_policy import (
     check_geofence_violation_handler,
     check_idling_violation_handler,
+    check_maintenance_handler,
     check_over_speeding_violation_handler,
 )
 from app.api.v1.endpoints.report import generate_smart_report_handler
@@ -93,6 +94,14 @@ async def startup_event():
         "interval",
         minutes=3,
         id="check_geofence_violation",
+    )
+
+    # check maintenance alert
+    scheduler.add_job(
+        check_maintenance_handler,
+        "interval",
+        minutes=10,
+        id="check_maintenance",
     )
 
     # check geofence violation for every 3 minutes

@@ -184,7 +184,7 @@ async def get_ssl_certificate(
 
 @router.post("/create_device_configuration")
 @inject
-async def get_device_configuration():
+async def create_device_configuration():
     try:
         return "okay"
     except Exception as e:

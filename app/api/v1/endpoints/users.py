@@ -157,11 +157,12 @@ async def update_user(
         user_by_phone = service.get_user_by_phone_number(payload.phone_number)
 
         if user_by_phone is not None:
-            return send_client_side_error(
-                user_msg=messages.PHONE_NUMBER_EXISTS,
-            )
+            if user.email_address != user_by_phone.get("email_address"):
+                return send_client_side_error(
+                    user_msg=messages.PHONE_NUMBER_EXISTS,
+                )
 
-        user = service.update_user_by_uuid(uuid, payload)
+        service.update_user_by_uuid(uuid, payload)
 
         return send_info("User updated successfully")
     except Exception as e:

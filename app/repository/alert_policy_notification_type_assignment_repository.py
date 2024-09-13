@@ -34,3 +34,11 @@ class AlertPolicyNotificationTypeAssignmentRepository(BaseRepository):
             ).delete()
             session.commit()
             return True
+
+    def delete_by_notification_type_by_policy_uuid(self, alert_policy_uuid):
+        with self.session_factory() as session:
+            session.query(self.model).filter_by(
+                alert_policy_uuid=alert_policy_uuid
+            ).delete()
+            session.commit()
+            return True

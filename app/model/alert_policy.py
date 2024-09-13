@@ -1,11 +1,11 @@
 import uuid
 
-from sqlalchemy import JSON, Column, Enum, ForeignKey, String
+from sqlalchemy import JSON, Column, Enum, ForeignKey, String,DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from app.model.base_model import BaseModel
-from app.util.enums import GeofenceShapeType, GeofenceType
+from app.util.enums import GeofenceShapeType, GeofenceType,ServiceStatus
 
 
 class AlertPolicy(BaseModel):
@@ -38,6 +38,10 @@ class AlertPolicy(BaseModel):
     maintenance_alert_type_uuid = Column(
         UUID(as_uuid=True), ForeignKey("alert_maintenance_types.uuid"), nullable=True
     )
+    service_status = Column(
+        Enum(ServiceStatus), nullable=False, default=ServiceStatus.NOT_SERVICED.value
+    )
+    maintenance_updated_at = Column(DateTime, nullable=True)
     alert_policy_type = relationship("AlertPolicyType", uselist=False, lazy="subquery")
     maintenance_alert_type = relationship("AlertMaintenanceType", lazy="subquery")
     assets = relationship("Asset", secondary="alert_policy_asset_assignments")
