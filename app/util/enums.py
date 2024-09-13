@@ -49,6 +49,10 @@ class ActiveStatus(str, Enum):
     DEACTIVATED = "deactivated"
 
 
+class ServiceStatus(str, Enum):
+    SERVICED = "SERVICED"
+    NOTSERVICED = "NOT_SERVICED"
+    
 class SmartReportStatus(str, Enum):
     PENDING = "pending"
     PROCESSING = "processing"
