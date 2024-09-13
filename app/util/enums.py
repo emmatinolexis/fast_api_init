@@ -50,9 +50,9 @@ class ActiveStatus(str, Enum):
 
 
 class ServiceStatus(str, Enum):
-    SERVICED = "SERVICED"
-    NOTSERVICED = "NOT_SERVICED"
-    
+    SERVICED = "serviced"
+    NOTSERVICED = "not_serviced"
+
 class SmartReportStatus(str, Enum):
     PENDING = "pending"
     PROCESSING = "processing"
