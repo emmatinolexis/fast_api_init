@@ -191,8 +191,7 @@ class AlertPolicyService(BaseService):
             created_policy = self.create_alert_geofence_policy(
                 alert_policy, user_uuid, business_uuid
             )
-
-            self.assign_alert_recipients(alert_policy, created_policy)
+            self.assign_alert_recipients(alert_policy.alert_recipients, created_policy.uuid)
             self.assign_alert_types(alert_policy.alert_types, created_policy.uuid)
             self.assign_alert_assets(alert_policy.alert_assets, created_policy.uuid)
             return created_policy
@@ -337,6 +336,7 @@ class AlertPolicyService(BaseService):
             )
 
     def assign_alert_types(self, alert_types, created_policy_uuid):
+
         for item in alert_types:
             alert_types_data = {
                 "alert_policy_uuid": created_policy_uuid,
