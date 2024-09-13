@@ -6,11 +6,7 @@ from app.core import messages
 from app.core.container import Container
 from app.schema.incident_schema import IncidentPayload
 from app.service.incident_service import IncidentService
-from app.util.utils import (
-    send_data,
-    send_data_with_info,
-    send_internal_server_error,
-)
+from app.util.utils import send_data, send_data_with_info, send_internal_server_error
 
 router = APIRouter(
     prefix="/incidents",

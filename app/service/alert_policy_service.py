@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List
 
 from app.core import messages
@@ -23,17 +24,17 @@ from app.schema.alert_policy_schema import (
     AlertPolicyInput,
     AlertPolicyNotificationTypeAssignment,
     AlertPolicyPayload,
+    AlertPolicyUpdateInputPayload,
     AlertPolicyUpdatePayload,
     GeofenceAlertPolicyInput,
     GeofenceAlertPolicyPayload,
     GeofenceAlertPolicyUpdateInput,
     GeofenceAlertPolicyUpdatePayload,
-    AlertPolicyUpdateInputPayload
 )
 from app.service.base_service import BaseService
 from app.transfomers.alert_policy_transformer import alert_policy_transformer
 from app.util.enums import ActiveStatus, GeofenceShapeType
-from datetime import datetime
+
 
 class AlertPolicyService(BaseService):
     def __init__(
@@ -115,9 +116,10 @@ class AlertPolicyService(BaseService):
         try:
             if date:
                 date = datetime.strptime(date, "%d/%m/%Y").strftime("%Y-%m-%d")
-                
 
-            return self.alert_policy_repository.toggle_maintenance_alert_status(alert_uuid, date)
+            return self.alert_policy_repository.toggle_maintenance_alert_status(
+                alert_uuid, date
+            )
         except Exception as e:
             raise e
 
@@ -201,7 +203,9 @@ class AlertPolicyService(BaseService):
             created_policy = self.create_alert_geofence_policy(
                 alert_policy, user_uuid, business_uuid
             )
-            self.assign_alert_recipients(alert_policy.alert_recipients, created_policy.uuid)
+            self.assign_alert_recipients(
+                alert_policy.alert_recipients, created_policy.uuid
+            )
             self.assign_alert_types(alert_policy.alert_types, created_policy.uuid)
             self.assign_alert_assets(alert_policy.alert_assets, created_policy.uuid)
             return created_policy
@@ -346,7 +350,6 @@ class AlertPolicyService(BaseService):
             )
 
     def assign_alert_types(self, alert_types, created_policy_uuid):
-
         for item in alert_types:
             alert_types_data = {
                 "alert_policy_uuid": created_policy_uuid,
@@ -463,17 +466,14 @@ class AlertPolicyService(BaseService):
                     )
 
     def _update_policy(self, alert_policy_uuid: str, alert_policy):
-
         input_data = AlertPolicyUpdateInputPayload(
             policy_name=alert_policy.policy_name,
             minimum_idle_time=alert_policy.minimum_idle_time,
             maximum_speed_limit=alert_policy.maximum_speed_limit,
-            maintenance_alert_schedule=alert_policy.maintenance_alert_schedule
+            maintenance_alert_schedule=alert_policy.maintenance_alert_schedule,
         )
 
-        self.alert_policy_repository.update_by_uuid(
-            alert_policy_uuid, input_data
-        )
+        self.alert_policy_repository.update_by_uuid(alert_policy_uuid, input_data)
 
     def update_alert_policy(
         self, alert_policy_uuid: str, payload: AlertPolicyUpdatePayload

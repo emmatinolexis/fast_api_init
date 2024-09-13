@@ -97,4 +97,3 @@ DRIVER_ALREADY_ASSIGNED_SAME_ASSET = "Driver is already assigned to the same ass
 
 
 DEVICE_TYPE_MISMATCH = "Device type mismatch"
-

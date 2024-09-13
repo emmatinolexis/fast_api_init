@@ -435,4 +435,3 @@ async def toggle_maintenance_alert(
     except Exception as e:
         msg = messages.MAINTENANCE_UPDATED_FAILED
         return send_internal_server_error(user_msg=msg, error=e)
-

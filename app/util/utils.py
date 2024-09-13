@@ -24,9 +24,9 @@ from app.util.enums import (
     CertificateIndex,
     CertificateKey,
     FileFormat,
+    ServiceStatus,
     SmartReportStatus,
     SmartReportUser,
-    ServiceStatus
 )
 
 log = get_logger()
@@ -127,12 +127,14 @@ def serialize_datetime(obj):
         return obj.isoformat()
     raise TypeError("Type not serializable")
 
+
 def toggle_maintenance_status(service_status):
     return (
         ServiceStatus.SERVICED
         if service_status == ServiceStatus.NOT_SERVICED
         else ServiceStatus.NOT_SERVICED
     )
+
 
 def send_internal_server_error(user_msg: str, error: Any, status_code: int = 500):
     log.error(user_msg, extra={"error": error})

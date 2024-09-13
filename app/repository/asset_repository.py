@@ -82,13 +82,13 @@ class AssetRepository(BaseRepository):
             return []
 
     def read_all_assets_by_uuid(
-            self,
-            user_uuid: str = None,
-            business_uuid: str = None,
-            asset_type_uuid: str = None,
-            page=1,
-            page_size=10,
-            search_query: str = None,
+        self,
+        user_uuid: str = None,
+        business_uuid: str = None,
+        asset_type_uuid: str = None,
+        page=1,
+        page_size=10,
+        search_query: str = None,
     ) -> Dict[str, Any]:
         with self.session_factory() as session:
             # Calculate the offset based on the page and per_page values
@@ -145,7 +145,11 @@ class AssetRepository(BaseRepository):
             processed_assets = self.process_assets(session, assets)
 
             # Get asset status counts (moving, idle, stopped)
-            moving_asset_count, idle_asset_count, stopped_asset_count = self.get_asset_status_counts(assets)
+            (
+                moving_asset_count,
+                idle_asset_count,
+                stopped_asset_count,
+            ) = self.get_asset_status_counts(assets)
 
             return {
                 "assets": processed_assets,
@@ -165,14 +169,16 @@ class AssetRepository(BaseRepository):
 
         for asset in assets:
             if (
-                    hasattr(asset, "last_tracking_event")
-                    and asset.last_tracking_event is not None
+                hasattr(asset, "last_tracking_event")
+                and asset.last_tracking_event is not None
             ):
                 tracking_event = asset.last_tracking_event
                 if "event_type" in tracking_event:
                     if tracking_event["event_type"] == "Start_Moving":
                         moving_asset_count += 1
-                    elif tracking_event["event_type"] == "Time_Interval_Tracking_Idling":
+                    elif (
+                        tracking_event["event_type"] == "Time_Interval_Tracking_Idling"
+                    ):
                         idle_asset_count += 1
                     elif tracking_event["event_type"] == "Stop_Moving":
                         stopped_asset_count += 1

@@ -1,11 +1,11 @@
 import uuid
 
-from sqlalchemy import JSON, Column, Enum, ForeignKey, String,DateTime
+from sqlalchemy import JSON, Column, DateTime, Enum, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from app.model.base_model import BaseModel
-from app.util.enums import GeofenceShapeType, GeofenceType,ServiceStatus
+from app.util.enums import GeofenceShapeType, GeofenceType, ServiceStatus
 
 
 class AlertPolicy(BaseModel):

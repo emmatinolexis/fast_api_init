@@ -5,7 +5,7 @@ from sqlalchemy import text
 
 from app.model.incident import Incident
 from app.repository.base_repository import BaseRepository
-from app.util.enums import IncidentType
+from app.util.enums import IncidenceType
 
 
 class IncidentRepository(BaseRepository):
@@ -13,7 +13,7 @@ class IncidentRepository(BaseRepository):
         self.session_factory = session_factory
         super().__init__(session_factory, Incident)
 
-    def get_all_incidents(self, incident_type: IncidentType = None) -> List[Incident]:
+    def get_all_incidents(self, incident_type: IncidenceType = None) -> List[Incident]:
         with self.session_factory() as session:
             if incident_type:
                 return (
