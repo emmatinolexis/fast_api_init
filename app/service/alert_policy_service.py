@@ -33,7 +33,7 @@ from app.schema.alert_policy_schema import (
 from app.service.base_service import BaseService
 from app.transfomers.alert_policy_transformer import alert_policy_transformer
 from app.util.enums import ActiveStatus, GeofenceShapeType
-
+from datetime import datetime
 
 class AlertPolicyService(BaseService):
     def __init__(
@@ -108,6 +108,16 @@ class AlertPolicyService(BaseService):
     def toggle_alert_status(self, alert_uuid: str):
         try:
             return self.alert_policy_repository.toggle_alert_status(alert_uuid)
+        except Exception as e:
+            raise e
+
+    def toggle_maintenance_status(self, alert_uuid: str, date: str):
+        try:
+            if date:
+                date = datetime.strptime(date, "%d/%m/%Y").strftime("%Y-%m-%d")
+                
+
+            return self.alert_policy_repository.toggle_maintenance_alert_status(alert_uuid, date)
         except Exception as e:
             raise e
 

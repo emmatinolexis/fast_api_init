@@ -419,3 +419,20 @@ async def delete_alert_policy_handler(
     except Exception as e:
         msg = messages.DELETE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.patch("/{maintenance_alert_uuid}/toggle_status", response_class=ORJSONResponse)
+@inject
+async def toggle_maintenance_alert(
+    maintenance_alert_uuid: str,
+    date: str = None,
+    service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        updated_alert = service.toggle_maintenance_status(maintenance_alert_uuid, date)
+        return updated_alert
+    except Exception as e:
+        msg = messages.MAINTENANCE_UPDATED_FAILED
+        return send_internal_server_error(user_msg=msg, error=e)
+
