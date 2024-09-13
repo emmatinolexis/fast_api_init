@@ -8,7 +8,7 @@ from app.util.enums import IncidenceType
 
 
 class Incident(BaseModel):
-    __tablename__ = "incident"
+    __tablename__ = "incidents"
     uuid = Column(
         UUID(as_uuid=True),
         primary_key=True,

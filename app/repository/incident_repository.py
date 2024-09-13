@@ -30,7 +30,7 @@ class IncidentRepository(BaseRepository):
             query = text(
                 """
             SELECT *
-            FROM incident
+            FROM incidents
             WHERE ST_DWithin(
                 geography(ST_MakePoint(longitude, latitude)),
                 geography(ST_MakePoint(:longitude, :latitude)),

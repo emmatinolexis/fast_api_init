@@ -25,11 +25,14 @@ class IncidentService(BaseService):
             raise e
 
     def get_incidents_by_location(
-        self, longitude: float, latitude: float
+        self,
+        longitude: float,
+        latitude: float,
+        radius: int,
     ) -> list[Incident]:
         try:
             return self.incident_repository.get_incidents_by_location(
-                longitude=longitude, latitude=latitude
+                longitude=longitude, latitude=latitude, radius=radius
             )
         except Exception as e:
             raise e

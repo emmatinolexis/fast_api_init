@@ -1,5 +1,5 @@
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
 
 from app.core import messages
@@ -49,11 +49,12 @@ async def get_all_incidents(
 async def get_incidents_by_location(
     longitude: float,
     latitude: float,
+    radius: int = Query(2, description="radius is in kilometers(default is 2km)"),
     service: IncidentService = Depends(Provide[Container.incident_service]),
 ):
     try:
         incidents = service.get_incidents_by_location(
-            longitude=longitude, latitude=latitude
+            longitude=longitude, latitude=latitude, radius=radius * 1000
         )
         return send_data(data=incidents)
     except Exception as e:
