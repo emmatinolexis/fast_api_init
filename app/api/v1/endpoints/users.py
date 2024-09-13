@@ -157,7 +157,7 @@ async def update_user(
         user_by_phone = service.get_user_by_phone_number(payload.phone_number)
 
         if user_by_phone is not None:
-            if user.email_address != user_by_phone.email_address:
+            if user.email_address != user_by_phone.get("email_address"):
                 return send_client_side_error(
                     user_msg=messages.PHONE_NUMBER_EXISTS,
                 )
