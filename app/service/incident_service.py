@@ -12,8 +12,7 @@ class IncidentService(BaseService):
 
     def create_incident(self, incident_payload: IncidentPayload) -> Incident:
         try:
-            incident = self.incident_repository.create(incident_payload)
-            return incident
+            return self.incident_repository.create(incident_payload)
         except Exception as e:
             raise e
 
@@ -21,6 +20,16 @@ class IncidentService(BaseService):
         try:
             return self.incident_repository.get_all_incidents(
                 incident_type=incident_type
+            )
+        except Exception as e:
+            raise e
+
+    def get_incidents_by_location(
+        self, longitude: float, latitude: float
+    ) -> list[Incident]:
+        try:
+            return self.incident_repository.get_incidents_by_location(
+                longitude=longitude, latitude=latitude
             )
         except Exception as e:
             raise e
