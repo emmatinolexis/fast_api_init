@@ -20,8 +20,15 @@ class DeviceEvent(Base):
     node_description = Column(String(50), nullable=False, index=True)
     master_id = Column(String(50), nullable=False, index=True)
     measurements = Column(JSON, nullable=False)
-    event_datetime = Column(DateTime, nullable=False)
+    event_datetime = Column(String(80), nullable=False)
     created_at = Column(DateTime(timezone=True), default=func.now())
+    alert_type = Column(String(50), nullable=False, index=True)
+    requires_attention = Column(String(50), nullable=False, index=True)
+    alert_description = Column(String(50), nullable=False, index=True)
+    device_type = Column(String(50), nullable=False, index=True)
+
+
+
 
     class Config:
         orm_mode = True
