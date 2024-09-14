@@ -26,16 +26,19 @@ class DeviceReportPayload(BaseModel):
     measurements: List[MeasurementPayload]
     event_datetime: str
 
-    @root_validator(pre=True)
-    def convert_timestamp(cls, values):
-        # Convert the timestamp string to a datetime object in the desired format
-        if "event_datetime" in values:
-            unix_timestamp = float(values["event_datetime"])
-            dt = datetime.fromtimestamp(unix_timestamp, tz=timezone.utc)
-            # Format to '2024-07-23 11:02:21.573 +0000'
-            formatted_time = dt.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3] + " +0000"
-            values["event_datetime"] = formatted_time
-        return values
+    # @root_validator(pre=True)
+    # def convert_timestamp(cls, values):
+    #     # Convert the timestamp string to a datetime object in the desired format
+    #     if "event_datetime" in values:
+    #         try:
+    #             unix_timestamp = float(values["event_datetime"])
+    #             dt = datetime.fromtimestamp(unix_timestamp, tz=timezone.utc)
+    #             # Format to '2024-07-23 11:02:21.573 +0000'
+    #             formatted_time = dt.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3] + " +0000"
+    #             values["event_datetime"] = formatted_time
+    #         except (ValueError, TypeError):
+    #             raise ValueError("Invalid event_datetime value. Must be a valid Unix timestamp.")
+    #     return values
 
 
 class SSLCertificateRequest(BaseModel):
