@@ -321,12 +321,14 @@ async def change_password_handler(
 
         data = resolve_data_from_request(request=request)
 
+        now = datetime.now()
+
         await send_password_change_email(
             recipient_name=user.get("first_name"),
             email=user.get("email_address"),
             ip_address=data.get("ip_address", "Unknown"),
             user_agent=data.get("user_agent", "Unknown"),
-            time_stamp=data.get("timestamp", datetime.now().isoformat()),
+            time_stamp=data.get("timestamp", now.strftime("%B %d, %Y %I:%M %p")),
         )
 
         return send_info("Password updated successfully")
