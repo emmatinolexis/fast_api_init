@@ -51,6 +51,7 @@ from app.repository import (
     package_item_repository,
     package_repository,
     payment_repository,
+    peripheral_devices_repository,
     permission_repository,
     phone_otp_repository,
     plan_upgrade_repository,
@@ -116,6 +117,7 @@ from app.service import (
     package_item_service,
     package_service,
     payment_service,
+    peripheral_device_service,
     permission_service,
     phone_otp_service,
     plan_updgrade_service,
@@ -466,6 +468,11 @@ class Container(containers.DeclarativeContainer):
         incident_repository.IncidentRepository, session_factory=db.provided.session
     )
 
+    peripheral_devices_repository = providers.Factory(
+        peripheral_devices_repository.PeripheralDeviceRepository,
+        session_factory=db.provided.session,
+    )
+
     # Services
     auth_service = providers.Factory(
         auth_service.AuthService,
@@ -775,4 +782,9 @@ class Container(containers.DeclarativeContainer):
     incident_service = providers.Factory(
         incident_service.IncidentService,
         incident_repository=incident_repository,
+    )
+
+    peripheral_device_service = providers.Factory(
+        peripheral_device_service.PeripheralDeviceService,
+        peripheral_device_repository=peripheral_devices_repository,
     )

@@ -51,7 +51,11 @@ def generate_access_token(email: str, role: str) -> (str, str):
 
 
 def generate_access_token_for_third_party_app(
-    secret_key: str, expiry: int, role: str
+    secret_key: str,
+    expiry: int,
+    role: str,
+    serial_number: str = None,
+    requires_conf: bool = None,
 ) -> (str, str):
     access_token_expires = timedelta(minutes=expiry)
     return create_access_token(

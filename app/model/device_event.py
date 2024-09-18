@@ -27,8 +27,5 @@ class DeviceEvent(Base):
     alert_description = Column(String(50), nullable=False, index=True)
     device_type = Column(String(50), nullable=False, index=True)
 
-
-
-
     class Config:
         orm_mode = True

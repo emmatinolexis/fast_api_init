@@ -1,7 +1,6 @@
-from datetime import datetime, timezone
 from typing import List, Union
 
-from pydantic import BaseModel, root_validator
+from pydantic import BaseModel
 
 
 class TrackingDeviceCreate(BaseModel):

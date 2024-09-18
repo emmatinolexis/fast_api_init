@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Optional, Union
 
 from pydantic import BaseModel
 
@@ -18,6 +18,8 @@ class ExternalAppPayload(BaseModel):
 class ExternalAppGenerateTokenPayload(BaseModel):
     app_id: str
     secret_key: str
+    serial_number: Optional[str] = None
+    requires_conf: Optional[bool] = None
 
     class Config:
         orm_model = True
