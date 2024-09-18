@@ -35,11 +35,16 @@ class ExternalAppService(BaseService):
             external_app = self.external_app_repository.get_app_service(payload)
             expiry_minutes = days_to_minutes(external_app.no_of_days_to_expire)
             generated_token = generate_access_token_for_third_party_app(
-                external_app.secret_key, expiry_minutes, UserRole.THIRD_PARTY_APP
+                external_app.secret_key,
+                expiry_minutes,
+                UserRole.THIRD_PARTY_APP,
+                payload.serial_number,
+                payload.requires_conf,
             )
             app_service_data = {
                 "access_token": generated_token[0],
                 "expiry_date": generated_token[1],
+                # "config": generated_token[2]
             }
             return app_service_data
         except Exception as e:
