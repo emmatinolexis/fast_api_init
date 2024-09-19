@@ -24,14 +24,11 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import ORJSONResponse
 
 
-
-
 router = APIRouter(
     prefix="/gateway_configuration",
     tags=["gateway_configuration"],
 )
 msg_prefix = "gateway_configuration"
-
 
 @router.get("/{uuid}", response_class=ORJSONResponse)
 @inject
