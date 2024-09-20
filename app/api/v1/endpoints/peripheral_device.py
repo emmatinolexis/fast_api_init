@@ -9,6 +9,7 @@ from app.model.user import User
 from app.schema.peripheral_device_schema import (
     CreateGatewayDeviceConfiguration,
     CreatePeripheralDevice,
+    UpdatePeripheralDevice
 )
 from app.service.device_configuration_service import DeviceConfigurationService
 from app.service.peripheral_device_service import PeripheralDeviceService
@@ -16,7 +17,10 @@ from app.util.utils import (
     send_data,
     send_info,
     send_internal_server_error,
+    send_client_side_error,
+    send_data_with_info
 )
+from app.core.exceptions import BadRequestError
 
 router = APIRouter(
     prefix="/peripheral_devices",
@@ -86,4 +90,29 @@ async def get_all_device_configurations_handler(
         return send_data(service.get_list())
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
+    
+
+
+@router.patch("/{building_uuid}",response_class=ORJSONResponse)
+@inject
+async def update_peripheral_device_handler(
+    payload : UpdatePeripheralDevice,
+    service: PeripheralDeviceService = Depends(
+        Provide[Container.peripheral_device_service]
+    ),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        response = service.update_peripheral_device(current_user.uuid,payload)
+        return send_info(
+            response
+        )
+        
+    except BadRequestError as e:
+        return send_client_side_error(
+            user_msg=e.detail
+        )
+    except Exception as e:
+        msg = messages.UPDATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)

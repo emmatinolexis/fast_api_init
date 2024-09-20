@@ -97,3 +97,6 @@ DRIVER_ALREADY_ASSIGNED_SAME_ASSET = "Driver is already assigned to the same ass
 
 
 DEVICE_TYPE_MISMATCH = "Device type mismatch"
+
+
+PERIPHERAL_DEVICE_NOT_FOUND = "No peripheral device was found with the given serial number : "
