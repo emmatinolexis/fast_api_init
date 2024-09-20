@@ -27,3 +27,5 @@ class Building(BaseModel):
     )
     user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=True)
     gas_cylinders = relationship("GasCylinder", back_populates="building")
+    peripheral_devices = relationship("PeripheralDevice", back_populates="building")
+    

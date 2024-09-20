@@ -2,6 +2,7 @@ import uuid as systemuuid
 
 from sqlalchemy import Column, Enum, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 from app.model.base_model import BaseModel
 from app.util.enums import DeviceStatus, PeripheralDeviceType
@@ -38,3 +39,4 @@ class PeripheralDevice(BaseModel):
     )
     location = Column(String(length=50), nullable=True, index=True)
     device_type = Column(Enum(PeripheralDeviceType), nullable=False, index=True)
+    building = relationship("Building", back_populates="peripheral_devices")
