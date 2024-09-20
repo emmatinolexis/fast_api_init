@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.model.peripheral_devices import PeripheralDevice
 from app.repository.base_repository import BaseRepository
 from app.util.enums import PeripheralDeviceType
-from sqlalchemy import asc
+from sqlalchemy import asc, cast, String
 
 
 class PeripheralDeviceRepository(BaseRepository):
@@ -14,13 +14,20 @@ class PeripheralDeviceRepository(BaseRepository):
         self.session_factory = session_factory
         super().__init__(session_factory, PeripheralDevice)
 
-    def read_all(self, page=1, page_size=10, device_type=None):
+    def read_all(self, page=1, page_size=10, device_type=None, search=None):
         with self.session_factory() as session:
             offset = (page - 1) * page_size
             base_query = session.query(self.model)
 
             if device_type:
                 base_query = base_query.filter(self.model.device_type == device_type.value)
+
+            if search:
+                search_pattern = f"%{search}%"
+                base_query = base_query.filter(
+                    (self.model.serial_number.ilike(search_pattern)) |
+                    (cast(self.model.device_type, String).ilike(search_pattern))
+                )
 
             total_devices = base_query.count()
             total_pages = (total_devices + page_size - 1) // page_size
@@ -72,3 +79,4 @@ class PeripheralDeviceRepository(BaseRepository):
             if device_type:
                 base_query = base_query.filter(self.model.device_type == device_type)
             return base_query.all()
+
