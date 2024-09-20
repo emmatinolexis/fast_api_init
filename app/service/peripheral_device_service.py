@@ -114,6 +114,29 @@ class PeripheralDeviceService(BaseService):
         
         except Exception as e:
             raise e
+        
+
+    def get_user_devices(self, user_uuid,device_type:str = None):
+        try:
+            devices =  self.peripheral_device_repository.get_user_devices(user_uuid,device_type)
+
+            return [peripheral_device_transformer(device) for device in devices]
+        except Exception as e:
+            raise e
+        
+
+    def get_business_devices(self, user_uuid, business_profile_uuid,device_type:str = None):
+        try:
+            devices =  self.peripheral_device_repository.get_business_devices(
+                business_profile_uuid,device_type
+            )
+
+            return [peripheral_device_transformer(device) for device in devices]
+        except Exception as e:
+            raise e 
+
+
+
 
 
 

@@ -63,4 +63,20 @@ class PeripheralDeviceRepository(BaseRepository):
                 .filter(self.model.serial_number == serial_number)
                 .first()
             )
+        
+
+    def get_user_devices(self,user_uuid,device_type:str=None):
+        with self.session_factory() as session:
+            base_query = session.query(self.model).filter(self.model.user_uuid == user_uuid)
+            if device_type:
+                base_query = base_query.filter(self.model.device_type == device_type)
+            return base_query.all()
+        
+        
+    def get_business_devices(self,business_uuid,device_type:str=None):
+        with self.session_factory() as session:
+            base_query = session.query(self.model).filter(self.model.business_profile_uuid == business_uuid)
+            if device_type:
+                base_query = base_query.filter(self.model.device_type == device_type)
+            return base_query.all()
 

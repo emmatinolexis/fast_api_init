@@ -24,6 +24,7 @@ from app.util.utils import (
     send_info,
     send_internal_server_error,
 )
+from app.util.enums import AccountType,DeviceType
 
 router = APIRouter(
     prefix="/peripheral_devices",
@@ -126,4 +127,31 @@ async def update_peripheral_device_handler(
         return send_client_side_error(user_msg=e.detail)
     except Exception as e:
         msg = messages.UPDATE_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+    
+
+
+@router.get("/user", response_class=ORJSONResponse)
+@inject
+async def get_peripheral_devices_by_user_handler(
+    device_type:DeviceType = Query(None,description="device type"),
+    service: PeripheralDeviceService = Depends(
+        Provide[Container.peripheral_device_service]
+    ),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        if current_user.account_type == AccountType.INDIVIDUAL:
+            devices = service.get_user_devices(user_uuid = current_user.uuid,device_type= device_type)
+        else:
+            devices = service.get_business_devices(
+                user_uuid=current_user.uuid, business_profile_uuid=current_user.business_profile_uuid,device_type = device_type
+            )
+        
+        return send_data_with_info(
+            info=messages.GET_SUCCESS + "devices",
+            data=devices
+        )
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)

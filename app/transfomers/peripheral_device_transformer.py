@@ -15,10 +15,4 @@ def peripheral_device_transformer(device: PeripheralDevice):
         "building_uuid": str(device.building_uuid) if device.building_uuid else None,
         "location": device.location,
         "device_type": device.device_type.name if device.device_type else None,
-        "building": {
-            "building_uuid": str(device.building.uuid),
-            "building_name": device.building.building_name,
-            "longitude": device.building.longitude,
-            "latitude": device.building.latitude,
-        } if device.building else None,
     }
