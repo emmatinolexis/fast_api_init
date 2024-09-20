@@ -44,3 +44,21 @@ class CreateGatewayDeviceConfiguration(BaseModel):
     wifi_gateway: Optional[str] = None
     wifi_subnet: Optional[str] = None
     hide_wifi: Optional[bool] = None
+
+
+
+class UpdatePeripheralDevice(BaseModel):
+    location :str
+    building_uuid :str
+    serial_number :str
+
+
+class UpdatePeripheralDeviceFull(UpdatePeripheralDevice):
+    user_uuid : Optional[str] = None
+    business_profile_uuid : Optional[str] = None
+
+    
+
+
+
+
