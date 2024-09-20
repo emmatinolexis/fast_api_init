@@ -131,8 +131,8 @@ class TrackingEventService(BaseService):
         current_event = None
 
         for event in events:
-            longitude = getattr(event, 'longitude', None)
-            latitude = getattr(event, 'latitude', None)
+            longitude = getattr(event, "longitude", None)
+            latitude = getattr(event, "latitude", None)
 
             if current_event is None:
                 current_event = {
@@ -156,7 +156,9 @@ class TrackingEventService(BaseService):
                             "location": {
                                 "longitude": current_event["longitude"],
                                 "latitude": current_event["latitude"],
-                            } if current_event["longitude"] and current_event["latitude"] else {},
+                            }
+                            if current_event["longitude"] and current_event["latitude"]
+                            else {},
                         }
                     )
                     current_event = {
@@ -178,12 +180,13 @@ class TrackingEventService(BaseService):
                     "location": {
                         "longitude": current_event["longitude"],
                         "latitude": current_event["latitude"],
-                    } if current_event["longitude"] and current_event["latitude"] else {},
+                    }
+                    if current_event["longitude"] and current_event["latitude"]
+                    else {},
                 }
             )
 
         return device_response
-
 
     # Dummy implementations for missing functions to avoid reference errors
     def get_status(event_type):

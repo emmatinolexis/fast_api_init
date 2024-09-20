@@ -60,3 +60,12 @@ class PeripheralDeviceService(BaseService):
                     self.peripheral_device_repository.create(initial_data)
         except Exception as e:
             raise e
+
+    def get_devices_by_serial_number(self, serial_number: str):
+        try:
+            devices = self.peripheral_device_repository.get_by_serial_number(
+                serial_number
+            )
+            return devices
+        except Exception as e:
+            raise e

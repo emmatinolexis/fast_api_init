@@ -3,7 +3,9 @@ from typing import Callable
 
 from sqlalchemy.orm import Session
 
-from app.model.default_device_gateway_configuration import DefaultDeviceGateWayConfiguration
+from app.model.default_device_gateway_configuration import (
+    DefaultDeviceGateWayConfiguration,
+)
 from app.repository.base_repository import BaseRepository
 
 

@@ -21,9 +21,15 @@ class CreatePeripheralDeviceInput(BaseModel):
     serial_number: str
 
 
-class CreateGatewayDeviceConfigurationInput(BaseModel):
+class CreateDeviceConfigurationInput(BaseModel):
     device_type: PeripheralDeviceType
     configuration: dict
+
+
+class GetDeviceConfiguration(BaseModel):
+    key: str
+    device_type: str
+    serial_number: str
 
 
 class CreateGatewayDeviceConfiguration(BaseModel):
@@ -42,3 +48,25 @@ class CreateGatewayDeviceConfiguration(BaseModel):
     wifi_gateway: Optional[str] = None
     wifi_subnet: Optional[str] = None
     hide_wifi: Optional[bool] = None
+
+
+class CreateNodeConfiguration(BaseModel):
+    description: str
+    microprocessor_unit: str
+    sensors: list
+    physical_quantity: list
+    update_interval: int
+    battery_cutoff: float
+    observation_time: float
+    target_temperature_threshold: float
+    ambient_temperature_threshold: float
+    humidity_threshold: float
+    air_quality_threshold: float
+    critical_mxl_velocity: float
+    critical_ambient_temperature: float
+    critical_humidity_velocity: float
+    critical_air_quality_velocity: float
+    critical_mxl_acceleration: float
+    critical_ambient_temperature_acceleration: float
+    critical_humidity_acceleration: float
+    critical_air_quality_acceleration: float
