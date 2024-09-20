@@ -70,7 +70,7 @@ class ExternalAppService(BaseService):
                         "devtype": "MVI-GATEWAY",
                     },
                     "serverconf": {
-                        "hostname": device_configuration.configuration.get("hostname"),
+                        "hostname": device_configuration.configuration.get("host_name"),
                         "apiurl": device_configuration.configuration.get("api_url"),
                         "tokenurl": device_configuration.configuration.get("token_url"),
                         "dataurl": device_configuration.configuration.get("data_url"),
