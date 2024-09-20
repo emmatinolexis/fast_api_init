@@ -6,7 +6,7 @@ from fastapi.responses import ORJSONResponse
 
 from app.core import messages
 from app.core.container import Container
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, get_current_app_service
 from app.core.exceptions import BadRequestError
 from app.model.user import User
 from app.schema.peripheral_device_schema import (
@@ -139,7 +139,7 @@ async def get_device_configurations_handler(
     service: DeviceConfigurationService = Depends(
         Provide[Container.device_configuration_service]
     ),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_app_service),
 ):
     try:
         peripheral_device = peripheral_device_service.get_devices_by_serial_number(
