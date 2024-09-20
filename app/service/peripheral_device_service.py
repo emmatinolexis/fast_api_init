@@ -18,6 +18,14 @@ class PeripheralDeviceService(BaseService):
         self.peripheral_device_repository = peripheral_device_repository
         super().__init__(peripheral_device_repository)
 
+    def get_list(self, page=1, page_size=10, device_type=None):
+        try:
+            return self.peripheral_device_repository.read_all(
+                page=page, page_size=page_size, device_type=device_type
+            )
+        except Exception as e:
+            raise e
+        
     def create_peripheral_device(self, payload: CreatePeripheralDevice):
         try:
             device_type = payload.device_type

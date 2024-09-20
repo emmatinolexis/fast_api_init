@@ -17,6 +17,10 @@ from app.util.utils import (
     send_info,
     send_internal_server_error,
 )
+from fastapi import Query
+
+from typing import Optional
+from app.util.enums import DeviceType
 
 router = APIRouter(
     prefix="/peripheral_devices",
@@ -28,17 +32,23 @@ msg_prefix = "peripheral_devices"
 @router.get("/", response_class=ORJSONResponse)
 @inject
 async def get_all_peripheral_devices_handler(
+    page: int = Query(1, ge=1, description="Page number, default is set to 1"),
+    page_size: int = Query(10, ge=1, le=1000, description="Items per page, default is 10"),
+    device_type: Optional[DeviceType] = Query(
+        None,
+        description="Filter by device type. Possible values: PYROGUARD_NODE_DEVICE, GATEWAY_DEVICE, GAS_DEVICE",
+    ),
     service: PeripheralDeviceService = Depends(
         Provide[Container.peripheral_device_service]
     ),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.get_list())
+        devices = service.get_list(page=page, page_size=page_size, device_type=device_type)
+        return send_data(devices)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
-
 
 @router.post("/", response_class=ORJSONResponse)
 @inject
