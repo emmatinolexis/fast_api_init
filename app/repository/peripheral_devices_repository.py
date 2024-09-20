@@ -79,4 +79,11 @@ class PeripheralDeviceRepository(BaseRepository):
             if device_type:
                 base_query = base_query.filter(self.model.device_type == device_type)
             return base_query.all()
+        
+    def get_building_devices(self,building_uuid,device_type:str=None):
+        with self.session_factory() as session:
+            base_query = session.query(self.model).filter(self.model.building_uuid == building_uuid)
+            if device_type:
+                base_query = base_query.filter(self.model.device_type == device_type)
+            return base_query.all()
 

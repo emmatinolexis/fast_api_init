@@ -136,6 +136,14 @@ class PeripheralDeviceService(BaseService):
             raise e 
 
 
+    def get_building_devices(self, building_uuid,device_type:str = None):
+        try:
+            devices = self.peripheral_device_repository.get_building_devices(building_uuid,device_type=device_type)
+
+            return [peripheral_device_transformer(device) for device in devices]
+        except Exception as e:
+            raise e
+
 
 
 
