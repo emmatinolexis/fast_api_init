@@ -11,12 +11,14 @@ from app.core.exceptions import BadRequestError
 from app.model.user import User
 from app.schema.peripheral_device_schema import (
     CreateGatewayDeviceConfiguration,
+    CreateNodeConfiguration,
     CreatePeripheralDevice,
+    GetDeviceConfiguration,
     UpdatePeripheralDevice,
 )
 from app.service.device_configuration_service import DeviceConfigurationService
 from app.service.peripheral_device_service import PeripheralDeviceService
-from app.util.enums import DeviceType
+from app.util.enums import AccountType, DeviceType
 from app.util.utils import (
     send_client_side_error,
     send_data,
@@ -24,7 +26,6 @@ from app.util.utils import (
     send_info,
     send_internal_server_error,
 )
-from app.util.enums import AccountType,DeviceType
 
 router = APIRouter(
     prefix="/peripheral_devices",
@@ -37,7 +38,9 @@ msg_prefix = "peripheral_devices"
 @inject
 async def get_all_peripheral_devices_handler(
     page: int = Query(1, ge=1, description="Page number, default is set to 1"),
-    page_size: int = Query(10, ge=1, le=1000, description="Items per page, default is 10"),
+    page_size: int = Query(
+        10, ge=1, le=1000, description="Items per page, default is 10"
+    ),
     device_type: Optional[DeviceType] = Query(
         None,
         description="Filter by device type. Possible values: PYROGUARD_NODE_DEVICE, GATEWAY_DEVICE, GAS_DEVICE",
@@ -94,6 +97,23 @@ async def create_gateway_configuration_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
+@router.post("/node_configuration", response_class=ORJSONResponse)
+@inject
+async def create_node_configuration_handler(
+    payload: CreateNodeConfiguration,
+    service: DeviceConfigurationService = Depends(
+        Provide[Container.device_configuration_service]
+    ),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        service.create_node_configuration(payload)
+        return send_info("Node Configuration created successfully")
+    except Exception as e:
+        msg = messages.CREATE_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
 @router.get("/configurations", response_class=ORJSONResponse)
 @inject
 async def get_all_device_configurations_handler(
@@ -109,10 +129,96 @@ async def get_all_device_configurations_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
+@router.post("/configurations", response_class=ORJSONResponse)
+@inject
+async def get_device_configurations_handler(
+    payload: GetDeviceConfiguration,
+    peripheral_device_service: PeripheralDeviceService = Depends(
+        Provide[Container.peripheral_device_service]
+    ),
+    service: DeviceConfigurationService = Depends(
+        Provide[Container.device_configuration_service]
+    ),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        peripheral_device = peripheral_device_service.get_devices_by_serial_number(
+            payload.serial_number
+        )
+        if not peripheral_device:
+            return send_client_side_error("Device not found")
+
+        configuration = service.get_device_configuration()
+
+        if not configuration:
+            return send_client_side_error("Configuration not found")
+
+        configuration_data = {
+            "key": "SG-PRYO-V1",
+            "value": {
+                "devconf": {
+                    "nodeid": peripheral_device.node_id,
+                    "desc": configuration.configuration.get("description"),
+                    "devloc": ""
+                    if not peripheral_device.location
+                    else peripheral_device.location,
+                    "mcu": configuration.configuration.get("microprocessor_unit"),
+                    "sensors": str(
+                        ", ".join(configuration.configuration.get("sensors"))
+                    ),
+                    "phyqnty": str(
+                        ", ".join(configuration.configuration.get("physical_quantity"))
+                    ),
+                },
+                "opconf": {
+                    "upint": configuration.configuration.get("update_interval"),
+                    "batcutoff": configuration.configuration.get("battery_cutoff"),
+                    "obstime": configuration.configuration.get("observation_time"),
+                    "ttmphresh": configuration.configuration.get(
+                        "target_temperature_threshold"
+                    ),
+                    "atmpthresh": configuration.configuration.get(
+                        "ambient_temperature_threshold"
+                    ),
+                    "humthresh": configuration.configuration.get("humidity_threshold"),
+                    "airqthresh": configuration.configuration.get(
+                        "air_quality_threshold"
+                    ),
+                    "mlxvel": configuration.configuration.get("critical_mxl_velocity"),
+                    "atvel": configuration.configuration.get(
+                        "critical_ambient_temperature"
+                    ),
+                    "humvel": configuration.configuration.get(
+                        "critical_humidity_velocity"
+                    ),
+                    "mqvel": configuration.configuration.get(
+                        "critical_air_quality_velocity"
+                    ),
+                    "mlxaccel": configuration.configuration.get(
+                        "critical_mxl_acceleration"
+                    ),
+                    "atmpaccel": configuration.configuration.get(
+                        "critical_ambient_temperature_acceleration"
+                    ),
+                    "hunaccel": configuration.configuration.get(
+                        "critical_humidity_acceleration"
+                    ),
+                    "mqaccel": configuration.configuration.get(
+                        "critical_air_quality_acceleration"
+                    ),
+                },
+            },
+        }
+        return send_data(configuration_data)
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
 @router.patch("/{building_uuid}", response_class=ORJSONResponse)
 @inject
 async def update_peripheral_device_handler(
-    building_uuid :str,
+    building_uuid: str,
     payload: UpdatePeripheralDevice,
     service: PeripheralDeviceService = Depends(
         Provide[Container.peripheral_device_service]
@@ -120,7 +226,9 @@ async def update_peripheral_device_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        response = service.update_peripheral_device(current_user.uuid, payload,building_uuid)
+        response = service.update_peripheral_device(
+            current_user.uuid, payload, building_uuid
+        )
         return send_info(response)
 
     except BadRequestError as e:
@@ -128,13 +236,12 @@ async def update_peripheral_device_handler(
     except Exception as e:
         msg = messages.UPDATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
-    
 
 
 @router.get("/user", response_class=ORJSONResponse)
 @inject
 async def get_peripheral_devices_by_user_handler(
-    device_type:DeviceType = Query(None,description="device type"),
+    device_type: DeviceType = Query(None, description="device type"),
     service: PeripheralDeviceService = Depends(
         Provide[Container.peripheral_device_service]
     ),
@@ -142,38 +249,35 @@ async def get_peripheral_devices_by_user_handler(
 ):
     try:
         if current_user.account_type == AccountType.INDIVIDUAL:
-            devices = service.get_user_devices(user_uuid = current_user.uuid,device_type= device_type)
+            devices = service.get_user_devices(
+                user_uuid=current_user.uuid, device_type=device_type
+            )
         else:
             devices = service.get_business_devices(
-                user_uuid=current_user.uuid, business_profile_uuid=current_user.business_profile_uuid,device_type = device_type
+                user_uuid=current_user.uuid,
+                business_profile_uuid=current_user.business_profile_uuid,
+                device_type=device_type,
             )
-        
-        return send_data_with_info(
-            info=messages.GET_SUCCESS + "devices",
-            data=devices
-        )
+
+        return send_data_with_info(info=messages.GET_SUCCESS + "devices", data=devices)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-
-@router.get("/building/{building_uuid}",response_class=ORJSONResponse)
+@router.get("/building/{building_uuid}", response_class=ORJSONResponse)
 @inject
 async def get_peripheral_devices_by_building_handler(
-    building_uuid:str,
-    device_type:DeviceType = Query(None,description="device type"),
+    building_uuid: str,
+    device_type: DeviceType = Query(None, description="device type"),
     service: PeripheralDeviceService = Depends(
         Provide[Container.peripheral_device_service]
     ),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        devices = service.get_building_devices(building_uuid,device_type)
-        return send_data_with_info(
-            info=messages.GET_SUCCESS + "devices",
-            data=devices
-        )
+        devices = service.get_building_devices(building_uuid, device_type)
+        return send_data_with_info(info=messages.GET_SUCCESS + "devices", data=devices)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)

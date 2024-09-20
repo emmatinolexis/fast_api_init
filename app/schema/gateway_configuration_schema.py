@@ -1,4 +1,3 @@
-from uuid import UUID
 from pydantic import BaseModel
 
 
@@ -7,7 +6,7 @@ class GatewayConfigurationSchema(BaseModel):
     update_interval: str
     version: str
     model: str
-    mnfdate: str 
+    mnfdate: str
     data_url: str
     alert_url: str
     conf_url: str

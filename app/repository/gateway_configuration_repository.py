@@ -3,9 +3,9 @@ from typing import Callable
 
 from sqlalchemy.orm import Session
 
+from app.core.exceptions import NotFoundError
 from app.model.gateway_configuration import GatewayConfiguration
 from app.repository.base_repository import BaseRepository
-from app.core.exceptions import NotFoundError
 
 
 class GatewayConfigurationRepository(BaseRepository):

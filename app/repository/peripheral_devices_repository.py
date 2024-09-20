@@ -1,12 +1,12 @@
 from contextlib import AbstractContextManager
 from typing import Callable
 
+from sqlalchemy import String, asc, cast
 from sqlalchemy.orm import Session
 
 from app.model.peripheral_devices import PeripheralDevice
 from app.repository.base_repository import BaseRepository
 from app.util.enums import PeripheralDeviceType
-from sqlalchemy import asc, cast, String
 
 
 class PeripheralDeviceRepository(BaseRepository):
@@ -20,13 +20,15 @@ class PeripheralDeviceRepository(BaseRepository):
             base_query = session.query(self.model)
 
             if device_type:
-                base_query = base_query.filter(self.model.device_type == device_type.value)
+                base_query = base_query.filter(
+                    self.model.device_type == device_type.value
+                )
 
             if search:
                 search_pattern = f"%{search}%"
                 base_query = base_query.filter(
-                    (self.model.serial_number.ilike(search_pattern)) |
-                    (cast(self.model.device_type, String).ilike(search_pattern))
+                    (self.model.serial_number.ilike(search_pattern))
+                    | (cast(self.model.device_type, String).ilike(search_pattern))
                 )
 
             total_devices = base_query.count()
@@ -46,7 +48,7 @@ class PeripheralDeviceRepository(BaseRepository):
             "current_page": page,
             "page_size": page_size,
         }
-    
+
     def get_last_device(self, device_type: PeripheralDeviceType):
         with self.session_factory() as session:
             return (
@@ -63,27 +65,30 @@ class PeripheralDeviceRepository(BaseRepository):
                 .filter(self.model.serial_number == serial_number)
                 .first()
             )
-        
 
-    def get_user_devices(self,user_uuid,device_type:str=None):
+    def get_user_devices(self, user_uuid, device_type: str = None):
         with self.session_factory() as session:
-            base_query = session.query(self.model).filter(self.model.user_uuid == user_uuid)
-            if device_type:
-                base_query = base_query.filter(self.model.device_type == device_type)
-            return base_query.all()
-        
-        
-    def get_business_devices(self,business_uuid,device_type:str=None):
-        with self.session_factory() as session:
-            base_query = session.query(self.model).filter(self.model.business_profile_uuid == business_uuid)
-            if device_type:
-                base_query = base_query.filter(self.model.device_type == device_type)
-            return base_query.all()
-        
-    def get_building_devices(self,building_uuid,device_type:str=None):
-        with self.session_factory() as session:
-            base_query = session.query(self.model).filter(self.model.building_uuid == building_uuid)
+            base_query = session.query(self.model).filter(
+                self.model.user_uuid == user_uuid
+            )
             if device_type:
                 base_query = base_query.filter(self.model.device_type == device_type)
             return base_query.all()
 
+    def get_business_devices(self, business_uuid, device_type: str = None):
+        with self.session_factory() as session:
+            base_query = session.query(self.model).filter(
+                self.model.business_profile_uuid == business_uuid
+            )
+            if device_type:
+                base_query = base_query.filter(self.model.device_type == device_type)
+            return base_query.all()
+
+    def get_building_devices(self, building_uuid, device_type: str = None):
+        with self.session_factory() as session:
+            base_query = session.query(self.model).filter(
+                self.model.building_uuid == building_uuid
+            )
+            if device_type:
+                base_query = base_query.filter(self.model.device_type == device_type)
+            return base_query.all()

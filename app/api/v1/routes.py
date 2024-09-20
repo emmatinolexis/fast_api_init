@@ -24,6 +24,9 @@ from app.api.v1.endpoints.fuel_log import router as fuel_log_router
 from app.api.v1.endpoints.gas_cylinder import router as gas_cylinder_router
 from app.api.v1.endpoints.gas_cylinder_type import router as gas_cylinder_type_router
 from app.api.v1.endpoints.gas_device import router as gas_device_router
+from app.api.v1.endpoints.gateway_configuration import (
+    router as gateway_configuration_router,
+)
 from app.api.v1.endpoints.health_check import router as health_check_router
 from app.api.v1.endpoints.incident import router as incident_router
 from app.api.v1.endpoints.inventory import router as inventory_router
@@ -48,7 +51,6 @@ from app.api.v1.endpoints.tracking import router as tracking_router
 from app.api.v1.endpoints.upload import router as upload_router
 from app.api.v1.endpoints.users import router as users_router
 from app.api.v1.endpoints.vehicle_make import router as vehicle_make_router
-from app.api.v1.endpoints.gateway_configuration import router as gateway_configuration_router
 
 routers = APIRouter()
 router_list = [
@@ -93,7 +95,6 @@ router_list = [
     incident_router,
     peripheral_device_router,
     gateway_configuration_router,
-
 ]
 
 for router in router_list:

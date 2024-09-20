@@ -1,11 +1,14 @@
-from app.model.base_model import BaseModel
 import uuid
-from sqlalchemy import Column, String, Boolean
+
+from sqlalchemy import Boolean, Column, String
 from sqlalchemy.dialects.postgresql import UUID
+
+from app.model.base_model import BaseModel
+
 
 class DefaultDeviceGateWayConfiguration(BaseModel):
     __tablename__ = "default_device_gateway_configuration"
-    
+
     uuid = Column(
         UUID(as_uuid=True),
         primary_key=True,
@@ -14,10 +17,12 @@ class DefaultDeviceGateWayConfiguration(BaseModel):
         nullable=False,
     )
     node_id = Column(String(length=100), nullable=False, unique=True, index=True)
-    update_interval = Column(String(length=100), nullable=False, unique=True, index=True)
+    update_interval = Column(
+        String(length=100), nullable=False, unique=True, index=True
+    )
     version = Column(String(length=100), nullable=False, unique=True, index=True)
     model = Column(String(length=100), nullable=False, unique=True, index=True)
-    mnfdate = Column(String(length=100), nullable=False, unique=True, index=True) 
+    mnfdate = Column(String(length=100), nullable=False, unique=True, index=True)
     data_url = Column(String(length=100), nullable=False, unique=True, index=True)
     alert_url = Column(String(length=100), nullable=False, unique=True, index=True)
     conf_url = Column(String(length=100), nullable=False, unique=True, index=True)
@@ -28,4 +33,3 @@ class DefaultDeviceGateWayConfiguration(BaseModel):
     wifi_gateway = Column(String(length=100), nullable=False, unique=True, index=True)
     wifi_subnet = Column(String(length=100), nullable=False, unique=True, index=True)
     hide_wifi = Column(Boolean, nullable=False, index=True)
-

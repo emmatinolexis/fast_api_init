@@ -24,7 +24,7 @@ async def create_incident(
 ):
     try:
         incident = service.create_incident(payload)
-        send_data_with_info(data=incident, info=messages.CREATE_SUCCESS)
+        return send_data_with_info(data=incident, info=messages.CREATE_SUCCESS)
     except Exception as e:
         msg = f"{messages.CREATE_FAILED} {msg_prefix}"
         return send_internal_server_error(user_msg=msg, error=e)

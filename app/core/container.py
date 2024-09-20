@@ -18,8 +18,8 @@ from app.repository import (
     building_repository,
     business_profile_repository,
     contact_sale_repository,
-    device_configuration_repository,
     default_device_gateway_configuration_repository,
+    device_configuration_repository,
     device_events_repository,
     device_image_repository,
     device_manufacturer_repository,
@@ -36,6 +36,7 @@ from app.repository import (
     gas_cylinder_repository,
     gas_cylinder_type_repository,
     gas_device_repository,
+    gateway_configuration_repository,
     geofence_violation_tracker_repository,
     immobilizer_report_repository,
     incident_repository,
@@ -75,7 +76,6 @@ from app.repository import (
     vehicle_make_repository,
     vehicle_model_repository,
     vehicle_owner_repository,
-    gateway_configuration_repository,
 )
 from app.service import (
     alert_maintenance_type_service,
@@ -89,8 +89,8 @@ from app.service import (
     building_service,
     business_profile_service,
     contact_sale_service,
-    device_configuration_service,
     default_device_gateway_configuration_service,
+    device_configuration_service,
     device_events_service,
     device_image_service,
     device_manufacturer_service,
@@ -106,6 +106,7 @@ from app.service import (
     gas_cylinder_service,
     gas_cylinder_type_service,
     gas_device_service,
+    gateway_configuration_service,
     geofence_violation_tracker_service,
     immobilizer_report_service,
     incident_service,
@@ -142,7 +143,6 @@ from app.service import (
     vehicle_make_service,
     vehicle_model_service,
     vehicle_owner_service,
-    gateway_configuration_service
 )
 
 
@@ -486,7 +486,7 @@ class Container(containers.DeclarativeContainer):
     )
 
     default_device_gateway_configuration_repository = providers.Factory(
-       default_device_gateway_configuration_repository.DefaultDeviceGatewayConfigurationRepository,
+        default_device_gateway_configuration_repository.DefaultDeviceGatewayConfigurationRepository,
         session_factory=db.provided.session,
     )
 
@@ -811,24 +811,20 @@ class Container(containers.DeclarativeContainer):
     peripheral_device_service = providers.Factory(
         peripheral_device_service.PeripheralDeviceService,
         peripheral_device_repository=peripheral_devices_repository,
-        user_repository = user_repository
+        user_repository=user_repository,
     )
 
     device_configuration_service = providers.Factory(
         device_configuration_service.DeviceConfigurationService,
         device_configuration_repository=device_configuration_repository,
     )
-    
+
     gateway_configuration_service = providers.Factory(
         gateway_configuration_service.GateWayConfigurationService,
-        gateway_configuration_repository = gateway_configuration_repository
+        gateway_configuration_repository=gateway_configuration_repository,
     )
 
     default_device_gateway_configuration_service = providers.Factory(
         default_device_gateway_configuration_service.DefaultDeviceGatewayConfigurationService,
-        default_device_gateway_configuration_repository=default_device_gateway_configuration_repository
+        default_device_gateway_configuration_repository=default_device_gateway_configuration_repository,
     )
-
-
-
-
