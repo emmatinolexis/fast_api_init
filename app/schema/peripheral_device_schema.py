@@ -49,13 +49,13 @@ class CreateGatewayDeviceConfiguration(BaseModel):
 
 class UpdatePeripheralDevice(BaseModel):
     location :str
-    building_uuid :str
     serial_number :str
 
 
 class UpdatePeripheralDeviceFull(UpdatePeripheralDevice):
     user_uuid : Optional[str] = None
     business_profile_uuid : Optional[str] = None
+    building_uuid : str
 
     
 
