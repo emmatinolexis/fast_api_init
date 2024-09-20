@@ -70,3 +70,14 @@ class CreateNodeConfiguration(BaseModel):
     critical_ambient_temperature_acceleration: float
     critical_humidity_acceleration: float
     critical_air_quality_acceleration: float
+
+
+class UpdatePeripheralDevice(BaseModel):
+    location: str
+    serial_number: str
+
+
+class UpdatePeripheralDeviceFull(UpdatePeripheralDevice):
+    user_uuid: Optional[str] = None
+    business_profile_uuid: Optional[str] = None
+    building_uuid: str

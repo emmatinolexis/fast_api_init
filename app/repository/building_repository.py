@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.model.buildings import Building
 from app.model.gas_cylinders import GasCylinder
+from app.model.peripheral_devices import PeripheralDevice
 from app.repository.base_repository import BaseRepository
 from app.util.enums import ActiveStatus, BuildingStatus
 from app.util.utils import calculate_gas_level_percentage
@@ -120,6 +121,9 @@ class BuildingRepository(BaseRepository):
             joinedload(self.model.gas_cylinders).joinedload(GasCylinder.gas_events),
             joinedload(self.model.gas_cylinders).joinedload(GasCylinder.gas_device),
             joinedload(self.model.gas_cylinders).joinedload(GasCylinder.cylinder_type),
+            joinedload(self.model.peripheral_devices).joinedload(
+                PeripheralDevice.building
+            ),
         )
 
     def _build_building_assets(self, assets):
