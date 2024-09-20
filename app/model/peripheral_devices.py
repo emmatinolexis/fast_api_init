@@ -1,23 +1,25 @@
-import uuid
+import uuid as systemuuid
 
 from sqlalchemy import Column, Enum, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.model.base_model import BaseModel
-from app.util.enums import DeviceStatus, DeviceType
+from app.util.enums import DeviceStatus, PeripheralDeviceType
 
 
-class PeripheralDevices(BaseModel):
+class PeripheralDevice(BaseModel):
     __tablename__ = "peripheral_devices"
     uuid = Column(
         UUID(as_uuid=True),
         primary_key=True,
-        default=uuid.uuid4,
+        default=systemuuid.uuid4,
         unique=True,
         nullable=False,
     )
-    serial_number = Column(String(length=50), nullable=False, unique=True, index=True)
-    node_id = Column(String(length=50), nullable=False, unique=True, index=True)
+    serial_number = Column(String(length=150), nullable=False, unique=True, index=True)
+    node_id = Column(
+        UUID(as_uuid=True), default=systemuuid.uuid4, unique=True, nullable=False
+    )
     status = Column(
         Enum(DeviceStatus),
         nullable=False,
@@ -35,5 +37,4 @@ class PeripheralDevices(BaseModel):
         UUID(as_uuid=True), ForeignKey("buildings.uuid"), nullable=True, index=True
     )
     location = Column(String(length=50), nullable=True, index=True)
-    device_type = Column(Enum(DeviceType), nullable=False, index=True)
-    configuration_version = Column(String(length=50), nullable=False, index=True)
+    device_type = Column(Enum(PeripheralDeviceType), nullable=False, index=True)

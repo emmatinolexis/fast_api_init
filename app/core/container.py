@@ -18,6 +18,7 @@ from app.repository import (
     building_repository,
     business_profile_repository,
     contact_sale_repository,
+    device_configuration_repository,
     device_events_repository,
     device_image_repository,
     device_manufacturer_repository,
@@ -86,6 +87,7 @@ from app.service import (
     building_service,
     business_profile_service,
     contact_sale_service,
+    device_configuration_service,
     device_events_service,
     device_image_service,
     device_manufacturer_service,
@@ -181,6 +183,7 @@ class Container(containers.DeclarativeContainer):
             "app.api.v1.endpoints.fuel_log",
             "app.api.v1.endpoints.fire_device",
             "app.api.v1.endpoints.incident",
+            "app.api.v1.endpoints.peripheral_device",
         ]
     )
 
@@ -473,6 +476,11 @@ class Container(containers.DeclarativeContainer):
         session_factory=db.provided.session,
     )
 
+    device_configuration_repository = providers.Factory(
+        device_configuration_repository.DeviceConfigurationRepository,
+        session_factory=db.provided.session,
+    )
+
     # Services
     auth_service = providers.Factory(
         auth_service.AuthService,
@@ -659,6 +667,8 @@ class Container(containers.DeclarativeContainer):
     external_app_service = providers.Factory(
         external_app_service.ExternalAppService,
         external_app_repository=external_app_repository,
+        peripheral_devices_repository=peripheral_devices_repository,
+        device_configuration_repository=device_configuration_repository,
     )
     immobilizer_report_service = providers.Factory(
         immobilizer_report_service.ImmobilizerReportService,
@@ -787,4 +797,9 @@ class Container(containers.DeclarativeContainer):
     peripheral_device_service = providers.Factory(
         peripheral_device_service.PeripheralDeviceService,
         peripheral_device_repository=peripheral_devices_repository,
+    )
+
+    device_configuration_service = providers.Factory(
+        device_configuration_service.DeviceConfigurationService,
+        device_configuration_repository=device_configuration_repository,
     )
