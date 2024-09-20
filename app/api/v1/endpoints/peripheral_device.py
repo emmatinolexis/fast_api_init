@@ -36,12 +36,13 @@ msg_prefix = "peripheral_devices"
 @inject
 async def get_all_peripheral_devices_handler(
     page: int = Query(1, ge=1, description="Page number, default is set to 1"),
-    page_size: int = Query(
-        10, ge=1, le=1000, description="Items per page, default is 10"
-    ),
+    page_size: int = Query(10, ge=1, le=1000, description="Items per page, default is 10"),
     device_type: Optional[DeviceType] = Query(
         None,
         description="Filter by device type. Possible values: PYROGUARD_NODE_DEVICE, GATEWAY_DEVICE, GAS_DEVICE",
+    ),
+    search: Optional[str] = Query(
+        None, description="Search term to filter by serial_number or device_type"
     ),
     service: PeripheralDeviceService = Depends(
         Provide[Container.peripheral_device_service]
@@ -50,7 +51,7 @@ async def get_all_peripheral_devices_handler(
 ):
     try:
         devices = service.get_list(
-            page=page, page_size=page_size, device_type=device_type
+            page=page, page_size=page_size, device_type=device_type, search=search
         )
         return send_data(devices)
     except Exception as e:
