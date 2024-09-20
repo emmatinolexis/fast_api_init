@@ -40,7 +40,10 @@ def create_access_token(
         payload, settings.SECRET_KEY, algorithm=settings.AUTH_ALGORITHM
     )
     expiration_datetime = expire.strftime(settings.DATETIME_FORMAT)
-    return encoded_jwt, expiration_datetime, configuration
+    if configuration:
+        return encoded_jwt, expiration_datetime, configuration
+    else:
+        return encoded_jwt, expiration_datetime
 
 
 def generate_access_token(email: str, role: str) -> (str, str):
