@@ -4,6 +4,8 @@ from pydantic import BaseModel, validator
 
 from app.util.enums import PeripheralDeviceType
 
+from pydantic import BaseModel
+from datetime import datetime
 
 class CreatePeripheralDevice(BaseModel):
     device_type: PeripheralDeviceType

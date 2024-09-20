@@ -1,26 +1,29 @@
+from typing import Optional
+
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
 
 from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
+from app.core.exceptions import BadRequestError
 from app.model.user import User
 from app.schema.peripheral_device_schema import (
     CreateGatewayDeviceConfiguration,
     CreatePeripheralDevice,
-    UpdatePeripheralDevice
+    UpdatePeripheralDevice,
 )
 from app.service.device_configuration_service import DeviceConfigurationService
 from app.service.peripheral_device_service import PeripheralDeviceService
+from app.util.enums import DeviceType
 from app.util.utils import (
+    send_client_side_error,
     send_data,
+    send_data_with_info,
     send_info,
     send_internal_server_error,
-    send_client_side_error,
-    send_data_with_info
 )
-from app.core.exceptions import BadRequestError
 
 router = APIRouter(
     prefix="/peripheral_devices",
@@ -32,13 +35,24 @@ msg_prefix = "peripheral_devices"
 @router.get("/", response_class=ORJSONResponse)
 @inject
 async def get_all_peripheral_devices_handler(
+    page: int = Query(1, ge=1, description="Page number, default is set to 1"),
+    page_size: int = Query(
+        10, ge=1, le=1000, description="Items per page, default is 10"
+    ),
+    device_type: Optional[DeviceType] = Query(
+        None,
+        description="Filter by device type. Possible values: PYROGUARD_NODE_DEVICE, GATEWAY_DEVICE, GAS_DEVICE",
+    ),
     service: PeripheralDeviceService = Depends(
         Provide[Container.peripheral_device_service]
     ),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.get_list())
+        devices = service.get_list(
+            page=page, page_size=page_size, device_type=device_type
+        )
+        return send_data(devices)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -91,28 +105,23 @@ async def get_all_device_configurations_handler(
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
-    
 
 
-@router.patch("/{building_uuid}",response_class=ORJSONResponse)
+@router.patch("/{building_uuid}", response_class=ORJSONResponse)
 @inject
 async def update_peripheral_device_handler(
-    payload : UpdatePeripheralDevice,
+    payload: UpdatePeripheralDevice,
     service: PeripheralDeviceService = Depends(
         Provide[Container.peripheral_device_service]
     ),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        response = service.update_peripheral_device(current_user.uuid,payload)
-        return send_info(
-            response
-        )
-        
+        response = service.update_peripheral_device(current_user.uuid, payload)
+        return send_info(response)
+
     except BadRequestError as e:
-        return send_client_side_error(
-            user_msg=e.detail
-        )
+        return send_client_side_error(user_msg=e.detail)
     except Exception as e:
         msg = messages.UPDATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
