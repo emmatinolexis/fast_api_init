@@ -78,7 +78,7 @@ class PeripheralDeviceService(BaseService):
         
 
     def update_peripheral_device(
-        self, user_uuid, payload: UpdatePeripheralDevice
+        self, user_uuid, payload: UpdatePeripheralDevice,building_uuid:str
 ):
         try:
             user = self.user_repository.get_user_by_uuid(user_uuid=user_uuid)
@@ -98,8 +98,8 @@ class PeripheralDeviceService(BaseService):
                 user_uuid=str(user_uuid),
                 business_profile_uuid=str(user.get("business_profile").uuid) if user.get("business_profile") else None,
                 location=payload.location,
-                building_uuid=payload.building_uuid,
-                serial_number=payload.serial_number
+                serial_number=payload.serial_number,
+                building_uuid=building_uuid
             )
 
 

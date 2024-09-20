@@ -110,6 +110,7 @@ async def get_all_device_configurations_handler(
 @router.patch("/{building_uuid}", response_class=ORJSONResponse)
 @inject
 async def update_peripheral_device_handler(
+    building_uuid :str,
     payload: UpdatePeripheralDevice,
     service: PeripheralDeviceService = Depends(
         Provide[Container.peripheral_device_service]
@@ -117,7 +118,7 @@ async def update_peripheral_device_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        response = service.update_peripheral_device(current_user.uuid, payload)
+        response = service.update_peripheral_device(current_user.uuid, payload,building_uuid)
         return send_info(response)
 
     except BadRequestError as e:
