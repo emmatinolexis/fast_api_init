@@ -27,7 +27,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 
 def create_access_token(
-    data: dict, expires_delta: Union[timedelta, None] = None
+    data: dict, expires_delta: Union[timedelta, None] = None, configuration: dict = None
 ) -> (str, str):
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
@@ -40,7 +40,7 @@ def create_access_token(
         payload, settings.SECRET_KEY, algorithm=settings.AUTH_ALGORITHM
     )
     expiration_datetime = expire.strftime(settings.DATETIME_FORMAT)
-    return encoded_jwt, expiration_datetime
+    return encoded_jwt, expiration_datetime, configuration
 
 
 def generate_access_token(email: str, role: str) -> (str, str):
@@ -51,15 +51,13 @@ def generate_access_token(email: str, role: str) -> (str, str):
 
 
 def generate_access_token_for_third_party_app(
-    secret_key: str,
-    expiry: int,
-    role: str,
-    serial_number: str = None,
-    requires_conf: bool = None,
+    secret_key: str, expiry: int, role: str, configuration: dict = None
 ) -> (str, str):
     access_token_expires = timedelta(minutes=expiry)
     return create_access_token(
-        data={"sub": secret_key, "role": role}, expires_delta=access_token_expires
+        data={"sub": secret_key, "role": role},
+        expires_delta=access_token_expires,
+        configuration=configuration,
     )
 
 

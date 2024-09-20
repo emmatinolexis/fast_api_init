@@ -1,0 +1,44 @@
+from typing import Optional
+
+from pydantic import BaseModel, validator
+
+from app.util.enums import PeripheralDeviceType
+
+
+class CreatePeripheralDevice(BaseModel):
+    device_type: PeripheralDeviceType
+    no_of_devices: int
+
+    @validator("no_of_devices")
+    def check_no_of_devices(cls, value):
+        if value <= 0:
+            raise ValueError("The number of devices must be greater than 0")
+        return value
+
+
+class CreatePeripheralDeviceInput(BaseModel):
+    device_type: PeripheralDeviceType
+    serial_number: str
+
+
+class CreateGatewayDeviceConfigurationInput(BaseModel):
+    device_type: PeripheralDeviceType
+    configuration: dict
+
+
+class CreateGatewayDeviceConfiguration(BaseModel):
+    upload_interval: int
+    version: str
+    host_name: str
+    api_url: str
+    token_url: str
+    data_url: str
+    alert_url: str
+    configuration_url: str
+    ssl_url: str
+    wifi_ssid: Optional[str] = None
+    wifi_password: Optional[str] = None
+    wifi_static_ip: Optional[str] = None
+    wifi_gateway: Optional[str] = None
+    wifi_subnet: Optional[str] = None
+    hide_wifi: Optional[bool] = None

@@ -24,6 +24,7 @@ from app.util.enums import (
     CertificateIndex,
     CertificateKey,
     FileFormat,
+    PeripheralDeviceType,
     ServiceStatus,
     SmartReportStatus,
     SmartReportUser,
@@ -1096,3 +1097,39 @@ def extract_certificate_info(cert_data):
     ]
 
     return certificate_info
+
+
+def generate_serial_numbers(
+    last_serial: str, device_type: PeripheralDeviceType, number: int
+) -> list:
+    # Determine the prefix based on device type
+    if device_type == PeripheralDeviceType.PYROGUARD_NODE_DEVICE:
+        prefix = "PN"
+    elif device_type == PeripheralDeviceType.GATEWAY_DEVICE:
+        prefix = "GTW"
+    elif device_type == PeripheralDeviceType.GAS_NODE_DEVICE:
+        prefix = "GN"
+    else:
+        raise ValueError("Unknown device type")
+
+    # Extract the numeric part of the last serial number
+    numeric_part = last_serial[len(prefix):]
+
+    # Convert the numeric part to an integer
+    current_number = int(numeric_part)
+
+    # List to store the generated serial numbers
+    serial_numbers = []
+
+    # Generate the required number of serial numbers
+    for _ in range(number):
+        # Increment the number
+        current_number += 1
+
+        # Format the new serial number without hyphens (e.g., PN0000000002)
+        new_serial = f"{prefix}{current_number:09d}"
+
+        # Add the generated serial number to the list
+        serial_numbers.append(new_serial)
+
+    return serial_numbers

@@ -36,6 +36,7 @@ from app.api.v1.endpoints.organisation_contact import (
 from app.api.v1.endpoints.package import router as package_router
 from app.api.v1.endpoints.package_item import router as package_item_router
 from app.api.v1.endpoints.payment import router as payment_router
+from app.api.v1.endpoints.peripheral_device import router as peripheral_device_router
 from app.api.v1.endpoints.permission import router as permission_router
 from app.api.v1.endpoints.report import router as report_router
 from app.api.v1.endpoints.subscription import router as subscription_router
@@ -90,7 +91,9 @@ router_list = [
     fuel_log_router,
     fire_device_router,
     incident_router,
+    peripheral_device_router,
     gateway_configuration_router,
+
 ]
 
 for router in router_list:

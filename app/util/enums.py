@@ -16,8 +16,15 @@ class AccountType(str, Enum):
 class DeviceType(str, Enum):
     TRACKING_DEVICE = "tracking_device"
     DASHCAM = "dashcam"
-    FIRE_DETECTOR = "fire_detector"
-    GAS_DEVICE = "gas_device"
+    PYROGUARD_NODE_DEVICE = "pyroguard_node_device"
+    GATEWAY_DEVICE = "gateway_device"
+    GAS_NODE_DEVICE = "gas_node_device"
+
+
+class PeripheralDeviceType(str, Enum):
+    PYROGUARD_NODE_DEVICE = "pyroguard_node_device"
+    GATEWAY_DEVICE = "gateway_device"
+    GAS_NODE_DEVICE = "gas_node_device"
 
 
 class FreePlan(str, Enum):
