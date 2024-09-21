@@ -2,3 +2,4 @@
 
 
 ![MVI ARCHITECTURE DIAGRAM](https://t9015333695.p.clickup-attachments.com/t9015333695/1799e75a-2463-4e9f-af4c-064feaab7fe3/MVI.png)
+

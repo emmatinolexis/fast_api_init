@@ -15,6 +15,7 @@ from app.schema.tracking_device_schema import (
     DeviceConfigurationPayload,
     DeviceReportPayload,
     SSLCertificateRequest,
+    DeviceReportPayloadInput
 )
 from app.service.asset_service import AssetService
 from app.service.device_events_service import DeviceEventService
@@ -139,18 +140,43 @@ async def get_over_speeding_stats_handler(
 @router.post("/device_event", response_class=ORJSONResponse)
 @inject
 async def create_device_events(
-    device_event_payload: DeviceReportPayload,
-    service: DeviceEventService = Depends(Provide[Container.device_events_service]),
-    current_user: User = Depends(get_current_app_service),
+        device_event_payload: DeviceReportPayload,
+        service: DeviceEventService = Depends(Provide[Container.device_events_service]),
 ):
     try:
-        service.add(device_event_payload)
+        # Iterate over all measurements in the dataset and extract the fields
+        measurements = [
+            {
+                "quantity": measurement.q,
+                "value": measurement.v,
+                "type": measurement.t,
+                "unit": measurement.u,
+            }
+            for measurement in device_event_payload.dataset
+        ]
+
+        # Creating the data object with the full measurements list
+        data = DeviceReportPayloadInput(
+            node_id=device_event_payload.node_id,
+            gateway_id=device_event_payload.gtwy,
+            alert_type=device_event_payload.alert_type,
+            device_type=device_event_payload.dev_type,
+            requires_attention=device_event_payload.has_alert,
+            alert_description=device_event_payload.alert_desc,
+            measurements=measurements,
+            event_datetime=device_event_payload.event_datetime
+        )
+
+        # Calling the service to add the data
+        service.add(data)
+
         msg = "device event saved"
         logging.info(msg)
         return send_info(msg)
+
     except Exception as e:
-        msg = f"{messages.GET_FAILED} {msg_prefix}s"
-        logging.info(msg)
+        msg = f"Failed to process device event"
+        logging.error(msg)
         return send_internal_server_error(user_msg=msg, error=e)
 
 
