@@ -23,7 +23,7 @@ class MeasurementPayloadInput(BaseModel):
 
 class DeviceReportPayload(BaseModel):
     node_id: str
-    gtwy: str
+    gtwy_id: str
     alert_type: str
     dev_type: str
     has_alert: bool = False
