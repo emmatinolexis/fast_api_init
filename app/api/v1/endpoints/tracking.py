@@ -165,7 +165,7 @@ async def create_device_events(
             requires_attention=device_event_payload.has_alert,
             alert_description=device_event_payload.alert_desc,
             measurements=measurements,
-            event_datetime=device_event_payload.event_datetime
+            event_datetime=device_event_payload.timestamp
         )
 
         # Calling the service to add the data

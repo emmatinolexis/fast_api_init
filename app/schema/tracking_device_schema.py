@@ -29,7 +29,7 @@ class DeviceReportPayload(BaseModel):
     has_alert: bool = False
     alert_desc: str
     dataset: List[MeasurementPayload]
-    event_datetime: str
+    timestamp: str
 
 
 class DeviceReportPayloadInput(BaseModel):
