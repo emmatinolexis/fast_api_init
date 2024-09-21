@@ -17,8 +17,8 @@ class DeviceEvent(Base):
         nullable=False,
     )
     node_id = Column(String(100), nullable=False, index=True)
-    node_description = Column(String(50), nullable=False, index=True)
-    master_id = Column(String(50), nullable=False, index=True)
+    node_description = Column(String(50), nullable=True, index=True)
+    gateway_id = Column(String(50), nullable=False, index=True)
     measurements = Column(JSON, nullable=False)
     event_datetime = Column(String(80), nullable=False)
     created_at = Column(DateTime(timezone=True), default=func.now())

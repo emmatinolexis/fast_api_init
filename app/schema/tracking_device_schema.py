@@ -8,6 +8,13 @@ class TrackingDeviceCreate(BaseModel):
 
 
 class MeasurementPayload(BaseModel):
+    q: str
+    v: str
+    t: str
+    u: str
+
+
+class MeasurementPayloadInput(BaseModel):
     quantity: str
     value: str
     type: str
@@ -16,13 +23,23 @@ class MeasurementPayload(BaseModel):
 
 class DeviceReportPayload(BaseModel):
     node_id: str
-    node_description: str
-    master_id: str
+    gtwy: str
+    alert_type: str
+    dev_type: str
+    has_alert: bool = False
+    alert_desc: str
+    dataset: List[MeasurementPayload]
+    event_datetime: str
+
+
+class DeviceReportPayloadInput(BaseModel):
+    node_id: str
+    gateway_id: str
     alert_type: str
     device_type: str
     requires_attention: bool = False
     alert_description: str
-    measurements: List[MeasurementPayload]
+    measurements: List[MeasurementPayloadInput]
     event_datetime: str
 
     # @root_validator(pre=True)
