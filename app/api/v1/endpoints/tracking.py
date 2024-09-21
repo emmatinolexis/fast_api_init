@@ -159,7 +159,7 @@ async def create_device_events(
         # Creating the data object with the full measurements list
         data = DeviceReportPayloadInput(
             node_id=device_event_payload.node_id,
-            gateway_id=device_event_payload.gtwy,
+            gateway_id=device_event_payload.gtwy_id,
             alert_type=device_event_payload.alert_type,
             device_type=device_event_payload.dev_type,
             requires_attention=device_event_payload.has_alert,
