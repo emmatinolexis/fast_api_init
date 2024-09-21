@@ -142,6 +142,7 @@ async def get_over_speeding_stats_handler(
 async def create_device_events(
         device_event_payload: DeviceReportPayload,
         service: DeviceEventService = Depends(Provide[Container.device_events_service]),
+        current_user: User = Depends(get_current_app_service),
 ):
     try:
         # Iterate over all measurements in the dataset and extract the fields
