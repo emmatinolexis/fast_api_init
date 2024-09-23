@@ -58,7 +58,7 @@ class BuildingService(BaseService):
             if payload.create_gas and payload.gas_cylinder:
                 cylinder_data = GasCylinderPayload(
                     cylinder_name=payload.gas_cylinder.cylinder_name,
-                    material_type=payload.gas_cylinder.material_type,
+                    # material_type=payload.gas_cylinder.material_type,
                     gas_device_serial_number=payload.gas_cylinder.device_serial_number,
                     cylinder_type_uuid=payload.gas_cylinder.cylinder_type_uuid,
                     building_uuid=building_uuid,
