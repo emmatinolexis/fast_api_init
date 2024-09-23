@@ -129,7 +129,7 @@ class GasCylinderInput(BaseModel):
 
 class GasCylinderPayload(BaseModel):
     cylinder_name: str
-    material_type: GasCylinderMaterialType
+    # material_type: GasCylinderMaterialType
     cylinder_type_uuid: UUID
     gas_device_serial_number: str
     user_uuid: UUID
