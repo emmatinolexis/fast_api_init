@@ -75,7 +75,7 @@ class BuildingService(BaseService):
                     user_uuid=building.user_uuid,
                     business_profile_uuid=building.business_profile_uuid,
                     location=payload.fire_device.location,
-                    device_type=DeviceType.FIRE_DETECTOR,
+                    device_type=DeviceType.PYROGUARD_NODE_DEVICE,
                 )
                 device = self.gas_device_repository.get_device_by_serial_no(
                     fire_device_data.serial_number
