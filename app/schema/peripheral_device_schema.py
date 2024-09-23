@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import BaseModel, validator
 
-from app.util.enums import PeripheralDeviceType
+from app.util.enums import DeviceConfigurationVersion, PeripheralDeviceType
 
 
 class CreatePeripheralDevice(BaseModel):
@@ -22,17 +22,18 @@ class CreatePeripheralDeviceInput(BaseModel):
 
 
 class CreateDeviceConfigurationInput(BaseModel):
-    device_type: PeripheralDeviceType
+    configuration_version: str
     configuration: dict
 
 
 class GetDeviceConfiguration(BaseModel):
     key: str
-    device_type: str
+    device_type: DeviceConfigurationVersion
     serial_number: str
 
 
 class CreateGatewayDeviceConfiguration(BaseModel):
+    configuration_version: DeviceConfigurationVersion
     upload_interval: int
     version: str
     host_name: str
@@ -50,14 +51,13 @@ class CreateGatewayDeviceConfiguration(BaseModel):
     hide_wifi: Optional[bool] = None
 
 
-class CreateNodeConfiguration(BaseModel):
-    description: str
-    microprocessor_unit: str
-    sensors: list
-    physical_quantity: list
-    update_interval: int
-    battery_cutoff: float
-    observation_time: float
+class CreateGasNodeConfiguration(BaseModel):
+    threshold_1: float
+    threshold_2: float
+    threshold_3: float
+
+
+class CreatePyroNodeConfiguration(BaseModel):
     target_temperature_threshold: float
     ambient_temperature_threshold: float
     humidity_threshold: float
@@ -70,6 +70,19 @@ class CreateNodeConfiguration(BaseModel):
     critical_ambient_temperature_acceleration: float
     critical_humidity_acceleration: float
     critical_air_quality_acceleration: float
+
+
+class CreateNodeConfiguration(BaseModel):
+    configuration_version: DeviceConfigurationVersion
+    description: str
+    microprocessor_unit: str
+    sensors: list
+    physical_quantity: list
+    update_interval: int
+    battery_cutoff: float
+    observation_time: float
+    gas_node_configuration: Optional[CreateGasNodeConfiguration] = None
+    pyro_node_configuration: Optional[CreatePyroNodeConfiguration] = None
 
 
 class UpdatePeripheralDevice(BaseModel):

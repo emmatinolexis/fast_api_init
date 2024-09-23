@@ -27,6 +27,12 @@ class PeripheralDeviceType(str, Enum):
     GAS_NODE_DEVICE = "gas_node_device"
 
 
+class DeviceConfigurationVersion(str, Enum):
+    SG_GGAURGEPRO_VI = "sg_ggaurgepro_v1"
+    SG_PYROGAURDE_V1 = ("sg_pyrogaurd_v1",)
+    SG_GATEWAY_VI = "sg_gateway_v1"
+
+
 class FreePlan(str, Enum):
     PLAN_NAME = "Free Plan"
     DESCRIPTION = "This is the free plan"

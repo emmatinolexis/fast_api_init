@@ -14,8 +14,8 @@ from app.model.user import User
 from app.schema.tracking_device_schema import (
     DeviceConfigurationPayload,
     DeviceReportPayload,
+    DeviceReportPayloadInput,
     SSLCertificateRequest,
-    DeviceReportPayloadInput
 )
 from app.service.asset_service import AssetService
 from app.service.device_events_service import DeviceEventService
@@ -140,9 +140,9 @@ async def get_over_speeding_stats_handler(
 @router.post("/device_event", response_class=ORJSONResponse)
 @inject
 async def create_device_events(
-        device_event_payload: DeviceReportPayload,
-        service: DeviceEventService = Depends(Provide[Container.device_events_service]),
-        current_user: User = Depends(get_current_app_service),
+    device_event_payload: DeviceReportPayload,
+    service: DeviceEventService = Depends(Provide[Container.device_events_service]),
+    current_user: User = Depends(get_current_app_service),
 ):
     try:
         # Iterate over all measurements in the dataset and extract the fields
@@ -165,7 +165,7 @@ async def create_device_events(
             requires_attention=device_event_payload.has_alert,
             alert_description=device_event_payload.alert_desc,
             measurements=measurements,
-            event_datetime=device_event_payload.timestamp
+            event_datetime=device_event_payload.timestamp,
         )
 
         # Calling the service to add the data
@@ -176,7 +176,7 @@ async def create_device_events(
         return send_info(msg)
 
     except Exception as e:
-        msg = f"Failed to process device event"
+        msg = "Failed to process device event"
         logging.error(msg)
         return send_internal_server_error(user_msg=msg, error=e)
 

@@ -181,5 +181,6 @@ class GasCylinderRepository(BaseRepository):
             return (
                 session.query(self.model)
                 .filter(self.model.gas_device_serial_number == serial_number)
+                .options(joinedload(self.model.cylinder_type))
                 .first()
             )

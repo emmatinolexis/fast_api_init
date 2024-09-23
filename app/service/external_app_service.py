@@ -7,7 +7,7 @@ from app.schema.external_app_schema import (
     ExternalAppPayload,
 )
 from app.service.base_service import BaseService
-from app.util.enums import PeripheralDeviceType, UserRole
+from app.util.enums import DeviceConfigurationVersion, UserRole
 from app.util.utils import days_to_minutes
 
 
@@ -46,7 +46,7 @@ class ExternalAppService(BaseService):
             if payload.requires_conf:
                 device_configuration = (
                     self.device_configuration_repository.get_configuration_by_type(
-                        PeripheralDeviceType.GATEWAY_DEVICE
+                        DeviceConfigurationVersion.SG_GATEWAY_VI
                     )
                 )
                 gateway_device = (
