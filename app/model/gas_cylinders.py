@@ -35,7 +35,7 @@ class GasCylinder(BaseModel):
     )
     gas_device_serial_number = Column(
         String(length=50),
-        ForeignKey("gas_devices.serial_number"),
+        ForeignKey("peripheral_devices.serial_number"),
         nullable=True,
         index=True,
     )
@@ -62,8 +62,8 @@ class GasCylinder(BaseModel):
         # back_populates="gas_cylinder",
     )
     gas_device = relationship(
-        "GasDevice",
-        primaryjoin="GasCylinder.gas_device_serial_number == foreign(GasDevice.serial_number)",
+        "PeripheralDevice",
+        primaryjoin="GasCylinder.gas_device_serial_number == foreign(PeripheralDevice.serial_number)",
         # back_populates="cylinders",
         uselist=False,
         cascade="none",
