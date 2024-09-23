@@ -5,7 +5,7 @@ from app.schema.peripheral_device_schema import (
     CreateNodeConfiguration,
 )
 from app.service.base_service import BaseService
-from app.util.enums import PeripheralDeviceType
+from app.util.enums import DeviceConfigurationVersion
 
 
 class DeviceConfigurationService(BaseService):
@@ -16,7 +16,7 @@ class DeviceConfigurationService(BaseService):
     def create_gateway_configuration(self, payload: CreateGatewayDeviceConfiguration):
         try:
             data = CreateDeviceConfigurationInput(
-                device_type=PeripheralDeviceType.GATEWAY_DEVICE,
+                configuration_version=payload.configuration_version,
                 configuration={
                     "upload_interval": payload.upload_interval,
                     "version": payload.version,
@@ -36,7 +36,7 @@ class DeviceConfigurationService(BaseService):
                 },
             )
             conf = self.device_configuration_repository.get_configuration_by_type(
-                PeripheralDeviceType.GATEWAY_DEVICE
+                payload.configuration_version
             )
             if conf is None:
                 return self.device_configuration_repository.create(data)
@@ -46,33 +46,81 @@ class DeviceConfigurationService(BaseService):
 
     def create_node_configuration(self, payload: CreateNodeConfiguration):
         try:
-            data = CreateDeviceConfigurationInput(
-                device_type=PeripheralDeviceType.PYROGUARD_NODE_DEVICE,
-                configuration={
-                    "description": payload.description,
-                    "microprocessor_unit": payload.microprocessor_unit,
-                    "sensors": payload.sensors,
-                    "physical_quantity": payload.physical_quantity,
-                    "update_interval": payload.update_interval,
-                    "battery_cutoff": payload.battery_cutoff,
-                    "observation_time": payload.observation_time,
-                    "target_temperature_threshold": payload.target_temperature_threshold,
-                    "ambient_temperature_threshold": payload.ambient_temperature_threshold,
-                    "humidity_threshold": payload.humidity_threshold,
-                    "air_quality_threshold": payload.air_quality_threshold,
-                    "critical_mxl_velocity": payload.critical_mxl_velocity,
-                    "critical_ambient_temperature": payload.critical_ambient_temperature,
-                    "critical_humidity_velocity": payload.critical_humidity_velocity,
-                    "critical_air_quality_velocity": payload.critical_air_quality_velocity,
-                    "critical_mxl_acceleration": payload.critical_mxl_acceleration,
-                    "critical_ambient_temperature_acceleration": payload.critical_ambient_temperature_acceleration,
-                    "critical_humidity_acceleration": payload.critical_humidity_acceleration,
-                    "critical_air_quality_acceleration": payload.critical_air_quality_acceleration,
-                },
-            )
+            if (
+                payload.configuration_version
+                == DeviceConfigurationVersion.SG_PYROGAURDE_V1
+            ):
+                data = CreateDeviceConfigurationInput(
+                    configuration_version=payload.configuration_version,
+                    configuration={
+                        "description": payload.description,
+                        "microprocessor_unit": payload.microprocessor_unit,
+                        "sensors": payload.sensors,
+                        "physical_quantity": payload.physical_quantity,
+                        "update_interval": payload.update_interval,
+                        "battery_cutoff": payload.battery_cutoff,
+                        "observation_time": payload.observation_time,
+                        "target_temperature_threshold": payload.pyro_node_configuration.get(
+                            "target_temperature_threshold"
+                        ),
+                        "ambient_temperature_threshold": payload.pyro_node_configuration.get(
+                            "ambient_temperature_threshold"
+                        ),
+                        "humidity_threshold": payload.pyro_node_configuration.get(
+                            "humidity_threshold"
+                        ),
+                        "air_quality_threshold": payload.pyro_node_configuration.get(
+                            "air_quality_threshold"
+                        ),
+                        "critical_mxl_velocity": payload.pyro_node_configuration.get(
+                            "critical_mxl_velocity"
+                        ),
+                        "critical_ambient_temperature": payload.pyro_node_configuration.get(
+                            "critical_ambient_temperature"
+                        ),
+                        "critical_humidity_velocity": payload.pyro_node_configuration.get(
+                            "critical_humidity_velocity"
+                        ),
+                        "critical_air_quality_velocity": payload.pyro_node_configuration.get(
+                            "critical_air_quality_velocity"
+                        ),
+                        "critical_mxl_acceleration": payload.pyro_node_configuration.get(
+                            "critical_mxl_acceleration"
+                        ),
+                        "critical_ambient_temperature_acceleration": payload.pyro_node_configuration.get(
+                            "critical_ambient_temperature_acceleration"
+                        ),
+                        "critical_humidity_acceleration": payload.pyro_node_configuration.get(
+                            "critical_humidity_acceleration"
+                        ),
+                        "critical_air_quality_acceleration": payload.pyro_node_configuration.get(
+                            "critical_air_quality_acceleration"
+                        ),
+                    },
+                )
+
+            if (
+                payload.configuration_version
+                == DeviceConfigurationVersion.SG_GGAURGEPRO_VI
+            ):
+                data = CreateDeviceConfigurationInput(
+                    configuration_version=payload.configuration_version,
+                    configuration={
+                        "description": payload.description,
+                        "microprocessor_unit": payload.microprocessor_unit,
+                        "sensors": payload.sensors,
+                        "physical_quantity": payload.physical_quantity,
+                        "update_interval": payload.update_interval,
+                        "battery_cutoff": payload.battery_cutoff,
+                        "observation_time": payload.observation_time,
+                        "threshold_1": payload.gas_node_configuration.threshold_1,
+                        "threshold_2": payload.gas_node_configuration.threshold_2,
+                        "threshold_3": payload.gas_node_configuration.threshold_3,
+                    },
+                )
 
             conf = self.device_configuration_repository.get_configuration_by_type(
-                PeripheralDeviceType.PYROGUARD_NODE_DEVICE
+                payload.configuration_version
             )
             if conf is None:
                 return self.device_configuration_repository.create(data)
@@ -80,11 +128,13 @@ class DeviceConfigurationService(BaseService):
         except Exception as e:
             raise e
 
-    def get_device_configuration(self):
+    def get_device_configuration(
+        self, configuration_version: DeviceConfigurationVersion
+    ):
         try:
             configuration = (
                 self.device_configuration_repository.get_configuration_by_type(
-                    PeripheralDeviceType.PYROGUARD_NODE_DEVICE
+                    configuration_version
                 )
             )
             return configuration

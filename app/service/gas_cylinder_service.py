@@ -133,6 +133,14 @@ class GasCylinderService(BaseService):
         except Exception as e:
             raise e
 
+    def get_cylinder_by_device_serial(self, serial_number: str):
+        try:
+            return self.gas_cylinder_repository.get_cylinder_by_device_serial_number(
+                serial_number
+            )
+        except Exception as e:
+            raise e
+
     def delete_gas_cylinder(self, cylinder_uuid: str, user: User):
         try:
             user_uuid = user.uuid

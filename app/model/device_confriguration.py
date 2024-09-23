@@ -1,10 +1,9 @@
 import uuid
 
-from sqlalchemy import JSON, Column, Enum
+from sqlalchemy import JSON, Column, String
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.model.base_model import BaseModel
-from app.util.enums import PeripheralDeviceType
 
 
 class DeviceConfiguration(BaseModel):
@@ -16,5 +15,7 @@ class DeviceConfiguration(BaseModel):
         unique=True,
         nullable=False,
     )
-    device_type = Column(Enum(PeripheralDeviceType), nullable=False, index=True)
+    configuration_version = Column(
+        String(length=100), nullable=False, unique=True, index=True
+    )
     configuration = Column(JSON, nullable=True)

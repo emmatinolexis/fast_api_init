@@ -14,7 +14,6 @@ from app.util.enums import (
     AssetUsageType,
     DeviceType,
     DriverType,
-    GasCylinderMaterialType,
     ImmobilizerReason,
     ImmobilizerType,
     IncidentStatus,

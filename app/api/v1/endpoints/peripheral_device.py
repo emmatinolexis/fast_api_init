@@ -6,7 +6,7 @@ from fastapi.responses import ORJSONResponse
 
 from app.core import messages
 from app.core.container import Container
-from app.core.dependencies import get_current_user, get_current_app_service
+from app.core.dependencies import get_current_app_service, get_current_user
 from app.core.exceptions import BadRequestError
 from app.model.user import User
 from app.schema.peripheral_device_schema import (
@@ -17,8 +17,9 @@ from app.schema.peripheral_device_schema import (
     UpdatePeripheralDevice,
 )
 from app.service.device_configuration_service import DeviceConfigurationService
+from app.service.gas_cylinder_service import GasCylinderService
 from app.service.peripheral_device_service import PeripheralDeviceService
-from app.util.enums import AccountType, DeviceType
+from app.util.enums import AccountType, DeviceConfigurationVersion, DeviceType
 from app.util.utils import (
     send_client_side_error,
     send_data,
@@ -139,6 +140,9 @@ async def get_device_configurations_handler(
     service: DeviceConfigurationService = Depends(
         Provide[Container.device_configuration_service]
     ),
+    gas_cylinder_service: GasCylinderService = Depends(
+        Provide[Container.gas_cylinder_service]
+    ),
     current_user: User = Depends(get_current_app_service),
 ):
     try:
@@ -148,68 +152,115 @@ async def get_device_configurations_handler(
         if not peripheral_device:
             return send_client_side_error("Device not found")
 
-        configuration = service.get_device_configuration()
+        configuration = service.get_device_configuration(payload.device_type)
 
         if not configuration:
             return send_client_side_error("Configuration not found")
 
-        configuration_data = {
-            "key": "SG-PRYO-V1",
-            "value": {
-                "devconf": {
-                    "nodeid": peripheral_device.node_id,
-                    "desc": configuration.configuration.get("description"),
-                    "devloc": ""
-                    if not peripheral_device.location
-                    else peripheral_device.location,
-                    "mcu": configuration.configuration.get("microprocessor_unit"),
-                    "sensors": str(
-                        ", ".join(configuration.configuration.get("sensors"))
-                    ),
-                    "phyqnty": str(
-                        ", ".join(configuration.configuration.get("physical_quantity"))
-                    ),
+        if payload.device_type == DeviceConfigurationVersion.SG_PYROGAURDE_V1:
+            configuration_data = {
+                "key": "SG-PRYO-V1",
+                "value": {
+                    "devconf": {
+                        "nodeid": peripheral_device.node_id,
+                        "desc": configuration.configuration.get("description"),
+                        "devloc": ""
+                        if not peripheral_device.location
+                        else peripheral_device.location,
+                        "mcu": configuration.configuration.get("microprocessor_unit"),
+                        "sensors": str(
+                            ", ".join(configuration.configuration.get("sensors"))
+                        ),
+                        "phyqnty": str(
+                            ", ".join(
+                                configuration.configuration.get("physical_quantity")
+                            )
+                        ),
+                    },
+                    "opconf": {
+                        "upint": configuration.configuration.get("update_interval"),
+                        "batcutoff": configuration.configuration.get("battery_cutoff"),
+                        "obstime": configuration.configuration.get("observation_time"),
+                        "ttmphresh": configuration.configuration.get(
+                            "target_temperature_threshold"
+                        ),
+                        "atmpthresh": configuration.configuration.get(
+                            "ambient_temperature_threshold"
+                        ),
+                        "humthresh": configuration.configuration.get(
+                            "humidity_threshold"
+                        ),
+                        "airqthresh": configuration.configuration.get(
+                            "air_quality_threshold"
+                        ),
+                        "mlxvel": configuration.configuration.get(
+                            "critical_mxl_velocity"
+                        ),
+                        "atvel": configuration.configuration.get(
+                            "critical_ambient_temperature"
+                        ),
+                        "humvel": configuration.configuration.get(
+                            "critical_humidity_velocity"
+                        ),
+                        "mqvel": configuration.configuration.get(
+                            "critical_air_quality_velocity"
+                        ),
+                        "mlxaccel": configuration.configuration.get(
+                            "critical_mxl_acceleration"
+                        ),
+                        "atmpaccel": configuration.configuration.get(
+                            "critical_ambient_temperature_acceleration"
+                        ),
+                        "hunaccel": configuration.configuration.get(
+                            "critical_humidity_acceleration"
+                        ),
+                        "mqaccel": configuration.configuration.get(
+                            "critical_air_quality_acceleration"
+                        ),
+                    },
                 },
-                "opconf": {
-                    "upint": configuration.configuration.get("update_interval"),
-                    "batcutoff": configuration.configuration.get("battery_cutoff"),
-                    "obstime": configuration.configuration.get("observation_time"),
-                    "ttmphresh": configuration.configuration.get(
-                        "target_temperature_threshold"
-                    ),
-                    "atmpthresh": configuration.configuration.get(
-                        "ambient_temperature_threshold"
-                    ),
-                    "humthresh": configuration.configuration.get("humidity_threshold"),
-                    "airqthresh": configuration.configuration.get(
-                        "air_quality_threshold"
-                    ),
-                    "mlxvel": configuration.configuration.get("critical_mxl_velocity"),
-                    "atvel": configuration.configuration.get(
-                        "critical_ambient_temperature"
-                    ),
-                    "humvel": configuration.configuration.get(
-                        "critical_humidity_velocity"
-                    ),
-                    "mqvel": configuration.configuration.get(
-                        "critical_air_quality_velocity"
-                    ),
-                    "mlxaccel": configuration.configuration.get(
-                        "critical_mxl_acceleration"
-                    ),
-                    "atmpaccel": configuration.configuration.get(
-                        "critical_ambient_temperature_acceleration"
-                    ),
-                    "hunaccel": configuration.configuration.get(
-                        "critical_humidity_acceleration"
-                    ),
-                    "mqaccel": configuration.configuration.get(
-                        "critical_air_quality_acceleration"
-                    ),
+            }
+            return send_data(configuration_data)
+
+        if payload.device_type == DeviceConfigurationVersion.SG_GGAURGEPRO_VI:
+            gas_cylinder = gas_cylinder_service.get_cylinder_by_device_serial(
+                payload.serial_number
+            )
+
+            if not gas_cylinder:
+                return send_client_side_error(
+                    "Gas cylinder not found for this serial number"
+                )
+
+            configuration_data = {
+                "key": "NODECONF",
+                "value": {
+                    "devconf": {
+                        "nodeid": peripheral_device.node_id,
+                        "desc": configuration.configuration.get("description"),
+                        "full_weight": gas_cylinder.cylinder_type.full_weight,
+                        "empty_weight": gas_cylinder.cylinder_type.empty_weight,
+                        "devloc": ""
+                        if not peripheral_device.location
+                        else peripheral_device.location,
+                        "mcu": configuration.configuration.get("microprocessor_unit"),
+                        "sensors": str(
+                            ", ".join(configuration.configuration.get("sensors"))
+                        ),
+                        "phyqnty": str(
+                            ", ".join(
+                                configuration.configuration.get("physical_quantity")
+                            )
+                        ),
+                    },
+                    "opconf": {
+                        "upint": configuration.configuration.get("update_interval"),
+                        "batcutoff": configuration.configuration.get("battery_cutoff"),
+                        "obstime": configuration.configuration.get("observation_time"),
+                    },
                 },
-            },
-        }
-        return send_data(configuration_data)
+            }
+            return send_data(configuration_data)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
