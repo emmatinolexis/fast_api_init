@@ -122,7 +122,7 @@ class VehicleOwnerInput(BaseModel):
 
 class GasCylinderInput(BaseModel):
     cylinder_name: str
-    material_type: GasCylinderMaterialType
+    # material_type: GasCylinderMaterialType
     cylinder_type_uuid: UUID
     device_serial_number: str
 
