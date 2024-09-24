@@ -181,7 +181,7 @@ class BuildingRepository(BaseRepository):
         if gas_device:
             return {
                 "uuid": gas_device.uuid,
-                "device_name": gas_device.device_name,
+                "device_location": gas_device.location,
                 "serial_number": gas_device.serial_number,
                 "status": gas_device.status,
                 "created_at": gas_device.created_at,
