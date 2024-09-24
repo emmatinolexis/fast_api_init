@@ -5,11 +5,16 @@ from app.core.constants import (
     INITIAL_PYROGUARD_DEVICE_SERIAL_NUMBER,
 )
 from app.core.exceptions import BadRequestError
+from app.repository.device_node_configuration_repository import (
+    DeviceNodeConfigRepository,
+)
 from app.repository.peripheral_devices_repository import PeripheralDeviceRepository
 from app.repository.user_repository import UserRepository
 from app.schema.peripheral_device_schema import (
     CreatePeripheralDevice,
     CreatePeripheralDeviceInput,
+    DefaultGasConfig,
+    DefaultPyroConfig,
     UpdatePeripheralDevice,
     UpdatePeripheralDeviceFull,
 )
@@ -24,9 +29,11 @@ class PeripheralDeviceService(BaseService):
         self,
         peripheral_device_repository: PeripheralDeviceRepository,
         user_repository: UserRepository,
+        device_node_config_repository: DeviceNodeConfigRepository,
     ):
         self.peripheral_device_repository = peripheral_device_repository
         self.user_repository = user_repository
+        self.device_node_config_repository = device_node_config_repository
         super().__init__(peripheral_device_repository)
 
     def get_list(self, page=1, page_size=10, device_type=None, search=None):
@@ -55,30 +62,64 @@ class PeripheralDeviceService(BaseService):
                     data = CreatePeripheralDeviceInput(
                         serial_number=serial_number, device_type=device_type
                     )
-                    self.peripheral_device_repository.create(data)
+                    peripheral_device = self.peripheral_device_repository.create(data)
+
+                    # Create default configuration based on device type
+                    self.create_default_config(peripheral_device.uuid, device_type)
+
             else:
                 if device_type == DeviceType.PYROGUARD_NODE_DEVICE:
                     initial_data = CreatePeripheralDeviceInput(
                         serial_number=INITIAL_PYROGUARD_DEVICE_SERIAL_NUMBER,
                         device_type=device_type,
                     )
-                    self.peripheral_device_repository.create(initial_data)
+                    peripheral_device = self.peripheral_device_repository.create(
+                        initial_data
+                    )
+
+                    # Create default configuration
+                    self.create_default_config(peripheral_device.uuid, device_type)
 
                 if device_type == DeviceType.GAS_NODE_DEVICE:
                     initial_data = CreatePeripheralDeviceInput(
                         serial_number=INITIAL_GAS_DEVICE_SERIAL_NUMBER,
                         device_type=device_type,
                     )
-                    self.peripheral_device_repository.create(initial_data)
+                    peripheral_device = self.peripheral_device_repository.create(
+                        initial_data
+                    )
+
+                    # Create default configuration
+                    self.create_default_config(peripheral_device.uuid, device_type)
 
                 if device_type == DeviceType.GATEWAY_DEVICE:
                     initial_data = CreatePeripheralDeviceInput(
                         serial_number=INITIAL_GATEWAY_DEVICE_SERIAL_NUMBER,
                         device_type=device_type,
                     )
-                    self.peripheral_device_repository.create(initial_data)
+                    peripheral_device = self.peripheral_device_repository.create(
+                        initial_data
+                    )
+
+                    # Create default configuration
+                    self.create_default_config(peripheral_device.uuid, device_type)
         except Exception as e:
             raise e
+
+    def create_default_config(
+        self, peripheral_device_uuid: str, device_type: DeviceType
+    ):
+        if device_type == DeviceType.PYROGUARD_NODE_DEVICE:
+            pyro_config = DefaultPyroConfig(
+                peripheral_device_uuid=str(peripheral_device_uuid)
+            )
+            self.device_node_config_repository.create(pyro_config)
+
+        elif device_type == DeviceType.GAS_NODE_DEVICE:
+            gas_config = DefaultGasConfig(
+                peripheral_device_uuid=str(peripheral_device_uuid)
+            )
+            self.device_node_config_repository.create(gas_config)
 
     def get_devices_by_serial_number(self, serial_number: str):
         try:
@@ -132,7 +173,14 @@ class PeripheralDeviceService(BaseService):
                 user_uuid, device_type
             )
 
-            return [peripheral_device_transformer(device) for device in devices]
+            return [
+                peripheral_device_transformer(
+                    device,
+                    self.peripheral_device_repository,
+                    self.device_node_config_repository,
+                )
+                for device in devices
+            ]
         except Exception as e:
             raise e
 
@@ -144,7 +192,14 @@ class PeripheralDeviceService(BaseService):
                 business_profile_uuid, device_type
             )
 
-            return [peripheral_device_transformer(device) for device in devices]
+            return [
+                peripheral_device_transformer(
+                    device,
+                    self.peripheral_device_repository,
+                    self.device_node_config_repository,
+                )
+                for device in devices
+            ]
         except Exception as e:
             raise e
 
@@ -154,6 +209,13 @@ class PeripheralDeviceService(BaseService):
                 building_uuid, device_type=device_type
             )
 
-            return [peripheral_device_transformer(device) for device in devices]
+            return [
+                peripheral_device_transformer(
+                    device,
+                    self.peripheral_device_repository,
+                    self.device_node_config_repository,
+                )
+                for device in devices
+            ]
         except Exception as e:
             raise e
