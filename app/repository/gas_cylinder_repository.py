@@ -81,6 +81,7 @@ class GasCylinderRepository(BaseRepository):
             if gas_payload.gas_cylinder_uuid:
                 return self._link_existing_gas_cylinder(session, gas_payload)
             else:
+                self._unlink_existing_gas_cylinder(session, gas_payload)
                 return self._create_new_gas_cylinder(
                     session, gas_payload, user_uuid, business_uuid
                 )
@@ -107,6 +108,25 @@ class GasCylinderRepository(BaseRepository):
             session.commit()
             session.refresh(gas_to_link)
             return gas_to_link
+
+        raise ValueError(
+            f"Gas cylinder with UUID {gas_payload.gas_cylinder_uuid} not found"
+        )
+
+    def _unlink_existing_gas_cylinder(self, session, gas_payload):
+        gas_to_unlink = (
+            session.query(self.model)
+            .filter(self.model.gas_device_serial_number == gas_payload.gas_device_serial_number)
+            .first()
+        )
+
+        if gas_to_unlink:
+            gas_to_unlink.gas_device_serial_number = None
+            gas_to_unlink.status = ActiveStatus.INACTIVE
+            session.commit()
+            session.refresh(gas_to_unlink)
+
+            return gas_to_unlink
 
         raise ValueError(
             f"Gas cylinder with UUID {gas_payload.gas_cylinder_uuid} not found"
