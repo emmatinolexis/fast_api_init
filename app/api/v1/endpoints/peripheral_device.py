@@ -7,7 +7,7 @@ from fastapi.responses import ORJSONResponse
 from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_app_service, get_current_user
-from app.core.exceptions import BadRequestError
+from app.core.exceptions import BadRequestError,AuthError
 from app.model.user import User
 from app.schema.peripheral_device_schema import (
     CreateGatewayDeviceConfiguration,
@@ -355,6 +355,10 @@ async def update_device_threshold_handler(
         return send_data_with_info(
             data=data,
             info=messages.UPDATE_SUCCESS + "device threshold",
+        )
+    except AuthError as e:
+        return send_client_side_error(
+            user_msg=e.detail
         )
     except Exception as e:
         msg = messages.UPDATE_FAILED + msg_prefix
