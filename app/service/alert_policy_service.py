@@ -95,6 +95,12 @@ class AlertPolicyService(BaseService):
             )
         except Exception as e:
             raise e
+        
+    def get_all_alert_reminders(self, user_uuid: str):
+        try:
+            return self.alert_policy_repository.get_all_alert_reminders(user_uuid)
+        except Exception as e:
+            raise e
 
     def get_all_alert_violations_by_business(
         self, business_uuid: str, page=1, page_size=10
