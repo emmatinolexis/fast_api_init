@@ -113,3 +113,11 @@ class DefaultGasConfig(BaseModel):
     flammable_smoke_threshold: float = 0
     minimum_threshold: int = constants.GAS_DEVICE_MINIMUM_THRESHOLD
     peripheral_device_uuid: str
+
+
+class UpdateDeviceConfigThreshold(BaseModel):
+    ambient_temperature_threshold: Optional[int] = None
+    humidity_threshold: Optional[int] = None
+    target_temperature_threshold: Optional[int] = None
+    flammable_smoke_threshold: Optional[float] = None
+    minimum_threshold: Optional[int] = None
