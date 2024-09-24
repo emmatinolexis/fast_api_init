@@ -105,4 +105,4 @@ PERIPHERAL_DEVICE_NOT_FOUND = (
 )
 
 
-UNAUTHRORIZED_ACTION = "You are not authorized to perform this action"
+UNAUTHORIZED_ACTION = "You are not authorized to perform this action"
