@@ -257,6 +257,9 @@ async def get_device_configurations_handler(
                         "upint": configuration.configuration.get("update_interval"),
                         "batcutoff": configuration.configuration.get("battery_cutoff"),
                         "obstime": configuration.configuration.get("observation_time"),
+                        "threshold_1": configuration.configuration.get("threshold_1"),
+                        "threshold_2": configuration.configuration.get("threshold_2"),
+                        "threshold_3": configuration.configuration.get("threshold_3"),
                     },
                 },
             }
