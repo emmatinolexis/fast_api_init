@@ -23,16 +23,19 @@ from app.service.base_service import BaseService
 from app.transfomers.peripheral_device_transformer import peripheral_device_transformer
 from app.util.enums import DeviceType
 from app.util.utils import generate_serial_numbers
+from app.service.device_events_service import DeviceEventService
 
 
 class PeripheralDeviceService(BaseService):
     def __init__(
         self,
         peripheral_device_repository: PeripheralDeviceRepository,
+        device_events_service: DeviceEventService,
         user_repository: UserRepository,
         device_node_config_repository: DeviceNodeConfigRepository,
     ):
         self.peripheral_device_repository = peripheral_device_repository
+        self.device_events_service = device_events_service
         self.user_repository = user_repository
         self.device_node_config_repository = device_node_config_repository
         super().__init__(peripheral_device_repository)
@@ -186,18 +189,31 @@ class PeripheralDeviceService(BaseService):
         self, user_uuid, business_profile_uuid, device_type: str = None
     ):
         try:
+            dev_data = []
             devices = self.peripheral_device_repository.get_business_devices(
                 business_profile_uuid, device_type
             )
 
-            return [
-                peripheral_device_transformer(
-                    device,
-                    self.peripheral_device_repository,
-                    self.device_node_config_repository,
-                )
-                for device in devices
-            ]
+            for device in devices:
+
+                latest_event = self.device_events_service.get_devices_latest_reading(device.node_id)
+                data = {
+                    "uuid": str(device.uuid),
+                    "serial_number": device.serial_number,
+                    "node_id": str(device.node_id) if device.node_id else None,
+                    "status": device.status.name if device.status else None,
+                    "user_uuid": str(device.user_uuid) if device.user_uuid else None,
+                    "business_profile_uuid": str(device.business_profile_uuid)
+                    if device.business_profile_uuid
+                    else None,
+                    "building_uuid": str(device.building_uuid) if device.building_uuid else None,
+                    "location": device.location,
+                    "device_type": device.device_type.name if device.device_type else None,
+                    "current_device_reading": latest_event.measurements if latest_event else None
+                }
+                dev_data.append(data)
+            return dev_data
+
         except Exception as e:
             raise e
 
