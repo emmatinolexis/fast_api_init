@@ -76,6 +76,7 @@ from app.repository import (
     vehicle_make_repository,
     vehicle_model_repository,
     vehicle_owner_repository,
+    device_node_configuration_repository
 )
 from app.service import (
     alert_maintenance_type_service,
@@ -143,6 +144,7 @@ from app.service import (
     vehicle_make_service,
     vehicle_model_service,
     vehicle_owner_service,
+    device_node_configuration_service
 )
 
 
@@ -495,6 +497,13 @@ class Container(containers.DeclarativeContainer):
         session_factory=db.provided.session,
     )
 
+    device_node_configuration_repository = providers.Factory(
+        device_node_configuration_repository.DeviceNodeConfigRepository,
+        session_factory=db.provided.session,
+    )
+
+
+
     # Services
     auth_service = providers.Factory(
         auth_service.AuthService,
@@ -812,6 +821,7 @@ class Container(containers.DeclarativeContainer):
         peripheral_device_service.PeripheralDeviceService,
         peripheral_device_repository=peripheral_devices_repository,
         user_repository=user_repository,
+        device_node_config_repository = device_node_configuration_repository
     )
 
     device_configuration_service = providers.Factory(
@@ -828,3 +838,4 @@ class Container(containers.DeclarativeContainer):
         default_device_gateway_configuration_service.DefaultDeviceGatewayConfigurationService,
         default_device_gateway_configuration_repository=default_device_gateway_configuration_repository,
     )
+
