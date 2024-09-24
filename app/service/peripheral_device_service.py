@@ -189,7 +189,7 @@ class PeripheralDeviceService(BaseService):
         self, user_uuid, business_profile_uuid, device_type: str = None
     ):
         try:
-            device_data = []
+            dev_data = []
             devices = self.peripheral_device_repository.get_business_devices(
                 business_profile_uuid, device_type
             )
@@ -211,8 +211,9 @@ class PeripheralDeviceService(BaseService):
                     "device_type": device.device_type.name if device.device_type else None,
                     "current_device_reading": latest_event.measurements if latest_event else None
                 }
-                device_data.append(data)
-            return device_data
+                dev_data.append(data)
+            return dev_data
+
         except Exception as e:
             raise e
 
