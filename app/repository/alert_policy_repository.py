@@ -792,6 +792,7 @@ class AlertPolicyRepository(BaseRepository):
     def check_maintenance(self):
         with self.session_factory() as session:
             violations = []
+            asset_to_notify = []
 
             # Get all active maintenance policies
             maintenance_policies = self.get_active_maintenance_policies(session)

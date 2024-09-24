@@ -812,6 +812,7 @@ class Container(containers.DeclarativeContainer):
         peripheral_device_service.PeripheralDeviceService,
         peripheral_device_repository=peripheral_devices_repository,
         user_repository=user_repository,
+        device_events_service=device_events_service,
     )
 
     device_configuration_service = providers.Factory(
