@@ -1,6 +1,6 @@
 import uuid as systemuuid
 
-from sqlalchemy import Column, Enum, ForeignKey, String, Integer, Float
+from sqlalchemy import Column, Enum, Float, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -10,7 +10,7 @@ from app.util.enums import DeviceStatus, PeripheralDeviceType
 
 class PeripheralDevice(BaseModel):
     __tablename__ = "peripheral_devices"
-    
+
     uuid = Column(
         UUID(as_uuid=True),
         primary_key=True,
@@ -40,9 +40,9 @@ class PeripheralDevice(BaseModel):
     )
     location = Column(String(length=50), nullable=True, index=True)
     device_type = Column(Enum(PeripheralDeviceType), nullable=False, index=True)
-    
+
     building = relationship("Building", back_populates="peripheral_devices")
-    
+
     # One-to-one relationship with DeviceNodeConfig
     device_configuration = relationship(
         "DeviceNodeConfig", back_populates="peripheral_device", uselist=False
@@ -51,7 +51,7 @@ class PeripheralDevice(BaseModel):
 
 class DeviceNodeConfig(BaseModel):
     __tablename__ = "device_node_configs"
-    
+
     uuid = Column(
         UUID(as_uuid=True),
         primary_key=True,
@@ -70,7 +70,7 @@ class DeviceNodeConfig(BaseModel):
     target_temperature_threshold = Column(Integer, nullable=False, default=40)
     flammable_smoke_threshold = Column(Float, nullable=False, default=50)
     minimum_threshold = Column(Integer, nullable=False, default=50)
-    
+
     # Back-populates the relationship with PeripheralDevice
     peripheral_device = relationship(
         "PeripheralDevice", back_populates="device_configuration"

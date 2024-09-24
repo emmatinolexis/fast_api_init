@@ -23,6 +23,7 @@ from app.repository import (
     device_events_repository,
     device_image_repository,
     device_manufacturer_repository,
+    device_node_configuration_repository,
     device_repository,
     driver_repository,
     email_verification_repository,
@@ -76,7 +77,6 @@ from app.repository import (
     vehicle_make_repository,
     vehicle_model_repository,
     vehicle_owner_repository,
-    device_node_configuration_repository
 )
 from app.service import (
     alert_maintenance_type_service,
@@ -95,6 +95,7 @@ from app.service import (
     device_events_service,
     device_image_service,
     device_manufacturer_service,
+    device_node_configuration_service,
     device_service,
     driver_service,
     equipment_service,
@@ -144,7 +145,6 @@ from app.service import (
     vehicle_make_service,
     vehicle_model_service,
     vehicle_owner_service,
-    device_node_configuration_service
 )
 
 
@@ -502,8 +502,6 @@ class Container(containers.DeclarativeContainer):
         session_factory=db.provided.session,
     )
 
-
-
     # Services
     auth_service = providers.Factory(
         auth_service.AuthService,
@@ -821,7 +819,7 @@ class Container(containers.DeclarativeContainer):
         peripheral_device_service.PeripheralDeviceService,
         peripheral_device_repository=peripheral_devices_repository,
         user_repository=user_repository,
-        device_node_config_repository = device_node_configuration_repository
+        device_node_config_repository=device_node_configuration_repository,
     )
 
     device_configuration_service = providers.Factory(
@@ -838,4 +836,3 @@ class Container(containers.DeclarativeContainer):
         default_device_gateway_configuration_service.DefaultDeviceGatewayConfigurationService,
         default_device_gateway_configuration_repository=default_device_gateway_configuration_repository,
     )
-
