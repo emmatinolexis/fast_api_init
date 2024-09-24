@@ -7,13 +7,14 @@ from fastapi.responses import ORJSONResponse
 from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_app_service, get_current_user
-from app.core.exceptions import BadRequestError
+from app.core.exceptions import BadRequestError,AuthError
 from app.model.user import User
 from app.schema.peripheral_device_schema import (
     CreateGatewayDeviceConfiguration,
     CreateNodeConfiguration,
     CreatePeripheralDevice,
     GetDeviceConfiguration,
+    UpdateDeviceConfigThreshold,
     UpdatePeripheralDevice,
 )
 from app.service.device_configuration_service import DeviceConfigurationService
@@ -334,4 +335,31 @@ async def get_peripheral_devices_by_building_handler(
         return send_data_with_info(info=messages.GET_SUCCESS + "devices", data=devices)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.patch("/update-threshold/{device_serial_number}", response_class=ORJSONResponse)
+@inject
+async def update_device_threshold_handler(
+    device_serial_number: str,
+    payload: UpdateDeviceConfigThreshold,
+    service: PeripheralDeviceService = Depends(
+        Provide[Container.peripheral_device_service]
+    ),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        data = service.update_device_threshold(
+            device_serial_number, payload, current_user.uuid
+        )
+        return send_data_with_info(
+            data=data,
+            info=messages.UPDATE_SUCCESS + "device threshold",
+        )
+    except AuthError as e:
+        return send_client_side_error(
+            user_msg=e.detail
+        )
+    except Exception as e:
+        msg = messages.UPDATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)

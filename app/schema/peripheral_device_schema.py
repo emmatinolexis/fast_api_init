@@ -2,6 +2,7 @@ from typing import Optional
 
 from pydantic import BaseModel, validator
 
+from app.core import constants
 from app.util.enums import DeviceConfigurationVersion, PeripheralDeviceType
 
 
@@ -94,3 +95,29 @@ class UpdatePeripheralDeviceFull(UpdatePeripheralDevice):
     user_uuid: Optional[str] = None
     business_profile_uuid: Optional[str] = None
     building_uuid: str
+
+
+class DefaultPyroConfig(BaseModel):
+    ambient_temperature_threshold: int = constants.PYRO_AMBIENT_TEMPERATURE_THRESHOLD
+    humidity_threshold: int = constants.PYRO_HUMIDITY_THRESHOLD
+    target_temperature_threshold: int = constants.PYRO_TARGET_TEMPERATURE_THRESHOLD
+    flammable_smoke_threshold: float = constants.PYRO_FLAMMABLE_SMOKE_THRESHOLD
+    minimum_threshold: int = 0
+    peripheral_device_uuid: str
+
+
+class DefaultGasConfig(BaseModel):
+    ambient_temperature_threshold: int = 0
+    humidity_threshold: int = 0
+    target_temperature_threshold: int = 0
+    flammable_smoke_threshold: float = 0
+    minimum_threshold: int = constants.GAS_DEVICE_MINIMUM_THRESHOLD
+    peripheral_device_uuid: str
+
+
+class UpdateDeviceConfigThreshold(BaseModel):
+    ambient_temperature_threshold: Optional[int] = None
+    humidity_threshold: Optional[int] = None
+    target_temperature_threshold: Optional[int] = None
+    flammable_smoke_threshold: Optional[float] = None
+    minimum_threshold: Optional[int] = None

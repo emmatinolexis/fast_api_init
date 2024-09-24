@@ -435,3 +435,19 @@ async def toggle_maintenance_alert(
     except Exception as e:
         msg = messages.MAINTENANCE_UPDATED_FAILED
         return send_internal_server_error(user_msg=msg, error=e)
+
+@router.get('/get_alert_reminders/{user_uuid}', response_class=ORJSONResponse)
+@inject
+async def get_alert_reminders(
+    user_uuid: str,
+    service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        reminders = service.get_all_alert_reminders(user_uuid)
+        return send_data(reminders)
+    except Exception as e:
+        msg = messages.ALERT_REMINDERS_NOT_FOUND + user_uuid
+        return send_internal_server_error(user_msg=msg, error=e)
+
+

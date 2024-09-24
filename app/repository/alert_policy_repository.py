@@ -5,7 +5,7 @@ from typing import Callable
 
 from sqlalchemy import Date, and_, cast, desc, func
 from sqlalchemy.orm import Session, joinedload
-
+from datetime import timedelta
 from app.core import messages
 from app.core.exceptions import NotFoundError
 from app.model.alert_policy import AlertPolicy
@@ -911,3 +911,59 @@ class AlertPolicyRepository(BaseRepository):
                     )
 
             return processed_data
+        
+    def get_all_alert_reminders(self, user_uuid: str):
+        with self.session_factory() as session:
+            today = datetime.now().date()
+            upcoming_date = today + timedelta(days=3)
+
+            opened_reminders_data = session.query(AlertPolicy.policy_name, AlertPolicy.created_at).filter(
+                AlertPolicy.user_uuid == user_uuid,
+                AlertPolicy.service_status == ServiceStatus.NOT_SERVICED,
+                AlertPolicy.alert_policy_type_uuid == GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY
+            ).all()
+            
+            opened_reminders_list = [
+                {
+                    'policy_name': policy_name,
+                    'created_at': created_at.isoformat()
+                }
+                for policy_name, created_at in opened_reminders_data
+            ]
+            opened_reminders_count = len(opened_reminders_list)
+
+            maintenance_policies = session.query(AlertPolicy).filter(
+                AlertPolicy.user_uuid == user_uuid,
+                AlertPolicy.alert_policy_type_uuid == GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY
+                ).all()
+
+            overdue_reminders = []
+            upcoming_reminders = []
+
+            for policy in maintenance_policies:
+                due_date = policy.created_at.date() + timedelta(days=int(policy.maintenance_alert_schedule))
+
+                reminder_info = {
+                    'policy_name': policy.policy_name,
+                    'created_at': policy.created_at.isoformat()  
+                }
+
+                if due_date < today:
+                    overdue_reminders.append(reminder_info)
+                elif today <= due_date <= upcoming_date:
+                    upcoming_reminders.append(reminder_info)
+
+            overdue_reminders_count = len(overdue_reminders)
+            upcoming_reminders_count = len(upcoming_reminders)
+
+            reminders = {
+                "opened_reminders_count": opened_reminders_count,
+                "overdue_reminders_count": overdue_reminders_count,
+                "upcoming_reminders_count": upcoming_reminders_count,
+                "opened_reminders": opened_reminders_list,
+                "overdue_reminders": overdue_reminders,
+                "upcoming_reminders": upcoming_reminders
+            }
+        
+        return reminders
+    
