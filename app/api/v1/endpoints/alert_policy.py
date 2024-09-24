@@ -447,7 +447,7 @@ async def get_alert_reminders(
         reminders = service.get_all_alert_reminders(user_uuid)
         return send_data(reminders)
     except Exception as e:
-        msg = messages.ALERT_REMINDERS_NOT_FOUND
+        msg = messages.ALERT_REMINDERS_NOT_FOUND + user_uuid
         return send_internal_server_error(user_msg=msg, error=e)
 
 
