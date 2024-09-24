@@ -4,7 +4,7 @@ from app.core.constants import (
     INITIAL_GATEWAY_DEVICE_SERIAL_NUMBER,
     INITIAL_PYROGUARD_DEVICE_SERIAL_NUMBER,
 )
-from app.core.exceptions import BadRequestError
+from app.core.exceptions import AuthError, BadRequestError, NotFoundError
 from app.repository.device_node_configuration_repository import (
     DeviceNodeConfigRepository,
 )
@@ -15,6 +15,7 @@ from app.schema.peripheral_device_schema import (
     CreatePeripheralDeviceInput,
     DefaultGasConfig,
     DefaultPyroConfig,
+    UpdateDeviceConfigThreshold,
     UpdatePeripheralDevice,
     UpdatePeripheralDeviceFull,
 )
@@ -100,9 +101,6 @@ class PeripheralDeviceService(BaseService):
                     peripheral_device = self.peripheral_device_repository.create(
                         initial_data
                     )
-
-                    # Create default configuration
-                    self.create_default_config(peripheral_device.uuid, device_type)
         except Exception as e:
             raise e
 
@@ -217,5 +215,68 @@ class PeripheralDeviceService(BaseService):
                 )
                 for device in devices
             ]
+        except Exception as e:
+            raise e
+
+    def update_device_threshold(
+        self,
+        device_serial_number: str,
+        payload: UpdateDeviceConfigThreshold,
+        user_uuid: str,
+    ):
+        try:
+            # Retrieve the peripheral device by serial number
+            device = self.peripheral_device_repository.get_by_serial_number(
+                device_serial_number
+            )
+
+            # Check if the device exists
+            if not device:
+                raise NotFoundError(
+                    messages.PERIPHERAL_DEVICE_NOT_FOUND + device_serial_number
+                )
+
+            # Retrieve the user by UUID
+            user = self.user_repository.get_user_by_uuid(user_uuid)
+
+            # Check if the user exists
+            if not user:
+                raise NotFoundError(messages.USER_NOT_FOUND + user_uuid)
+
+            # Check if the user is authorized to update this device
+            is_user_authorized = (
+                device.user_uuid == user.get("uuid")
+                or device.business_profile_uuid == user.get("business_profile").uuid
+            )
+
+            if not is_user_authorized:
+                raise AuthError(messages.UNAUTHORIZED_ACTION)
+
+            # Handle the device configuration based on device type
+            config = self.device_node_config_repository.get_device_node_config_by_device_uuid(
+                device.uuid
+            )
+
+            # Create default configurations if they don't exist
+            if not config:
+                if device.device_type == DeviceType.PYROGUARD_NODE_DEVICE:
+                    config = self.device_node_config_repository.create(
+                        DefaultPyroConfig(peripheral_device_uuid=str(device.uuid))
+                    )
+                elif device.device_type == DeviceType.GAS_NODE_DEVICE:
+                    config = self.device_node_config_repository.create(
+                        DefaultGasConfig(peripheral_device_uuid=str(device.uuid))
+                    )
+
+            # Update the device configuration
+            self.device_node_config_repository.update_by_uuid(config.uuid, payload)
+
+            # Return the transformed device data
+            return peripheral_device_transformer(
+                device,
+                self.peripheral_device_repository,
+                self.device_node_config_repository,
+            )
+
         except Exception as e:
             raise e

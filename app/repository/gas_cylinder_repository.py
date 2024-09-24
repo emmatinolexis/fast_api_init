@@ -116,7 +116,10 @@ class GasCylinderRepository(BaseRepository):
     def _unlink_existing_gas_cylinder(self, session, gas_payload):
         gas_to_unlink = (
             session.query(self.model)
-            .filter(self.model.gas_device_serial_number == gas_payload.gas_device_serial_number)
+            .filter(
+                self.model.gas_device_serial_number
+                == gas_payload.gas_device_serial_number
+            )
             .first()
         )
 

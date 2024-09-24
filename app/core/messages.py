@@ -103,3 +103,6 @@ DEVICE_TYPE_MISMATCH = "Device type mismatch"
 PERIPHERAL_DEVICE_NOT_FOUND = (
     "No peripheral device was found with the given serial number : "
 )
+
+
+UNAUTHRORIZED_ACTION = "You are not authorized to perform this action"
