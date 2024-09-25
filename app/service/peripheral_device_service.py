@@ -237,6 +237,13 @@ class PeripheralDeviceService(BaseService):
         except Exception as e:
             raise e
 
+    def set_device_configuration_to_default(self, peripheral_device_uuid: str):
+        try:
+            device = self.device_node_config_repository.set_peripheral_device_to_default(peripheral_device_uuid)
+            return device
+        except Exception as e:
+            raise e
+
     def update_device_threshold(
         self,
         device_serial_number: str,
@@ -295,6 +302,7 @@ class PeripheralDeviceService(BaseService):
                 device,
                 self.peripheral_device_repository,
                 self.device_node_config_repository,
+                self.device_event_repository
             )
 
         except Exception as e:

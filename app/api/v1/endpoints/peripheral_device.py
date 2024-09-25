@@ -338,7 +338,7 @@ async def get_peripheral_devices_by_building_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.patch("/update-threshold/{device_serial_number}", response_class=ORJSONResponse)
+@router.patch("/update_threshold/{device_serial_number}", response_class=ORJSONResponse)
 @inject
 async def update_device_threshold_handler(
     device_serial_number: str,
@@ -362,4 +362,21 @@ async def update_device_threshold_handler(
         )
     except Exception as e:
         msg = messages.UPDATE_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/default/{peripheral_device_uuid}", response_class=ORJSONResponse)
+@inject
+async def get_peripheral_devices_by_building_handler(
+    peripheral_device_uuid: str,
+    service: PeripheralDeviceService = Depends(
+        Provide[Container.peripheral_device_service]
+    ),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        service.set_device_configuration_to_default(peripheral_device_uuid)
+        return send_data(messages.SUCCESS_MESSAGE)
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
