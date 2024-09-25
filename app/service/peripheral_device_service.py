@@ -239,19 +239,8 @@ class PeripheralDeviceService(BaseService):
 
     def set_device_configuration_to_default(self, peripheral_device_uuid: str):
         try:
-            devices = self.peripheral_device_repository.get_building_devices(
-                building_uuid, device_type=device_type
-            )
-
-            return [
-                peripheral_device_transformer(
-                    device,
-                    self.peripheral_device_repository,
-                    self.device_node_config_repository,
-                    self.device_event_repository
-                )
-                for device in devices
-            ]
+            device = self.device_node_config_repository.set_peripheral_device_to_default(peripheral_device_uuid)
+            return device
         except Exception as e:
             raise e
 
@@ -313,6 +302,7 @@ class PeripheralDeviceService(BaseService):
                 device,
                 self.peripheral_device_repository,
                 self.device_node_config_repository,
+                self.device_event_repository
             )
 
         except Exception as e:
