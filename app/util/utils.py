@@ -1113,7 +1113,7 @@ def generate_serial_numbers(
         raise ValueError("Unknown device type")
 
     # Extract the numeric part of the last serial number
-    numeric_part = last_serial[len(prefix) :]
+    numeric_part = last_serial[len(prefix):]
 
     # Convert the numeric part to an integer
     current_number = int(numeric_part)

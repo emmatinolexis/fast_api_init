@@ -9,7 +9,7 @@ ORGANISATION_CONTACT_NOT_FOUND = (
 ALERT_MAINTENANCE_TYPE_NOT_FOUND = (
     "No alert maintenance type was found with the given uuid : "
 )
-ALERT_REMINDERS_NOT_FOUND = 'No alert reminders found with the given uuid: '
+ALERT_REMINDERS_NOT_FOUND = "No alert reminders found with the given uuid: "
 MAINTENANCE_ALERT_NOT_FOUND = "No maintenance alert was found with the given uuid : "
 MAINTENANCE_UPDATED_FAILED = "Failed to update  Could not toggle maintenance status"
 ALERT_POLICY_TYPE_NOT_FOUND = "No alert policy type was found with the given uuid : "

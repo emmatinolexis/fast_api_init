@@ -1209,7 +1209,7 @@ class SmartReportService(BaseService):
                 smart_report_fleet_overview,
                 smart_report_fleet_performance,
                 cost_analysis,
-                assets
+                assets,
             )
 
         except Exception as e:
@@ -1302,7 +1302,7 @@ class SmartReportService(BaseService):
         smart_report_fleet_overview,
         smart_report_fleet_performance,
         cost_analysis,
-        assets
+        assets,
     ):
         return {
             "report_header": {
@@ -1328,9 +1328,10 @@ class SmartReportService(BaseService):
                 "report_assets": [
                     {
                         "asset_name": asset.asset_name,
-                        "vehicle_license_no": asset.vehicle_license_no
-                    } for asset in assets
-                ]
+                        "vehicle_license_no": asset.vehicle_license_no,
+                    }
+                    for asset in assets
+                ],
             },
             "smart_report_fleet_overview": smart_report_fleet_overview,
             "smart_report_fleet_performance": smart_report_fleet_performance,

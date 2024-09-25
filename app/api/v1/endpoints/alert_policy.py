@@ -436,7 +436,8 @@ async def toggle_maintenance_alert(
         msg = messages.MAINTENANCE_UPDATED_FAILED
         return send_internal_server_error(user_msg=msg, error=e)
 
-@router.get('/get_alert_reminders/{user_uuid}', response_class=ORJSONResponse)
+
+@router.get("/get_alert_reminders/{user_uuid}", response_class=ORJSONResponse)
 @inject
 async def get_alert_reminders(
     user_uuid: str,
@@ -449,5 +450,3 @@ async def get_alert_reminders(
     except Exception as e:
         msg = messages.ALERT_REMINDERS_NOT_FOUND + user_uuid
         return send_internal_server_error(user_msg=msg, error=e)
-
-

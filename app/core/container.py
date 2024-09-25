@@ -95,7 +95,6 @@ from app.service import (
     device_events_service,
     device_image_service,
     device_manufacturer_service,
-    device_node_configuration_service,
     device_service,
     driver_service,
     equipment_service,
@@ -821,7 +820,7 @@ class Container(containers.DeclarativeContainer):
         user_repository=user_repository,
         device_events_service=device_events_service,
         device_node_config_repository=device_node_configuration_repository,
-        device_event_repository=device_event_repository
+        device_event_repository=device_event_repository,
     )
 
     device_configuration_service = providers.Factory(
