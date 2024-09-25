@@ -182,6 +182,7 @@ class PeripheralDeviceService(BaseService):
                     device,
                     self.peripheral_device_repository,
                     self.device_node_config_repository,
+                    self.device_event_repository
                 )
                 for device in devices
             ]

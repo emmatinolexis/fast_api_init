@@ -1209,6 +1209,7 @@ class SmartReportService(BaseService):
                 smart_report_fleet_overview,
                 smart_report_fleet_performance,
                 cost_analysis,
+                assets
             )
 
         except Exception as e:
@@ -1301,6 +1302,7 @@ class SmartReportService(BaseService):
         smart_report_fleet_overview,
         smart_report_fleet_performance,
         cost_analysis,
+        assets
     ):
         return {
             "report_header": {
@@ -1323,6 +1325,12 @@ class SmartReportService(BaseService):
                 "total_fuel_saved": round(
                     fuel_level_past_range - fuel_level_current_range, 2
                 ),
+                "report_assets": [
+                    {
+                        "asset_name": asset.asset_name,
+                        "vehicle_license_no": asset.vehicle_license_no
+                    } for asset in assets
+                ]
             },
             "smart_report_fleet_overview": smart_report_fleet_overview,
             "smart_report_fleet_performance": smart_report_fleet_performance,
