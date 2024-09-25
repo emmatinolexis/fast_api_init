@@ -1,10 +1,10 @@
 from app.model.peripheral_devices import DeviceNodeConfig, PeripheralDevice
+from app.repository.device_events_repository import DeviceEventRepository
 from app.repository.device_node_configuration_repository import (
     DeviceNodeConfigRepository,
 )
 from app.repository.peripheral_devices_repository import PeripheralDeviceRepository
 from app.util.enums import PeripheralDeviceType
-from app.repository.device_events_repository import DeviceEventRepository
 
 
 def pyro_node_config_transformer(device_node_config: DeviceNodeConfig):
@@ -26,7 +26,7 @@ def peripheral_device_transformer(
     device: PeripheralDevice,
     device_repo: PeripheralDeviceRepository,
     config_repo: DeviceNodeConfigRepository,
-    device_event_repository: DeviceEventRepository
+    device_event_repository: DeviceEventRepository,
 ):
     # Fetch the full device details with its configuration
     device = device_repo.read_by_uuid(device.uuid)
@@ -55,28 +55,28 @@ def peripheral_device_transformer(
         if device.device_type == PeripheralDeviceType.PYROGUARD_NODE_DEVICE:
             ambient_temperature_threshold = {
                 "value": latest_event.measurements[0].get("value"),
-                "unit": latest_event.measurements[0].get("unit")
+                "unit": latest_event.measurements[0].get("unit"),
             }
 
             measurement["ambient_temperature_threshold"] = ambient_temperature_threshold
 
             humidity_threshold = {
                 "value": latest_event.measurements[1].get("value"),
-                "unit": latest_event.measurements[1].get("unit")
+                "unit": latest_event.measurements[1].get("unit"),
             }
 
             measurement["humidity_threshold"] = humidity_threshold
 
             target_temperature_threshold = {
                 "value": latest_event.measurements[2].get("value"),
-                "unit": latest_event.measurements[2].get("unit")
+                "unit": latest_event.measurements[2].get("unit"),
             }
 
             measurement["target_temperature_threshold"] = target_temperature_threshold
 
             flammable_smoke_threshold = {
                 "value": latest_event.measurements[3].get("value"),
-                "unit": latest_event.measurements[3].get("unit")
+                "unit": latest_event.measurements[3].get("unit"),
             }
 
             measurement["flammable_smoke_threshold"] = flammable_smoke_threshold
@@ -84,7 +84,7 @@ def peripheral_device_transformer(
         if device.device_type == PeripheralDeviceType.GAS_NODE_DEVICE:
             minimum_threshold = {
                 "value": latest_event.measurements[4].get("value"),
-                "unit": latest_event.measurements[4].get("unit")
+                "unit": latest_event.measurements[4].get("unit"),
             }
 
             measurement["minimum_temperature"] = minimum_threshold
@@ -102,5 +102,5 @@ def peripheral_device_transformer(
         "location": device.location,
         "device_type": device.device_type.name if device.device_type else None,
         "device_configuration": device_config,
-        "current_device_reading": measurement
+        "current_device_reading": measurement,
     }

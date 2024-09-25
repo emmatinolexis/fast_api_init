@@ -5,6 +5,7 @@ from app.core.constants import (
     INITIAL_PYROGUARD_DEVICE_SERIAL_NUMBER,
 )
 from app.core.exceptions import AuthError, BadRequestError, NotFoundError
+from app.repository.device_events_repository import DeviceEventRepository
 from app.repository.device_node_configuration_repository import (
     DeviceNodeConfigRepository,
 )
@@ -20,11 +21,10 @@ from app.schema.peripheral_device_schema import (
     UpdatePeripheralDeviceFull,
 )
 from app.service.base_service import BaseService
+from app.service.device_events_service import DeviceEventService
 from app.transfomers.peripheral_device_transformer import peripheral_device_transformer
 from app.util.enums import DeviceType, PeripheralDeviceType
 from app.util.utils import generate_serial_numbers
-from app.service.device_events_service import DeviceEventService
-from app.repository.device_events_repository import DeviceEventRepository
 
 
 class PeripheralDeviceService(BaseService):
@@ -34,7 +34,7 @@ class PeripheralDeviceService(BaseService):
         device_events_service: DeviceEventService,
         user_repository: UserRepository,
         device_node_config_repository: DeviceNodeConfigRepository,
-        device_event_repository: DeviceEventRepository
+        device_event_repository: DeviceEventRepository,
     ):
         self.peripheral_device_repository = peripheral_device_repository
         self.device_events_service = device_events_service
@@ -182,7 +182,7 @@ class PeripheralDeviceService(BaseService):
                     device,
                     self.peripheral_device_repository,
                     self.device_node_config_repository,
-                    self.device_event_repository
+                    self.device_event_repository,
                 )
                 for device in devices
             ]
@@ -199,7 +199,9 @@ class PeripheralDeviceService(BaseService):
             )
 
             for device in devices:
-                latest_event = self.device_events_service.get_devices_latest_reading(device.node_id)
+                latest_event = self.device_events_service.get_devices_latest_reading(
+                    device.node_id
+                )
                 data = {
                     "uuid": str(device.uuid),
                     "serial_number": device.serial_number,
@@ -209,10 +211,16 @@ class PeripheralDeviceService(BaseService):
                     "business_profile_uuid": str(device.business_profile_uuid)
                     if device.business_profile_uuid
                     else None,
-                    "building_uuid": str(device.building_uuid) if device.building_uuid else None,
+                    "building_uuid": str(device.building_uuid)
+                    if device.building_uuid
+                    else None,
                     "location": device.location,
-                    "device_type": device.device_type.name if device.device_type else None,
-                    "current_device_reading": latest_event.measurements if latest_event else None
+                    "device_type": device.device_type.name
+                    if device.device_type
+                    else None,
+                    "current_device_reading": latest_event.measurements
+                    if latest_event
+                    else None,
                 }
                 dev_data.append(data)
             return dev_data
@@ -231,7 +239,7 @@ class PeripheralDeviceService(BaseService):
                     device,
                     self.peripheral_device_repository,
                     self.device_node_config_repository,
-                    self.device_event_repository
+                    self.device_event_repository,
                 )
                 for device in devices
             ]
@@ -240,7 +248,11 @@ class PeripheralDeviceService(BaseService):
 
     def set_device_configuration_to_default(self, peripheral_device_uuid: str):
         try:
-            device = self.device_node_config_repository.set_peripheral_device_to_default(peripheral_device_uuid)
+            device = (
+                self.device_node_config_repository.set_peripheral_device_to_default(
+                    peripheral_device_uuid
+                )
+            )
             return device
         except Exception as e:
             raise e
@@ -303,7 +315,7 @@ class PeripheralDeviceService(BaseService):
                 device,
                 self.peripheral_device_repository,
                 self.device_node_config_repository,
-                self.device_event_repository
+                self.device_event_repository,
             )
 
         except Exception as e:

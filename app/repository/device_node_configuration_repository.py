@@ -3,16 +3,16 @@ from typing import Callable
 
 from sqlalchemy.orm import Session, joinedload
 
+from app.core.constants import (
+    GAS_DEVICE_MINIMUM_THRESHOLD,
+    PYRO_AMBIENT_TEMPERATURE_THRESHOLD,
+    PYRO_FLAMMABLE_SMOKE_THRESHOLD,
+    PYRO_HUMIDITY_THRESHOLD,
+    PYRO_TARGET_TEMPERATURE_THRESHOLD,
+)
 from app.model.peripheral_devices import DeviceNodeConfig
 from app.repository.base_repository import BaseRepository
 from app.util.enums import PeripheralDeviceType
-from app.core.constants import (
-    GAS_DEVICE_MINIMUM_THRESHOLD,
-    PYRO_HUMIDITY_THRESHOLD,
-    PYRO_AMBIENT_TEMPERATURE_THRESHOLD,
-    PYRO_FLAMMABLE_SMOKE_THRESHOLD,
-    PYRO_TARGET_TEMPERATURE_THRESHOLD
-)
 
 
 class DeviceNodeConfigRepository(BaseRepository):
@@ -37,13 +37,23 @@ class DeviceNodeConfigRepository(BaseRepository):
                 .first()
             )
 
-            if device.peripheral_device.device_type == PeripheralDeviceType.GAS_NODE_DEVICE:
+            if (
+                device.peripheral_device.device_type
+                == PeripheralDeviceType.GAS_NODE_DEVICE
+            ):
                 device.minimum_threshold = GAS_DEVICE_MINIMUM_THRESHOLD
 
-            if device.peripheral_device.device_type == PeripheralDeviceType.PYROGUARD_NODE_DEVICE:
-                device.ambient_temperature_threshold = PYRO_AMBIENT_TEMPERATURE_THRESHOLD
+            if (
+                device.peripheral_device.device_type
+                == PeripheralDeviceType.PYROGUARD_NODE_DEVICE
+            ):
+                device.ambient_temperature_threshold = (
+                    PYRO_AMBIENT_TEMPERATURE_THRESHOLD
+                )
                 device.humidity_threshold = PYRO_HUMIDITY_THRESHOLD
-                device.target_temperature_threshold = PYRO_TARGET_TEMPERATURE_THRESHOLD,
+                device.target_temperature_threshold = (
+                    PYRO_TARGET_TEMPERATURE_THRESHOLD,
+                )
                 device.flammable_smoke_threshold = PYRO_FLAMMABLE_SMOKE_THRESHOLD
 
             session.commit()
