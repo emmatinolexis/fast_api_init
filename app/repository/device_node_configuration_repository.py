@@ -47,4 +47,5 @@ class DeviceNodeConfigRepository(BaseRepository):
                 device.flammable_smoke_threshold = PYRO_FLAMMABLE_SMOKE_THRESHOLD
 
             session.commit()
+            session.refresh(device)
             return device
