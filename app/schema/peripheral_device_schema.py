@@ -3,7 +3,9 @@ from typing import Optional
 from pydantic import BaseModel, validator
 
 from app.core import constants
-from app.util.enums import DeviceConfigurationVersion, PeripheralDeviceType
+from app.util.enums import DeviceConfigurationVersion, PeripheralDeviceType,DeviceStatus
+from datetime import datetime
+
 
 
 class CreatePeripheralDevice(BaseModel):
@@ -91,10 +93,14 @@ class UpdatePeripheralDevice(BaseModel):
     serial_number: str
 
 
+
+
 class UpdatePeripheralDeviceFull(UpdatePeripheralDevice):
     user_uuid: Optional[str] = None
     business_profile_uuid: Optional[str] = None
     building_uuid: str
+    installed_at : datetime = datetime.now()
+    status : DeviceStatus = DeviceStatus.ASSIGNED
 
 
 class DefaultPyroConfig(BaseModel):

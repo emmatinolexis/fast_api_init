@@ -1,4 +1,5 @@
 from app.core import messages
+from datetime import datetime
 from app.core.constants import (
     INITIAL_GAS_DEVICE_SERIAL_NUMBER,
     INITIAL_GATEWAY_DEVICE_SERIAL_NUMBER,

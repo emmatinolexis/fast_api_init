@@ -99,6 +99,7 @@ def peripheral_device_transformer(
         if device.business_profile_uuid
         else None,
         "building_uuid": str(device.building_uuid) if device.building_uuid else None,
+        "installed_at": device.installed_at if device.installed_at else None,
         "location": device.location,
         "device_type": device.device_type.name if device.device_type else None,
         "device_configuration": device_config,
