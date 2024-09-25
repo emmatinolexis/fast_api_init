@@ -21,9 +21,10 @@ from app.schema.peripheral_device_schema import (
 )
 from app.service.base_service import BaseService
 from app.transfomers.peripheral_device_transformer import peripheral_device_transformer
-from app.util.enums import DeviceType
+from app.util.enums import DeviceType, PeripheralDeviceType
 from app.util.utils import generate_serial_numbers
 from app.service.device_events_service import DeviceEventService
+from app.repository.device_events_repository import DeviceEventRepository
 
 
 class PeripheralDeviceService(BaseService):
@@ -33,11 +34,13 @@ class PeripheralDeviceService(BaseService):
         device_events_service: DeviceEventService,
         user_repository: UserRepository,
         device_node_config_repository: DeviceNodeConfigRepository,
+        device_event_repository: DeviceEventRepository
     ):
         self.peripheral_device_repository = peripheral_device_repository
         self.device_events_service = device_events_service
         self.user_repository = user_repository
         self.device_node_config_repository = device_node_config_repository
+        self.device_event_repository = device_event_repository
         super().__init__(peripheral_device_repository)
 
     def get_list(self, page=1, page_size=10, device_type=None, search=None):
@@ -108,7 +111,7 @@ class PeripheralDeviceService(BaseService):
             raise e
 
     def create_default_config(
-        self, peripheral_device_uuid: str, device_type: DeviceType
+        self, peripheral_device_uuid: str, device_type: PeripheralDeviceType
     ):
         if device_type == DeviceType.PYROGUARD_NODE_DEVICE:
             pyro_config = DefaultPyroConfig(
@@ -195,7 +198,6 @@ class PeripheralDeviceService(BaseService):
             )
 
             for device in devices:
-
                 latest_event = self.device_events_service.get_devices_latest_reading(device.node_id)
                 data = {
                     "uuid": str(device.uuid),
@@ -228,6 +230,7 @@ class PeripheralDeviceService(BaseService):
                     device,
                     self.peripheral_device_repository,
                     self.device_node_config_repository,
+                    self.device_event_repository
                 )
                 for device in devices
             ]
