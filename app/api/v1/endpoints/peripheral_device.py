@@ -375,8 +375,8 @@ async def get_peripheral_devices_by_building_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        service.set_device_configuration_to_default(peripheral_device_uuid)
-        return send_data(messages.SUCCESS_MESSAGE)
+        data = service.set_device_configuration_to_default(peripheral_device_uuid)
+        return send_data_with_info(data, messages.SUCCESS_MESSAGE)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
