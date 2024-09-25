@@ -36,9 +36,9 @@ class DeviceNodeConfigRepository(BaseRepository):
                 .options(joinedload(self.model.peripheral_device))
                 .first()
             )
-            return
+
             if device.peripheral_device.device_type == PeripheralDeviceType.GAS_NODE_DEVICE:
-                device.minimum = GAS_DEVICE_MINIMUM_THRESHOLD
+                device.minimum_threshold = GAS_DEVICE_MINIMUM_THRESHOLD
 
             if device.peripheral_device.device_type == PeripheralDeviceType.PYROGUARD_NODE_DEVICE:
                 device.ambient_temperature_threshold = PYRO_AMBIENT_TEMPERATURE_THRESHOLD
@@ -46,6 +46,5 @@ class DeviceNodeConfigRepository(BaseRepository):
                 device.target_temperature_threshold = PYRO_TARGET_TEMPERATURE_THRESHOLD,
                 device.flammable_smoke_threshold = PYRO_FLAMMABLE_SMOKE_THRESHOLD
 
-            session.refresh(device)
             session.commit()
             return device
