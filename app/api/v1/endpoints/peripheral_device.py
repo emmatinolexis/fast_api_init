@@ -367,7 +367,7 @@ async def update_device_threshold_handler(
 
 @router.get("/default/{peripheral_device_uuid}", response_class=ORJSONResponse)
 @inject
-async def get_peripheral_devices_by_building_handler(
+async def set_peripheral_device_to_default_handler(
     peripheral_device_uuid: str,
     service: PeripheralDeviceService = Depends(
         Provide[Container.peripheral_device_service]
