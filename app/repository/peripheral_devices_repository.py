@@ -73,7 +73,7 @@ class PeripheralDeviceRepository(BaseRepository):
             )
             if device_type:
                 base_query = base_query.filter(self.model.device_type == device_type)
-            return base_query.all()
+            return base_query.order_by(self.model.created_at).all()
 
     def get_business_devices(self, business_uuid, device_type: str = None):
         with self.session_factory() as session:
@@ -82,7 +82,7 @@ class PeripheralDeviceRepository(BaseRepository):
             )
             if device_type:
                 base_query = base_query.filter(self.model.device_type == device_type)
-            return base_query.all()
+            return base_query.order_by(self.model.created_at).all()
 
     def get_building_devices(self, building_uuid, device_type: str = None):
         with self.session_factory() as session:
@@ -91,4 +91,4 @@ class PeripheralDeviceRepository(BaseRepository):
             )
             if device_type:
                 base_query = base_query.filter(self.model.device_type == device_type)
-            return base_query.all()
+            return base_query.order_by(self.model.created_at).all()
