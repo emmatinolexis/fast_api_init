@@ -21,7 +21,7 @@ from app.schema.peripheral_device_schema import (
 )
 from app.service.base_service import BaseService
 from app.transfomers.peripheral_device_transformer import peripheral_device_transformer
-from app.util.enums import DeviceType
+from app.util.enums import DeviceType, PeripheralDeviceType
 from app.util.utils import generate_serial_numbers
 from app.service.device_events_service import DeviceEventService
 from app.repository.device_events_repository import DeviceEventRepository
@@ -111,7 +111,7 @@ class PeripheralDeviceService(BaseService):
             raise e
 
     def create_default_config(
-        self, peripheral_device_uuid: str, device_type: DeviceType
+        self, peripheral_device_uuid: str, device_type: PeripheralDeviceType
     ):
         if device_type == DeviceType.PYROGUARD_NODE_DEVICE:
             pyro_config = DefaultPyroConfig(
@@ -221,8 +221,6 @@ class PeripheralDeviceService(BaseService):
 
     def get_building_devices(self, building_uuid, device_type: str = None):
         try:
-            dev_data = []
-
             devices = self.peripheral_device_repository.get_building_devices(
                 building_uuid, device_type=device_type
             )
