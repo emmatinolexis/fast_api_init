@@ -4,6 +4,7 @@ from app.repository.device_node_configuration_repository import (
 )
 from app.repository.peripheral_devices_repository import PeripheralDeviceRepository
 from app.util.enums import PeripheralDeviceType
+from app.repository.device_events_repository import DeviceEventRepository
 
 
 def pyro_node_config_transformer(device_node_config: DeviceNodeConfig):
@@ -25,6 +26,7 @@ def peripheral_device_transformer(
     device: PeripheralDevice,
     device_repo: PeripheralDeviceRepository,
     config_repo: DeviceNodeConfigRepository,
+    device_event_repository: DeviceEventRepository
 ):
     # Fetch the full device details with its configuration
     device = device_repo.read_by_uuid(device.uuid)
@@ -47,6 +49,8 @@ def peripheral_device_transformer(
             elif device.device_type == PeripheralDeviceType.GAS_NODE_DEVICE:
                 device_config = gas_node_config_transformer(config)
 
+    latest_event = device_event_repository.get_device_latest_reading(device.node_id)
+
     return {
         "uuid": str(device.uuid),
         "serial_number": device.serial_number,
@@ -60,4 +64,5 @@ def peripheral_device_transformer(
         "location": device.location,
         "device_type": device.device_type.name if device.device_type else None,
         "device_configuration": device_config,
+        "current_device_reading": latest_event.measurements if latest_event else None
     }
