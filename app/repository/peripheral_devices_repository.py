@@ -66,6 +66,14 @@ class PeripheralDeviceRepository(BaseRepository):
                 .first()
             )
 
+    def get_by_peripheral_device_uuid(self, peripheral_device_uuid: str):
+        with self.session_factory() as session:
+            return (
+                session.query(self.model)
+                .filter(self.model.uuid == peripheral_device_uuid)
+                .first()
+            )
+
     def get_user_devices(self, user_uuid, device_type: str = None):
         with self.session_factory() as session:
             base_query = session.query(self.model).filter(

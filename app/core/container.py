@@ -837,3 +837,9 @@ class Container(containers.DeclarativeContainer):
         default_device_gateway_configuration_service.DefaultDeviceGatewayConfigurationService,
         default_device_gateway_configuration_repository=default_device_gateway_configuration_repository,
     )
+
+    # device_node_configuration_service = providers.Factory(
+    #     device_node_configuration_service.DeviceNodeConfigService,
+    #     device_node_configuration_repository=device_node_configuration_repository,
+    # )
+

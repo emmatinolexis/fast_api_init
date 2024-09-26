@@ -102,5 +102,6 @@ def peripheral_device_transformer(
         "location": device.location,
         "device_type": device.device_type.name if device.device_type else None,
         "device_configuration": device_config,
+        "send_alert_status": device.send_alert_status,
         "current_device_reading": measurement,
     }
