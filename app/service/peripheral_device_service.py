@@ -259,7 +259,6 @@ class PeripheralDeviceService(BaseService):
             devices = self.peripheral_device_repository.get_building_devices(
                 building_uuid, device_type=device_type
             )
-
             return [
                 peripheral_device_transformer(
                     device,

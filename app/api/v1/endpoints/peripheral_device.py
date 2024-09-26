@@ -331,6 +331,7 @@ async def get_peripheral_devices_by_building_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
+
         devices = service.get_building_devices(building_uuid, device_type)
         return send_data_with_info(info=messages.GET_SUCCESS + "devices", data=devices)
     except Exception as e:
