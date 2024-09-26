@@ -177,8 +177,6 @@ async def create_device_events(
             event_datetime=device_event_payload.timestamp,
         )
 
-        await send_sms("+233541557459", "Test from MVI")
-
         # Calling the service to add the data
         service.add(data)
 
@@ -188,10 +186,10 @@ async def create_device_events(
             peripheral_device = peripheral_device_service.get_device_by_node_id(device_event_payload.node_id)
 
             if peripheral_device:
-                alert_message = f"This is to inform you that {device_event_payload.alert_desc} in {peripheral_device.location} of {peripheral_device.building_building_name} needs attention. Please take action to maintain optimal conditions."
-                alert_title = f"Device Alert"
+                alert_message = f"This is to inform you that {device_event_payload.alert_desc} in {peripheral_device.location} of {peripheral_device.building.building_name} needs attention. Please take action to maintain optimal conditions."
+                alert_title = device_event_payload.node_id
 
-                await send_sms("+233541557459", "Test from MVI")
+                await send_sms("+233541557459", alert_message)
 
         msg = "device event saved"
         logging.info(msg)
