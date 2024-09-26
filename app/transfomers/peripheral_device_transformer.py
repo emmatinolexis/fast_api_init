@@ -54,22 +54,22 @@ def peripheral_device_transformer(
     if latest_event:
         if device.device_type == PeripheralDeviceType.PYROGUARD_NODE_DEVICE:
             ambient_temperature_threshold = {
-                "value": latest_event.measurements[0].get("value"),
-                "unit": latest_event.measurements[0].get("unit"),
+                "value": latest_event.measurements[1].get("value"),
+                "unit": latest_event.measurements[1].get("unit"),
             }
 
             measurement["ambient_temperature_threshold"] = ambient_temperature_threshold
 
             humidity_threshold = {
-                "value": latest_event.measurements[1].get("value"),
-                "unit": latest_event.measurements[1].get("unit"),
+                "value": latest_event.measurements[2].get("value"),
+                "unit": latest_event.measurements[2].get("unit"),
             }
 
             measurement["humidity_threshold"] = humidity_threshold
 
             target_temperature_threshold = {
-                "value": latest_event.measurements[2].get("value"),
-                "unit": latest_event.measurements[2].get("unit"),
+                "value": latest_event.measurements[0].get("value"),
+                "unit": latest_event.measurements[0].get("unit"),
             }
 
             measurement["target_temperature_threshold"] = target_temperature_threshold
@@ -82,12 +82,12 @@ def peripheral_device_transformer(
             measurement["flammable_smoke_threshold"] = flammable_smoke_threshold
 
         if device.device_type == PeripheralDeviceType.GAS_NODE_DEVICE:
-            minimum_threshold = {
-                "value": latest_event.measurements[4].get("value"),
-                "unit": latest_event.measurements[4].get("unit"),
+            gas_level = {
+                "value": latest_event.measurements[0].get("value"),
+                "unit": latest_event.measurements[0].get("unit"),
             }
 
-            measurement["minimum_temperature"] = minimum_threshold
+            measurement["gas_level"] = gas_level
 
     return {
         "uuid": str(device.uuid),
