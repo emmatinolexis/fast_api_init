@@ -151,6 +151,13 @@ class PeripheralDeviceService(BaseService):
         except Exception as e:
             raise e
 
+    def get_device_by_node_id(self, node_id: str):
+        try:
+            device = self.peripheral_device_repository.get_device_node_id(node_id)
+            return device
+        except Exception as e:
+            raise e
+
     def get_device_conf_by_peripheral_uuid(self, peripheral_uuid: str):
         try:
             device = self.device_node_config_repository.get_device_node_config_by_device_uuid(peripheral_uuid)
