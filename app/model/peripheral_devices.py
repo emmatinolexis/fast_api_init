@@ -1,6 +1,6 @@
 import uuid as systemuuid
 
-from sqlalchemy import Column, Enum, Float, ForeignKey, Integer, String, DateTime
+from sqlalchemy import Column, DateTime, Enum, Float, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -43,6 +43,10 @@ class PeripheralDevice(BaseModel):
 
     building = relationship("Building", back_populates="peripheral_devices")
     installed_at = Column(DateTime, nullable=True)
+
+    gas_cylinder_uuid = Column(
+        UUID(as_uuid=True), ForeignKey("gas_cylinders.uuid"), nullable=True
+    )
 
     # One-to-one relationship with DeviceNodeConfig
     device_configuration = relationship(

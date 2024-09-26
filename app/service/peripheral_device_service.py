@@ -1,5 +1,6 @@
-from app.core import messages
 from datetime import datetime
+
+from app.core import messages
 from app.core.constants import (
     INITIAL_GAS_DEVICE_SERIAL_NUMBER,
     INITIAL_GATEWAY_DEVICE_SERIAL_NUMBER,
@@ -10,6 +11,7 @@ from app.repository.device_events_repository import DeviceEventRepository
 from app.repository.device_node_configuration_repository import (
     DeviceNodeConfigRepository,
 )
+from app.repository.gas_cylinder_repository import GasCylinderRepository
 from app.repository.peripheral_devices_repository import PeripheralDeviceRepository
 from app.repository.user_repository import UserRepository
 from app.schema.peripheral_device_schema import (
@@ -17,6 +19,7 @@ from app.schema.peripheral_device_schema import (
     CreatePeripheralDeviceInput,
     DefaultGasConfig,
     DefaultPyroConfig,
+    LinkGasCylinderToDevice,
     UpdateDeviceConfigThreshold,
     UpdatePeripheralDevice,
     UpdatePeripheralDeviceFull,
@@ -36,12 +39,14 @@ class PeripheralDeviceService(BaseService):
         user_repository: UserRepository,
         device_node_config_repository: DeviceNodeConfigRepository,
         device_event_repository: DeviceEventRepository,
+        gas_cylinder_repository: GasCylinderRepository,
     ):
         self.peripheral_device_repository = peripheral_device_repository
         self.device_events_service = device_events_service
         self.user_repository = user_repository
         self.device_node_config_repository = device_node_config_repository
         self.device_event_repository = device_event_repository
+        self.gas_cylinder_repository = gas_cylinder_repository
         super().__init__(peripheral_device_repository)
 
     def get_list(self, page=1, page_size=10, device_type=None, search=None):
@@ -241,6 +246,7 @@ class PeripheralDeviceService(BaseService):
                     self.peripheral_device_repository,
                     self.device_node_config_repository,
                     self.device_event_repository,
+                    self.gas_cylinder_repository,
                 )
                 for device in devices
             ]
@@ -317,7 +323,59 @@ class PeripheralDeviceService(BaseService):
                 self.peripheral_device_repository,
                 self.device_node_config_repository,
                 self.device_event_repository,
+                self.gas_cylinder_repository,
             )
 
+        except Exception as e:
+            raise e
+
+    def link_gas_cylinder_to_peripheral_device(
+        self, user_uuid, payload: LinkGasCylinderToDevice
+    ):
+        try:
+            device = self.peripheral_device_repository.get_by_serial_number(
+                payload.serial_number
+            )
+
+            if not device:
+                raise NotFoundError(
+                    messages.PERIPHERAL_DEVICE_NOT_FOUND + payload.serial_number
+                )
+
+            if device.device_type != DeviceType.GAS_NODE_DEVICE:
+                raise BadRequestError(messages.INVALID_DEVICE_TYPE)
+
+            user = self.user_repository.get_user_by_uuid(user_uuid)
+
+            is_authorized = (
+                device.user_uuid == user.get("uuid")
+                or device.business_profile_uuid == user.get("business_profile").uuid
+            )
+
+            if not is_authorized:
+                raise AuthError(messages.UNAUTHORIZED_ACTION)
+
+            device_with_existing_cylinder = (
+                self.peripheral_device_repository.get_device_by_cylinder_uuid(
+                    payload.gas_cylinder_uuid
+                )
+            )
+
+            if device_with_existing_cylinder is not None:
+                self.peripheral_device_repository.update_attr_by_uuid(
+                    device_with_existing_cylinder.uuid, "gas_cylinder_uuid", None
+                )
+
+            self.peripheral_device_repository.update_attr_by_uuid(
+                device.uuid, "gas_cylinder_uuid", payload.gas_cylinder_uuid
+            )
+
+            return peripheral_device_transformer(
+                device,
+                self.peripheral_device_repository,
+                self.device_node_config_repository,
+                self.device_event_repository,
+                self.gas_cylinder_repository,
+            )
         except Exception as e:
             raise e

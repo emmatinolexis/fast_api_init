@@ -821,6 +821,7 @@ class Container(containers.DeclarativeContainer):
         device_events_service=device_events_service,
         device_node_config_repository=device_node_configuration_repository,
         device_event_repository=device_event_repository,
+        gas_cylinder_repository=gas_cylinder_repository,
     )
 
     device_configuration_service = providers.Factory(
