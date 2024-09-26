@@ -18,6 +18,7 @@ from app.schema.peripheral_device_schema import (
     UpdatePeripheralDevice,
 )
 from app.service.device_configuration_service import DeviceConfigurationService
+from app.service.device_node_configuration_service import DeviceNodeConfigService
 from app.service.gas_cylinder_service import GasCylinderService
 from app.service.peripheral_device_service import PeripheralDeviceService
 from app.util.enums import AccountType, DeviceConfigurationVersion, DeviceType
@@ -116,7 +117,7 @@ async def create_node_configuration_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/configurations", response_class=ORJSONResponse)
+@router.get("/configurations/all", response_class=ORJSONResponse)
 @inject
 async def get_all_device_configurations_handler(
     service: DeviceConfigurationService = Depends(
@@ -377,4 +378,22 @@ async def set_peripheral_device_to_default_handler(
         return send_data_with_info(data, messages.SUCCESS_MESSAGE)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.put("/toggle_alert_status/{peripheral_device_uuid}", response_class=ORJSONResponse)
+@inject
+async def update_device_threshold_handler(
+    device_serial_number: str,
+    service: DeviceNodeConfigService = Depends(
+        Provide[Container.peripheral_device_service]
+    ),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        return send_info("successful")
+    except AuthError as e:
+        return send_client_side_error(user_msg=e.detail)
+    except Exception as e:
+        msg = messages.UPDATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
