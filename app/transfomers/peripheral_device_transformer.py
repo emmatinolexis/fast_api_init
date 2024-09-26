@@ -54,22 +54,22 @@ def peripheral_device_transformer(
     if latest_event:
         if device.device_type == PeripheralDeviceType.PYROGUARD_NODE_DEVICE:
             ambient_temperature_threshold = {
-                "value": latest_event.measurements[1].get("value"),
-                "unit": latest_event.measurements[1].get("unit"),
+                "value": latest_event.measurements[0].get("value"),
+                "unit": latest_event.measurements[0].get("unit"),
             }
 
             measurement["ambient_temperature_threshold"] = ambient_temperature_threshold
 
             humidity_threshold = {
-                "value": latest_event.measurements[2].get("value"),
-                "unit": latest_event.measurements[2].get("unit"),
+                "value": latest_event.measurements[1].get("value"),
+                "unit": latest_event.measurements[1].get("unit"),
             }
 
             measurement["humidity_threshold"] = humidity_threshold
 
             target_temperature_threshold = {
-                "value": latest_event.measurements[0].get("value"),
-                "unit": latest_event.measurements[0].get("unit"),
+                "value": latest_event.measurements[2].get("value"),
+                "unit": latest_event.measurements[2].get("unit"),
             }
 
             measurement["target_temperature_threshold"] = target_temperature_threshold
@@ -82,12 +82,12 @@ def peripheral_device_transformer(
             measurement["flammable_smoke_threshold"] = flammable_smoke_threshold
 
         if device.device_type == PeripheralDeviceType.GAS_NODE_DEVICE:
-            gas_level = {
-                "value": latest_event.measurements[0].get("value"),
-                "unit": latest_event.measurements[0].get("unit"),
+            minimum_threshold = {
+                "value": latest_event.measurements[4].get("value"),
+                "unit": latest_event.measurements[4].get("unit"),
             }
 
-            measurement["gas_level"] = gas_level
+            measurement["minimum_temperature"] = minimum_threshold
 
     return {
         "uuid": str(device.uuid),
@@ -99,7 +99,6 @@ def peripheral_device_transformer(
         if device.business_profile_uuid
         else None,
         "building_uuid": str(device.building_uuid) if device.building_uuid else None,
-        "installed_at": device.installed_at if device.installed_at else None,
         "location": device.location,
         "device_type": device.device_type.name if device.device_type else None,
         "device_configuration": device_config,
