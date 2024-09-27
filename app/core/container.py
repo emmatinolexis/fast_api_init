@@ -19,6 +19,7 @@ from app.repository import (
     business_profile_repository,
     contact_sale_repository,
     default_device_gateway_configuration_repository,
+    device_alert_notification_repository,
     device_configuration_repository,
     device_events_repository,
     device_image_repository,
@@ -91,6 +92,7 @@ from app.service import (
     business_profile_service,
     contact_sale_service,
     default_device_gateway_configuration_service,
+    device_alert_notification_service,
     device_configuration_service,
     device_events_service,
     device_image_service,
@@ -501,6 +503,11 @@ class Container(containers.DeclarativeContainer):
         session_factory=db.provided.session,
     )
 
+    device_alert_notification_repository = providers.Factory(
+        device_alert_notification_repository.DeviceAlertNotificationRepository,
+        session_factory=db.provided.session,
+    )
+
     # Services
     auth_service = providers.Factory(
         auth_service.AuthService,
@@ -839,8 +846,7 @@ class Container(containers.DeclarativeContainer):
         default_device_gateway_configuration_repository=default_device_gateway_configuration_repository,
     )
 
-    # device_node_configuration_service = providers.Factory(
-    #     device_node_configuration_service.DeviceNodeConfigService,
-    #     device_node_configuration_repository=device_node_configuration_repository,
-    # )
-
+    device_alert_notification_service = providers.Factory(
+        device_alert_notification_service.DeviceAlertNotificationService,
+        device_alert_notification_repository=device_alert_notification_repository,
+    )

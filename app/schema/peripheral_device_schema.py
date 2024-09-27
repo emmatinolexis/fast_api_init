@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Optional
+from uuid import UUID
 
 from pydantic import BaseModel, validator
 
@@ -94,6 +95,16 @@ class CreateNodeConfiguration(BaseModel):
 class UpdatePeripheralDevice(BaseModel):
     location: str
     serial_number: str
+
+
+class DeviceAlertRecipient(BaseModel):
+    node_id: str
+    user_uuids: list[UUID]
+
+
+class DeviceAlertRecipientInput(BaseModel):
+    node_id: str
+    user_uuid: UUID
 
 
 class UpdatePeripheralDeviceFull(UpdatePeripheralDevice):
