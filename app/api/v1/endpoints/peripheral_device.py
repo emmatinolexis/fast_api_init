@@ -64,6 +64,26 @@ async def get_all_peripheral_devices_handler(
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
+    
+
+
+@router.get("/{peripheral_device_uuid}", response_class=ORJSONResponse)
+@inject
+async def get_peripheral_device_handler(
+    peripheral_device_uuid: str,
+    service: PeripheralDeviceService = Depends(
+        Provide[Container.peripheral_device_service]
+    ),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        device = service.get_device_by_peripheral_uuid(peripheral_device_uuid)
+        return send_data_with_info(
+            data=device, info=messages.GET_SUCCESS + "device"  
+        )
+    except Exception as e:
+        msg = messages.GET_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
 
 
 @router.post("/", response_class=ORJSONResponse)
@@ -408,3 +428,7 @@ async def update_sent_alert_status(
     except Exception as e:
         msg = messages.UPDATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
+    
+
+
+

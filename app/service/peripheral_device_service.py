@@ -353,3 +353,20 @@ class PeripheralDeviceService(BaseService):
 
         except Exception as e:
             raise e
+        
+
+
+    def get_device_by_peripheral_uuid(self,device_uuid:str):
+        try:
+            device = self.peripheral_device_repository.read_by_uuid(device_uuid)
+            return peripheral_device_transformer(
+                device,
+                self.peripheral_device_repository,
+                self.device_node_config_repository,
+                self.device_event_repository,
+            )
+        except Exception as e:
+            raise e
+
+
+
