@@ -7,7 +7,7 @@ from fastapi.responses import ORJSONResponse
 from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_app_service, get_current_user
-from app.core.exceptions import AuthError, BadRequestError
+from app.core.exceptions import AuthError, BadRequestError,NotFoundError
 from app.model.user import User
 from app.schema.peripheral_device_schema import (
     CreateGatewayDeviceConfiguration,
@@ -68,7 +68,7 @@ async def get_all_peripheral_devices_handler(
     
 
 
-@router.get("/{peripheral_device_uuid}", response_class=ORJSONResponse)
+@router.get("/get_device/{peripheral_device_uuid}", response_class=ORJSONResponse)
 @inject
 async def get_peripheral_device_handler(
     peripheral_device_uuid: str,
@@ -82,6 +82,8 @@ async def get_peripheral_device_handler(
         return send_data_with_info(
             data=device, info=messages.GET_SUCCESS + "device"  
         )
+    except NotFoundError as e:
+        return send_client_side_error(user_msg=e.detail)
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
