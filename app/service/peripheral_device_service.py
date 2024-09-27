@@ -360,6 +360,25 @@ class PeripheralDeviceService(BaseService):
 
         except Exception as e:
             raise e
+        
+
+
+    def get_device_by_peripheral_uuid(self,device_uuid:str):
+        try:
+            device = self.peripheral_device_repository.read_by_uuid(device_uuid)
+
+
+            if not device:
+                raise NotFoundError(messages.PERIPHERAL_DEVICE_NOT_FOUND + device_uuid)
+            return peripheral_device_transformer(
+                device,
+                self.peripheral_device_repository,
+                self.device_node_config_repository,
+                self.device_event_repository,
+                self.gas_cylinder_repository,
+            )
+        except Exception as e:
+            raise e
 
     def link_gas_cylinder_to_peripheral_device(
         self, user_uuid, payload: LinkGasCylinderToDevice
@@ -407,7 +426,7 @@ class PeripheralDeviceService(BaseService):
                 self.peripheral_device_repository,
                 self.device_node_config_repository,
                 self.device_event_repository,
-                self.gas_cylinder_repository,
+                self.gas_cylinder_repository
             )
         except Exception as e:
             raise e
