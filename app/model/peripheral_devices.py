@@ -44,6 +44,10 @@ class PeripheralDevice(BaseModel):
     building = relationship("Building", back_populates="peripheral_devices")
     installed_at = Column(DateTime, nullable=True)
 
+    gas_cylinder_uuid = Column(
+        UUID(as_uuid=True), ForeignKey("gas_cylinders.uuid"), nullable=True
+    )
+
     # One-to-one relationship with DeviceNodeConfig
     device_configuration = relationship(
         "DeviceNodeConfig", back_populates="peripheral_device", uselist=False
