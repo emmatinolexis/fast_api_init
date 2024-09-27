@@ -32,8 +32,9 @@ def peripheral_device_transformer(
 ):
     device = device_repo.read_by_uuid(device.uuid)
 
-    # Initialize device_config
+    # Initialize device_config and gas_cylinder_data
     device_config = None
+    gas_cylinder_data = None  # Initialize to avoid the 'referenced before assignment' error
 
     # Retrieve and transform device configuration based on device type
     if device.device_type in [
@@ -95,7 +96,7 @@ def peripheral_device_transformer(
             }
 
             measurement["gas_level"] = gas_level
-    # return measurement
+
     return {
         "uuid": str(device.uuid),
         "serial_number": device.serial_number,
@@ -111,5 +112,6 @@ def peripheral_device_transformer(
         "device_configuration": device_config,
         # "send_alert_status": device.send_alert_status,
         "current_device_reading": measurement,
-        "gas_cylinder_data": gas_cylinder_data,  # Return gas_cylinder_data only for GAS_NODE_DEVICE
+        "gas_cylinder_data": gas_cylinder_data,  # This is now safely initialized
     }
+
