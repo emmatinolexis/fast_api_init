@@ -30,7 +30,6 @@ def peripheral_device_transformer(
     device_event_repository: DeviceEventRepository,
     gas_cylinder_repo: GasCylinderRepository,
 ):
-    # Fetch the full device details with its configuration
     device = device_repo.read_by_uuid(device.uuid)
 
     gas_cylinder_data = None
