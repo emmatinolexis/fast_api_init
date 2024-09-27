@@ -7,7 +7,7 @@ from fastapi.responses import ORJSONResponse
 from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_app_service, get_current_user
-from app.core.exceptions import AuthError, BadRequestError
+from app.core.exceptions import AuthError, BadRequestError,NotFoundError
 from app.model.user import User
 from app.schema.peripheral_device_schema import (
     CreateGatewayDeviceConfiguration,
@@ -16,6 +16,7 @@ from app.schema.peripheral_device_schema import (
     DeviceAlertRecipient,
     DeviceAlertRecipientInput,
     GetDeviceConfiguration,
+    LinkGasCylinderToDevice,
     UpdateDeviceConfigThreshold,
     UpdatePeripheralDevice,
 )
@@ -65,6 +66,53 @@ async def get_all_peripheral_devices_handler(
         return send_data(devices)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
+    
+
+
+@router.get("/get_device/{peripheral_device_uuid}", response_class=ORJSONResponse)
+@inject
+async def get_peripheral_device_handler(
+    peripheral_device_uuid: str,
+    service: PeripheralDeviceService = Depends(
+        Provide[Container.peripheral_device_service]
+    ),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        device = service.get_device_by_peripheral_uuid(peripheral_device_uuid)
+        return send_data_with_info(
+            data=device, info=messages.GET_SUCCESS + "device"  
+        )
+    except NotFoundError as e:
+        return send_client_side_error(user_msg=e.detail)
+    except Exception as e:
+        msg = messages.GET_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.patch("/link")
+@inject
+async def link_gas_cylinder_to_peripheral_device(
+    payload: LinkGasCylinderToDevice,
+    service: PeripheralDeviceService = Depends(
+        Provide[Container.peripheral_device_service]
+    ),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        response = service.link_gas_cylinder_to_peripheral_device(
+            current_user.uuid,
+            payload,
+        )
+        return send_data_with_info(
+            data=response,
+            info=messages.UPDATE_SUCCESS + "peripheral device",
+        )
+    except BadRequestError as e:
+        return send_client_side_error(user_msg=e.detail)
+    except Exception as e:
+        msg = messages.UPDATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
 
 
@@ -443,3 +491,5 @@ async def create_device_alert_recipients_handler(
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
+
+

@@ -139,3 +139,8 @@ class UpdateDeviceConfigThreshold(BaseModel):
     target_temperature_threshold: Optional[int] = None
     flammable_smoke_threshold: Optional[float] = None
     minimum_threshold: Optional[int] = None
+
+
+class LinkGasCylinderToDevice(BaseModel):
+    gas_cylinder_uuid: str
+    serial_number: str
