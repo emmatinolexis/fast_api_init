@@ -29,7 +29,7 @@ class PeripheralDeviceType(str, Enum):
 
 class DeviceConfigurationVersion(str, Enum):
     SG_GGAURGEPRO_VI = "sg_ggaurgepro_v1"
-    SG_PYROGAURDE_V1 = ("sg_pyrogaurd_v1",)
+    SG_PYROGAURDE_V1 = "sg_pyrogaurd_v1"
     SG_GATEWAY_VI = "sg_gateway_v1"
 
 

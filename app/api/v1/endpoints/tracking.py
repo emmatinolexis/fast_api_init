@@ -18,9 +18,12 @@ from app.schema.tracking_device_schema import (
     SSLCertificateRequest,
 )
 from app.service.asset_service import AssetService
+from app.service.device_alert_notification_service import DeviceAlertNotificationService
 from app.service.device_events_service import DeviceEventService
-from app.service.tracking_event_service import TrackingEventService
 from app.service.peripheral_device_service import PeripheralDeviceService
+from app.service.tracking_event_service import TrackingEventService
+
+from app.util.sms import send_sms
 from app.util.utils import (
     extract_certificate_info,
     send_client_side_error,
@@ -28,13 +31,6 @@ from app.util.utils import (
     send_info,
     send_internal_server_error,
 )
-
-from app.util.email import (
-    send_alert_policy_violation_email,
-    send_maintenance_alert_email,
-)
-
-from app.util.sms import send_sms
 
 router = APIRouter(
     prefix="/tracking",
@@ -150,7 +146,12 @@ async def get_over_speeding_stats_handler(
 async def create_device_events(
     device_event_payload: DeviceReportPayload,
     service: DeviceEventService = Depends(Provide[Container.device_events_service]),
-    peripheral_device_service: PeripheralDeviceService = Depends(Provide[Container.peripheral_device_service]),
+    device_alert_service: DeviceAlertNotificationService = Depends(
+        Provide[Container.device_alert_notification_service]
+    ),
+    peripheral_device_service: PeripheralDeviceService = Depends(
+        Provide[Container.peripheral_device_service]
+    ),
     current_user: User = Depends(get_current_app_service),
 ):
     try:
@@ -181,15 +182,30 @@ async def create_device_events(
         service.add(data)
 
         # check if payload.has_alert is true and send email and sms
+        if device_event_payload.has_alert:
+            peripheral_device = peripheral_device_service.get_device_by_node_id(
+                device_event_payload.node_id
+            )
 
-        # if device_event_payload.has_alert:
-        #     peripheral_device = peripheral_device_service.get_device_by_node_id(device_event_payload.node_id)
-        #
-        #     if peripheral_device:
-        #         alert_message = f"This is to inform you that {device_event_payload.alert_desc} in {peripheral_device.location} of {peripheral_device.building.building_name} needs attention. Please take action to maintain optimal conditions."
-        #         alert_title = device_event_payload.node_id
-        #
-        #         await send_sms("+233541557459", alert_message)
+            if not peripheral_device:
+                send_client_side_error(messages.PERIPHERAL_DEVICE_NOT_FOUND_MSG)
+                logging.info(messages.PERIPHERAL_DEVICE_NOT_FOUND_MSG)
+
+            recipients = device_alert_service.get_recipients_by_node_id(
+                device_event_payload.node_id
+            )
+
+            if not recipients:
+                send_client_side_error(messages.DEVICE_ALERT_RECIPIENT_NOT_FOUND_MSG)
+                logging.info(messages.DEVICE_ALERT_RECIPIENT_NOT_FOUND_MSG)
+
+            alert_message = (f"This is to inform you that {device_event_payload.alert_desc} in "
+                             f"{peripheral_device.location} of {peripheral_device.building.building_name} needs attention. "
+                             f"Please take action to maintain optimal conditions.")
+            # alert_title = device_event_payload.alert_desc
+
+            for recipient in recipients:
+                await send_sms(recipient, alert_message)
 
         msg = "device event saved"
         logging.info(msg)

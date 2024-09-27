@@ -62,7 +62,11 @@ class DeviceNodeConfigRepository(BaseRepository):
 
     def toggle_send_alert_status(self, peripheral_device_uuid: str):
         with self.session_factory() as session:
-            device = session.query(self.model).filter_by(peripheral_device_uuid=peripheral_device_uuid).first()
+            device = (
+                session.query(self.model)
+                .filter_by(peripheral_device_uuid=peripheral_device_uuid)
+                .first()
+            )
 
             if device:
                 device.send_alert_status = not device.send_alert_status

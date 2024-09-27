@@ -1,5 +1,4 @@
 from app.core import messages
-from datetime import datetime
 from app.core.constants import (
     INITIAL_GAS_DEVICE_SERIAL_NUMBER,
     INITIAL_GATEWAY_DEVICE_SERIAL_NUMBER,
@@ -57,7 +56,9 @@ class PeripheralDeviceService(BaseService):
         peripheral_device_uuid: str,
     ):
         try:
-            return self.device_node_config_repository.toggle_send_alert_status(peripheral_device_uuid)
+            return self.device_node_config_repository.toggle_send_alert_status(
+                peripheral_device_uuid
+            )
         except Exception as e:
             raise e
 
@@ -146,7 +147,9 @@ class PeripheralDeviceService(BaseService):
 
     def get_device_by_peripheral_uuid(self, peripheral_uuid: str):
         try:
-            device = self.peripheral_device_repository.get_by_peripheral_device_uuid(peripheral_uuid)
+            device = self.peripheral_device_repository.get_by_peripheral_device_uuid(
+                peripheral_uuid
+            )
             return device
         except Exception as e:
             raise e
@@ -160,7 +163,9 @@ class PeripheralDeviceService(BaseService):
 
     def get_device_conf_by_peripheral_uuid(self, peripheral_uuid: str):
         try:
-            device = self.device_node_config_repository.get_device_node_config_by_device_uuid(peripheral_uuid)
+            device = self.device_node_config_repository.get_device_node_config_by_device_uuid(
+                peripheral_uuid
+            )
             return device
         except Exception as e:
             raise e
@@ -220,9 +225,7 @@ class PeripheralDeviceService(BaseService):
         except Exception as e:
             raise e
 
-    def get_business_devices(
-        self, business_profile_uuid, device_type: str = None
-    ):
+    def get_business_devices(self, business_profile_uuid, device_type: str = None):
         try:
             dev_data = []
             devices = self.peripheral_device_repository.get_business_devices(
@@ -253,7 +256,6 @@ class PeripheralDeviceService(BaseService):
                     "current_device_reading": latest_event.measurements
                     if latest_event
                     else None,
-
                 }
                 dev_data.append(data)
             return dev_data

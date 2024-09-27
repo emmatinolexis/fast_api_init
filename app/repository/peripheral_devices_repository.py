@@ -1,7 +1,7 @@
 from contextlib import AbstractContextManager
 from typing import Callable
 
-from sqlalchemy import String, asc, cast, nulls_last, desc
+from sqlalchemy import String, asc, cast, desc, nulls_last
 from sqlalchemy.orm import Session, joinedload
 
 from app.model.peripheral_devices import PeripheralDevice
@@ -91,7 +91,9 @@ class PeripheralDeviceRepository(BaseRepository):
             if device_type:
                 base_query = base_query.filter(self.model.device_type == device_type)
 
-            base_query = base_query.order_by(nulls_last(desc(self.model.installed_at)), desc(self.model.created_at))
+            base_query = base_query.order_by(
+                nulls_last(desc(self.model.installed_at)), desc(self.model.created_at)
+            )
             return base_query.order_by(self.model.created_at).all()
 
     def get_business_devices(self, business_uuid, device_type: str = None):
@@ -102,10 +104,10 @@ class PeripheralDeviceRepository(BaseRepository):
             if device_type:
                 base_query = base_query.filter(self.model.device_type == device_type)
 
-
-            base_query = base_query.order_by(nulls_last(desc(self.model.installed_at)), desc(self.model.created_at))
+            base_query = base_query.order_by(
+                nulls_last(desc(self.model.installed_at)), desc(self.model.created_at)
+            )
             return base_query.order_by(self.model.created_at).all()
-
 
     def get_building_devices(self, building_uuid, device_type: str = None):
         with self.session_factory() as session:
@@ -114,9 +116,10 @@ class PeripheralDeviceRepository(BaseRepository):
             )
             if device_type:
                 base_query = base_query.filter(self.model.device_type == device_type)
-            
-            # Order by installed_at if it exists, otherwise order by created_at
-            base_query = base_query.order_by(nulls_last(desc(self.model.installed_at)), desc(self.model.created_at))
-            
-            return base_query.all()
 
+            # Order by installed_at if it exists, otherwise order by created_at
+            base_query = base_query.order_by(
+                nulls_last(desc(self.model.installed_at)), desc(self.model.created_at)
+            )
+
+            return base_query.all()

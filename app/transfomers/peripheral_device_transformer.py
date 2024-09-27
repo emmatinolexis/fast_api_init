@@ -50,9 +50,8 @@ def peripheral_device_transformer(
 
     latest_event = device_event_repository.get_device_latest_reading(device.node_id)
 
-    if latest_event == PeripheralDeviceType:
+    if latest_event:
         if device.device_type == PeripheralDeviceType.PYROGUARD_NODE_DEVICE:
-
             ambient_temperature_threshold = {
                 "value": latest_event.measurements[1].get("value"),
                 "unit": latest_event.measurements[1].get("unit"),
@@ -88,7 +87,7 @@ def peripheral_device_transformer(
             }
 
             measurement["gas_level"] = gas_level
-    # return measurement
+
     return {
         "uuid": str(device.uuid),
         "serial_number": device.serial_number,
