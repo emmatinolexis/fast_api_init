@@ -205,7 +205,8 @@ async def create_device_events(
             # alert_title = device_event_payload.alert_desc
 
             for recipient in recipients:
-                await send_sms(recipient, alert_message)
+                await send_sms(recipient.get("phone_number"), alert_message)
+
 
         msg = "device event saved"
         logging.info(msg)
