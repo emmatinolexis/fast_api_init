@@ -1,11 +1,14 @@
+from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel, validator
 
 from app.core import constants
-from app.util.enums import DeviceConfigurationVersion, PeripheralDeviceType,DeviceStatus
-from datetime import datetime
-
+from app.util.enums import (
+    DeviceConfigurationVersion,
+    DeviceStatus,
+    PeripheralDeviceType,
+)
 
 
 class CreatePeripheralDevice(BaseModel):
@@ -93,14 +96,12 @@ class UpdatePeripheralDevice(BaseModel):
     serial_number: str
 
 
-
-
 class UpdatePeripheralDeviceFull(UpdatePeripheralDevice):
     user_uuid: Optional[str] = None
     business_profile_uuid: Optional[str] = None
     building_uuid: str
-    installed_at : datetime = datetime.now()
-    status : DeviceStatus = DeviceStatus.ASSIGNED
+    installed_at: datetime = datetime.now()
+    status: DeviceStatus = DeviceStatus.ASSIGNED
 
 
 class DefaultPyroConfig(BaseModel):
@@ -127,3 +128,8 @@ class UpdateDeviceConfigThreshold(BaseModel):
     target_temperature_threshold: Optional[int] = None
     flammable_smoke_threshold: Optional[float] = None
     minimum_threshold: Optional[int] = None
+
+
+class LinkGasCylinderToDevice(BaseModel):
+    gas_cylinder_uuid: str
+    serial_number: str

@@ -14,6 +14,7 @@ from app.schema.peripheral_device_schema import (
     CreateNodeConfiguration,
     CreatePeripheralDevice,
     GetDeviceConfiguration,
+    LinkGasCylinderToDevice,
     UpdateDeviceConfigThreshold,
     UpdatePeripheralDevice,
 )
@@ -83,6 +84,31 @@ async def get_peripheral_device_handler(
         )
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.patch("/link")
+@inject
+async def link_gas_cylinder_to_peripheral_device(
+    payload: LinkGasCylinderToDevice,
+    service: PeripheralDeviceService = Depends(
+        Provide[Container.peripheral_device_service]
+    ),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        response = service.link_gas_cylinder_to_peripheral_device(
+            current_user.uuid,
+            payload,
+        )
+        return send_data_with_info(
+            data=response,
+            info=messages.UPDATE_SUCCESS + "peripheral device",
+        )
+    except BadRequestError as e:
+        return send_client_side_error(user_msg=e.detail)
+    except Exception as e:
+        msg = messages.UPDATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
 
 

@@ -96,7 +96,7 @@ class GasDeviceService(BaseService):
 
             # Paginate the results
 
-            paginated_devices = devices[(page - 1) * limit: page * limit]
+            paginated_devices = devices[(page - 1) * limit : page * limit]
             total_devices = len(devices)
 
             return {

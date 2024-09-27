@@ -3,6 +3,7 @@ from app.repository.device_events_repository import DeviceEventRepository
 from app.repository.device_node_configuration_repository import (
     DeviceNodeConfigRepository,
 )
+from app.repository.gas_cylinder_repository import GasCylinderRepository
 from app.repository.peripheral_devices_repository import PeripheralDeviceRepository
 from app.util.enums import PeripheralDeviceType
 
@@ -27,12 +28,13 @@ def peripheral_device_transformer(
     device_repo: PeripheralDeviceRepository,
     config_repo: DeviceNodeConfigRepository,
     device_event_repository: DeviceEventRepository,
+    gas_cylinder_repo: GasCylinderRepository,
 ):
-    # Fetch the full device details with its configuration
     device = device_repo.read_by_uuid(device.uuid)
 
-    # Initialize device_config
+    # Initialize device_config and gas_cylinder_data
     device_config = None
+    gas_cylinder_data = None  # Initialize to avoid the 'referenced before assignment' error
 
     # Retrieve and transform device configuration based on device type
     if device.device_type in [
@@ -47,6 +49,12 @@ def peripheral_device_transformer(
                 device_config = pyro_node_config_transformer(config)
             elif device.device_type == PeripheralDeviceType.GAS_NODE_DEVICE:
                 device_config = gas_node_config_transformer(config)
+
+    # Fetch gas cylinder data only if the device type is GAS_NODE_DEVICE
+    if device.device_type == PeripheralDeviceType.GAS_NODE_DEVICE:
+        cylinder = gas_cylinder_repo.read_by_uuid(device.gas_cylinder_uuid)
+        if cylinder:
+            gas_cylinder_data = {"name": cylinder.cylinder_name}
 
     latest_event = device_event_repository.get_device_latest_reading(device.node_id)
 
@@ -88,7 +96,7 @@ def peripheral_device_transformer(
             }
 
             measurement["gas_level"] = gas_level
-    # return measurement
+
     return {
         "uuid": str(device.uuid),
         "serial_number": device.serial_number,
@@ -104,4 +112,6 @@ def peripheral_device_transformer(
         "device_configuration": device_config,
         # "send_alert_status": device.send_alert_status,
         "current_device_reading": measurement,
+        "gas_cylinder_data": gas_cylinder_data,  # This is now safely initialized
     }
+
