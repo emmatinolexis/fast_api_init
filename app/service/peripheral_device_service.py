@@ -57,6 +57,15 @@ class PeripheralDeviceService(BaseService):
         except Exception as e:
             raise e
 
+    def toggle_send_alert_status(
+        self,
+        peripheral_device_uuid: str,
+    ):
+        try:
+            return self.device_node_config_repository.toggle_send_alert_status(peripheral_device_uuid)
+        except Exception as e:
+            raise e
+
     def create_peripheral_device(self, payload: CreatePeripheralDevice):
         try:
             device_type = payload.device_type
@@ -140,6 +149,27 @@ class PeripheralDeviceService(BaseService):
         except Exception as e:
             raise e
 
+    def get_device_by_peripheral_uuid(self, peripheral_uuid: str):
+        try:
+            device = self.peripheral_device_repository.get_by_peripheral_device_uuid(peripheral_uuid)
+            return device
+        except Exception as e:
+            raise e
+
+    def get_device_by_node_id(self, node_id: str):
+        try:
+            device = self.peripheral_device_repository.get_device_node_id(node_id)
+            return device
+        except Exception as e:
+            raise e
+
+    def get_device_conf_by_peripheral_uuid(self, peripheral_uuid: str):
+        try:
+            device = self.device_node_config_repository.get_device_node_config_by_device_uuid(peripheral_uuid)
+            return device
+        except Exception as e:
+            raise e
+
     def update_peripheral_device(
         self, user_uuid, payload: UpdatePeripheralDevice, building_uuid: str
     ):
@@ -196,7 +226,7 @@ class PeripheralDeviceService(BaseService):
             raise e
 
     def get_business_devices(
-        self, user_uuid, business_profile_uuid, device_type: str = None
+        self, business_profile_uuid, device_type: str = None
     ):
         try:
             dev_data = []
@@ -224,9 +254,11 @@ class PeripheralDeviceService(BaseService):
                     "device_type": device.device_type.name
                     if device.device_type
                     else None,
+                    "send_alert_status": device.send_alert_status,
                     "current_device_reading": latest_event.measurements
                     if latest_event
                     else None,
+
                 }
                 dev_data.append(data)
             return dev_data

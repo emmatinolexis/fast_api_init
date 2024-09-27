@@ -1,6 +1,6 @@
 import uuid as systemuuid
 
-from sqlalchemy import Column, DateTime, Enum, Float, ForeignKey, Integer, String
+from sqlalchemy import Column, Enum, Float, ForeignKey, Integer, String, DateTime, Boolean
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -75,7 +75,7 @@ class DeviceNodeConfig(BaseModel):
     target_temperature_threshold = Column(Integer, nullable=False, default=40)
     flammable_smoke_threshold = Column(Float, nullable=False, default=50)
     minimum_threshold = Column(Integer, nullable=False, default=50)
-
+    send_alert_status = Column(Boolean, nullable=False, default=True)
     # Back-populates the relationship with PeripheralDevice
     peripheral_device = relationship(
         "PeripheralDevice", back_populates="device_configuration"

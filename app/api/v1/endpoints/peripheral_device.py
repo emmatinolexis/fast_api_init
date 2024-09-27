@@ -19,6 +19,7 @@ from app.schema.peripheral_device_schema import (
     UpdatePeripheralDevice,
 )
 from app.service.device_configuration_service import DeviceConfigurationService
+from app.service.device_node_configuration_service import DeviceNodeConfigService
 from app.service.gas_cylinder_service import GasCylinderService
 from app.service.peripheral_device_service import PeripheralDeviceService
 from app.util.enums import AccountType, DeviceConfigurationVersion, DeviceType
@@ -142,7 +143,7 @@ async def create_node_configuration_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/configurations", response_class=ORJSONResponse)
+@router.get("/configurations/all", response_class=ORJSONResponse)
 @inject
 async def get_all_device_configurations_handler(
     service: DeviceConfigurationService = Depends(
@@ -335,7 +336,6 @@ async def get_peripheral_devices_by_user_handler(
             )
         else:
             devices = service.get_business_devices(
-                user_uuid=current_user.uuid,
                 business_profile_uuid=current_user.business_profile_uuid,
                 device_type=device_type,
             )
@@ -357,6 +357,7 @@ async def get_peripheral_devices_by_building_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
+
         devices = service.get_building_devices(building_uuid, device_type)
         return send_data_with_info(info=messages.GET_SUCCESS + "devices", data=devices)
     except Exception as e:
@@ -403,4 +404,33 @@ async def set_peripheral_device_to_default_handler(
         return send_data_with_info(data, messages.SUCCESS_MESSAGE)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/toggle_alert_status/{peripheral_device_uuid}", response_class=ORJSONResponse)
+@inject
+async def update_sent_alert_status(
+    peripheral_device_uuid: str,
+    peripheral_service: PeripheralDeviceService = Depends(
+        Provide[Container.peripheral_device_service]
+    ),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        device = peripheral_service.get_device_by_peripheral_uuid(peripheral_device_uuid)
+
+        if not device:
+            return send_client_side_error(messages.PERIPHERAL_DEVICE_NOT_FOUND_MSG, messages.PERIPHERAL_DEVICE_NOT_FOUND_MSG)
+
+        device_config = peripheral_service.get_device_conf_by_peripheral_uuid(peripheral_device_uuid)
+
+        if not device_config:
+            return send_client_side_error(messages.DEVICE_CONFIG_NOT_FOUND, messages.DEVICE_CONFIG_NOT_FOUND)
+
+        device_update = peripheral_service.toggle_send_alert_status(peripheral_device_uuid)
+        return send_data_with_info(device_update, messages.SUCCESS_MESSAGE)
+    except AuthError as e:
+        return send_client_side_error(user_msg=e.detail)
+    except Exception as e:
+        msg = messages.UPDATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)

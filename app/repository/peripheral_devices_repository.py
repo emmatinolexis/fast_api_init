@@ -1,8 +1,8 @@
 from contextlib import AbstractContextManager
 from typing import Callable
 
-from sqlalchemy import String, asc, cast, desc, nulls_last
-from sqlalchemy.orm import Session
+from sqlalchemy import String, asc, cast, nulls_last, desc
+from sqlalchemy.orm import Session, joinedload
 
 from app.model.peripheral_devices import PeripheralDevice
 from app.repository.base_repository import BaseRepository
@@ -63,6 +63,23 @@ class PeripheralDeviceRepository(BaseRepository):
             return (
                 session.query(self.model)
                 .filter(self.model.serial_number == serial_number)
+                .first()
+            )
+
+    def get_by_peripheral_device_uuid(self, peripheral_device_uuid: str):
+        with self.session_factory() as session:
+            return (
+                session.query(self.model)
+                .filter(self.model.uuid == peripheral_device_uuid)
+                .first()
+            )
+
+    def get_device_node_id(self, node_id: str):
+        with self.session_factory() as session:
+            return (
+                session.query(self.model)
+                .filter(self.model.node_id == node_id)
+                .options(joinedload(self.model.building))
                 .first()
             )
 

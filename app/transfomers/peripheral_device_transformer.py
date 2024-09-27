@@ -32,8 +32,6 @@ def peripheral_device_transformer(
 ):
     device = device_repo.read_by_uuid(device.uuid)
 
-    gas_cylinder_data = None
-
     # Initialize device_config
     device_config = None
 
@@ -58,8 +56,10 @@ def peripheral_device_transformer(
             gas_cylinder_data = {"name": cylinder.cylinder_name}
 
     latest_event = device_event_repository.get_device_latest_reading(device.node_id)
-    if latest_event:
+
+    if latest_event == PeripheralDeviceType:
         if device.device_type == PeripheralDeviceType.PYROGUARD_NODE_DEVICE:
+
             ambient_temperature_threshold = {
                 "value": latest_event.measurements[1].get("value"),
                 "unit": latest_event.measurements[1].get("unit"),
@@ -95,7 +95,7 @@ def peripheral_device_transformer(
             }
 
             measurement["gas_level"] = gas_level
-
+    # return measurement
     return {
         "uuid": str(device.uuid),
         "serial_number": device.serial_number,
@@ -109,6 +109,7 @@ def peripheral_device_transformer(
         "location": device.location,
         "device_type": device.device_type.name if device.device_type else None,
         "device_configuration": device_config,
+        # "send_alert_status": device.send_alert_status,
         "current_device_reading": measurement,
         "gas_cylinder_data": gas_cylinder_data,  # Return gas_cylinder_data only for GAS_NODE_DEVICE
     }
