@@ -100,12 +100,12 @@ async def send_device_alert_email(
             email=email,
         )
         if response["data"]["status"] == "success":
-            log.info("Smart report notification sent successfully")
+            log.info("Device alert sent successfully")
             return
 
-        log.error(f"Failed smart report notification email [{email}]")
+        log.error(f"Failed to send device alert email [{email}]")
     except Exception as e:
-        log.error(f"Failed to smart report notification email [{email}]")
+        log.error(f"Failed to send device alert email  [{email}]")
         raise Exception(str(e))
 
 
