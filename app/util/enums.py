@@ -282,6 +282,7 @@ class EmailPurpose(str, Enum):
     MAINTENANCE_ALERT = "Maintenance_Alert"
     SMART_REPORT_ALERT = "Smart_Report_Alert"
     PASSWORD_CHANGE = "Password_Change"
+    DEVICE_ALERTS = "Device_Alerts"
 
 
 class FileFormat(str, Enum):

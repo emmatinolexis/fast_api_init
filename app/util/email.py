@@ -84,6 +84,31 @@ async def send_smart_report_email(
         raise Exception(str(e))
 
 
+async def send_device_alert_email(
+    email,
+    message,
+    title,
+    email_purpose=EmailPurpose.DEVICE_ALERTS,
+):
+    try:
+        response = await send_email(
+            email_purpose=email_purpose,
+            email_body={
+                "alert_message": message,
+                "alert_title": title,
+            },
+            email=email,
+        )
+        if response["data"]["status"] == "success":
+            log.info("Smart report notification sent successfully")
+            return
+
+        log.error(f"Failed smart report notification email [{email}]")
+    except Exception as e:
+        log.error(f"Failed to smart report notification email [{email}]")
+        raise Exception(str(e))
+
+
 async def send_email_invitation(
     recipient_name, email, invitee_name, business_profile_uuid, role, expiry_date
 ):
