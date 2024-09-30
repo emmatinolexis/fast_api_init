@@ -3,7 +3,7 @@ from contextlib import AbstractContextManager
 from datetime import datetime, timedelta
 from typing import Callable
 
-from sqlalchemy import Date, and_, cast, desc, func
+from sqlalchemy import Date, and_, cast, desc, func, or_
 from sqlalchemy.orm import Session, joinedload
 
 from app.core import messages
@@ -11,6 +11,7 @@ from app.core.exceptions import NotFoundError
 from app.model.alert_policy import AlertPolicy
 from app.model.alert_policy_violations import AlertPolicyViolation
 from app.model.asset import Asset
+from app.model.user import User
 from app.model.maintenance_alert import MaintenanceAlert
 from app.model.tracking_event import TrackingEvent
 from app.repository.base_repository import BaseRepository
@@ -33,7 +34,7 @@ from app.util.utils import (
     toggle_maintenance_status,
     toggle_status,
 )
-
+from typing import Optional
 
 class AlertPolicyRepository(BaseRepository):
     def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
@@ -221,35 +222,104 @@ class AlertPolicyRepository(BaseRepository):
                 "page_size": page_size,
             }
 
-    def read_all_alert_violations_by_user(self, user_uuid: str, page=1, page_size=10):
+    def read_all_alert_violations_by_user(
+    self,
+    user_uuid: str,
+    page=1,
+    page_size=10,
+    policy_type: Optional[str] = None,
+    policy_status: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    search: Optional[str] = None,
+):
         with self.session_factory() as session:
             offset = (page - 1) * page_size
 
-            # Query to get the total count of alert violations
-            total_alerts = (
-                session.query(func.count(AlertPolicyViolation.id))
-                .filter(AlertPolicyViolation.user_uuid == user_uuid)
-                .scalar()
+            # Start building the query
+            query = session.query(AlertPolicyViolation).filter(
+                AlertPolicyViolation.user_uuid == user_uuid
             )
+            query = query.join(AlertPolicyViolation.alert_policy).join(AlertPolicyViolation.asset)
+            query = query.join(AlertPolicy.alert_policy_type)
+
+            # Apply policy type filter
+            if policy_type:
+                query = query.filter(
+                    AlertPolicy.alert_policy_type.has(policy_type_name=policy_type)
+                )
+
+            # Apply policy status filter
+            if policy_status:
+                query = query.filter(AlertPolicyViolation.status == policy_status)
+
+            # Apply date filter
+            if start_date and end_date:
+                # Both start_date and end_date are provided
+                try:
+                    start_date_obj = datetime.strptime(start_date, '%Y-%m-%d')
+                    end_date_obj = datetime.strptime(end_date, '%Y-%m-%d')
+                    # Include the entire end date
+                    end_date_obj += timedelta(days=1)
+                    query = query.filter(
+                        AlertPolicyViolation.created_at >= start_date_obj,
+                        AlertPolicyViolation.created_at < end_date_obj
+                    )
+                except ValueError:
+                    raise ValueError("Invalid date format. Expected 'YYYY-MM-DD'.")
+            elif start_date:
+                # Only start_date is provided
+                try:
+                    date_obj = datetime.strptime(start_date, '%Y-%m-%d')
+                    next_day = date_obj + timedelta(days=1)
+                    query = query.filter(
+                        AlertPolicyViolation.created_at >= date_obj,
+                        AlertPolicyViolation.created_at < next_day
+                    )
+                except ValueError:
+                    raise ValueError("Invalid date format. Expected 'YYYY-MM-DD'.")
+            elif end_date:
+                # Only end_date is provided
+                try:
+                    end_date_obj = datetime.strptime(end_date, '%Y-%m-%d')
+                    # Include the entire end date
+                    end_date_obj += timedelta(days=1)
+                    query = query.filter(
+                        AlertPolicyViolation.created_at < end_date_obj
+                    )
+                except ValueError:
+                    raise ValueError("Invalid date format. Expected 'YYYY-MM-DD'.")
+
+            # Apply search filter
+            if search:
+                search_term = f"%{search}%"
+                query = query.filter(
+                    or_(
+                        AlertPolicy.policy_name.ilike(search_term),
+                        Asset.asset_name.ilike(search_term),
+                    )
+                )
+
+            # Query to get the total count of alert violations
+            total_alerts = query.count()
 
             # Calculate total pages
             total_pages = (total_alerts + page_size - 1) // page_size
 
             # Fetch paginated results
             alerts = (
-                session.query(AlertPolicyViolation)
-                .filter(AlertPolicyViolation.user_uuid == user_uuid)
-                .order_by(desc(AlertPolicyViolation.created_at))
-                .offset(offset)
-                .limit(page_size)
-                .options(joinedload(AlertPolicyViolation.alert_policy))
-                .options(
-                    joinedload(AlertPolicyViolation.asset).joinedload(Asset.driver)
-                )
-                .options(joinedload(AlertPolicyViolation.user))
-                .all()
+            query.order_by(desc(AlertPolicyViolation.created_at))
+            .offset(offset)
+            .limit(page_size)
+            .options(joinedload(AlertPolicyViolation.alert_policy))
+            .options(
+                joinedload(AlertPolicyViolation.asset).joinedload(Asset.driver)
             )
-
+            .options(
+                joinedload(AlertPolicyViolation.user).defer(User.password)
+            )
+            .all()
+        )
             return {
                 "alerts": alerts,
                 "total_alerts": total_alerts,
@@ -257,6 +327,7 @@ class AlertPolicyRepository(BaseRepository):
                 "current_page": page,
                 "page_size": page_size,
             }
+
 
     def read_all_alert_violations_by_business(
         self, business_uuid: str, page=1, page_size=10

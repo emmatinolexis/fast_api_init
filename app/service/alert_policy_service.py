@@ -34,7 +34,7 @@ from app.schema.alert_policy_schema import (
 from app.service.base_service import BaseService
 from app.transfomers.alert_policy_transformer import alert_policy_transformer
 from app.util.enums import ActiveStatus, GeofenceShapeType
-
+from typing import Optional
 
 class AlertPolicyService(BaseService):
     def __init__(
@@ -88,13 +88,31 @@ class AlertPolicyService(BaseService):
         except Exception as e:
             raise e
 
-    def get_all_alert_violations_by_user(self, user_uuid: str, page=1, page_size=10):
+    def get_all_alert_violations_by_user(
+        self,
+        user_uuid: str,
+        page=1,
+        page_size=10,
+        policy_type: Optional[str] = None,
+        policy_status: Optional[str] = None,
+        start_date: Optional[str] = None,
+        end_date:Optional[str] = None,
+        search: Optional[str] = None,
+    ):
         try:
             return self.alert_policy_repository.read_all_alert_violations_by_user(
-                user_uuid, page, page_size
+                user_uuid=user_uuid,
+                page=page,
+                page_size=page_size,
+                policy_type=policy_type,
+                policy_status=policy_status,
+                start_date=start_date,
+                end_date = end_date,
+                search=search,
             )
         except Exception as e:
             raise e
+
 
     def get_all_alert_reminders(self, user_uuid: str):
         try:
