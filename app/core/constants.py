@@ -291,30 +291,21 @@ PYRO_FLAMMABLE_SMOKE_THRESHOLD = 50
 GAS_DEVICE_MINIMUM_THRESHOLD = 20
 
 PERMISSIONS = {
-    "asset": [
-        "create_asset",
-        "update_asset",
-        "view_asset",
-        "delete_asset"
-    ],
+    "asset": ["create_asset", "update_asset", "view_asset", "delete_asset"],
     "live_map": [
-            "view_live_map",
-            "route_replay",
-            "shut_off_on_engine",
-            "navigate_to_asset",
-            "view_activity_timeline",
+        "view_live_map",
+        "route_replay",
+        "shut_off_on_engine",
+        "navigate_to_asset",
+        "view_activity_timeline",
     ],
-    "alert_policy":[
-        "create_policy",
-        "view_policy",
-        "update_policy"
-    ],
-    "driver":[
+    "alert_policy": ["create_policy", "view_policy", "update_policy"],
+    "driver": [
         "create_driver",
         "view_driver",
         "update_driver",
     ],
-    "report":[
+    "report": [
         "violation_report",
         "opened_reminders_report",
         "distance_traveled_report",
@@ -322,18 +313,10 @@ PERMISSIONS = {
         "hours_worked_report",
         "harsh_driving_report",
     ],
-    "phone_number":[
+    "phone_number": [
         "update_phone_number",
     ],
-    "password":[
-        "change_password"
-    ],
-    "account":[
-        "deactivate_account"
-    ],
-    "team_members":[
-        "invite_team_member",
-        "update_team_member"
-    ]
+    "password": ["change_password"],
+    "account": ["deactivate_account"],
+    "team_members": ["invite_team_member", "update_team_member"],
 }
-

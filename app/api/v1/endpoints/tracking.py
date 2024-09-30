@@ -17,16 +17,14 @@ from app.schema.tracking_device_schema import (
     DeviceReportPayloadInput,
     SSLCertificateRequest,
 )
-from app.service.user_service import UserService
 from app.service.asset_service import AssetService
 from app.service.device_alert_notification_service import DeviceAlertNotificationService
 from app.service.device_events_service import DeviceEventService
 from app.service.peripheral_device_service import PeripheralDeviceService
 from app.service.tracking_event_service import TrackingEventService
-
+from app.service.user_service import UserService
+from app.util.email import EmailPurpose, send_device_alert_email
 from app.util.sms import send_sms
-from app.util.email import send_device_alert_email
-from app.util.email import EmailPurpose
 from app.util.utils import (
     extract_certificate_info,
     send_client_side_error,
@@ -195,17 +193,23 @@ async def create_device_events(
                 send_client_side_error(messages.PERIPHERAL_DEVICE_NOT_FOUND_MSG)
                 logging.info(messages.PERIPHERAL_DEVICE_NOT_FOUND_MSG)
 
-            alert_message = (f"Please be advised that {device_event_payload.alert_desc} in "
-                             f"{peripheral_device.location} of {peripheral_device.building.building_name}. "
-                             f"Please take immediate action to ensure optimal conditions.")
+            alert_message = (
+                f"Please be advised that {device_event_payload.alert_desc} in "
+                f"{peripheral_device.location} of {peripheral_device.building.building_name}. "
+                f"Please take immediate action to ensure optimal conditions."
+            )
 
             alert_title = device_event_payload.alert_type
 
             if peripheral_device.business_profile_uuid:
-                recipients = user_service.get_account_users(peripheral_device.business_profile_uuid)
+                recipients = user_service.get_account_users(
+                    peripheral_device.business_profile_uuid
+                )
 
                 if not recipients:
-                    send_client_side_error(messages.DEVICE_ALERT_RECIPIENT_NOT_FOUND_MSG)
+                    send_client_side_error(
+                        messages.DEVICE_ALERT_RECIPIENT_NOT_FOUND_MSG
+                    )
                     logging.info(messages.DEVICE_ALERT_RECIPIENT_NOT_FOUND_MSG)
 
                 for recipient in recipients.get("users"):
@@ -213,13 +217,19 @@ async def create_device_events(
                         await send_sms(recipient.get("phone_number"), alert_message)
 
                     if recipient.get("email_address") is not None:
-                        await send_device_alert_email(recipient.get("email_address"), alert_message, alert_title,
-                                                      EmailPurpose.DEVICE_ALERTS)
+                        await send_device_alert_email(
+                            recipient.get("email_address"),
+                            alert_message,
+                            alert_title,
+                            EmailPurpose.DEVICE_ALERTS,
+                        )
             else:
                 recipient = user_service.get_user_by_uuid(peripheral_device.user_uuid)
 
                 if not recipient:
-                    send_client_side_error(messages.DEVICE_ALERT_RECIPIENT_NOT_FOUND_MSG)
+                    send_client_side_error(
+                        messages.DEVICE_ALERT_RECIPIENT_NOT_FOUND_MSG
+                    )
                     logging.info(messages.DEVICE_ALERT_RECIPIENT_NOT_FOUND_MSG)
 
                 await send_sms(recipient.get("phone_number"), alert_message)

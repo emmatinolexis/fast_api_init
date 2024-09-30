@@ -33,7 +33,6 @@ async def synchronize_permissions_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-
 @router.post("/", response_class=ORJSONResponse)
 @inject
 async def create_permission_handler(
