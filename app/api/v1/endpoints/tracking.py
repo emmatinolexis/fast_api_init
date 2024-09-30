@@ -195,28 +195,34 @@ async def create_device_events(
                 send_client_side_error(messages.PERIPHERAL_DEVICE_NOT_FOUND_MSG)
                 logging.info(messages.PERIPHERAL_DEVICE_NOT_FOUND_MSG)
 
-            if peripheral_device.business_profile_uuid:
-                recipients = user_service.get_account_users(peripheral_device.business_profile_uuid)
-            else:
-                recipients = user_service.get_user_by_uuid(peripheral_device.user_uuid)
-
-            if not recipients:
-                send_client_side_error(messages.DEVICE_ALERT_RECIPIENT_NOT_FOUND_MSG)
-                logging.info(messages.DEVICE_ALERT_RECIPIENT_NOT_FOUND_MSG)
-
             alert_message = (f"Please be advised that {device_event_payload.alert_desc} in "
                              f"{peripheral_device.location} of {peripheral_device.building.building_name}. "
                              f"Please take immediate action to ensure optimal conditions.")
 
             alert_title = device_event_payload.alert_type
 
-            for recipient in recipients.get("users"):
+            if peripheral_device.business_profile_uuid:
+                recipients = user_service.get_account_users(peripheral_device.business_profile_uuid)
 
-                if recipient.get("phone_number") is not None:
-                    await send_sms(recipient.get("phone_number"), alert_message)
+                if not recipients:
+                    send_client_side_error(messages.DEVICE_ALERT_RECIPIENT_NOT_FOUND_MSG)
+                    logging.info(messages.DEVICE_ALERT_RECIPIENT_NOT_FOUND_MSG)
 
-                if recipient.get("email_address") is not None:
-                    await send_device_alert_email(recipient.get("email_address"), alert_message, alert_title, EmailPurpose.DEVICE_ALERTS)
+                for recipient in recipients.get("users"):
+                    if recipient.get("phone_number") is not None:
+                        await send_sms(recipient.get("phone_number"), alert_message)
+
+                    if recipient.get("email_address") is not None:
+                        await send_device_alert_email(recipient.get("email_address"), alert_message, alert_title,
+                                                      EmailPurpose.DEVICE_ALERTS)
+            else:
+                recipient = user_service.get_user_by_uuid(peripheral_device.user_uuid)
+
+                if not recipient:
+                    send_client_side_error(messages.DEVICE_ALERT_RECIPIENT_NOT_FOUND_MSG)
+                    logging.info(messages.DEVICE_ALERT_RECIPIENT_NOT_FOUND_MSG)
+
+                await send_sms(recipient.get("phone_number"), alert_message)
 
         msg = "device event saved"
         logging.info(msg)
