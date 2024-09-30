@@ -35,9 +35,15 @@ async def create_incident(
 async def get_all_incidents(
     incident_type: str = None,
     service: IncidentService = Depends(Provide[Container.incident_service]),
+    page: int = Query(1, ge=1, description="Page number, default is set to 1"),
+    page_size: int = Query(
+        10, ge=1, le=1000, description="Items per page, default is 10"
+    ),
 ):
     try:
-        incidents = service.get_all_incidents(incident_type=incident_type)
+        incidents = service.get_all_incidents(
+            incident_type=incident_type, page_size=page_size, page=page
+        )
         return send_data(data=incidents)
     except Exception as e:
         msg = f"{messages.GET_FAILED} {msg_prefix }"

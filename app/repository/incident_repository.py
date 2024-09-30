@@ -13,15 +13,21 @@ class IncidentRepository(BaseRepository):
         self.session_factory = session_factory
         super().__init__(session_factory, Incident)
 
-    def get_all_incidents(self, incident_type: IncidenceType = None) -> List[Incident]:
+    def get_all_incidents(
+        self, incident_type: IncidenceType = None, page: int = 1, page_size: int = 10
+    ) -> List[Incident]:
         with self.session_factory() as session:
+            offset = (page - 1) * page_size
             if incident_type:
                 return (
                     session.query(self.model)
                     .filter_by(incident_type=incident_type)
+                    .offset(offset)
+                    .limit(page_size)
                     .all()
                 )
-            return self.read_all()
+
+            return session.query(self.model).offset(offset).limit(page_size).all()
 
     def get_incidents_by_location(
         self, longitude: float, latitude: float, radius: int = 2000
