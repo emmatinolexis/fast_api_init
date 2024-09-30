@@ -96,7 +96,7 @@ SMART_REPORT_NOT_FOUND = "Smart Report was not found"
 ASSET_MUST_BE_ASSIGNED = "Asset must be assigned to a driver to perform this action"
 DRIVER_ALREADY_ASSIGNED_SAME_ASSET = "Driver is already assigned to the same asset"
 
-
+FAILED_TO_CREATE = "Failed to create"
 DEVICE_TYPE_MISMATCH = "Device type mismatch"
 PERIPHERAL_DEVICE_NOT_FOUND_MSG = "Peripheral device not found"
 DEVICE_ALERT_RECIPIENT_NOT_FOUND_MSG = "Device alert recipients not found"
