@@ -1133,3 +1133,8 @@ def generate_serial_numbers(
         serial_numbers.append(new_serial)
 
     return serial_numbers
+
+
+def format_compound_words(word):
+    return word.replace("_", " ").title()
+
