@@ -141,6 +141,21 @@ class UpdateDeviceConfigThreshold(BaseModel):
     minimum_threshold: Optional[int] = None
 
 
+class CreateGasCylinder(BaseModel):
+    building_uuid: str
+    cylinder_name: str
+    cylinder_type_uuid: str
+
+
+class CreateGasCylinderFull(BaseModel):
+    user_uuid: str
+    business_profile_uuid: str
+    building_uuid: str
+    cylinder_name: str
+    cylinder_type_uuid: str
+
+
 class LinkGasCylinderToDevice(BaseModel):
-    gas_cylinder_uuid: str
+    gas_cylinder_uuid: Optional[str] = None
+    gas_cylinder: Optional[CreateGasCylinder] = None
     serial_number: str
