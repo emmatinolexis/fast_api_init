@@ -6,11 +6,11 @@ from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
 from app.model.user import User
-from app.schema.permission_schema import PermissionPayload, RolePayload
+from app.schema.permission_schema import RolePayload
 from app.service.permission_service import PermissionService
 from app.service.role_service import RoleService
 from app.util.enums import RoleType
-from app.util.utils import send_data, send_internal_server_error
+from app.util.utils import send_data, send_internal_server_error, send_data_with_info
 
 router = APIRouter(
     prefix="/permissions",
@@ -29,20 +29,19 @@ async def synchronize_permissions_handler(
         permissions = service.synchronize_permissions()
         return send_data(permissions)
     except Exception as e:
-        msg = messages.POST_FAILED + f"{msg_prefix}s"
+        msg = messages.FAILED_TO_CREATE + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.post("/", response_class=ORJSONResponse)
+@router.get("/", response_class=ORJSONResponse)
 @inject
-async def create_permission_handler(
-    payload: PermissionPayload,
+async def get_all_permission_handler(
     service: PermissionService = Depends(Provide[Container.permission_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        permission = service.add(payload)
-        return send_data(permission)
+        permissions = service.get_permissions()
+        return send_data_with_info(permissions, messages.SUCCESS_MESSAGE)
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
