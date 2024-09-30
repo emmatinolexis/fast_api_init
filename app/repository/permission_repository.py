@@ -22,4 +22,3 @@ class PermissionRepository(BaseRepository):
             session.commit()
             session.refresh(permission)
             return permission
-        

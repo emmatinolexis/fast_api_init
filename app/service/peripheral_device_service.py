@@ -13,6 +13,7 @@ from app.repository.gas_cylinder_repository import GasCylinderRepository
 from app.repository.peripheral_devices_repository import PeripheralDeviceRepository
 from app.repository.user_repository import UserRepository
 from app.schema.peripheral_device_schema import (
+    CreateGasCylinderFull,
     CreatePeripheralDevice,
     CreatePeripheralDeviceInput,
     DefaultGasConfig,
@@ -25,7 +26,7 @@ from app.schema.peripheral_device_schema import (
 from app.service.base_service import BaseService
 from app.service.device_events_service import DeviceEventService
 from app.transfomers.peripheral_device_transformer import peripheral_device_transformer
-from app.util.enums import DeviceType, PeripheralDeviceType
+from app.util.enums import ActiveStatus, DeviceType, PeripheralDeviceType
 from app.util.utils import generate_serial_numbers
 
 
@@ -191,6 +192,15 @@ class PeripheralDeviceService(BaseService):
                     messages.PERIPHERAL_DEVICE_NOT_FOUND + payload.device_serial_number
                 )
 
+            is_authorized = (
+                peripheral_device.user_uuid == user.get("uuid")
+                or peripheral_device.business_profile_uuid
+                == user.get("business_profile").uuid
+            )
+
+            if not is_authorized:
+                raise AuthError(messages.UNAUTHORIZED_ACTION)
+
             data = UpdatePeripheralDeviceFull(
                 user_uuid=str(user_uuid),
                 business_profile_uuid=str(user.get("business_profile").uuid)
@@ -223,7 +233,7 @@ class PeripheralDeviceService(BaseService):
                     self.peripheral_device_repository,
                     self.device_node_config_repository,
                     self.device_event_repository,
-                    self.gas_cylinder_repository
+                    self.gas_cylinder_repository,
                 )
                 for device in devices
             ]
@@ -362,13 +372,10 @@ class PeripheralDeviceService(BaseService):
 
         except Exception as e:
             raise e
-        
 
-
-    def get_device_by_peripheral_uuid(self,device_uuid:str):
+    def get_device_by_peripheral_uuid(self, device_uuid: str):
         try:
             device = self.peripheral_device_repository.read_by_uuid(device_uuid)
-
 
             if not device:
                 raise NotFoundError(messages.PERIPHERAL_DEVICE_NOT_FOUND + device_uuid)
@@ -408,6 +415,28 @@ class PeripheralDeviceService(BaseService):
             if not is_authorized:
                 raise AuthError(messages.UNAUTHORIZED_ACTION)
 
+            # Check if there's an existing gas cylinder linked to the device
+            if device.gas_cylinder_uuid:
+                # Unlink the existing gas cylinder
+                self.gas_cylinder_repository.update_attr_by_uuid(
+                    device.gas_cylinder_uuid, "status", ActiveStatus.INACTIVE
+                )
+                self.peripheral_device_repository.update_attr_by_uuid(
+                    device.uuid, "gas_cylinder_uuid", None
+                )
+
+            if payload.gas_cylinder_uuid is None and payload.gas_cylinder is not None:
+                cylinder_payload = CreateGasCylinderFull(
+                    user_uuid=str(user_uuid),
+                    business_profile_uuid=str(user.get("business_profile").uuid),
+                    building_uuid=str(device.building_uuid),
+                    cylinder_name=payload.gas_cylinder.cylinder_name,
+                    cylinder_type_uuid=payload.gas_cylinder.cylinder_type_uuid,
+                )
+                payload.gas_cylinder_uuid = (
+                    self.gas_cylinder_repository.create(cylinder_payload)
+                ).uuid
+
             device_with_existing_cylinder = (
                 self.peripheral_device_repository.get_device_by_cylinder_uuid(
                     payload.gas_cylinder_uuid
@@ -423,12 +452,16 @@ class PeripheralDeviceService(BaseService):
                 device.uuid, "gas_cylinder_uuid", payload.gas_cylinder_uuid
             )
 
+            self.gas_cylinder_repository.update_attr_by_uuid(
+                payload.gas_cylinder_uuid, "status", ActiveStatus.ACTIVE
+            )
+
             return peripheral_device_transformer(
                 device,
                 self.peripheral_device_repository,
                 self.device_node_config_repository,
                 self.device_event_repository,
-                self.gas_cylinder_repository
+                self.gas_cylinder_repository,
             )
         except Exception as e:
             raise e

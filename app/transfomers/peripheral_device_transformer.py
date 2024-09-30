@@ -34,7 +34,9 @@ def peripheral_device_transformer(
 
     # Initialize device_config and gas_cylinder_data
     device_config = None
-    gas_cylinder_data = None  # Initialize to avoid the 'referenced before assignment' error
+    gas_cylinder_data = (
+        None  # Initialize to avoid the 'referenced before assignment' error
+    )
 
     # Retrieve and transform device configuration based on device type
     if device.device_type in [
@@ -113,4 +115,3 @@ def peripheral_device_transformer(
         "current_device_reading": measurement,
         "gas_cylinder_data": gas_cylinder_data,  # This is now safely initialized
     }
-

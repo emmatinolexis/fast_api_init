@@ -1,3 +1,5 @@
+from typing import Optional
+
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
@@ -27,7 +29,6 @@ from app.util.utils import (
     send_info,
     send_internal_server_error,
 )
-from typing import Optional
 
 router = APIRouter(
     prefix="/alert_policies",
@@ -119,7 +120,7 @@ async def get_alert_violations_by_user_handler(
         None,
         description="Filter by date or date range in format 'YYYY-MM-DD'",
     ),
-     end_date: Optional[str] = Query(
+    end_date: Optional[str] = Query(
         None,
         description="Filter by date or date range in format 'YYYY-MM-DD' ",
     ),
@@ -135,7 +136,7 @@ async def get_alert_violations_by_user_handler(
             page_size=page_size,
             policy_type=policy_type,
             policy_status=policy_status,
-            start_date = start_date,
+            start_date=start_date,
             end_date=end_date,
             search=search,
         )
