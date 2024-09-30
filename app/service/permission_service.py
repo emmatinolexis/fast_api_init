@@ -28,3 +28,24 @@ class PermissionService(BaseService):
                     existing_permission_names.add(permission_name)
         # Return all permissions
         return self.permission_repository.get_list()
+
+    def get_permissions(self):
+        try:
+            data = self.permission_repository.get_list()
+            permissions = {}
+
+            for entry in data:
+                model = entry.model
+                permission = {
+                    "permission_name": entry.permission_name,
+                    "uuid": entry.uuid
+                }
+
+                if model not in permissions:
+                    permissions[model] = []
+
+                permissions[model].append(permission)
+
+            return permissions
+        except Exception as e:
+            raise e
