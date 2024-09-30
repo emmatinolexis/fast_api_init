@@ -17,6 +17,7 @@ class Permission(BaseModel):
         nullable=False,
     )
     permission_name = Column(String(100), unique=True, nullable=False)
+    model = Column(String(100), unique=False, nullable=False)
     roles = relationship(
         "Role", secondary="role_permission_assignments", back_populates="permissions"
     )

@@ -27,6 +27,7 @@ from app.util.utils import (
     send_info,
     send_internal_server_error,
 )
+from typing import Optional
 
 router = APIRouter(
     prefix="/alert_policies",
@@ -107,14 +108,40 @@ async def get_alert_violations_by_user_handler(
     page_size: int = Query(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
+    policy_type: Optional[str] = Query(
+        None,
+        description="Filter by policy type. Possible values: Geofence, Maintenance, Idling",
+    ),
+    policy_status: Optional[str] = Query(
+        None, description="Filter by policy status. Possible values: Active, Seen"
+    ),
+    start_date: Optional[str] = Query(
+        None,
+        description="Filter by date or date range in format 'YYYY-MM-DD'",
+    ),
+     end_date: Optional[str] = Query(
+        None,
+        description="Filter by date or date range in format 'YYYY-MM-DD' ",
+    ),
+    search: Optional[str] = Query(
+        None, description="Search term to filter by relevant fields"
+    ),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(
-            service.get_all_alert_violations_by_user(user_uuid, page, page_size)
+        alerts = service.get_all_alert_violations_by_user(
+            user_uuid=user_uuid,
+            page=page,
+            page_size=page_size,
+            policy_type=policy_type,
+            policy_status=policy_status,
+            start_date = start_date,
+            end_date=end_date,
+            search=search,
         )
+        return send_data(alerts)
     except Exception as e:
-        msg = messages.GET_FAILED + "alert policies"
+        msg = messages.GET_FAILED + "alert violations"
         return send_internal_server_error(user_msg=msg, error=e)
 
 

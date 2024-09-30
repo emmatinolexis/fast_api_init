@@ -19,17 +19,19 @@ router = APIRouter(
 msg_prefix = "permission"
 
 
-@router.get("/", response_class=ORJSONResponse)
+@router.post("/synchronize/", response_class=ORJSONResponse)
 @inject
-async def get_all_permissions_handler(
+async def synchronize_permissions_handler(
     service: PermissionService = Depends(Provide[Container.permission_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.get_list())
+        permissions = service.synchronize_permissions()
+        return send_data(permissions)
     except Exception as e:
-        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        msg = messages.POST_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
+
 
 
 @router.post("/", response_class=ORJSONResponse)
