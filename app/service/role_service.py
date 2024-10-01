@@ -44,6 +44,7 @@ class RoleService(BaseService):
                 ]
                 updated_role = {
                     "role_name": role.role_name,
+                    "role_uuid": role.uuid,
                     "permissions": formatted_data,
                 }
                 roles_data.append(updated_role)
