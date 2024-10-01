@@ -10,7 +10,7 @@ from app.schema.permission_schema import RolePayload
 from app.service.permission_service import PermissionService
 from app.service.role_service import RoleService
 from app.util.enums import RoleType
-from app.util.utils import send_data, send_internal_server_error, send_data_with_info
+from app.util.utils import send_data, send_data_with_info, send_internal_server_error
 
 router = APIRouter(
     prefix="/permissions",

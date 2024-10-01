@@ -39,7 +39,7 @@ class PermissionService(BaseService):
                 model = entry.model
                 permission = {
                     "permission_name": entry.permission_name,
-                    "uuid": entry.uuid
+                    "uuid": entry.uuid,
                 }
 
                 if model not in permissions:
