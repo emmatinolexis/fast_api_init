@@ -24,7 +24,7 @@ async def create_incident(
 ):
     try:
         incident = service.create_incident(payload)
-        return send_data_with_info(data=incident, info=messages.CREATE_SUCCESS)
+        return send_data_with_info(data=incident.dto(), info=messages.CREATE_SUCCESS)
     except Exception as e:
         msg = f"{messages.CREATE_FAILED} {msg_prefix}"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -44,7 +44,7 @@ async def get_all_incidents(
         incidents = service.get_all_incidents(
             incident_type=incident_type, page_size=page_size, page=page
         )
-        return send_data(data=incidents)
+        return send_data(data=[i.dto() for i in incidents])
     except Exception as e:
         msg = f"{messages.GET_FAILED} {msg_prefix }"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -55,14 +55,14 @@ async def get_all_incidents(
 async def get_incidents_by_location(
     longitude: float,
     latitude: float,
-    radius: int = Query(2, description="radius is in kilometers(default is 2km)"),
+    radius: int = Query(2000, description="radius is in meters(default is 2000)"),
     service: IncidentService = Depends(Provide[Container.incident_service]),
 ):
     try:
         incidents = service.get_incidents_by_location(
             longitude=longitude, latitude=latitude, radius=radius * 1000
         )
-        return send_data(data=incidents)
+        return send_data(data=[i.dto() for i in incidents])
     except Exception as e:
-        msg = f"{messages.GET_FAILED} {msg_prefix }"
+        msg = f"{messages.GET_FAILED} {msg_prefix}"
         return send_internal_server_error(user_msg=msg, error=e)

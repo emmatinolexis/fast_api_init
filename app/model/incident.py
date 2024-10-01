@@ -1,7 +1,8 @@
 import uuid
 
-from sqlalchemy import Column, Double, Enum
+from sqlalchemy import Column, Double, Enum, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 from app.model.base_model import BaseModel
 from app.util.enums import IncidenceType
@@ -19,3 +20,18 @@ class Incident(BaseModel):
     incident_type = Column(Enum(IncidenceType), nullable=False, index=True)
     longitude = Column(Double, nullable=False, index=True)
     latitude = Column(Double, nullable=False, index=True)
+    user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
+
+    user = relationship("User", back_populates="incidents", lazy="joined")
+
+    def dto(self):
+        return {
+            "id": self.id,
+            "incidentType": self.incident_type,
+            "username": f"{self.user.first_name} {self.user.last_name}",
+            "userId": self.user_uuid,
+            "longitude": self.longitude,
+            "latitude": self.latitude,
+            "createdAt": self.created_at,
+            "updatedAt": self.updated_at,
+        }
