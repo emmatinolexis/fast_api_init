@@ -236,7 +236,6 @@ class AlertPolicyRepository(BaseRepository):
         with self.session_factory() as session:
             offset = (page - 1) * page_size
 
-            # Start building the query
             query = session.query(AlertPolicyViolation).filter(
                 AlertPolicyViolation.user_uuid == user_uuid
             )
@@ -245,23 +244,18 @@ class AlertPolicyRepository(BaseRepository):
             )
             query = query.join(AlertPolicy.alert_policy_type)
 
-            # Apply policy type filter
             if policy_type:
                 query = query.filter(
                     AlertPolicy.alert_policy_type.has(name=policy_type)
                 )
 
-            # Apply policy status filter
             if policy_status:
                 query = query.filter(AlertPolicyViolation.status == policy_status)
 
-            # Apply date filter
             if start_date and end_date:
-                # Both start_date and end_date are provided
                 try:
                     start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
                     end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
-                    # Include the entire end date
                     end_date_obj += timedelta(days=1)
                     query = query.filter(
                         AlertPolicyViolation.created_at >= start_date_obj,
@@ -270,7 +264,6 @@ class AlertPolicyRepository(BaseRepository):
                 except ValueError:
                     raise ValueError("Invalid date format. Expected 'YYYY-MM-DD'.")
             elif start_date:
-                # Only start_date is provided
                 try:
                     date_obj = datetime.strptime(start_date, "%Y-%m-%d")
                     next_day = date_obj + timedelta(days=1)
@@ -281,16 +274,13 @@ class AlertPolicyRepository(BaseRepository):
                 except ValueError:
                     raise ValueError("Invalid date format. Expected 'YYYY-MM-DD'.")
             elif end_date:
-                # Only end_date is provided
                 try:
                     end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
-                    # Include the entire end date
                     end_date_obj += timedelta(days=1)
                     query = query.filter(AlertPolicyViolation.created_at < end_date_obj)
                 except ValueError:
                     raise ValueError("Invalid date format. Expected 'YYYY-MM-DD'.")
 
-            # Apply search filter
             if search:
                 search_term = f"%{search}%"
                 query = query.filter(
@@ -300,13 +290,10 @@ class AlertPolicyRepository(BaseRepository):
                     )
                 )
 
-            # Query to get the total count of alert violations
             total_alerts = query.count()
 
-            # Calculate total pages
             total_pages = (total_alerts + page_size - 1) // page_size
 
-            # Fetch paginated results
             alerts = (
                 query.order_by(desc(AlertPolicyViolation.created_at))
                 .offset(offset)
