@@ -248,7 +248,7 @@ class AlertPolicyRepository(BaseRepository):
             # Apply policy type filter
             if policy_type:
                 query = query.filter(
-                    AlertPolicy.alert_policy_type.has(policy_type_name=policy_type)
+                    AlertPolicy.alert_policy_type.has(name=policy_type)
                 )
 
             # Apply policy status filter
