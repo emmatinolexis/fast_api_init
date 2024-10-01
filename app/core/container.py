@@ -790,7 +790,7 @@ class Container(containers.DeclarativeContainer):
         building_repository=building_repository,
         gas_device_repository=gas_device_repository,
         gas_cylinder_repository=gas_cylinder_repository,
-        user_repository = user_repository,
+        user_repository=user_repository,
         peripheral_device_repository=peripheral_devices_repository,
     )
 

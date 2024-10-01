@@ -1,12 +1,12 @@
 from typing import Optional
 
 from app.core import messages
-from app.core.exceptions import NotFoundError,BadRequestError,AuthError
+from app.core.exceptions import AuthError, BadRequestError, NotFoundError
 from app.repository.building_repository import BuildingRepository
 from app.repository.gas_cylinder_repository import GasCylinderRepository
 from app.repository.gas_device_repository import GasDeviceRepository
-from app.repository.user_repository import UserRepository
 from app.repository.peripheral_devices_repository import PeripheralDeviceRepository
+from app.repository.user_repository import UserRepository
 from app.schema.asset_schema import (
     BuildingInput,
     CreateBuildingInput,
@@ -14,10 +14,14 @@ from app.schema.asset_schema import (
     GasCylinderPayload,
     UpdateBuildingPayload,
 )
+from app.schema.peripheral_device_schema import (
+    CreateBuildingWithDevice,
+    CreateBuildingWithDeviceFull,
+    UpdateBuildingWithDevice,
+)
 from app.service.base_service import BaseService
 from app.transfomers.building_transformers import building_transformer
 from app.util.enums import DeviceStatus, DeviceType
-from app.schema.peripheral_device_schema import CreateBuildingWithDeviceFull,CreateBuildingWithDevice,UpdateBuildingWithDevice
 
 
 class BuildingService(BaseService):
@@ -169,15 +173,18 @@ class BuildingService(BaseService):
             return building_transformer(building)
         except Exception as e:
             raise e
-        
 
-    def create_building_with_peripheral_device(self, user_uuid: str, payload: CreateBuildingWithDevice):
+    def create_building_with_peripheral_device(
+        self, user_uuid: str, payload: CreateBuildingWithDevice
+    ):
         try:
             user = self.user_repository.get_user_by_uuid(user_uuid)
             if not user:
                 raise NotFoundError(messages.USER_NOT_FOUND + user_uuid)
 
-            device = self.peripheral_device_repository.get_by_serial_number(payload.serial_number)
+            device = self.peripheral_device_repository.get_by_serial_number(
+                payload.serial_number
+            )
             if not device:
                 raise BadRequestError(messages.DEVICE_DOES_NOT_EXIST)
 
@@ -185,13 +192,17 @@ class BuildingService(BaseService):
                 raise BadRequestError(messages.DEVICE_TYPE_MISMATCH)
 
             user_business_uuid = user.get("business_profile")
-            user_business_uuid_str = str(user_business_uuid.uuid) if user_business_uuid else None
+            user_business_uuid_str = (
+                str(user_business_uuid.uuid) if user_business_uuid else None
+            )
 
             # Check business profile first
             if device.business_profile_uuid:
-                print(user_business_uuid_str,device.business_profile_uuid)
-                print(type(user_business_uuid_str),type(device.business_profile_uuid))
-                if not user_business_uuid_str or user_business_uuid_str != str(device.business_profile_uuid):
+                print(user_business_uuid_str, device.business_profile_uuid)
+                print(type(user_business_uuid_str), type(device.business_profile_uuid))
+                if not user_business_uuid_str or user_business_uuid_str != str(
+                    device.business_profile_uuid
+                ):
                     raise AuthError(messages.ACTION_NOT_ALLOWED)
             # If no business profile, then check user
             elif device.user_uuid and device.user_uuid != user_uuid:
@@ -205,7 +216,7 @@ class BuildingService(BaseService):
                 latitude=payload.latitude,
                 image_url=payload.image_url,
                 user_uuid=str(user_uuid),
-                business_profile_uuid=user_business_uuid_str
+                business_profile_uuid=user_business_uuid_str,
             )
 
             building = self.building_repository.create(building_data)
@@ -217,12 +228,11 @@ class BuildingService(BaseService):
                     location=payload.location,
                     status=DeviceStatus.ASSIGNED,
                     user_uuid=str(user_uuid),
-                    business_profile_uuid=user_business_uuid_str
-                )
+                    business_profile_uuid=user_business_uuid_str,
+                ),
             )
 
             return building_transformer(building)
 
         except Exception as e:
             raise e
-

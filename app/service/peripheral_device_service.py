@@ -25,7 +25,11 @@ from app.schema.peripheral_device_schema import (
 )
 from app.service.base_service import BaseService
 from app.service.device_events_service import DeviceEventService
-from app.transfomers.peripheral_device_transformer import peripheral_device_transformer,gas_node_config_transformer,pyro_node_config_transformer
+from app.transfomers.peripheral_device_transformer import (
+    gas_node_config_transformer,
+    peripheral_device_transformer,
+    pyro_node_config_transformer,
+)
 from app.util.enums import ActiveStatus, DeviceType, PeripheralDeviceType
 from app.util.utils import generate_serial_numbers
 
@@ -465,15 +469,20 @@ class PeripheralDeviceService(BaseService):
             )
         except Exception as e:
             raise e
-        
 
-    def device_config_by_serial_number(self,serial_number:str):
+    def device_config_by_serial_number(self, serial_number: str):
         try:
-            device = self.peripheral_device_repository.get_by_serial_number(serial_number)
+            device = self.peripheral_device_repository.get_by_serial_number(
+                serial_number
+            )
             if not device:
-                raise NotFoundError(messages.PERIPHERAL_DEVICE_NOT_FOUND + serial_number)
-            
-            config = self.device_node_config_repository.get_device_node_config_by_device_uuid(device.uuid)
+                raise NotFoundError(
+                    messages.PERIPHERAL_DEVICE_NOT_FOUND + serial_number
+                )
+
+            config = self.device_node_config_repository.get_device_node_config_by_device_uuid(
+                device.uuid
+            )
             if not config:
                 raise NotFoundError(messages.DEVICE_CONFIG_NOT_FOUND + device.uuid)
             if device.device_type == DeviceType.PYROGUARD_NODE_DEVICE:

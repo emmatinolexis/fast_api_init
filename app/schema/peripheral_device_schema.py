@@ -6,10 +6,10 @@ from pydantic import BaseModel, validator
 
 from app.core import constants
 from app.util.enums import (
+    ActiveStatus,
     DeviceConfigurationVersion,
     DeviceStatus,
     PeripheralDeviceType,
-    ActiveStatus
 )
 
 
@@ -162,10 +162,6 @@ class LinkGasCylinderToDevice(BaseModel):
     serial_number: str
 
 
-
-
-
-
 class CreateBuildingWithDevice(BaseModel):
     building_name: str
     longitude: float
@@ -182,14 +178,11 @@ class CreateBuildingWithDeviceFull(BaseModel):
     latitude: float
     image_url: str
     user_uuid: str
-    status : ActiveStatus = ActiveStatus.ACTIVE
-    business_profile_uuid:Optional[str] = None
+    status: ActiveStatus = ActiveStatus.ACTIVE
+    business_profile_uuid: Optional[str] = None
 
 
 class UpdateBuildingWithDevice(BaseModel):
     building_uuid: str
     location: str
     status: DeviceStatus = DeviceStatus.ASSIGNED
-
-
-
