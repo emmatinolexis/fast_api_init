@@ -111,10 +111,10 @@ async def get_alert_violations_by_user_handler(
     ),
     policy_type: Optional[str] = Query(
         None,
-        description="Filter by policy type. Possible values: Geofence, Maintenance, Idling",
+        description="Filter by policy type. Possible values: Geofence alert policy, Over speeding alert policy",
     ),
     policy_status: Optional[str] = Query(
-        None, description="Filter by policy status. Possible values: Active, Seen"
+        None, description="Filter by policy status. Possible values: active, inactive"
     ),
     start_date: Optional[str] = Query(
         None,
