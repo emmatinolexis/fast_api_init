@@ -6,6 +6,7 @@ from pydantic import BaseModel, validator
 
 from app.core import constants
 from app.util.enums import (
+    ActiveStatus,
     DeviceConfigurationVersion,
     DeviceStatus,
     PeripheralDeviceType,
@@ -159,3 +160,29 @@ class LinkGasCylinderToDevice(BaseModel):
     gas_cylinder_uuid: Optional[str] = None
     gas_cylinder: Optional[CreateGasCylinder] = None
     serial_number: str
+
+
+class CreateBuildingWithDevice(BaseModel):
+    building_name: str
+    longitude: float
+    latitude: float
+    image_url: str
+    device_type: PeripheralDeviceType
+    serial_number: str
+    location: str
+
+
+class CreateBuildingWithDeviceFull(BaseModel):
+    building_name: str
+    longitude: float
+    latitude: float
+    image_url: str
+    user_uuid: str
+    status: ActiveStatus = ActiveStatus.ACTIVE
+    business_profile_uuid: Optional[str] = None
+
+
+class UpdateBuildingWithDevice(BaseModel):
+    building_uuid: str
+    location: str
+    status: DeviceStatus = DeviceStatus.ASSIGNED
