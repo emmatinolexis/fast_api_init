@@ -19,11 +19,13 @@ from app.schema.peripheral_device_schema import (
     LinkGasCylinderToDevice,
     UpdateDeviceConfigThreshold,
     UpdatePeripheralDevice,
+    CreateBuildingWithDevice
 )
 from app.service.device_alert_notification_service import DeviceAlertNotificationService
 from app.service.device_configuration_service import DeviceConfigurationService
 from app.service.gas_cylinder_service import GasCylinderService
 from app.service.peripheral_device_service import PeripheralDeviceService
+from app.service.building_service import BuildingService
 from app.util.enums import AccountType, DeviceConfigurationVersion, DeviceType
 from app.util.utils import (
     send_client_side_error,
@@ -488,3 +490,44 @@ async def create_device_alert_recipients_handler(
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
+
+
+
+@router.post("/building", response_class=ORJSONResponse)
+@inject
+async def create_building_handler(
+    payload: CreateBuildingWithDevice,
+    service: BuildingService = Depends(
+        Provide[Container.building_service]
+    ),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        building = service.create_building_with_peripheral_device(current_user.uuid,payload)
+        return send_data_with_info(info=messages.SUCCESS_MESSAGE, data=building)
+    except (AuthError,BadRequestError) as e:
+        return send_client_side_error(user_msg=e.detail)
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
+    
+
+
+@router.get("/config/{serial_number}",response_class=ORJSONResponse)
+@inject
+async def get_device_config_by_serial_number(
+    serial_number: str,
+    service: PeripheralDeviceService = Depends(
+        Provide[Container.peripheral_device_service]
+    ),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        config = service.device_config_by_serial_number(serial_number)
+        return send_data_with_info(info=messages.GET_SUCCESS + "device config",data=config)
+    except (NotFoundError,BadRequestError) as e:
+        return send_client_side_error(user_msg=e.detail)
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
+    
