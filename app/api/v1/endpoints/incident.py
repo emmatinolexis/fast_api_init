@@ -60,7 +60,7 @@ async def get_incidents_by_location(
 ):
     try:
         incidents = service.get_incidents_by_location(
-            longitude=longitude, latitude=latitude, radius=radius * 1000
+            longitude=longitude, latitude=latitude, radius=radius
         )
         return send_data(data=[i.dto() for i in incidents])
     except Exception as e:
