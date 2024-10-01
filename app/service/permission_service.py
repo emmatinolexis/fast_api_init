@@ -1,7 +1,7 @@
-from app.repository.permission_repository import PermissionRepository
-from app.service.base_service import BaseService
 from app.core.constants import PERMISSIONS
 from app.model.permission import Permission
+from app.repository.permission_repository import PermissionRepository
+from app.service.base_service import BaseService
 from app.util.utils import format_compound_words
 
 
@@ -39,7 +39,7 @@ class PermissionService(BaseService):
                 model = entry.model
                 permission = {
                     "permission_name": entry.permission_name,
-                    "uuid": entry.uuid
+                    "uuid": entry.uuid,
                 }
 
                 if model not in permissions:
@@ -47,8 +47,10 @@ class PermissionService(BaseService):
 
                 permissions[model].append(permission)
 
-            formatted_data = [{"name": format_compound_words(model), "permission": permissions} for model, permissions in
-                              permissions.items()]
+            formatted_data = [
+                {"name": format_compound_words(model), "permission": permissions}
+                for model, permissions in permissions.items()
+            ]
 
             return formatted_data
 

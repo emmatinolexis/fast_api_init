@@ -1137,4 +1137,3 @@ def generate_serial_numbers(
 
 def format_compound_words(word):
     return word.replace("_", " ").title()
-

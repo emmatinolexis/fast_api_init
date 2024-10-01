@@ -4,6 +4,7 @@ from app.repository.role_permission_assignment_repository import (
 from app.repository.role_repository import RoleRepository
 from app.schema.permission_schema import RolePayload
 from app.service.base_service import BaseService
+from app.util.utils import format_compound_words
 
 
 class RoleService(BaseService):
@@ -18,8 +19,38 @@ class RoleService(BaseService):
         )
         super().__init__(role_repository)
 
-    def get_all_roles(self, role_type: str = None) -> RolePayload:
-        return self.role_repository.get_all_roles(role_type)
+    def get_all_roles(self, role_type: str = None):
+        try:
+            roles_data = []
+            roles = self.role_repository.get_all_roles(role_type)
+            for role in roles:
+                permissions = {}
+
+                for entry in role.permissions:
+                    model = entry.model
+                    permission = {
+                        "permission_name": entry.permission_name,
+                        "uuid": entry.uuid,
+                    }
+
+                    if model not in permissions:
+                        permissions[model] = []
+
+                    permissions[model].append(permission)
+
+                formatted_data = [
+                    {"name": format_compound_words(model), "permission": permissions}
+                    for model, permissions in permissions.items()
+                ]
+                updated_role = {
+                    "role_name": role.role_name,
+                    "permissions": formatted_data,
+                }
+                roles_data.append(updated_role)
+
+            return roles_data
+        except Exception as e:
+            raise e
 
     def get_role(self, role_uuid: str):
         try:
