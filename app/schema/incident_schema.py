@@ -7,3 +7,4 @@ class IncidentPayload(BaseModel):
     incident_type: IncidenceType
     longitude: float
     latitude: float
+    user_uuid: str
