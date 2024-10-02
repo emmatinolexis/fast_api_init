@@ -11,9 +11,21 @@ from app.model.external_app import ExternalApp
 from app.model.user import User
 from app.service.external_app_service import ExternalAppService
 from app.service.user_service import UserService
-from app.util.utils import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE, THIRD_PARTY_APP_ROLE
+from app.util.utils import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE, THIRD_PARTY_APP_ROLE, check_permission
+from fastapi import HTTPException
+
 
 log = get_logger()
+
+
+def get_current_user_with_permission(permission: str):
+    def dependency(
+            token: str = Depends(JWTBearer(allowed_roles=[ADMIN_USER_ROLE, CUSTOMER_USER_ROLE])),
+            service: UserService = Depends(Provide[Container.user_service])
+    ):
+        return get_current_user(token=token, service=service, permission=permission)
+
+    return dependency
 
 
 @inject
@@ -22,7 +34,8 @@ def get_current_user(
         JWTBearer(allowed_roles=[ADMIN_USER_ROLE, CUSTOMER_USER_ROLE])
     ),
     service: UserService = Depends(Provide[Container.user_service]),
-) -> User:
+    # permission: str = None,
+):
     try:
         token_data = verify_token(token)
     except Exception as e:
@@ -30,12 +43,28 @@ def get_current_user(
         raise AuthError(detail="Could not validate credentials")
 
     current_user: User = service.get_user_by_email_address(token_data.username)
+
     if not current_user:
         raise AuthError(detail="User not found")
     log.info(
         "Current user in session", extra={"email_address": current_user.email_address}
     )
+
+    # if permission:
+    #     check_permission(current_user.user_role.permissions, permission)
     return current_user
+
+
+@inject
+def check_user_permission(
+    current_user,
+    permission_name: str = None,
+):
+    for permission in current_user.user_role.permissions:
+        if permission.get("permission_name") == permission_name:
+            return True
+    # Raise a 403 Forbidden error if the permission is not found
+    raise HTTPException(status_code=403, detail="Not Authorized")
 
 
 @inject

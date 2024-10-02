@@ -4,13 +4,15 @@ from fastapi.responses import ORJSONResponse
 
 from app.core import messages
 from app.core.container import Container
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, get_current_user_with_permission
+from app.model.permission import Permission
 from app.model.user import User
 from app.schema.permission_schema import RolePayload
 from app.service.permission_service import PermissionService
 from app.service.role_service import RoleService
 from app.util.enums import RoleType
 from app.util.utils import send_data, send_data_with_info, send_internal_server_error
+from app.core.constants import PERMISSIONS
 
 router = APIRouter(
     prefix="/permissions",
@@ -52,7 +54,9 @@ async def get_all_permission_handler(
 async def get_all_roles_handler(
     role_type: RoleType = None,
     service: RoleService = Depends(Provide[Container.role_service]),
+    # current_user: User = Depends(get_current_user_with_permission("view_role")),
     current_user: User = Depends(get_current_user),
+
 ):
     try:
         return send_data(service.get_all_roles(role_type))
@@ -70,7 +74,7 @@ async def create_role_handler(
 ):
     try:
         role = service.create_role_permission(payload)
-        return send_data(role)
+        return send_data_with_info(role, messages.SUCCESS_MESSAGE)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -88,7 +92,7 @@ async def update_role_handler(
         role = service.get_by_uuid(role_uuid)
         if role:
             update_role = service.update_role(payload, role_uuid)
-            return send_data(update_role)
+            return send_data_with_info(update_role, messages.SUCCESS_MESSAGE)
         msg = "role not found"
         return send_internal_server_error(user_msg=msg, error=msg)
     except Exception as e:
