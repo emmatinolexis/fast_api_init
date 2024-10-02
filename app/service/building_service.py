@@ -21,7 +21,7 @@ from app.schema.peripheral_device_schema import (
 )
 from app.service.base_service import BaseService
 from app.transfomers.building_transformers import building_transformer
-from app.util.enums import DeviceStatus, DeviceType
+from app.util.enums import DeviceStatus, DeviceType,ActiveStatus
 
 
 class BuildingService(BaseService):
@@ -182,57 +182,55 @@ class BuildingService(BaseService):
             if not user:
                 raise NotFoundError(messages.USER_NOT_FOUND + user_uuid)
 
-            device = self.peripheral_device_repository.get_by_serial_number(
-                payload.serial_number
-            )
-            if not device:
-                raise BadRequestError(messages.DEVICE_DOES_NOT_EXIST)
+            business_profile_uuid = user.get("business_profile").uuid
 
-            if payload.device_type != device.device_type:
-                raise BadRequestError(messages.DEVICE_TYPE_MISMATCH)
+            if payload.device:
+                device = self.peripheral_device_repository.get_by_serial_number(payload.device.serial_number)
+                if not device:
+                    raise NotFoundError(messages.DEVICE_NOT_FOUND + payload.device.serial_number)
+                
+                if payload.device.device_type != device.device_type:
+                    raise BadRequestError(messages.DEVICE_TYPE_MISMATCH)
 
-            user_business_uuid = user.get("business_profile")
-            user_business_uuid_str = (
-                str(user_business_uuid.uuid) if user_business_uuid else None
-            )
+                # Check if device has both user_uuid and business_profile_uuid
+                if device.user_uuid and device.business_profile_uuid:
+                    if device.business_profile_uuid != business_profile_uuid:
+                        raise AuthError(messages.ACTION_NOT_ALLOWED)
+                # If device only has user_uuid, check if it matches
+                elif device.user_uuid:
+                    if device.user_uuid != user_uuid:
+                        raise AuthError(messages.ACTION_NOT_ALLOWED)
+                
+                # Use device's business_profile_uuid if available
+                business_profile_uuid = device.business_profile_uuid or business_profile_uuid
 
-            # Check business profile first
-            if device.business_profile_uuid:
-                print(user_business_uuid_str, device.business_profile_uuid)
-                print(type(user_business_uuid_str), type(device.business_profile_uuid))
-                if not user_business_uuid_str or user_business_uuid_str != str(
-                    device.business_profile_uuid
-                ):
-                    raise AuthError(messages.ACTION_NOT_ALLOWED)
-            # If no business profile, then check user
-            elif device.user_uuid and device.user_uuid != user_uuid:
-                raise AuthError(messages.ACTION_NOT_ALLOWED)
+            if payload.building:
+                building_data = CreateBuildingInput(
+                    building_name=payload.building.building_name,
+                    longitude=payload.building.longitude,
+                    latitude=payload.building.latitude,
+                    image_url=payload.building.image_url,
+                    user_uuid=user_uuid,
+                    business_profile_uuid=business_profile_uuid,
+                    status=ActiveStatus.ACTIVE
+                )
 
-            # If we've reached this point, the user is allowed to add the device to a building
+                building = self.building_repository.create(building_data)
 
-            building_data = CreateBuildingWithDeviceFull(
-                building_name=payload.building_name,
-                longitude=payload.longitude,
-                latitude=payload.latitude,
-                image_url=payload.image_url,
-                user_uuid=str(user_uuid),
-                business_profile_uuid=user_business_uuid_str,
-            )
+                if payload.device:
+                    # Update device with building information
+                    device_update = UpdateBuildingWithDevice(
+                        building_uuid=str(building.uuid),
+                        location=payload.device.location,
+                    )
+                    self.peripheral_device_repository.update_by_uuid(device.uuid, device_update)
 
-            building = self.building_repository.create(building_data)
-
-            device = self.peripheral_device_repository.update_by_uuid(
-                device.uuid,
-                UpdateBuildingWithDevice(
-                    building_uuid=str(building.uuid),
-                    location=payload.location,
-                    status=DeviceStatus.ASSIGNED,
-                    user_uuid=str(user_uuid),
-                    business_profile_uuid=user_business_uuid_str,
-                ),
-            )
-
-            return building_transformer(building)
+                return building_transformer(building)
+            else:
+                raise BadRequestError(messages.BUILDING_DATA_REQUIRED)
 
         except Exception as e:
+            # If building was created but device assignment failed, delete the building
+            if 'building' in locals():
+                self.building_repository.delete_by_uuid(building.uuid)
             raise e

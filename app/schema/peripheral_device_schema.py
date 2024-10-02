@@ -162,14 +162,24 @@ class LinkGasCylinderToDevice(BaseModel):
     serial_number: str
 
 
-class CreateBuildingWithDevice(BaseModel):
+
+
+class BuildingInput(BaseModel):
     building_name: str
     longitude: float
     latitude: float
     image_url: str
+
+
+class DeviceInput(BaseModel):
     device_type: PeripheralDeviceType
     serial_number: str
     location: str
+
+
+class CreateBuildingWithDevice(BaseModel):
+    building: BuildingInput
+    device: Optional[DeviceInput] = None
 
 
 class CreateBuildingWithDeviceFull(BaseModel):
@@ -186,3 +196,4 @@ class UpdateBuildingWithDevice(BaseModel):
     building_uuid: str
     location: str
     status: DeviceStatus = DeviceStatus.ASSIGNED
+    installed_at : datetime = datetime.now()
