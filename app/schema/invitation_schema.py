@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, field_validator
 
-from app.util.enums import InvitationStatus
+from app.util.enums import InvitationStatus, RoleType
 
 
 class Permissions(BaseModel):
@@ -40,6 +40,17 @@ class InvitationPayload(InvitationCreatePayloadSingle):
     business_profile_uuid: str
     status: InvitationStatus = InvitationStatus.PENDING
     expired_at: datetime
+
+    class Config:
+        orm_mode = True
+
+
+class AdminInvitationPayload(InvitationCreatePayloadSingle):
+    status: InvitationStatus = InvitationStatus.PENDING
+    expired_at: datetime
+    email: EmailStr
+    role_uuid: UUID
+    invitation_type: RoleType
 
     class Config:
         orm_mode = True

@@ -31,6 +31,7 @@ from app.service.business_profile_service import BusinessProfileService
 from app.service.invitation_service import InvitationService
 from app.service.phone_otp_service import PhoneOTPService
 from app.service.reset_password_service import ResetPassword
+from app.service.role_service import RoleService
 from app.service.user_service import UserService
 from app.util.email import (
     send_email_invitation,
@@ -38,7 +39,7 @@ from app.util.email import (
     send_otp_email,
     send_password_change_email,
 )
-from app.util.enums import AccountType, EmailPurpose
+from app.util.enums import AccountType, EmailPurpose, RoleType
 from app.util.utils import (
     allow_admins_only,
     resolve_data_from_request,
@@ -442,6 +443,7 @@ async def create_team_member_invitation(
     invitation_service: InvitationService = Depends(
         Provide[Container.invitation_service]
     ),
+    role_service: RoleService = Depends(Provide[Container.role_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
@@ -469,6 +471,12 @@ async def create_team_member_invitation(
                 email=invitation.email, role_uuid=invitation.role_uuid
             )
 
+            role = role_service.get_by_uuid(str(invitation.role_uuid))
+            if role is None:
+                return send_client_side_error(
+                    user_msg=messages.ROLE_NOT_FOUND,
+                )
+
             created_invite = service.create_team_member_invitation(
                 user_uuid, invitation_payload, user
             )
@@ -481,6 +489,7 @@ async def create_team_member_invitation(
                 business_profile_uuid=str(user.business_profile_uuid),
                 role=str(invitation.role_uuid),
                 expiry_date=serialize_datetime(created_invite.expired_at),
+                role_type=RoleType.CUSTOMER
             )
         msg = "Invitations sent successfully"
         return send_info(msg)
@@ -577,11 +586,69 @@ async def resend_invitation_handler(
             invitee_name=f"{current_user.first_name} {current_user.last_name}",
             business_profile_uuid=str(invitation.business_profile_uuid),
             role=str(invitation.role_uuid),
+            role_type=RoleType.CUSTOMER,
             expiry_date=serialize_datetime(invitation.expired_at),
         )
 
         msg = "Invitation resent successfully"
         return send_info(msg)
+    except Exception as e:
+        msg = messages.CREATE_FAILED + "invitation"
+        return send_internal_server_error(user_msg=msg, error=str(e))
+
+
+@router.post("/admin/invitations", response_class=ORJSONResponse)
+@inject
+async def create_admin_user_invitation(
+    payload: InvitationCreatePayload,
+    service: UserService = Depends(Provide[Container.user_service]),
+    invitation_service: InvitationService = Depends(
+        Provide[Container.invitation_service]
+    ),
+    role_service: RoleService = Depends(Provide[Container.role_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+
+        for invitation in payload.invitations:
+            existing_user = service.get_user_by_email_address(invitation.email)
+            if existing_user:
+                msg = "User already exist, "
+                raise NotFoundError(detail=msg + f" email: {invitation.email}")
+
+            invitation_exists = invitation_service.get_invitation_by_email(
+                invitation.email
+            )
+            if invitation_exists:
+                return send_client_side_error(
+                    user_msg=f"Invitation already exists for : {invitation.email}",
+                )
+
+            role = role_service.get_by_uuid(str(invitation.role_uuid))
+            if role is None:
+                return send_client_side_error(
+                    user_msg=messages.ROLE_NOT_FOUND,
+                )
+
+            invitation_payload = InvitationCreatePayloadSingle(
+                email=invitation.email, role_uuid=invitation.role_uuid
+            )
+
+            created_invite = service.create_admin_user_invitation(invitation_payload)
+
+            # send email invite
+            await send_email_invitation(
+                recipient_name="",
+                email=invitation.email,
+                invitee_name=f"{current_user.first_name} {current_user.last_name}",
+                role=str(invitation.role_uuid),
+                role_type=RoleType.ADMIN,
+                expiry_date=serialize_datetime(created_invite.expired_at),
+            )
+        msg = "Invitations sent successfully"
+        return send_info(msg)
+    except NotFoundError as e:
+        return send_client_side_error(e.detail)
     except Exception as e:
         msg = messages.CREATE_FAILED + "invitation"
         return send_internal_server_error(user_msg=msg, error=str(e))

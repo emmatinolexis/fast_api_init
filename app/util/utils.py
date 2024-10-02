@@ -13,6 +13,7 @@ from fastapi import Depends, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import ORJSONResponse
 from geopy.distance import geodesic
+from fastapi import HTTPException
 
 from app.client.s3_client import S3Client
 from app.core.constants import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE, THIRD_PARTY_APP_ROLE
@@ -1137,3 +1138,12 @@ def generate_serial_numbers(
 
 def format_compound_words(word):
     return word.replace("_", " ").title()
+
+
+def check_permission(permissions, permission_name):
+    """Check if a particular permission exists in the list of permissions."""
+    for permission in permissions:
+        if permission.permission_name == permission_name:
+            return True
+    # Raise a 403 Forbidden error if the permission is not found
+    raise HTTPException(status_code=403, detail="Not Authorized")

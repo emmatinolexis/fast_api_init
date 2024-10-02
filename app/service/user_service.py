@@ -15,6 +15,7 @@ from app.repository.user_subscription_repository import UserSubscriptionReposito
 from app.schema.invitation_schema import (
     InvitationCreatePayloadSingle,
     InvitationPayload,
+    AdminInvitationPayload
 )
 from app.schema.user_schema import (
     AccountDeactivationPayload,
@@ -23,7 +24,7 @@ from app.schema.user_schema import (
     UserProfileUdatePayload,
 )
 from app.service.base_service import BaseService
-from app.util.enums import InvitationStatus
+from app.util.enums import InvitationStatus, RoleType
 
 
 class UserService(BaseService):
@@ -142,12 +143,12 @@ class UserService(BaseService):
             raise e
 
     def create_team_member_invitation(
-        self, uuid: str, payload: InvitationCreatePayloadSingle, user: dict
+        self, uuid: str, payload: InvitationCreatePayloadSingle, user
     ):
-        if not user.business_profile_uuid:
-            raise NotFoundError(detail=messages.BUSINESS_PROFILE_NOT_FOUND + str(uuid))
 
         try:
+            if not user.business_profile_uuid:
+                raise NotFoundError(detail=messages.BUSINESS_PROFILE_NOT_FOUND + str(uuid))
             return self.invitation_repository.create_invitation(
                 payload=InvitationPayload(
                     business_profile_uuid=str(user.business_profile_uuid),
@@ -157,6 +158,22 @@ class UserService(BaseService):
                     expired_at=datetime.now() + timedelta(days=3),
                 )
             )
+        except Exception as e:
+            raise e
+
+    def create_admin_user_invitation(
+        self, payload: InvitationCreatePayloadSingle
+    ):
+        try:
+            payload = AdminInvitationPayload(
+                    email=payload.email,
+                    role_uuid=payload.role_uuid,
+                    status=InvitationStatus.PENDING,
+                    expired_at=datetime.now() + timedelta(days=3),
+                    invitation_type=RoleType.ADMIN,
+                )
+            self.invitation_repository.create(payload)
+            return payload
         except Exception as e:
             raise e
 
