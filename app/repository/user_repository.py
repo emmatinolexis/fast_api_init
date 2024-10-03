@@ -22,7 +22,7 @@ from app.schema.user_schema import (
     UserPayload,
     UserProfileUdatePayload,
 )
-from app.util.enums import AccountType, ActiveStatus, CustomerRoles, InvitationStatus
+from app.util.enums import AccountType, ActiveStatus, CustomerRoles, InvitationStatus, RoleType
 from app.util.utils import toggle_status
 
 
@@ -192,32 +192,53 @@ class UserRepository(BaseRepository):
                 "page_size": page_size,
             }
 
-    # def get_account_users(self, business_uuid: str, page=1, page_size=10):
-    #     with self.session_factory() as session:
-    #         offset = (page - 1) * page_size
-    #
-    #         account_users = (
-    #             session.query(self.model)
-    #             .filter(self.model.business_profile_uuid == business_uuid)
-    #             .order_by(desc(self.model.created_at)).offset(offset).limit(page_size)
-    #             .options(joinedload(User.user_role))
-    #         )
-    #         users_data = []
-    #         for user in account_users:
-    #             user_data = {
-    #                 "uuid": user.uuid,
-    #                 "first_name": user.first_name,
-    #                 "last_name": user.last_name,
-    #                 "email_address": user.email_address,
-    #                 "phone_number": user.phone_number,
-    #                 "image_url": user.avatar_url,
-    #                 "status": user.status,
-    #                 "role": user.user_role,
-    #                 "created_at": user.created_at,
-    #             }
-    #             users_data.append(user_data)
-    #
-    #         return users_data
+    def get_admin_team_members(self, page=1, page_size=10, email: str = None, role_uuid: str = None):
+        with self.session_factory() as session:
+            offset = (page - 1) * page_size
+            # Build the query for invitations with optional filters
+            query = session.query(self.model).filter(self.model.role == RoleType.ADMIN)
+
+            # Add filters based on provided parameters
+            if email:
+                query = query.filter(self.model.email_address.ilike(f"%{email}%"))
+            if role_uuid:
+                query = query.filter(self.model.role_uuid == role_uuid)
+
+            # Query to get the total count of invitations with filters
+            total_invitations = query.with_entities(func.count(self.model.id)).scalar()
+
+            # Calculate total pages
+            total_pages = (total_invitations + page_size - 1) // page_size
+
+            # Get the invitations with filters, pagination, and sorting
+            users = (
+                query
+                .order_by(desc(self.model.created_at))
+                .offset(offset)
+                .limit(page_size)
+                .options(joinedload(self.model.user_role))
+                .all()
+            )
+
+            # Prepare the invitation data
+            users_data = [
+                {
+                    "uuid": user.uuid,
+                    "email": user.email_address,
+                    "role": user.user_role,
+                    "status": user.status,
+                    "created_at": user.created_at,
+                }
+                for user in users
+            ]
+
+            return {
+                "invitations": users_data,
+                "total_invitations": total_invitations,
+                "total_pages": total_pages,
+                "current_page": page,
+                "page_size": page_size,
+            }
 
     def create_user(self, user: UserPayload):
         with self.session_factory() as session:
