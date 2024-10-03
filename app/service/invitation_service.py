@@ -25,6 +25,11 @@ class InvitationService(BaseService):
             business_uuid, page, page_size
         )
 
+    def get_all_admin_invites(self, page=1, page_size=10):
+        return self.invitation_repository.get_admin_invitations(
+            page, page_size
+        )
+
     def update_invitation_expiry(self, invitation_uuid: str, expiry_date: datetime):
         return self.invitation_repository.update_attr_by_uuid(
             invitation_uuid, "expired_at", expiry_date

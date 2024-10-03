@@ -81,44 +81,44 @@ async def startup_event():
     scheduler.start()
 
     # check over speeding every 2 minutes
-    # scheduler.add_job(
-    #     check_over_speeding_violation_handler,
-    #     "interval",
-    #     minutes=2,
-    #     id="check_over_speeding_violation",
-    # )
+    scheduler.add_job(
+        check_over_speeding_violation_handler,
+        "interval",
+        minutes=2,
+        id="check_over_speeding_violation",
+    )
 
     # check geofence violation for every 3 minutes
-    # scheduler.add_job(
-    #     check_geofence_violation_handler,
-    #     "interval",
-    #     minutes=3,
-    #     id="check_geofence_violation",
-    # )
+    scheduler.add_job(
+        check_geofence_violation_handler,
+        "interval",
+        minutes=3,
+        id="check_geofence_violation",
+    )
 
     # check maintenance alert
-    # scheduler.add_job(
-    #     check_maintenance_handler,
-    #     "interval",
-    #     minutes=10,
-    #     id="check_maintenance",
-    # )
+    scheduler.add_job(
+        check_maintenance_handler,
+        "interval",
+        minutes=10,
+        id="check_maintenance",
+    )
 
     # check geofence violation for every 3 minutes
-    # scheduler.add_job(
-    #     check_idling_violation_handler,
-    #     "interval",
-    #     minutes=4,
-    #     id="check_idling_violation",
-    # )
+    scheduler.add_job(
+        check_idling_violation_handler,
+        "interval",
+        minutes=4,
+        id="check_idling_violation",
+    )
 
     # get new smart reports and generate report
-    # scheduler.add_job(
-    #     generate_smart_report_handler,
-    #     "interval",
-    #     minutes=5,
-    #     id="smart_report_generation",
-    # )
+    scheduler.add_job(
+        generate_smart_report_handler,
+        "interval",
+        minutes=5,
+        id="smart_report_generation",
+    )
 
 
 @app.on_event("shutdown")

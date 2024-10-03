@@ -597,7 +597,7 @@ async def resend_invitation_handler(
         return send_internal_server_error(user_msg=msg, error=str(e))
 
 
-@router.post("/admin/invitations", response_class=ORJSONResponse)
+@router.post("/admin/invitations", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def create_admin_user_invitation(
     payload: InvitationCreatePayload,
@@ -652,3 +652,25 @@ async def create_admin_user_invitation(
     except Exception as e:
         msg = messages.CREATE_FAILED + "invitation"
         return send_internal_server_error(user_msg=msg, error=str(e))
+
+
+@router.get("/admin/invitations/", dependencies=[allow_admins_only], response_class=ORJSONResponse)
+@inject
+async def get_all_user_invitations_handler(
+    invitation_service: InvitationService = Depends(
+        Provide[Container.invitation_service]
+    ),
+    page: int = Query(1, ge=1, description="Page number, default is set to 1"),
+    page_size: int = Query(
+        10, ge=1, le=1000, description="Items per page, default is 10"
+    ),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        invitations = invitation_service.get_all_admin_invites(
+             page, page_size
+        )
+        return send_data(invitations)
+    except Exception as e:
+        msg = messages.GET_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
