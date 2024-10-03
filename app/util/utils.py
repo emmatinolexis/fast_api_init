@@ -9,11 +9,10 @@ from typing import Any, List, Union
 import boto3
 import pandas as pd
 from dateutil import parser
-from fastapi import Depends, Request
+from fastapi import Depends, HTTPException, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import ORJSONResponse
 from geopy.distance import geodesic
-from fastapi import HTTPException
 
 from app.client.s3_client import S3Client
 from app.core.constants import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE, THIRD_PARTY_APP_ROLE

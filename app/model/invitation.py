@@ -1,11 +1,11 @@
 import uuid
 
-from sqlalchemy import Column, DateTime, ForeignKey, String, Enum
+from sqlalchemy import Column, DateTime, Enum, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from app.util.enums import RoleType
 
 from app.model.base_model import BaseModel
+from app.util.enums import RoleType
 
 
 class Invitation(BaseModel):

@@ -13,9 +13,9 @@ from app.repository.team_member_invitation_repository import (
 from app.repository.user_repository import UserRepository
 from app.repository.user_subscription_repository import UserSubscriptionRepository
 from app.schema.invitation_schema import (
+    AdminInvitationPayload,
     InvitationCreatePayloadSingle,
     InvitationPayload,
-    AdminInvitationPayload
 )
 from app.schema.user_schema import (
     AccountDeactivationPayload,
@@ -145,10 +145,11 @@ class UserService(BaseService):
     def create_team_member_invitation(
         self, uuid: str, payload: InvitationCreatePayloadSingle, user
     ):
-
         try:
             if not user.business_profile_uuid:
-                raise NotFoundError(detail=messages.BUSINESS_PROFILE_NOT_FOUND + str(uuid))
+                raise NotFoundError(
+                    detail=messages.BUSINESS_PROFILE_NOT_FOUND + str(uuid)
+                )
             return self.invitation_repository.create_invitation(
                 payload=InvitationPayload(
                     business_profile_uuid=str(user.business_profile_uuid),
@@ -161,17 +162,15 @@ class UserService(BaseService):
         except Exception as e:
             raise e
 
-    def create_admin_user_invitation(
-        self, payload: InvitationCreatePayloadSingle
-    ):
+    def create_admin_user_invitation(self, payload: InvitationCreatePayloadSingle):
         try:
             payload = AdminInvitationPayload(
-                    email=payload.email,
-                    role_uuid=payload.role_uuid,
-                    status=InvitationStatus.PENDING,
-                    expired_at=datetime.now() + timedelta(days=3),
-                    invitation_type=RoleType.ADMIN,
-                )
+                email=payload.email,
+                role_uuid=payload.role_uuid,
+                status=InvitationStatus.PENDING,
+                expired_at=datetime.now() + timedelta(days=3),
+                invitation_type=RoleType.ADMIN,
+            )
             self.invitation_repository.create(payload)
             return payload
         except Exception as e:

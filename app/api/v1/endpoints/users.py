@@ -489,7 +489,7 @@ async def create_team_member_invitation(
                 business_profile_uuid=str(user.business_profile_uuid),
                 role=str(invitation.role_uuid),
                 expiry_date=serialize_datetime(created_invite.expired_at),
-                role_type=RoleType.CUSTOMER
+                role_type=RoleType.CUSTOMER,
             )
         msg = "Invitations sent successfully"
         return send_info(msg)
@@ -597,7 +597,11 @@ async def resend_invitation_handler(
         return send_internal_server_error(user_msg=msg, error=str(e))
 
 
-@router.post("/admin/invitations", dependencies=[allow_admins_only], response_class=ORJSONResponse)
+@router.post(
+    "/admin/invitations",
+    dependencies=[allow_admins_only],
+    response_class=ORJSONResponse,
+)
 @inject
 async def create_admin_user_invitation(
     payload: InvitationCreatePayload,
@@ -609,7 +613,6 @@ async def create_admin_user_invitation(
     current_user: User = Depends(get_current_user),
 ):
     try:
-
         for invitation in payload.invitations:
             existing_user = service.get_user_by_email_address(invitation.email)
             if existing_user:
@@ -654,7 +657,11 @@ async def create_admin_user_invitation(
         return send_internal_server_error(user_msg=msg, error=str(e))
 
 
-@router.get("/admin/invitations/", dependencies=[allow_admins_only], response_class=ORJSONResponse)
+@router.get(
+    "/admin/invitations/",
+    dependencies=[allow_admins_only],
+    response_class=ORJSONResponse,
+)
 @inject
 async def get_all_user_invitations_handler(
     email: str = None,
@@ -670,7 +677,7 @@ async def get_all_user_invitations_handler(
 ):
     try:
         invitations = invitation_service.get_all_admin_invites(
-             page, page_size, email, role_uuid
+            page, page_size, email, role_uuid
         )
         return send_data(invitations)
     except Exception as e:
@@ -678,7 +685,11 @@ async def get_all_user_invitations_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.delete("/admin/invitations/{invite_uuid}", dependencies=[allow_admins_only], response_class=ORJSONResponse)
+@router.delete(
+    "/admin/invitations/{invite_uuid}",
+    dependencies=[allow_admins_only],
+    response_class=ORJSONResponse,
+)
 @inject
 async def delete_admin_invite_handler(
     invite_uuid: str,
@@ -696,7 +707,9 @@ async def delete_admin_invite_handler(
 
 
 @router.get(
-    "/admin/invitations/resend/{invitation_uuid}", dependencies=[allow_admins_only], response_class=ORJSONResponse
+    "/admin/invitations/resend/{invitation_uuid}",
+    dependencies=[allow_admins_only],
+    response_class=ORJSONResponse,
 )
 @inject
 async def resend_invitation_handler(
