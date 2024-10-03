@@ -575,7 +575,7 @@ async def resend_invitation_handler(
                 user_msg=messages.ACTION_NOT_ALLOWED,
             )
 
-        invitation_service.update_invitation_expiry(
+        updated_invite = invitation_service.update_invitation_expiry(
             invitation_uuid, datetime.now() + timedelta(days=3)
         )
 
@@ -587,7 +587,7 @@ async def resend_invitation_handler(
             business_profile_uuid=str(invitation.business_profile_uuid),
             role=str(invitation.role_uuid),
             role_type=RoleType.CUSTOMER,
-            expiry_date=serialize_datetime(invitation.expired_at),
+            expiry_date=serialize_datetime(updated_invite.expired_at),
         )
 
         msg = "Invitation resent successfully"
@@ -693,3 +693,42 @@ async def delete_admin_invite_handler(
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get(
+    "/admin/invitations/resend/{invitation_uuid}", dependencies=[allow_admins_only], response_class=ORJSONResponse
+)
+@inject
+async def resend_invitation_handler(
+    invitation_uuid: str,
+    invitation_service: InvitationService = Depends(
+        Provide[Container.invitation_service]
+    ),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        invitation = invitation_service.get_by_uuid(invitation_uuid)
+        if not invitation:
+            return send_client_side_error(
+                user_msg=messages.INVITATION_NOT_FOUND + invitation_uuid,
+            )
+
+        updated_invite = invitation_service.update_invitation_expiry(
+            invitation_uuid, datetime.now() + timedelta(days=3)
+        )
+
+        # send email invite
+        await send_email_invitation(
+            recipient_name="",
+            email=updated_invite.email,
+            invitee_name=f"{current_user.first_name} {current_user.last_name}",
+            role=str(updated_invite.role_uuid),
+            role_type=RoleType.ADMIN,
+            expiry_date=serialize_datetime(updated_invite.expired_at),
+        )
+
+        msg = "Invitation resent successfully"
+        return send_info(msg)
+    except Exception as e:
+        msg = messages.CREATE_FAILED + "invitation"
+        return send_internal_server_error(user_msg=msg, error=str(e))
