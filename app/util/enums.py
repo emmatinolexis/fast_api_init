@@ -8,8 +8,8 @@ from app.core.constants import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE, THIRD_PARTY_
 class AccountType(str, Enum):
     BUSINESS = "business"
     INDIVIDUAL = "individual"
-    ADMIN = ("admin",)
-    POLICE = ("police",)
+    ADMIN = "admin"
+    POLICE = "police"
     DVLA = "dvla"
 
 

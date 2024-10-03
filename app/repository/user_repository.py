@@ -274,6 +274,7 @@ class UserRepository(BaseRepository):
             if not user.invite_status
             else user.user_role_uuid,
             status=user.status,
+            verifiedAt=datetime.utcnow() if user.invite_status else None
         )
 
         session.add(db_user)
