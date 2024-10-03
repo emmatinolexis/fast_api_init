@@ -191,3 +191,8 @@ class UserService(BaseService):
             raise e
         except Exception as e:
             raise e
+
+    def get_all_admin_team_members(self, page=1, page_size=10, email: str = None, role_uuid: str = None):
+        return self.user_repository.get_admin_team_members(
+            page, page_size, email, role_uuid
+        )

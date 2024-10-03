@@ -732,3 +732,25 @@ async def resend_invitation_handler(
     except Exception as e:
         msg = messages.CREATE_FAILED + "invitation"
         return send_internal_server_error(user_msg=msg, error=str(e))
+
+
+@router.get("/admin/team_members", dependencies=[allow_admins_only], response_class=ORJSONResponse)
+@inject
+async def get_all_admin_team_members_handler(
+    email: str = None,
+    role_uuid: str = None,
+    user_service: UserService = Depends(
+        Provide[Container.user_service]
+    ),
+    page: int = Query(1, ge=1, description="Page number, default is set to 1"),
+    page_size: int = Query(
+        10, ge=1, le=1000, description="Items per page, default is 10"
+    ),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        team_members = user_service.get_all_admin_team_members(page=page, page_size=page_size, email=email, role_uuid=role_uuid)
+        return send_data(team_members)
+    except Exception as e:
+        msg = messages.GET_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
