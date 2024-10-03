@@ -696,7 +696,7 @@ async def delete_admin_invite_handler(
 
 
 @router.get(
-    "/admin/invitations/resend/{invitation_uuid}", response_class=ORJSONResponse
+    "/admin/invitations/resend/{invitation_uuid}", dependencies=[allow_admins_only], response_class=ORJSONResponse
 )
 @inject
 async def resend_invitation_handler(
