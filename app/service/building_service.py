@@ -222,6 +222,8 @@ class BuildingService(BaseService):
                     device_update = UpdateBuildingWithDevice(
                         building_uuid=str(building.uuid),
                         location=payload.device.location,
+                        business_profile_uuid=str(business_profile_uuid),
+                        user_uuid=str(user_uuid),
                     )
                     self.peripheral_device_repository.update_by_uuid(device.uuid, device_update)
 
