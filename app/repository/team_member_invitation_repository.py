@@ -66,12 +66,16 @@ class TeamMemberInvitationRepository(BaseRepository):
                 "page_size": page_size,
             }
 
-    def get_admin_invitations(self, page=1, page_size=10, email: str = None, role_uuid: str = None):
+    def get_admin_invitations(
+        self, page=1, page_size=10, email: str = None, role_uuid: str = None
+    ):
         with self.session_factory() as session:
             offset = (page - 1) * page_size
 
             # Build the query for invitations with optional filters
-            query = session.query(self.model).filter(self.model.invitation_type == RoleType.ADMIN)
+            query = session.query(self.model).filter(
+                self.model.invitation_type == RoleType.ADMIN
+            )
 
             # Add filters based on provided parameters
             if email:
@@ -87,8 +91,7 @@ class TeamMemberInvitationRepository(BaseRepository):
 
             # Get the invitations with filters, pagination, and sorting
             invitations = (
-                query
-                .order_by(desc(self.model.created_at))
+                query.order_by(desc(self.model.created_at))
                 .offset(offset)
                 .limit(page_size)
                 .options(joinedload(self.model.role))
@@ -114,4 +117,3 @@ class TeamMemberInvitationRepository(BaseRepository):
                 "current_page": page,
                 "page_size": page_size,
             }
-

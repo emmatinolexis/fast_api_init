@@ -21,7 +21,7 @@ from app.util.email import (
     send_alert_policy_violation_email,
     send_maintenance_alert_email,
 )
-from app.util.enums import AccountType
+from app.util.enums import AccountType, ActiveStatus
 from app.util.utils import (
     send_client_side_error,
     send_data,
@@ -155,11 +155,38 @@ async def get_alert_violations_by_business_handler(
     page_size: int = Query(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
+    policy_status: ActiveStatus = Query(
+        None, description="Filter by policy status. Possible values: active, inactive"
+    ),
+    policy_type: Optional[str] = Query(
+        None,
+        description="Filter by policy type. Possible values: Geofence alert policy, Over speeding alert policy",
+    ),
+    start_date: Optional[str] = Query(
+        None,
+        description="Filter by date or date range in format 'YYYY-MM-DD'",
+    ),
+    end_date: Optional[str] = Query(
+        None,
+        description="Filter by date or date range in format 'YYYY-MM-DD' ",
+    ),
+    search: Optional[str] = Query(
+        None, description="Search term to filter by relevant fields"
+    ),
     current_user: User = Depends(get_current_user),
 ):
     try:
         return send_data(
-            service.get_all_alert_violations_by_business(business_uuid, page, page_size)
+            service.get_all_alert_violations_by_business(
+                business_uuid,
+                page,
+                page_size,
+                policy_status,
+                policy_type,
+                start_date,
+                end_date,
+                search,
+            )
         )
     except Exception as e:
         msg = messages.GET_FAILED + "alert policies"

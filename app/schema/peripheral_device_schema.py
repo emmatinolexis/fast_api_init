@@ -162,8 +162,6 @@ class LinkGasCylinderToDevice(BaseModel):
     serial_number: str
 
 
-
-
 class BuildingInput(BaseModel):
     building_name: str
     longitude: float
@@ -196,6 +194,6 @@ class UpdateBuildingWithDevice(BaseModel):
     building_uuid: str
     location: str
     status: DeviceStatus = DeviceStatus.ASSIGNED
-    installed_at : datetime = datetime.now()
+    installed_at: datetime = datetime.now()
     business_profile_uuid: Optional[str] = None
     user_uuid: str

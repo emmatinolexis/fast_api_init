@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import List, Optional
 
 from app.core import messages
@@ -120,11 +120,26 @@ class AlertPolicyService(BaseService):
             raise e
 
     def get_all_alert_violations_by_business(
-        self, business_uuid: str, page=1, page_size=10
+        self,
+        business_uuid: str,
+        page=1,
+        page_size=10,
+        policy_status: str = None,
+        policy_type: str = None,
+        start_date: date = None,
+        end_date: date = None,
+        search: str = None,
     ):
         try:
             return self.alert_policy_repository.read_all_alert_violations_by_business(
-                business_uuid, page, page_size
+                business_uuid,
+                page,
+                page_size,
+                policy_status,
+                policy_type,
+                start_date,
+                end_date,
+                search,
             )
         except Exception as e:
             raise e

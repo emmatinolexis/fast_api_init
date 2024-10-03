@@ -110,7 +110,13 @@ async def send_device_alert_email(
 
 
 async def send_email_invitation(
-    recipient_name, email, invitee_name, role, expiry_date, role_type=RoleType, business_profile_uuid=None
+    recipient_name,
+    email,
+    invitee_name,
+    role,
+    expiry_date,
+    role_type=RoleType,
+    business_profile_uuid=None,
 ):
     try:
         response = await send_email(
@@ -118,7 +124,9 @@ async def send_email_invitation(
             email_body={
                 "recipient_name": recipient_name,
                 "invitee_name": invitee_name,
-                "business_profile_uuid": business_profile_uuid if business_profile_uuid else None,
+                "business_profile_uuid": business_profile_uuid
+                if business_profile_uuid
+                else None,
                 "email": email,
                 "role": role,
                 "role_type": role_type,

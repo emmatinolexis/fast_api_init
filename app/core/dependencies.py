@@ -1,5 +1,5 @@
 from dependency_injector.wiring import Provide, inject
-from fastapi import Depends
+from fastapi import Depends, HTTPException
 from jose import jwt
 from pydantic import ValidationError
 
@@ -11,17 +11,22 @@ from app.model.external_app import ExternalApp
 from app.model.user import User
 from app.service.external_app_service import ExternalAppService
 from app.service.user_service import UserService
-from app.util.utils import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE, THIRD_PARTY_APP_ROLE, check_permission
-from fastapi import HTTPException
-
+from app.util.utils import (
+    ADMIN_USER_ROLE,
+    CUSTOMER_USER_ROLE,
+    THIRD_PARTY_APP_ROLE,
+    check_permission,
+)
 
 log = get_logger()
 
 
 def get_current_user_with_permission(permission: str):
     def dependency(
-            token: str = Depends(JWTBearer(allowed_roles=[ADMIN_USER_ROLE, CUSTOMER_USER_ROLE])),
-            service: UserService = Depends(Provide[Container.user_service])
+        token: str = Depends(
+            JWTBearer(allowed_roles=[ADMIN_USER_ROLE, CUSTOMER_USER_ROLE])
+        ),
+        service: UserService = Depends(Provide[Container.user_service]),
     ):
         return get_current_user(token=token, service=service, permission=permission)
 
