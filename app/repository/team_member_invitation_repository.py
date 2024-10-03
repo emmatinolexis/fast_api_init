@@ -66,23 +66,28 @@ class TeamMemberInvitationRepository(BaseRepository):
                 "page_size": page_size,
             }
 
-    def get_admin_invitations(self, page=1, page_size=10):
+    def get_admin_invitations(self, page=1, page_size=10, email: str = None, role_uuid: str = None):
         with self.session_factory() as session:
             offset = (page - 1) * page_size
 
-            # Query to get the total count of invitations
-            total_invitations = (
-                session.query(func.count(self.model.id))
-                .filter(self.model.invitation_type == RoleType.ADMIN)
-                .scalar()
-            )
+            # Build the query for invitations with optional filters
+            query = session.query(self.model).filter(self.model.invitation_type == RoleType.ADMIN)
+
+            # Add filters based on provided parameters
+            if email:
+                query = query.filter(self.model.email.ilike(f"%{email}%"))
+            if role_uuid:
+                query = query.filter(self.model.role_uuid == role_uuid)
+
+            # Query to get the total count of invitations with filters
+            total_invitations = query.with_entities(func.count(self.model.id)).scalar()
 
             # Calculate total pages
             total_pages = (total_invitations + page_size - 1) // page_size
 
+            # Get the invitations with filters, pagination, and sorting
             invitations = (
-                session.query(self.model)
-                .filter(self.model.invitation_type == RoleType.ADMIN)
+                query
                 .order_by(desc(self.model.created_at))
                 .offset(offset)
                 .limit(page_size)
@@ -90,6 +95,7 @@ class TeamMemberInvitationRepository(BaseRepository):
                 .all()
             )
 
+            # Prepare the invitation data
             invitations_data = [
                 {
                     "uuid": invitation.uuid,
@@ -108,3 +114,4 @@ class TeamMemberInvitationRepository(BaseRepository):
                 "current_page": page,
                 "page_size": page_size,
             }
+
