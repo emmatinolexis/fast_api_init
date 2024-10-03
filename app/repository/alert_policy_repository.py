@@ -104,7 +104,16 @@ class AlertPolicyRepository(BaseRepository):
             return maintenance_alert.service_status
 
     def read_all_alert_policies_by_user(
-        self, user_uuid: str, alert_policy_type_uuid: str = None, page=1, page_size=10
+        self,
+        user_uuid: str,
+        alert_policy_type_uuid: str = None,
+        page=1,
+        page_size=10,
+        policy_status: Optional[ActiveStatus] = None,
+        policy_type: Optional[str] = None,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+        search: Optional[str] = None,
     ):
         with self.session_factory() as session:
             offset = (page - 1) * page_size
@@ -112,10 +121,38 @@ class AlertPolicyRepository(BaseRepository):
             # Start building the query
             query = session.query(self.model).filter(self.model.user_uuid == user_uuid)
 
+
+            query = query.join(self.model.assets)
+
             # Apply the asset_type_uuid filter if provided
             if alert_policy_type_uuid:
                 query = query.filter(
                     self.model.alert_policy_type_uuid == alert_policy_type_uuid
+                )
+
+            # Apply policy status filter
+            if policy_status:
+                query = query.filter(self.model.status == policy_status)
+
+            # Apply policy type filter
+            if policy_type:
+                query = query.filter(self.model.alert_policy_type.has(name=policy_type))
+
+            # Apply date filter
+            if start_date and end_date:
+                query = query.filter(
+                    self.model.created_at >= start_date,
+                    self.model.created_at < end_date,
+                )
+
+            # Apply search filter
+            if search:
+                search_term = f"%{search}%"
+                query = query.filter(
+                    or_(
+                        self.model.policy_name.ilike(search_term),
+                        Asset.asset_name.ilike(search_term),
+                    )
                 )
 
             # Query to get the total count of alert policies
@@ -150,6 +187,11 @@ class AlertPolicyRepository(BaseRepository):
         alert_policy_type_uuid: str = None,
         page=1,
         page_size=10,
+        policy_status: Optional[ActiveStatus] = None,
+        policy_type: Optional[str] = None,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+        search: Optional[str] = None,
     ):
         with self.session_factory() as session:
             offset = (page - 1) * page_size
@@ -159,10 +201,36 @@ class AlertPolicyRepository(BaseRepository):
                 self.model.business_profile_uuid == business_uuid
             )
 
+            query = query.join(self.model.assets)
+
             # Apply the asset_type_uuid filter if provided
             if alert_policy_type_uuid:
                 query = query.filter(
                     self.model.alert_policy_type_uuid == alert_policy_type_uuid
+                )
+
+            if policy_status:
+                query = query.filter(self.model.status == policy_status)
+
+            # Apply policy type filter
+            if policy_type:
+                query = query.filter(self.model.alert_policy_type.has(name=policy_type))
+
+            # Apply date filter
+            if start_date and end_date:
+                query = query.filter(
+                    self.model.created_at >= start_date,
+                    self.model.created_at < end_date,
+                )
+
+            # Apply search filter
+            if search:
+                search_term = f"%{search}%"
+                query = query.filter(
+                    or_(
+                        self.model.policy_name.ilike(search_term),
+                        Asset.asset_name.ilike(search_term),
+                    )
                 )
 
             # Query to get the total count of alert policies
