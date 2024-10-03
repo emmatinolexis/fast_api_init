@@ -197,3 +197,5 @@ class UpdateBuildingWithDevice(BaseModel):
     location: str
     status: DeviceStatus = DeviceStatus.ASSIGNED
     installed_at : datetime = datetime.now()
+    business_profile_uuid: Optional[str] = None
+    user_uuid: str
