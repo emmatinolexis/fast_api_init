@@ -657,6 +657,8 @@ async def create_admin_user_invitation(
 @router.get("/admin/invitations/", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def get_all_user_invitations_handler(
+    email: str = None,
+    role_uuid: str = None,
     invitation_service: InvitationService = Depends(
         Provide[Container.invitation_service]
     ),
@@ -668,7 +670,7 @@ async def get_all_user_invitations_handler(
 ):
     try:
         invitations = invitation_service.get_all_admin_invites(
-             page, page_size
+             page, page_size, email, role_uuid
         )
         return send_data(invitations)
     except Exception as e:
