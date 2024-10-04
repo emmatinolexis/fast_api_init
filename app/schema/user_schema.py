@@ -132,3 +132,11 @@ class UpdatePhoneNumber(BaseModel):
 
 class UserPhoneVerificationToken(BaseModel):
     token: str = Field(min_length=6, max_length=6)
+
+
+class UpdateAdminTeamMemberPayload(BaseModel):
+    status: Optional[ActiveStatus] = None
+    role_uuid: Optional[UUID] = None
+
+    class Config:
+        orm_model = True

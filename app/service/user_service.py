@@ -195,3 +195,11 @@ class UserService(BaseService):
         return self.user_repository.get_admin_team_members(
             page, page_size, email, role_uuid
         )
+
+    def get_admin_team_member(self, team_member_uuid: str):
+        try:
+            return self.user_repository.get_admin_team_member(team_member_uuid)
+        except NotFoundError as e:
+            raise e
+        except Exception as e:
+            raise e

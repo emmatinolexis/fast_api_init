@@ -243,6 +243,32 @@ class UserRepository(BaseRepository):
                 "page_size": page_size,
             }
 
+    def get_admin_team_member(self, team_member_uuid: str):
+        with self.session_factory() as session:
+            user = (
+                session.query(self.model)
+                .filter(self.model.uuid == team_member_uuid)
+                .options(joinedload(User.user_role))
+                .first()
+            )
+
+            if not user:
+                return None
+
+            user = [
+                {
+                    "uuid": user.uuid,
+                    "email": user.email_address,
+                    "role": user.user_role,
+                    "status": user.status,
+                    "created_at": user.created_at,
+                    "name": f"{user.first_name} {user.last_name}",
+                    "phone_number": user.phone_number,
+                    "profile_picture_url": user.avatar_url
+                }
+            ]
+            return user
+
     def create_user(self, user: UserPayload):
         with self.session_factory() as session:
             try:
