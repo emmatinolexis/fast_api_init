@@ -136,7 +136,7 @@ class UserPhoneVerificationToken(BaseModel):
 
 class UpdateAdminTeamMemberPayload(BaseModel):
     status: Optional[ActiveStatus] = None
-    role_uuid: Optional[UUID] = None
+    user_role_uuid: Optional[UUID] = None
 
     class Config:
         orm_model = True

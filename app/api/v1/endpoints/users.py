@@ -26,6 +26,7 @@ from app.schema.user_schema import (
     UserPhoneVerificationToken,
     UserProfileUdatePayload,
     UserUpdatePassword,
+    UpdateAdminTeamMemberPayload
 )
 from app.service.business_profile_service import BusinessProfileService
 from app.service.invitation_service import InvitationService
@@ -781,24 +782,25 @@ async def get_team_member_handler(
 ):
     try:
         team_member = user_service.get_admin_team_member(team_member_uuid)
-        return send_info(messages.DELETE_SUCCESS)
+        return send_data(team_member)
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-# @router.patch("/admin/team_members/{team_member_uuid}", dependencies=[allow_admins_only], response_class=ORJSONResponse)
-# @inject
-# async def get_team_member_handler(
-#     team_member_uuid: str,
-#     user_service: UserService = Depends(
-#         Provide[Container.user_service]
-#     ),
-#     current_user: User = Depends(get_current_user),
-# ):
-#     try:
-#         team_member = user_service.get_admin_team_member(team_member_uuid)
-#         return send_info(messages.DELETE_SUCCESS)
-#     except Exception as e:
-#         msg = messages.GET_FAILED + msg_prefix
-#         return send_internal_server_error(user_msg=msg, error=e)
+@router.patch("/admin/team_members/{team_member_uuid}", dependencies=[allow_admins_only], response_class=ORJSONResponse)
+@inject
+async def get_team_member_handler(
+    team_member_uuid: str,
+    payload: UpdateAdminTeamMemberPayload,
+    user_service: UserService = Depends(
+        Provide[Container.user_service]
+    ),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        user_service.patch_by_uuid(team_member_uuid, payload)
+        return send_info(messages.UPDATE_SUCCESS)
+    except Exception as e:
+        msg = messages.GET_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
