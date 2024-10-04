@@ -754,3 +754,37 @@ async def get_all_admin_team_members_handler(
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/admin/team_members/{team_member_uuid}", dependencies=[allow_admins_only], response_class=ORJSONResponse)
+@inject
+async def get_team_member_handler(
+    team_member_uuid: str,
+    user_service: UserService = Depends(
+        Provide[Container.user_service]
+    ),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        team_member = user_service.get_admin_team_member(team_member_uuid)
+        return send_info(messages.DELETE_SUCCESS)
+    except Exception as e:
+        msg = messages.GET_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+# @router.patch("/admin/team_members/{team_member_uuid}", dependencies=[allow_admins_only], response_class=ORJSONResponse)
+# @inject
+# async def get_team_member_handler(
+#     team_member_uuid: str,
+#     user_service: UserService = Depends(
+#         Provide[Container.user_service]
+#     ),
+#     current_user: User = Depends(get_current_user),
+# ):
+#     try:
+#         team_member = user_service.get_admin_team_member(team_member_uuid)
+#         return send_info(messages.DELETE_SUCCESS)
+#     except Exception as e:
+#         msg = messages.GET_FAILED + msg_prefix
+#         return send_internal_server_error(user_msg=msg, error=e)
