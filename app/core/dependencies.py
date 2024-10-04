@@ -13,6 +13,7 @@ from app.service.external_app_service import ExternalAppService
 from app.service.user_service import UserService
 from app.util.utils import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE, THIRD_PARTY_APP_ROLE, check_permission
 from fastapi import HTTPException
+from app.util.enums import ActiveStatus
 
 
 log = get_logger()
@@ -50,8 +51,8 @@ def get_current_user(
         "Current user in session", extra={"email_address": current_user.email_address}
     )
 
-    if current_user.status != "active":
-        raise AuthError(detail="User is not active")
+    if current_user.status == ActiveStatus.INACTIVE or current_user.status == ActiveStatus.DEACTIVATED:
+        raise AuthError(detail="User is not active or deactivated")
 
     return current_user
 
