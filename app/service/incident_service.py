@@ -1,3 +1,5 @@
+from typing import Dict
+
 from app.model.incident import Incident
 from app.repository.incident_repository import IncidentRepository
 from app.schema.incident_schema import IncidentPayload
@@ -38,3 +40,22 @@ class IncidentService(BaseService):
             )
         except Exception as e:
             raise e
+
+    def get_all_incidents_count(self) -> int:
+        try:
+            return self.incident_repository.get_all_incident_count()
+        except Exception as e:
+            raise e
+
+    def total_pages(self, count: int, limit: int) -> int:
+        return int(count / limit) + (count % limit > 0)
+
+    def pagination(
+        self, total: int, current_page: int, limit: int, total_pages: int
+    ) -> Dict[str, int]:
+        return {
+            "total": total,
+            "page": current_page,
+            "pageSize": limit,
+            "totalPages": total_pages,
+        }

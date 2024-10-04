@@ -55,3 +55,7 @@ class IncidentRepository(BaseRepository):
             incidents.append(Incident(**row_dict))
 
         return incidents
+
+    def get_all_incident_count(self) -> int:
+        with self.session_factory() as session:
+            return session.query(self.model).count()

@@ -6,7 +6,12 @@ from app.core import messages
 from app.core.container import Container
 from app.schema.incident_schema import IncidentPayload
 from app.service.incident_service import IncidentService
-from app.util.utils import send_data, send_data_with_info, send_internal_server_error
+from app.util.utils import (
+    send_data,
+    send_data_with_info,
+    send_data_with_pagination,
+    send_internal_server_error,
+)
 
 router = APIRouter(
     prefix="/incidents",
@@ -44,7 +49,19 @@ async def get_all_incidents(
         incidents = service.get_all_incidents(
             incident_type=incident_type, page_size=page_size, page=page
         )
-        return send_data(data=[i.dto() for i in incidents])
+
+        incident_count = service.get_all_incidents_count()
+
+        pagination = service.pagination(
+            total=incident_count,
+            limit=page_size,
+            current_page=page,
+            total_pages=service.total_pages(count=incident_count, limit=page_size),
+        )
+
+        return send_data_with_pagination(
+            data=[i.dto() for i in incidents], pagination=pagination
+        )
     except Exception as e:
         msg = f"{messages.GET_FAILED} {msg_prefix }"
         return send_internal_server_error(user_msg=msg, error=e)

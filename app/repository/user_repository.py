@@ -22,7 +22,13 @@ from app.schema.user_schema import (
     UserPayload,
     UserProfileUdatePayload,
 )
-from app.util.enums import AccountType, ActiveStatus, CustomerRoles, InvitationStatus, RoleType
+from app.util.enums import (
+    AccountType,
+    ActiveStatus,
+    CustomerRoles,
+    InvitationStatus,
+    RoleType,
+)
 from app.util.utils import toggle_status
 
 
@@ -192,7 +198,9 @@ class UserRepository(BaseRepository):
                 "page_size": page_size,
             }
 
-    def get_admin_team_members(self, page=1, page_size=10, email: str = None, role_uuid: str = None):
+    def get_admin_team_members(
+        self, page=1, page_size=10, email: str = None, role_uuid: str = None
+    ):
         with self.session_factory() as session:
             offset = (page - 1) * page_size
             # Build the query for invitations with optional filters
@@ -212,8 +220,7 @@ class UserRepository(BaseRepository):
 
             # Get the invitations with filters, pagination, and sorting
             users = (
-                query
-                .order_by(desc(self.model.created_at))
+                query.order_by(desc(self.model.created_at))
                 .offset(offset)
                 .limit(page_size)
                 .options(joinedload(self.model.user_role))
@@ -230,7 +237,7 @@ class UserRepository(BaseRepository):
                     "created_at": user.created_at,
                     "name": f"{user.first_name} {user.last_name}",
                     "phone_number": user.phone_number,
-                    "profile_picture_url": user.avatar_url
+                    "profile_picture_url": user.avatar_url,
                 }
                 for user in users
             ]
@@ -277,7 +284,7 @@ class UserRepository(BaseRepository):
             if not user.invite_status
             else user.user_role_uuid,
             status=user.status,
-            verifiedAt=datetime.utcnow() if user.invite_status else None
+            verifiedAt=datetime.utcnow() if user.invite_status else None,
         )
 
         session.add(db_user)
