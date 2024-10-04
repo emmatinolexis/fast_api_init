@@ -677,7 +677,7 @@ async def patch_building_handler(
 ):
     try:
         data = building_service.update_building(building_uuid, payload)
-        return send_data_with_info(data, messages.UPDATE_SUCCESS + "building")
+        return send_data_with_info(data, messages.UPDATE_SUCCESS + "Building")
     except Exception as e:
         msg = messages.UPDATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
