@@ -50,8 +50,9 @@ def get_current_user(
         "Current user in session", extra={"email_address": current_user.email_address}
     )
 
-    # if permission:
-    #     check_permission(current_user.user_role.permissions, permission)
+    if current_user.status != "active":
+        raise AuthError(detail="User is not active")
+
     return current_user
 
 

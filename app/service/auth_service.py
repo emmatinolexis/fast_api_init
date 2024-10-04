@@ -56,6 +56,8 @@ class AuthService(BaseService):
                 raise NotVerifiedError(detail="User email not verified")
             if db_user.status == ActiveStatus.DEACTIVATED:
                 raise AuthError(detail="User account is deactivated")
+            if db_user.status == ActiveStatus.INACTIVE:
+                raise AuthError(detail="User is not active")
 
             user = extract_user_data(db_user)
 
