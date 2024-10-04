@@ -255,8 +255,7 @@ class UserRepository(BaseRepository):
             if not user:
                 return None
 
-            user = [
-                {
+            user = {
                     "uuid": user.uuid,
                     "email": user.email_address,
                     "role": user.user_role,
@@ -266,7 +265,7 @@ class UserRepository(BaseRepository):
                     "phone_number": user.phone_number,
                     "profile_picture_url": user.avatar_url
                 }
-            ]
+
             return user
 
     def create_user(self, user: UserPayload):
