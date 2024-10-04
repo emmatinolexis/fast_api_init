@@ -205,10 +205,10 @@ class UserRepository(BaseRepository):
                 query = query.filter(self.model.role_uuid == role_uuid)
 
             # Query to get the total count of invitations with filters
-            total_invitations = query.with_entities(func.count(self.model.id)).scalar()
+            total_team_members = query.with_entities(func.count(self.model.id)).scalar()
 
             # Calculate total pages
-            total_pages = (total_invitations + page_size - 1) // page_size
+            total_pages = (total_team_members + page_size - 1) // page_size
 
             # Get the invitations with filters, pagination, and sorting
             users = (
@@ -228,13 +228,16 @@ class UserRepository(BaseRepository):
                     "role": user.user_role,
                     "status": user.status,
                     "created_at": user.created_at,
+                    "name": f"{user.first_name} {user.last_name}",
+                    "phone_number": user.phone_number,
+                    "profile_picture_url": user.avatar_url
                 }
                 for user in users
             ]
 
             return {
-                "invitations": users_data,
-                "total_invitations": total_invitations,
+                "team_members": users_data,
+                "total_team_members": total_team_members,
                 "total_pages": total_pages,
                 "current_page": page,
                 "page_size": page_size,
