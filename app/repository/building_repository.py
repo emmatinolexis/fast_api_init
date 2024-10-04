@@ -1,7 +1,7 @@
 from contextlib import AbstractContextManager
 from typing import Any, Callable, Dict
 
-from sqlalchemy import asc
+from sqlalchemy import asc, desc
 from sqlalchemy.orm import Session, joinedload
 
 from app.model.buildings import Building
@@ -85,7 +85,7 @@ class BuildingRepository(BaseRepository):
             total_pages = (total_assets + page_size - 1) // page_size
 
             paginated_query = (
-                base_query.order_by(asc(self.model.created_at))
+                base_query.order_by(desc(self.model.created_at))
                 .offset(offset)
                 .limit(page_size)
             )

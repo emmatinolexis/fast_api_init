@@ -306,7 +306,7 @@ PERMISSIONS = {
         "view_peripheral_device",
         "configure_device",
         "link_tracking_device",
-        "configure_tracking_device"
+        "configure_tracking_device",
     ],
     "live_map": [
         "view_live_map",
@@ -330,63 +330,49 @@ PERMISSIONS = {
         "harsh_driving_report",
     ],
     "smart_report": [
-            "create_smart_report",
-            "view_smart_report",
-            "share_smart_report",
-            "print_smart_report"
-        ],
+        "create_smart_report",
+        "view_smart_report",
+        "share_smart_report",
+        "print_smart_report",
+    ],
     "fuel_purchase_log": [
-            "create_fuel_purchase_log",
-            "view_fuel_purchase_log",
-            "import_fuel_purchase_log"
-        ],
+        "create_fuel_purchase_log",
+        "view_fuel_purchase_log",
+        "import_fuel_purchase_log",
+    ],
     "settings": [
-            "update_phone_number",
-            "change_password",
-            "deactivate_account",
-            "invite_team_member",
-            "update_team_member"
-        ],
+        "update_phone_number",
+        "change_password",
+        "deactivate_account",
+        "invite_team_member",
+        "update_team_member",
+    ],
     "equipments": [
         "create_equipment",
         "view_equipment",
         "update_equipment",
         "create_equipment_type",
         "view_equipment_type",
-        "update_equipment_type"
+        "update_equipment_type",
     ],
     "cylinder_size": [
         "create_cylinder_size",
         "view_cylinder_size",
-        "update_cylinder_size"
+        "update_cylinder_size",
     ],
-    "system_packages": [
-        'create_package',
-        'view_package',
-        'update_package'
-    ],
+    "system_packages": ["create_package", "view_package", "update_package"],
     "inventory": [
         "create_inventory",
         "view_inventory",
         "update_inventory",
-        "register_device"
+        "register_device",
     ],
-    "orders": [
-        "view_order",
-        "update_order"
-    ],
-    "customers": [
-        "view_customers",
-        "view_customer_devices",
-        "view_customer_payments"
-    ],
-    "reported_incidence": [
-        "view_reported_incidence",
-        "update_reported_incidence"
-    ],
+    "orders": ["view_order", "update_order"],
+    "customers": ["view_customers", "view_customer_devices", "view_customer_payments"],
+    "reported_incidence": ["view_reported_incidence", "update_reported_incidence"],
     "admin_dashboard": [
         "view_admin_dashboard_stat",
         "view_admin_dashboard_customer_analytics",
-        "view_admin_dashboard_subscriptions"
-    ]
+        "view_admin_dashboard_subscriptions",
+    ],
 }

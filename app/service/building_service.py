@@ -1,10 +1,12 @@
 from typing import Optional
 
 from app.core import messages
-from app.core.exceptions import NotFoundError
+from app.core.exceptions import AuthError, BadRequestError, NotFoundError
 from app.repository.building_repository import BuildingRepository
 from app.repository.gas_cylinder_repository import GasCylinderRepository
 from app.repository.gas_device_repository import GasDeviceRepository
+from app.repository.peripheral_devices_repository import PeripheralDeviceRepository
+from app.repository.user_repository import UserRepository
 from app.schema.asset_schema import (
     BuildingInput,
     CreateBuildingInput,
@@ -12,9 +14,14 @@ from app.schema.asset_schema import (
     GasCylinderPayload,
     UpdateBuildingPayload,
 )
+from app.schema.peripheral_device_schema import (
+    CreateBuildingWithDevice,
+    CreateBuildingWithDeviceFull,
+    UpdateBuildingWithDevice,
+)
 from app.service.base_service import BaseService
 from app.transfomers.building_transformers import building_transformer
-from app.util.enums import DeviceStatus, DeviceType
+from app.util.enums import ActiveStatus, DeviceStatus, DeviceType
 
 
 class BuildingService(BaseService):
@@ -23,10 +30,14 @@ class BuildingService(BaseService):
         building_repository: BuildingRepository,
         gas_device_repository: GasDeviceRepository,
         gas_cylinder_repository: GasCylinderRepository,
+        user_repository: UserRepository,
+        peripheral_device_repository: PeripheralDeviceRepository,
     ):
         self.building_repository = building_repository
         self.gas_device_repository = gas_device_repository
         self.gas_cylinder_repository = gas_cylinder_repository
+        self.user_repository = user_repository
+        self.peripheral_device_repository = peripheral_device_repository
         super().__init__(building_repository)
 
     def create_building(self, payload: BuildingInput):
@@ -161,4 +172,75 @@ class BuildingService(BaseService):
             building = self.building_repository.update_by_uuid(building_uuid, payload)
             return building_transformer(building)
         except Exception as e:
+            raise e
+
+    def create_building_with_peripheral_device(
+        self, user_uuid: str, payload: CreateBuildingWithDevice
+    ):
+        try:
+            user = self.user_repository.get_user_by_uuid(user_uuid)
+            if not user:
+                raise NotFoundError(messages.USER_NOT_FOUND + user_uuid)
+
+            business_profile_uuid = user.get("business_profile").uuid
+
+            if payload.device:
+                device = self.peripheral_device_repository.get_by_serial_number(
+                    payload.device.serial_number
+                )
+                if not device:
+                    raise NotFoundError(
+                        messages.DEVICE_NOT_FOUND + payload.device.serial_number
+                    )
+
+                if payload.device.device_type != device.device_type:
+                    raise BadRequestError(messages.DEVICE_TYPE_MISMATCH)
+
+                # Check if device has both user_uuid and business_profile_uuid
+                if device.user_uuid and device.business_profile_uuid:
+                    if device.business_profile_uuid != business_profile_uuid:
+                        raise AuthError(messages.ACTION_NOT_ALLOWED)
+                # If device only has user_uuid, check if it matches
+                elif device.user_uuid:
+                    if device.user_uuid != user_uuid:
+                        raise AuthError(messages.ACTION_NOT_ALLOWED)
+
+                # Use device's business_profile_uuid if available
+                business_profile_uuid = (
+                    device.business_profile_uuid or business_profile_uuid
+                )
+
+            if payload.building:
+                building_data = CreateBuildingInput(
+                    building_name=payload.building.building_name,
+                    longitude=payload.building.longitude,
+                    latitude=payload.building.latitude,
+                    image_url=payload.building.image_url,
+                    user_uuid=user_uuid,
+                    business_profile_uuid=business_profile_uuid,
+                    status=ActiveStatus.ACTIVE,
+                )
+
+                building = self.building_repository.create(building_data)
+
+                if payload.device:
+                    # Update device with building information
+                    device_update = UpdateBuildingWithDevice(
+                        building_uuid=str(building.uuid),
+                        location=payload.device.location,
+                        business_profile_uuid=str(business_profile_uuid),
+                        user_uuid=str(user_uuid),
+                    )
+                    self.peripheral_device_repository.update_by_uuid(
+                        device.uuid, device_update
+                    )
+
+                return building_transformer(building)
+            else:
+                raise BadRequestError(messages.BUILDING_DATA_REQUIRED)
+
+        except Exception as e:
+            # If building was created but device assignment failed, delete the building
+            if "building" in locals():
+                self.building_repository.delete_by_uuid(building.uuid)
             raise e

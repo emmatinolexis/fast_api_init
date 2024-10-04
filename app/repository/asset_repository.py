@@ -128,7 +128,7 @@ class AssetRepository(BaseRepository):
 
             # Apply ordering and pagination after filtering
             paginated_query = (
-                base_query.order_by(asc(self.model.created_at))
+                base_query.order_by(desc(self.model.created_at))
                 .offset(offset)
                 .limit(page_size)
             )

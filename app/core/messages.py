@@ -108,3 +108,4 @@ PERIPHERAL_DEVICE_NOT_FOUND = (
 
 UNAUTHORIZED_ACTION = "You are not authorized to perform this action"
 INVALID_DEVICE_TYPE = "Invalid device type"
+BUILDING_DATA_REQUIRED = "Building data is required."

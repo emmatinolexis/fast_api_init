@@ -16,10 +16,12 @@ class IncidentService(BaseService):
         except Exception as e:
             raise e
 
-    def get_all_incidents(self, incident_type: IncidenceType):
+    def get_all_incidents(
+        self, incident_type: IncidenceType, page: int = 1, page_size: int = 10
+    ):
         try:
             return self.incident_repository.get_all_incidents(
-                incident_type=incident_type
+                incident_type=incident_type, page=page, page_size=page_size
             )
         except Exception as e:
             raise e

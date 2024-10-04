@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import ORJSONResponse
 
 from app.core import messages
+from app.core.constants import PERMISSIONS
 from app.core.container import Container
 from app.core.dependencies import get_current_user, get_current_user_with_permission
 from app.model.permission import Permission
@@ -12,7 +13,6 @@ from app.service.permission_service import PermissionService
 from app.service.role_service import RoleService
 from app.util.enums import RoleType
 from app.util.utils import send_data, send_data_with_info, send_internal_server_error
-from app.core.constants import PERMISSIONS
 
 router = APIRouter(
     prefix="/permissions",
@@ -56,7 +56,6 @@ async def get_all_roles_handler(
     service: RoleService = Depends(Provide[Container.role_service]),
     # current_user: User = Depends(get_current_user_with_permission("view_role")),
     current_user: User = Depends(get_current_user),
-
 ):
     try:
         return send_data(service.get_all_roles(role_type))
