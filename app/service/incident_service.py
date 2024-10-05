@@ -47,6 +47,34 @@ class IncidentService(BaseService):
         except Exception as e:
             raise e
 
+    def get_incident_reports(self, page: int = 1, page_size: int = 10):
+        try:
+            incidents = self.incident_repository.get_incidents_report(
+                page=page, page_size=page_size
+            )
+
+            total_incidents = len(incidents)
+
+            return {
+                "total": total_incidents,
+                "data": [
+                    {
+                        "id": incident[0],
+                        "incidentType": incident[1].lower(),
+                        "longitude": incident[2],
+                        "latitude": incident[3],
+                        "firstName": incident[4],
+                        "lastName": incident[5],
+                        "count": incident[6],
+                        "createdAt": incident[7],
+                    }
+                    for incident in incidents
+                ],
+            }
+
+        except Exception as e:
+            raise e
+
     def total_pages(self, count: int, limit: int) -> int:
         return int(count / limit) + (count % limit > 0)
 

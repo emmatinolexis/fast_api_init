@@ -83,3 +83,30 @@ async def get_incidents_by_location(
     except Exception as e:
         msg = f"{messages.GET_FAILED} {msg_prefix}"
         return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/report", response_class=ORJSONResponse)
+@inject
+async def get_incidents_report(
+    page: int = Query(1, ge=1, description="Page number, default is set to 1"),
+    page_size: int = Query(
+        10, ge=1, le=1000, description="Items per page, default is 10"
+    ),
+    service: IncidentService = Depends(Provide[Container.incident_service]),
+):
+    try:
+        incidents = service.get_incident_reports(page=page, page_size=page_size)
+        incident_count = incidents["total"]
+
+        pagination = service.pagination(
+            total=incident_count,
+            limit=page_size,
+            current_page=page,
+            total_pages=service.total_pages(count=incident_count, limit=page_size),
+        )
+
+        return send_data_with_pagination(data=incidents["data"], pagination=pagination)
+
+    except Exception as e:
+        msg = f"{messages.GET_FAILED} {msg_prefix}"
+        return send_internal_server_error(user_msg=msg, error=e)
