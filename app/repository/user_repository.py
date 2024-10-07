@@ -38,11 +38,13 @@ class UserRepository(BaseRepository):
                 if user_to_update is None:
                     raise Exception("User not found")
 
-                # return self.update_by_uuid(uuid, user)
                 user_to_update.location = user.location
                 user_to_update.address = user.address
                 user_to_update.phone_number = user.phone_number
                 user_to_update.country = user.country
+
+                if user_to_update.onboarding_status is None:
+                    user_to_update.onboarding_status = datetime.now()
 
                 # Commit the changes to the database
                 session.commit()
