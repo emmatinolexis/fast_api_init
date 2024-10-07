@@ -43,6 +43,7 @@ class UserRepository(BaseRepository):
                 user_to_update.phone_number = user.phone_number
                 user_to_update.country = user.country
 
+                # set onboarding status
                 if user_to_update.onboarding_status is None:
                     user_to_update.onboarding_status = datetime.now()
 
