@@ -192,6 +192,12 @@ class RoleType(str, Enum):
     ADMIN = "admin"
 
 
+class PermissionType(str, Enum):
+    customer = "customer"
+    admin = "admin"
+    all = "all"
+
+
 class IncidentType(str, Enum):
     THEFT = "theft"
 

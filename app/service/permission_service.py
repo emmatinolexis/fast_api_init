@@ -2,6 +2,7 @@ from app.core.constants import PERMISSIONS
 from app.model.permission import Permission
 from app.repository.permission_repository import PermissionRepository
 from app.service.base_service import BaseService
+from app.util.enums import PermissionType
 from app.util.utils import format_compound_words
 
 
@@ -13,25 +14,39 @@ class PermissionService(BaseService):
     def synchronize_permissions(self):
         # Get all existing permissions from the database
         existing_permissions = self.permission_repository.get_list()
-        existing_permission_names = set(p.permission_name for p in existing_permissions)
 
-        # Iterate over the PERMISSIONS dictionary
         for model, permissions in PERMISSIONS.items():
-            for permission_name in permissions:
-                if permission_name not in existing_permission_names:
-                    # Create a new Permission object
-                    permission = Permission(
-                        permission_name=permission_name, model=model
+            for permission in permissions:
+                permission_name = permission["permission_name"]
+                permission_type = permission["permission_type"]
+
+                # Check if the permission already exists
+                existing_permission = next(
+                    (ep for ep in existing_permissions if ep.permission_name == permission_name and ep.model == model),
+                    None
+                )
+
+                if existing_permission:
+                    # Update the permission_type if it's None
+                    if existing_permission.permission_type is None:
+                        self.permission_repository.update_attr_by_uuid(
+                            existing_permission.uuid,
+                            "permission_type",
+                            permission_type
+                        )
+                else:
+                    # Create a new Permission object if it doesn't exist
+                    permission_obj = Permission(
+                        permission_name=permission_name, model=model, permission_type=permission_type
                     )
                     # Save it to the database
-                    self.permission_repository.create(permission)
-                    existing_permission_names.add(permission_name)
-        # Return all permissions
+                    self.permission_repository.create(permission_obj)
+
         return self.permission_repository.get_list()
 
-    def get_permissions(self):
+    def get_permissions(self, permission_type: PermissionType):
         try:
-            data = self.permission_repository.get_list()
+            data = self.permission_repository.get_all_permissions(permission_type)
 
             permissions = {}
 
@@ -40,6 +55,7 @@ class PermissionService(BaseService):
                 permission = {
                     "permission_name": entry.permission_name,
                     "uuid": entry.uuid,
+                    "permission_type": entry.permission_type
                 }
 
                 if model not in permissions:
