@@ -34,7 +34,7 @@ def get_current_user_with_permission(permission: str):
         ),
         service: UserService = Depends(Provide[Container.user_service]),
     ):
-        return get_current_user(token=token, service=service, permission=permission)
+        return get_user_permission(token=token, service=service, permission=permission)
 
     return dependency
 
@@ -45,7 +45,6 @@ def get_current_user(
         JWTBearer(allowed_roles=[ADMIN_USER_ROLE, CUSTOMER_USER_ROLE])
     ),
     service: UserService = Depends(Provide[Container.user_service]),
-    # permission: str = None,
 ):
     try:
         token_data = verify_token(token)
@@ -65,6 +64,38 @@ def get_current_user(
         raise AuthError(detail="User is not active or deactivated")
 
     return current_user
+
+
+@inject
+def get_user_permission(
+    token: str = Depends(
+        JWTBearer(allowed_roles=[ADMIN_USER_ROLE, CUSTOMER_USER_ROLE])
+    ),
+    service: UserService = Depends(Provide[Container.user_service]),
+    permission: str = None,
+):
+    try:
+        token_data = verify_token(token)
+    except Exception as e:
+        log.error(e)
+        raise AuthError(detail="Could not validate credentials")
+
+    current_user: User = service.get_user_by_email_address(token_data.username)
+
+    if not current_user:
+        raise AuthError(detail="User not found")
+    log.info(
+        "Current user in session", extra={"email_address": current_user.email_address}
+    )
+
+    if current_user.status == ActiveStatus.INACTIVE or current_user.status == ActiveStatus.DEACTIVATED:
+        raise AuthError(detail="User is not active or deactivated")
+
+    if permission:
+        check_permission(current_user.user_role.permissions, permission)
+
+    return current_user
+
 
 
 @inject
