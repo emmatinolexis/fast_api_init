@@ -121,7 +121,6 @@ class AlertPolicyRepository(BaseRepository):
             # Start building the query
             query = session.query(self.model).filter(self.model.user_uuid == user_uuid)
 
-
             query = query.join(self.model.assets)
 
             # Apply the asset_type_uuid filter if provided
