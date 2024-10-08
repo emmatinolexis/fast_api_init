@@ -1,8 +1,9 @@
 import uuid
 
-from sqlalchemy import Column, String
+from sqlalchemy import Column, String, Enum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
+from app.util.enums import PermissionType
 
 from app.model.base_model import BaseModel
 
@@ -18,6 +19,7 @@ class Permission(BaseModel):
     )
     permission_name = Column(String(100), unique=True, nullable=False)
     model = Column(String(100), unique=False, nullable=False)
+    permission_type = Column(Enum(PermissionType), nullable=False)
     roles = relationship(
         "Role", secondary="role_permission_assignments", back_populates="permissions"
     )

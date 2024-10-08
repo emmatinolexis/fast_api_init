@@ -10,7 +10,7 @@ from app.model.user import User
 from app.schema.permission_schema import RolePayload
 from app.service.permission_service import PermissionService
 from app.service.role_service import RoleService
-from app.util.enums import RoleType
+from app.util.enums import RoleType, PermissionType
 from app.util.utils import send_data, send_data_with_info, send_internal_server_error
 
 router = APIRouter(
@@ -37,12 +37,12 @@ async def synchronize_permissions_handler(
 @router.get("/", response_class=ORJSONResponse)
 @inject
 async def get_all_permission_handler(
+    permission_type: PermissionType = None,
     service: PermissionService = Depends(Provide[Container.permission_service]),
     current_user: User = Depends(get_current_user_with_permission("view_permissions")),
-
 ):
     try:
-        permissions = service.get_permissions()
+        permissions = service.get_permissions(permission_type)
         return send_data_with_info(permissions, messages.SUCCESS_MESSAGE)
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
@@ -85,7 +85,7 @@ async def update_role_handler(
     payload: RolePayload,
     role_uuid: str,
     service: RoleService = Depends(Provide[Container.role_service]),
-    current_user: User = Depends(get_current_user_with_permission("update_role")),
+    current_user: User = Depends(get_current_user_with_permission("update_roles")),
 
 ):
     try:
