@@ -375,4 +375,5 @@ PERMISSIONS = {
         "view_admin_dashboard_customer_analytics",
         "view_admin_dashboard_subscriptions",
     ],
+    "roles_permissions": ["view_roles", "create_role", "update_roles", "view_permissions", "assign_permissions_role", "synchronize_permissions"],
 }

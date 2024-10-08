@@ -3,10 +3,9 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import ORJSONResponse
 
 from app.core import messages
-from app.core.constants import PERMISSIONS
 from app.core.container import Container
-from app.core.dependencies import get_current_user, get_current_user_with_permission
-from app.model.permission import Permission
+from app.core.dependencies import get_current_user_with_permission
+
 from app.model.user import User
 from app.schema.permission_schema import RolePayload
 from app.service.permission_service import PermissionService
@@ -25,7 +24,7 @@ msg_prefix = "permission"
 @inject
 async def synchronize_permissions_handler(
     service: PermissionService = Depends(Provide[Container.permission_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("synchronize_permissions")),
 ):
     try:
         permissions = service.synchronize_permissions()
@@ -39,7 +38,8 @@ async def synchronize_permissions_handler(
 @inject
 async def get_all_permission_handler(
     service: PermissionService = Depends(Provide[Container.permission_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_permissions")),
+
 ):
     try:
         permissions = service.get_permissions()
@@ -54,8 +54,7 @@ async def get_all_permission_handler(
 async def get_all_roles_handler(
     role_type: RoleType = None,
     service: RoleService = Depends(Provide[Container.role_service]),
-    # current_user: User = Depends(get_current_user_with_permission("view_role")),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_roles")),
 ):
     try:
         return send_data(service.get_all_roles(role_type))
@@ -69,7 +68,8 @@ async def get_all_roles_handler(
 async def create_role_handler(
     payload: RolePayload,
     service: RoleService = Depends(Provide[Container.role_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("create_role")),
+
 ):
     try:
         role = service.create_role_permission(payload)
@@ -85,7 +85,8 @@ async def update_role_handler(
     payload: RolePayload,
     role_uuid: str,
     service: RoleService = Depends(Provide[Container.role_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("update_role")),
+
 ):
     try:
         role = service.get_by_uuid(role_uuid)
@@ -104,7 +105,8 @@ async def update_role_handler(
 async def get_role_handler(
     role_uuid: str,
     service: RoleService = Depends(Provide[Container.role_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_roles")),
+
 ):
     try:
         role = service.get_role(role_uuid)
