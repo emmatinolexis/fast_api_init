@@ -3,7 +3,7 @@ from contextlib import AbstractContextManager
 from datetime import datetime, timedelta
 from typing import Callable, Optional
 
-from sqlalchemy import Date, and_, cast, desc, func, or_, case
+from sqlalchemy import Date, and_, case, cast, desc, func, or_
 from sqlalchemy.orm import Session, joinedload
 
 from app.core import messages
@@ -120,7 +120,6 @@ class AlertPolicyRepository(BaseRepository):
 
             # Start building the query
             query = session.query(self.model).filter(self.model.user_uuid == user_uuid)
-
 
             query = query.join(self.model.assets)
 
@@ -371,22 +370,23 @@ class AlertPolicyRepository(BaseRepository):
 
             # Apply custom ordering: "active" first, then order by created_at
             alerts = (
-            query.order_by(
-                case(
-                    (AlertPolicyViolation.status == 'active', 1),
-                    else_=2
-                ),  # Give priority to active violations
-                desc(AlertPolicyViolation.created_at)  # Sort remaining by created_at
+                query.order_by(
+                    case(
+                        (AlertPolicyViolation.status == "active", 1), else_=2
+                    ),  # Give priority to active violations
+                    desc(
+                        AlertPolicyViolation.created_at
+                    ),  # Sort remaining by created_at
+                )
+                .offset(offset)
+                .limit(page_size)
+                .options(joinedload(AlertPolicyViolation.alert_policy))
+                .options(
+                    joinedload(AlertPolicyViolation.asset).joinedload(Asset.driver)
+                )
+                .options(joinedload(AlertPolicyViolation.user).defer(User.password))
+                .all()
             )
-            .offset(offset)
-            .limit(page_size)
-            .options(joinedload(AlertPolicyViolation.alert_policy))
-            .options(
-                joinedload(AlertPolicyViolation.asset).joinedload(Asset.driver)
-            )
-            .options(joinedload(AlertPolicyViolation.user).defer(User.password))
-            .all()
-        )
 
             return {
                 "alerts": alerts,
@@ -477,22 +477,23 @@ class AlertPolicyRepository(BaseRepository):
 
             # Apply custom ordering: "active" first, then order by created_at
             alerts = (
-            query.order_by(
-                case(
-                    (AlertPolicyViolation.status == 'active', 1),
-                    else_=2
-                ),  # Give priority to active violations
-                desc(AlertPolicyViolation.created_at)  # Sort remaining by created_at
+                query.order_by(
+                    case(
+                        (AlertPolicyViolation.status == "active", 1), else_=2
+                    ),  # Give priority to active violations
+                    desc(
+                        AlertPolicyViolation.created_at
+                    ),  # Sort remaining by created_at
+                )
+                .offset(offset)
+                .limit(page_size)
+                .options(joinedload(AlertPolicyViolation.alert_policy))
+                .options(
+                    joinedload(AlertPolicyViolation.asset).joinedload(Asset.driver)
+                )
+                .options(joinedload(AlertPolicyViolation.user).defer(User.password))
+                .all()
             )
-            .offset(offset)
-            .limit(page_size)
-            .options(joinedload(AlertPolicyViolation.alert_policy))
-            .options(
-                joinedload(AlertPolicyViolation.asset).joinedload(Asset.driver)
-            )
-            .options(joinedload(AlertPolicyViolation.user).defer(User.password))
-            .all()
-        )
 
             return {
                 "alerts": alerts,

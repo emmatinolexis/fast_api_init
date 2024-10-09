@@ -1,11 +1,11 @@
 import uuid
 
-from sqlalchemy import Column, String, Enum
+from sqlalchemy import Column, Enum, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from app.util.enums import PermissionType
 
 from app.model.base_model import BaseModel
+from app.util.enums import PermissionType
 
 
 class Permission(BaseModel):
