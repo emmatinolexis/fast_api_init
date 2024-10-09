@@ -372,7 +372,7 @@ class AlertPolicyRepository(BaseRepository):
             alerts = (
                 query.order_by(
                     case(
-                        (AlertPolicyViolation.status == "active", 1), else_=2
+                        (AlertPolicyViolation.status == ActiveStatus.ACTIVE, 1), else_=2
                     ),  # Give priority to active violations
                     desc(
                         AlertPolicyViolation.created_at
@@ -479,7 +479,7 @@ class AlertPolicyRepository(BaseRepository):
             alerts = (
                 query.order_by(
                     case(
-                        (AlertPolicyViolation.status == "active", 1), else_=2
+                        (AlertPolicyViolation.status == ActiveStatus.ACTIVE, 1), else_=2
                     ),  # Give priority to active violations
                     desc(
                         AlertPolicyViolation.created_at
