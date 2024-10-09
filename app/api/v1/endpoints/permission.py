@@ -5,7 +5,6 @@ from fastapi.responses import ORJSONResponse
 from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user_with_permission
-
 from app.model.user import User
 from app.schema.permission_schema import RolePayload
 from app.service.permission_service import PermissionService
@@ -24,7 +23,9 @@ msg_prefix = "permission"
 @inject
 async def synchronize_permissions_handler(
     service: PermissionService = Depends(Provide[Container.permission_service]),
-    current_user: User = Depends(get_current_user_with_permission("synchronize_permissions")),
+    current_user: User = Depends(
+        get_current_user_with_permission("synchronize_permissions")
+    ),
 ):
     try:
         permissions = service.synchronize_permissions()
@@ -69,7 +70,6 @@ async def create_role_handler(
     payload: RolePayload,
     service: RoleService = Depends(Provide[Container.role_service]),
     current_user: User = Depends(get_current_user_with_permission("create_role")),
-
 ):
     try:
         role = service.create_role_permission(payload)
@@ -106,7 +106,6 @@ async def get_role_handler(
     role_uuid: str,
     service: RoleService = Depends(Provide[Container.role_service]),
     current_user: User = Depends(get_current_user_with_permission("view_roles")),
-
 ):
     try:
         role = service.get_role(role_uuid)
