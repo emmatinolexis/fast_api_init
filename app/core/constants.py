@@ -492,8 +492,14 @@ PERMISSIONS = {
     ],
     "admin_dashboard": [
         {"permission_name": "view_admin_dashboard_stat", "permission_type": "admin"},
-        {"permission_name": "view_admin_dashboard_customer_analytics", "permission_type": "admin"},
-        {"permission_name": "view_admin_dashboard_subscriptions", "permission_type": "admin"},
+        {
+            "permission_name": "view_admin_dashboard_customer_analytics",
+            "permission_type": "admin",
+        },
+        {
+            "permission_name": "view_admin_dashboard_subscriptions",
+            "permission_type": "admin",
+        },
     ],
     "roles_permissions": [
         {"permission_name": "view_roles", "permission_type": "admin"},
