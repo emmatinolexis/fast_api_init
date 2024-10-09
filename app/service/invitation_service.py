@@ -7,6 +7,7 @@ from app.repository.team_member_invitation_repository import (
 )
 from app.schema.invitation_schema import InvitationPayload
 from app.service.base_service import BaseService
+from app.util.enums import InvitationStatus
 
 
 class InvitationService(BaseService):
@@ -20,9 +21,17 @@ class InvitationService(BaseService):
     def get_invitation_by_email(self, email: EmailStr):
         return self.invitation_repository.get_invitation_by_email(email)
 
-    def get_all_user_invites(self, business_uuid: str, page=1, page_size=10):
+    def get_all_user_invites(
+        self,
+        business_uuid: str,
+        page=1,
+        page_size=10,
+        search: str = None,
+        role_uuid: str = None,
+        status: InvitationStatus = None,
+    ):
         return self.invitation_repository.get_user_invitations(
-            business_uuid, page, page_size
+            business_uuid, page, page_size, search, role_uuid, status
         )
 
     def get_all_admin_invites(

@@ -19,6 +19,7 @@ from app.schema.invitation_schema import (
 from app.schema.user_schema import (
     AccountDeactivationPayload,
     ResetPasswordPayload,
+    UpdateAdminTeamMemberPayload,
     UpdatePhoneNumber,
     UpdateUserAvatar,
     UpdateUserPayload,
@@ -26,7 +27,6 @@ from app.schema.user_schema import (
     UserPhoneVerificationToken,
     UserProfileUdatePayload,
     UserUpdatePassword,
-    UpdateAdminTeamMemberPayload
 )
 from app.service.business_profile_service import BusinessProfileService
 from app.service.invitation_service import InvitationService
@@ -40,7 +40,13 @@ from app.util.email import (
     send_otp_email,
     send_password_change_email,
 )
-from app.util.enums import AccountType, EmailPurpose, RoleType
+from app.util.enums import (
+    AccountType,
+    ActiveStatus,
+    EmailPurpose,
+    InvitationStatus,
+    RoleType,
+)
 from app.util.utils import (
     allow_admins_only,
     resolve_data_from_request,
@@ -275,6 +281,9 @@ async def user_account(
     page_size: int = Query(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
+    search: str = Query(None, description="Email or Name"),
+    role_uuid: str = Query(None, description="Role uuid"),
+    status: ActiveStatus = Query(None, description="Account Status"),
     current_user: User = Depends(get_current_user),
 ):
     try:
@@ -282,7 +291,11 @@ async def user_account(
         if business is None:
             msg = f"{messages.BUSINESS_PROFILE_NOT_FOUND}{business_uuid}"
             return send_internal_server_error(user_msg=msg, error=msg)
-        return send_data(service.get_account_users(business_uuid, page, page_size))
+        return send_data(
+            service.get_account_users(
+                business_uuid, page, page_size, search, role_uuid, status
+            )
+        )
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
@@ -512,11 +525,14 @@ async def get_all_user_invitations_handler(
     page_size: int = Query(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
+    search: str = Query(None, description="Email or Name"),
+    role_uuid: str = Query(None, description="Role uuid"),
+    status: InvitationStatus = Query(None, description="Invitation Status"),
     current_user: User = Depends(get_current_user),
 ):
     try:
         invitations = invitation_service.get_all_user_invites(
-            business_uuid, page, page_size
+            business_uuid, page, page_size, search, role_uuid, status
         )
         return send_data(invitations)
     except Exception as e:
@@ -774,13 +790,15 @@ async def get_all_admin_team_members_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/admin/team_members/{team_member_uuid}", dependencies=[allow_admins_only], response_class=ORJSONResponse)
+@router.get(
+    "/admin/team_members/{team_member_uuid}",
+    dependencies=[allow_admins_only],
+    response_class=ORJSONResponse,
+)
 @inject
 async def get_team_member_handler(
     team_member_uuid: str,
-    user_service: UserService = Depends(
-        Provide[Container.user_service]
-    ),
+    user_service: UserService = Depends(Provide[Container.user_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
@@ -791,14 +809,16 @@ async def get_team_member_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.patch("/admin/team_members/{team_member_uuid}", dependencies=[allow_admins_only], response_class=ORJSONResponse)
+@router.patch(
+    "/admin/team_members/{team_member_uuid}",
+    dependencies=[allow_admins_only],
+    response_class=ORJSONResponse,
+)
 @inject
 async def get_team_member_handler(
     team_member_uuid: str,
     payload: UpdateAdminTeamMemberPayload,
-    user_service: UserService = Depends(
-        Provide[Container.user_service]
-    ),
+    user_service: UserService = Depends(Provide[Container.user_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:

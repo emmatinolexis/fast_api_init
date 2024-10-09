@@ -11,18 +11,13 @@ from app.model.external_app import ExternalApp
 from app.model.user import User
 from app.service.external_app_service import ExternalAppService
 from app.service.user_service import UserService
-from app.util.utils import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE, THIRD_PARTY_APP_ROLE, check_permission
-from fastapi import HTTPException
 from app.util.enums import ActiveStatus
-
-
 from app.util.utils import (
     ADMIN_USER_ROLE,
     CUSTOMER_USER_ROLE,
     THIRD_PARTY_APP_ROLE,
     check_permission,
 )
-
 
 log = get_logger()
 
@@ -60,7 +55,10 @@ def get_current_user(
         "Current user in session", extra={"email_address": current_user.email_address}
     )
 
-    if current_user.status == ActiveStatus.INACTIVE or current_user.status == ActiveStatus.DEACTIVATED:
+    if (
+        current_user.status == ActiveStatus.INACTIVE
+        or current_user.status == ActiveStatus.DEACTIVATED
+    ):
         raise AuthError(detail="User is not active or deactivated")
 
     return current_user
@@ -88,14 +86,16 @@ def get_user_permission(
         "Current user in session", extra={"email_address": current_user.email_address}
     )
 
-    if current_user.status == ActiveStatus.INACTIVE or current_user.status == ActiveStatus.DEACTIVATED:
+    if (
+        current_user.status == ActiveStatus.INACTIVE
+        or current_user.status == ActiveStatus.DEACTIVATED
+    ):
         raise AuthError(detail="User is not active or deactivated")
 
     if permission:
         check_permission(current_user.user_role.permissions, permission)
 
     return current_user
-
 
 
 @inject
