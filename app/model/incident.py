@@ -22,13 +22,10 @@ class Incident(BaseModel):
     latitude = Column(Double, nullable=False, index=True)
     user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
 
-    user = relationship("User", back_populates="incidents", lazy="joined")
-
     def dto(self):
         return {
             "id": self.id,
             "incidentType": self.incident_type,
-            "username": f"{self.user.first_name} {self.user.last_name}",
             "userId": self.user_uuid,
             "longitude": self.longitude,
             "latitude": self.latitude,
