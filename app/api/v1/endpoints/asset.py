@@ -7,7 +7,7 @@ from fastapi.responses import ORJSONResponse
 from app.core import messages
 from app.core.constants import ENGINE_SHUTDOWN_PASSWORD, ENGINE_SHUTDOWN_USERNAME
 from app.core.container import Container
-from app.core.dependencies import get_current_user, get_current_user_with_permission
+from app.core.dependencies import get_current_user_with_permission
 from app.core.exceptions import NotFoundError, UnAuthorizedError
 from app.model.user import User
 from app.schema.asset_schema import (
