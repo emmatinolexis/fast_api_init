@@ -290,6 +290,10 @@ PYRO_FLAMMABLE_SMOKE_THRESHOLD = 50
 
 GAS_DEVICE_MINIMUM_THRESHOLD = 20
 
+LONGITUDE = "longitude"
+LATITUDE = "latitude"
+RADIUS = "radius"
+
 # PERMISSIONS = {
 #     "asset": [
 #         {

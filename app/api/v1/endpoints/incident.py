@@ -6,6 +6,7 @@ from app.core import messages
 from app.core.container import Container
 from app.schema.incident_schema import IncidentPayload
 from app.service.incident_service import IncidentService
+from app.util.enums import IncidenceType
 from app.util.utils import (
     send_data,
     send_data_with_info,
@@ -78,6 +79,46 @@ async def get_incidents_by_location(
     try:
         incidents = service.get_incidents_by_location(
             longitude=longitude, latitude=latitude, radius=radius
+        )
+        return send_data(data=[i.dto() for i in incidents])
+    except Exception as e:
+        msg = f"{messages.GET_FAILED} {msg_prefix}"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/location", response_class=ORJSONResponse)
+@inject
+async def get_incidents_by_location(
+    longitude: float,
+    latitude: float,
+    radius: int = Query(2000, description="radius is in meters(default is 2000)"),
+    service: IncidentService = Depends(Provide[Container.incident_service]),
+):
+    try:
+        incidents = service.get_incidents_by_location(
+            longitude=longitude, latitude=latitude, radius=radius
+        )
+        return send_data(data=[i.dto() for i in incidents])
+    except Exception as e:
+        msg = f"{messages.GET_FAILED} {msg_prefix}"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/location/incident_type", response_class=ORJSONResponse)
+@inject
+async def get_incidents_by_location(
+    incident_type: IncidenceType,
+    longitude: float,
+    latitude: float,
+    radius: int = Query(2000, description="radius is in meters(default is 2000)"),
+    service: IncidentService = Depends(Provide[Container.incident_service]),
+):
+    try:
+        incidents = service.get_incidents_by_location_incident_type(
+            longitude=longitude,
+            latitude=latitude,
+            radius=radius,
+            incident_type=incident_type,
         )
         return send_data(data=[i.dto() for i in incidents])
     except Exception as e:

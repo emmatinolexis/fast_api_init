@@ -41,6 +41,23 @@ class IncidentService(BaseService):
         except Exception as e:
             raise e
 
+    def get_incidents_by_location_incident_type(
+        self,
+        longitude: float,
+        latitude: float,
+        radius: int,
+        incident_type: IncidenceType,
+    ) -> list[Incident]:
+        try:
+            return self.incident_repository.get_incidents_by_location_incident_type(
+                longitude=longitude,
+                latitude=latitude,
+                radius=radius,
+                incident_type=incident_type,
+            )
+        except Exception as e:
+            raise e
+
     def get_all_incidents_count(self) -> int:
         try:
             return self.incident_repository.get_all_incident_count()
