@@ -1,6 +1,7 @@
 from contextlib import AbstractContextManager
 from datetime import datetime, timedelta
 from typing import Callable, Optional
+from uuid import UUID
 
 from pydantic import EmailStr
 from sqlalchemy import desc, func, or_
@@ -155,7 +156,6 @@ class UserRepository(BaseRepository):
             session.refresh(user)
             return extract_user_data(user)
 
-    from sqlalchemy import or_
 
     def get_account_users(
         self,
@@ -163,7 +163,7 @@ class UserRepository(BaseRepository):
         page=1,
         page_size=10,
         search: str = None,
-        role_uuid: str = None,
+        role_uuids: list[str] = None,
         status: InvitationStatus = None,
     ):
         with self.session_factory() as session:
@@ -181,8 +181,17 @@ class UserRepository(BaseRepository):
                 )
                 query = query.filter(search_filter)
 
-            if role_uuid:
-                query = query.filter(self.model.user_role_uuid == role_uuid)
+            if role_uuids:
+                # Validate and convert role_uuids to proper UUID objects
+                valid_role_uuids = []
+                for role_uuid in role_uuids:
+                    try:
+                        valid_role_uuids.append(UUID(role_uuid))
+                    except ValueError:
+                        # Skip invalid UUIDs
+                        continue
+                if valid_role_uuids:
+                    query = query.filter(self.model.user_role_uuid.in_(valid_role_uuids))
 
             if status:
                 query = query.filter(self.model.status == status)
