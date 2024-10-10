@@ -20,6 +20,7 @@ from app.model.user import User
 from app.schema.auth_schema import TokenData
 from app.schema.external_app_schema import AppServiceTokenData
 from app.schema.user_schema import UserLogin
+from app.util.enums import RoleType
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -164,7 +165,7 @@ def extract_user_data(user: User) -> Dict[str, str]:
         "business_profile": user.business_profile,
         "avatar_url": user.avatar_url,
         "role": user.role,
-        # "user_role": user.user_role,
+        "user_role": user.user_role if user.role == RoleType.CUSTOMER else None,
         "status": user.status,
         "country": user.country,
     }
