@@ -6,7 +6,7 @@ from fastapi.responses import ORJSONResponse
 
 from app.core import messages
 from app.core.container import Container
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, get_current_user_with_permission
 from app.core.exceptions import NotFoundError, UnAuthorizedError
 from app.model.user import User
 from app.schema.alert_policy_schema import (
@@ -45,7 +45,7 @@ async def get_alert_policies_handler(
     page_size: int = Query(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("update_asset")),
 ):
     try:
         return send_data(service.get_all_alert_policies(page, page_size))

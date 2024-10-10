@@ -393,8 +393,10 @@ GAS_DEVICE_MINIMUM_THRESHOLD = 20
 PERMISSIONS = {
     "asset": [
         {"permission_name": "create_asset", "permission_type": "customer"},
+        {"permission_name": "create_third_party_asset", "permission_type": "admin"},
         {"permission_name": "update_asset", "permission_type": "customer"},
         {"permission_name": "view_asset", "permission_type": "all"},
+        {"permission_name": "view_stolen_asset", "permission_type": "admin"},
         {"permission_name": "view_asset_analytics", "permission_type": "customer"},
         {"permission_name": "view_asset_details", "permission_type": "all"},
         {"permission_name": "view_asset_devices", "permission_type": "all"},
@@ -407,6 +409,9 @@ PERMISSIONS = {
         {"permission_name": "configure_device", "permission_type": "customer"},
         {"permission_name": "link_tracking_device", "permission_type": "admin"},
         {"permission_name": "configure_tracking_device", "permission_type": "admin"},
+        {"permission_name": "request_asset_device", "permission_type": "customer"},
+        {"permission_name": "view_device_requests", "permission_type": "customer"},
+        {"permission_name": "update_device_requests", "permission_type": "customer"},
     ],
     "live_map": [
         {"permission_name": "view_live_map", "permission_type": "all"},
@@ -452,6 +457,7 @@ PERMISSIONS = {
         {"permission_name": "update_team_member", "permission_type": "all"},
         {"permission_name": "view_team_member", "permission_type": "all"},
         {"permission_name": "view_invitations", "permission_type": "all"},
+        {"permission_name": "delete_invitations", "permission_type": "all"},
     ],
     "equipments": [
         {"permission_name": "create_equipment", "permission_type": "admin"},
@@ -487,6 +493,7 @@ PERMISSIONS = {
         {"permission_name": "view_customer_payments", "permission_type": "admin"},
     ],
     "reported_incidence": [
+        {"permission_name": "create_incident", "permission_type": "customer"},
         {"permission_name": "view_reported_incidence", "permission_type": "admin"},
         {"permission_name": "update_reported_incidence", "permission_type": "admin"},
     ],
@@ -503,4 +510,7 @@ PERMISSIONS = {
         {"permission_name": "assign_permissions_role", "permission_type": "admin"},
         {"permission_name": "synchronize_permissions", "permission_type": "admin"},
     ],
+    "tracking_devices": [
+        {"permission_name": "view_device_list", "permission_type": "admin"}
+    ]
 }

@@ -7,7 +7,7 @@ from fastapi.responses import ORJSONResponse
 from app.core import messages
 from app.core.constants import ENGINE_SHUTDOWN_PASSWORD, ENGINE_SHUTDOWN_USERNAME
 from app.core.container import Container
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, get_current_user_with_permission
 from app.core.exceptions import NotFoundError, UnAuthorizedError
 from app.model.user import User
 from app.schema.asset_schema import (
@@ -44,6 +44,7 @@ from app.util.utils import (
     send_data_with_info,
     send_info,
     send_internal_server_error,
+    allow_admins_only
 )
 
 router = APIRouter(
@@ -53,11 +54,11 @@ router = APIRouter(
 msg_prefix = "asset"
 
 
-@router.get("/", response_class=ORJSONResponse)
+@router.get("/", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def get_asset_handler(
     service: AssetService = Depends(Provide[Container.asset_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_asset")),
 ):
     try:
         return send_data(service.get_list())
@@ -76,7 +77,7 @@ async def get_asset_by_user_uuid_handler(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
     service: AssetService = Depends(Provide[Container.asset_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_asset")),
 ):
     try:
         assets = service.get_assets_by_user_uuid(
@@ -104,7 +105,7 @@ async def get_asset_by_business_uuid_handler(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
     service: AssetService = Depends(Provide[Container.asset_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_asset")),
 ):
     try:
         assets = service.get_assets_by_business_uuid(
@@ -127,7 +128,7 @@ async def get_asset_by_business_uuid_handler(
 async def create_asset_handler(
     payload: AssetPayload,
     service: AssetService = Depends(Provide[Container.asset_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("create_asset")),
 ):
     try:
         asset = service.create_asset(payload)
@@ -145,7 +146,7 @@ async def patch_asset_handler(
     uuid: str,
     payload: PatchAssetPayload,
     service: AssetService = Depends(Provide[Container.asset_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("update_asset")),
 ):
     try:
         if current_user.account_type == AccountType.INDIVIDUAL:
@@ -167,7 +168,7 @@ async def patch_asset_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/stolen/assets", response_class=ORJSONResponse)
+@router.get("/stolen/assets", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def get_stolen_assets_handler(
     asset_type_uuid: str = None,
@@ -176,7 +177,7 @@ async def get_stolen_assets_handler(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
     service: AssetService = Depends(Provide[Container.asset_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_stolen_asset")),
 ):
     try:
         assets = service.get_third_stolen_assets(asset_type_uuid, page, page_size)
@@ -188,7 +189,7 @@ async def get_stolen_assets_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/third_party_asset/assets", response_class=ORJSONResponse)
+@router.get("/third_party_asset/assets", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def get_third_party_assets_handler(
     asset_type_uuid: str = None,
@@ -197,7 +198,7 @@ async def get_third_party_assets_handler(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
     service: AssetService = Depends(Provide[Container.asset_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_stolen_asset")),
 ):
     try:
         assets = service.get_third_party_assets(asset_type_uuid, page, page_size)
@@ -214,7 +215,7 @@ async def get_third_party_assets_handler(
 async def create_third_party_asset_handler(
     payload: ThirdPartyAssetPayload,
     service: AssetService = Depends(Provide[Container.asset_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("create_third_party_asset")),
 ):
     try:
         asset = service.create_third_party_asset(payload)
@@ -232,7 +233,7 @@ async def update_asset_handler(
     uuid: str,
     payload: AssetPayload,
     service: AssetService = Depends(Provide[Container.asset_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("update_asset")),
 ):
     try:
         asset = service.patch_by_uuid(uuid, payload)
@@ -244,30 +245,30 @@ async def update_asset_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.delete("/{uuid}", response_class=ORJSONResponse)
-@inject
-async def delete_asset_handler(
-    uuid: str,
-    service: AssetService = Depends(Provide[Container.asset_service]),
-    current_user: User = Depends(get_current_user),
-):
-    try:
-        service.remove_by_uuid(uuid)
-        return send_info(messages.DELETE_SUCCESS + msg_prefix)
-    except NotFoundError as e:
-        return send_client_side_error(user_msg=messages.ASSET_NOT_FOUND + str(e.detail))
-    except Exception as e:
-        msg = messages.DELETE_FAILED + msg_prefix
-        return send_internal_server_error(user_msg=msg, error=e)
+# @router.delete("/{uuid}", response_class=ORJSONResponse)
+# @inject
+# async def delete_asset_handler(
+#     uuid: str,
+#     service: AssetService = Depends(Provide[Container.asset_service]),
+#     current_user: User = Depends(get_current_user_with_permission("delete_asset")),
+# ):
+#     try:
+#         service.remove_by_uuid(uuid)
+#         return send_info(messages.DELETE_SUCCESS + msg_prefix)
+#     except NotFoundError as e:
+#         return send_client_side_error(user_msg=messages.ASSET_NOT_FOUND + str(e.detail))
+#     except Exception as e:
+#         msg = messages.DELETE_FAILED + msg_prefix
+#         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.post("/{asset_uuid}", response_class=ORJSONResponse)
+@router.post("/{asset_uuid}", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def assign_device_to_asset(
     asset_uuid: str,
     payload: AssignDeviceInputPayload,
     service: AssetService = Depends(Provide[Container.asset_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("link_tracking_device")),
 ):
     try:
         asset = service.assign_device_imei(asset_uuid, payload)
@@ -283,7 +284,7 @@ async def get_device_analytics(
     asset_uuid: str,
     service: TrackingEventService = Depends(Provide[Container.tracking_event_service]),
     asset_service: AssetService = Depends(Provide[Container.asset_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_asset_details")),
 ):
     try:
         asset = asset_service.get_by_uuid(asset_uuid)
@@ -314,7 +315,7 @@ async def request_asset_device(
     request_service: AssetDeviceRequestService = Depends(
         Provide[Container.asset_device_request_service]
     ),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("request_asset_device")),
 ):
     try:
         request_service.create_asset_device_request(
@@ -334,7 +335,7 @@ async def get_asset_device_requests_by_user(
     request_service: AssetDeviceRequestService = Depends(
         Provide[Container.asset_device_request_service]
     ),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_device_requests")),
 ):
     try:
         requests = request_service.get_asset_device_requests_by_user_uuid(user_uuid)
@@ -351,7 +352,7 @@ async def get_asset_device_requests(
     request_service: AssetDeviceRequestService = Depends(
         Provide[Container.asset_device_request_service]
     ),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_device_requests")),
 ):
     try:
         requests = request_service.get_asset_device_requests()
@@ -361,14 +362,14 @@ async def get_asset_device_requests(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.put("/process-device-request/{request_uuid}", response_class=ORJSONResponse)
+@router.put("/process-device-request/{request_uuid}", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def update_status_request(
     request_uuid: str,
     request_service: AssetDeviceRequestService = Depends(
         Provide[Container.asset_device_request_service]
     ),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("update_device_requests")),
 ):
     try:
         request_service.update_status(request_uuid)
@@ -384,7 +385,7 @@ async def update_status_request(
 async def shutdown_engine_request_handler(
     shutdown_payload: ImmobilizerPayload,
     asset_service: AssetService = Depends(Provide[Container.asset_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("shut_off_on_engine")),
 ):
     try:
         request = asset_service.shutdown_engine(shutdown_payload.asset_uuid)
@@ -443,7 +444,7 @@ async def shutdown_engine_request_handler(
 async def on_engine_request_handler(
     engine_on_payload: EngineOnPayload,
     asset_service: AssetService = Depends(Provide[Container.asset_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("shut_off_on_engine")),
 ):
     try:
         request = asset_service.shutdown_engine(engine_on_payload.asset_uuid)
@@ -477,7 +478,7 @@ async def on_engine_request_handler(
 async def get_last_immobilizer_action(
     asset_uuid: str,
     asset_service: AssetService = Depends(Provide[Container.asset_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("shut_off_on_engine")),
 ):
     try:
         action = asset_service.get_last_immobilizer_action(asset_uuid)
@@ -487,11 +488,11 @@ async def get_last_immobilizer_action(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/immobilizer/theft_incidence", response_class=ORJSONResponse)
+@router.get("/immobilizer/theft_incidence", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def get_all_incidence_handler(
     asset_service: AssetService = Depends(Provide[Container.asset_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_reported_incidence")),
 ):
     try:
         incidence = asset_service.get_all_theft_incidence()
@@ -501,12 +502,12 @@ async def get_all_incidence_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/theft_incidence/{incident_uuid}/resolve", response_class=ORJSONResponse)
+@router.get("/theft_incidence/{incident_uuid}/resolve", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def mark_incident_as_resolved_handler(
     incident_uuid: str,
     asset_service: AssetService = Depends(Provide[Container.asset_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("update_reported_incidence")),
 ):
     try:
         incident = asset_service.mark_as_resolved(incident_uuid)
@@ -523,7 +524,7 @@ async def mark_incident_as_resolved_handler(
 async def get_incident_reports_handler(
     incident_uuid: str,
     asset_service: AssetService = Depends(Provide[Container.asset_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_reported_incidence")),
 ):
     try:
         reports = asset_service.get_incident_reports(incident_uuid)
@@ -540,7 +541,7 @@ async def create_theft_report_handler(
     theft_report_service: TheftReportService = Depends(
         Provide[Container.theft_report_service]
     ),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("create_incident")),
 ):
     try:
         reports = theft_report_service.add(payload)
@@ -558,7 +559,7 @@ async def create_building_handler(
     gas_device_service: GasDeviceService = Depends(
         Provide[Container.gas_device_service]
     ),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("create_asset")),
 ):
     try:
         if payload.create_building_without_cylinder:
@@ -595,7 +596,7 @@ async def get_building_asset_handler(
     ),
     building_service: BuildingService = Depends(Provide[Container.building_service]),
     user_service: UserService = Depends(Provide[Container.user_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_asset")),
 ):
     try:
         user = user_service.get_user_by_uuid(user_uuid)
@@ -627,7 +628,7 @@ async def get_building_asset_handler(
 async def get_building_by_uuid_handler(
     building_uuid: str,
     building_service: BuildingService = Depends(Provide[Container.building_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_asset")),
 ):
     try:
         building = building_service.get_building_by_uuid(building_uuid)
@@ -647,7 +648,7 @@ async def get_building_cylinder_assets_handler(
     ),
     cylinder_status: ActiveStatus = Query(None, description="Filter by device status"),
     building_service: BuildingService = Depends(Provide[Container.building_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_asset_devices")),
 ):
     try:
         building = building_service.get_by_uuid(building_uuid)
@@ -673,7 +674,7 @@ async def patch_building_handler(
     building_uuid: str,
     payload: UpdateBuildingPayload,
     building_service: BuildingService = Depends(Provide[Container.building_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("update_asset")),
 ):
     try:
         data = building_service.update_building(building_uuid, payload)
