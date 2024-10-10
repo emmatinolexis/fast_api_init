@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from typing import Callable, Optional
 
 from pydantic import EmailStr
-from sqlalchemy import desc, func
+from sqlalchemy import desc, func, or_
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.security import extract_user_data, hash_user_password
@@ -22,7 +22,13 @@ from app.schema.user_schema import (
     UserPayload,
     UserProfileUdatePayload,
 )
-from app.util.enums import AccountType, ActiveStatus, CustomerRoles, InvitationStatus, RoleType
+from app.util.enums import (
+    AccountType,
+    ActiveStatus,
+    CustomerRoles,
+    InvitationStatus,
+    RoleType,
+)
 from app.util.utils import toggle_status
 
 
@@ -149,32 +155,55 @@ class UserRepository(BaseRepository):
             session.refresh(user)
             return extract_user_data(user)
 
-    def get_account_users(self, business_uuid: str, page=1, page_size=10):
-        with self.session_factory() as session:
-            offset = (page - 1) * page_size
+    from sqlalchemy import or_
 
-            # Query to get the total count of users
-            total_users = (
-                session.query(func.count(self.model.id))
-                .filter(self.model.business_profile_uuid == business_uuid)
-                .scalar()
+    def get_account_users(
+        self,
+        business_uuid: str,
+        page=1,
+        page_size=10,
+        search: str = None,
+        role_uuid: str = None,
+        status: InvitationStatus = None,
+    ):
+        with self.session_factory() as session:
+            query = session.query(self.model).filter(
+                self.model.business_profile_uuid == business_uuid
             )
 
-            # Calculate total pages
+            # Apply filters
+            if search:
+                search = f"%{search.strip().lower()}%"
+                search_filter = or_(
+                    self.model.first_name.ilike(search),
+                    self.model.last_name.ilike(search),
+                    self.model.email_address.ilike(search),
+                )
+                query = query.filter(search_filter)
+
+            if role_uuid:
+                query = query.filter(self.model.user_role_uuid == role_uuid)
+
+            if status:
+                query = query.filter(self.model.status == status)
+
+            # Get total count and pages
+            total_users = query.count()
             total_pages = (total_users + page_size - 1) // page_size
 
-            account_users = (
-                session.query(self.model)
-                .filter(self.model.business_profile_uuid == business_uuid)
-                .order_by(desc(self.model.created_at))
+            # Apply pagination
+            offset = (page - 1) * page_size
+            query = (
+                query.order_by(desc(self.model.created_at))
                 .offset(offset)
                 .limit(page_size)
-                .options(joinedload(User.user_role))
             )
 
-            users_data = []
-            for user in account_users:
-                user_data = {
+            # Fetch users with roles
+            account_users = query.options(joinedload(User.user_role)).all()
+
+            users_data = [
+                {
                     "uuid": user.uuid,
                     "first_name": user.first_name,
                     "last_name": user.last_name,
@@ -185,7 +214,8 @@ class UserRepository(BaseRepository):
                     "role": user.user_role,
                     "created_at": user.created_at,
                 }
-                users_data.append(user_data)
+                for user in account_users
+            ]
 
             return {
                 "users": users_data,
@@ -195,7 +225,9 @@ class UserRepository(BaseRepository):
                 "page_size": page_size,
             }
 
-    def get_admin_team_members(self, page=1, page_size=10, email: str = None, role_uuid: str = None):
+    def get_admin_team_members(
+        self, page=1, page_size=10, email: str = None, role_uuid: str = None
+    ):
         with self.session_factory() as session:
             offset = (page - 1) * page_size
             # Build the query for invitations with optional filters
@@ -215,8 +247,7 @@ class UserRepository(BaseRepository):
 
             # Get the invitations with filters, pagination, and sorting
             users = (
-                query
-                .order_by(desc(self.model.created_at))
+                query.order_by(desc(self.model.created_at))
                 .offset(offset)
                 .limit(page_size)
                 .options(joinedload(self.model.user_role))
@@ -233,7 +264,7 @@ class UserRepository(BaseRepository):
                     "created_at": user.created_at,
                     "name": f"{user.first_name} {user.last_name}",
                     "phone_number": user.phone_number,
-                    "profile_picture_url": user.avatar_url
+                    "profile_picture_url": user.avatar_url,
                 }
                 for user in users
             ]
@@ -259,15 +290,15 @@ class UserRepository(BaseRepository):
                 return None
 
             user = {
-                    "uuid": user.uuid,
-                    "email": user.email_address,
-                    "role": user.user_role,
-                    "status": user.status,
-                    "created_at": user.created_at,
-                    "name": f"{user.first_name} {user.last_name}",
-                    "phone_number": user.phone_number,
-                    "profile_picture_url": user.avatar_url
-                }
+                "uuid": user.uuid,
+                "email": user.email_address,
+                "role": user.user_role,
+                "status": user.status,
+                "created_at": user.created_at,
+                "name": f"{user.first_name} {user.last_name}",
+                "phone_number": user.phone_number,
+                "profile_picture_url": user.avatar_url,
+            }
 
             return user
 
@@ -305,7 +336,7 @@ class UserRepository(BaseRepository):
             if not user.invite_status
             else user.user_role_uuid,
             status=user.status,
-            verifiedAt=datetime.utcnow() if user.invite_status else None
+            verifiedAt=datetime.utcnow() if user.invite_status else None,
         )
 
         session.add(db_user)

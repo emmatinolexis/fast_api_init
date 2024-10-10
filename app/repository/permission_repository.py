@@ -2,10 +2,10 @@ from contextlib import AbstractContextManager
 from typing import Callable
 
 from sqlalchemy.orm import Session
-from app.util.enums import PermissionType
 
 from app.model.permission import Permission
 from app.repository.base_repository import BaseRepository
+from app.util.enums import PermissionType
 
 
 class PermissionRepository(BaseRepository):
@@ -26,16 +26,20 @@ class PermissionRepository(BaseRepository):
             if permission_type == PermissionType.admin:
                 # Filter permissions for admin, allowing 'all' permission type
                 filtered_permissions = [
-                    perm for perm in permissions
-                    if perm.permission_type == PermissionType.admin or perm.permission_type == PermissionType.all
+                    perm
+                    for perm in permissions
+                    if perm.permission_type == PermissionType.admin
+                    or perm.permission_type == PermissionType.all
                 ]
                 return filtered_permissions
 
             if permission_type == PermissionType.customer:
                 # Filter permissions for customer, allowing 'all' permission type
                 filtered_permissions = [
-                    perm for perm in permissions
-                    if perm.permission_type == PermissionType.customer or perm.permission_type == PermissionType.all
+                    perm
+                    for perm in permissions
+                    if perm.permission_type == PermissionType.customer
+                    or perm.permission_type == PermissionType.all
                 ]
                 return filtered_permissions
 

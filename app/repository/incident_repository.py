@@ -55,3 +55,45 @@ class IncidentRepository(BaseRepository):
             incidents.append(Incident(**row_dict))
 
         return incidents
+
+    def get_all_incident_count(self) -> int:
+        with self.session_factory() as session:
+            return session.query(self.model).count()
+
+    def get_incidents_report(self, page: int = 1, page_size: int = 10):
+        with self.session_factory() as session:
+            offset = (page - 1) * page_size
+            limit = page_size
+            query = text(
+                """
+            with cluster_incidents_by_type AS (
+            SELECT i.id, i.incident_type, i.longitude, i.latitude, i.user_uuid, i.created_at,
+                ROW_NUMBER() OVER (PARTITION BY i.incident_type ORDER BY i.id) AS rn
+            FROM incidents i
+            )
+            SELECT 
+                cl.id AS id,
+                cl.incident_type AS incident_type,
+                cl.longitude AS longitude,
+                cl.latitude AS latitude,
+                u.first_name  AS first_name,
+                u.last_name  AS last_name,
+                (SELECT COUNT(*)
+                FROM incidents i
+                WHERE i.incident_type = cl.incident_type
+                AND ST_DWithin(
+                    geography(ST_MakePoint(i.longitude, i.latitude)),
+                    geography(ST_MakePoint(cl.longitude, cl.latitude)),
+                    2000
+                )
+               ) AS count,
+                cl.created_at as created_at
+            FROM cluster_incidents_by_type cl
+            JOIN users u ON cl.user_uuid = u.uuid
+            WHERE cl.rn = 1 
+            LIMIT :limit OFFSET :offset;
+        """
+            )
+
+        result = session.execute(query, {"limit": limit, "offset": offset}).fetchall()
+        return result

@@ -1,17 +1,14 @@
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends
 from fastapi.responses import ORJSONResponse
-
 from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user_with_permission, get_current_user
-
 from app.model.user import User
 from app.schema.permission_schema import RolePayload
 from app.service.permission_service import PermissionService
 from app.service.role_service import RoleService
-
-from app.util.enums import RoleType, PermissionType
+from app.util.enums import PermissionType, RoleType
 from app.util.utils import send_data, send_data_with_info, send_internal_server_error
 
 router = APIRouter(
@@ -25,7 +22,9 @@ msg_prefix = "permission"
 @inject
 async def synchronize_permissions_handler(
     service: PermissionService = Depends(Provide[Container.permission_service]),
-    current_user: User = Depends(get_current_user_with_permission("synchronize_permissions")),
+    current_user: User = Depends(
+        get_current_user_with_permission("synchronize_permissions")
+    ),
 ):
     try:
         permissions = service.synchronize_permissions()
@@ -70,7 +69,6 @@ async def create_role_handler(
     payload: RolePayload,
     service: RoleService = Depends(Provide[Container.role_service]),
     current_user: User = Depends(get_current_user_with_permission("create_role")),
-
 ):
     try:
         role = service.create_role_permission(payload)
@@ -87,7 +85,6 @@ async def update_role_handler(
     role_uuid: str,
     service: RoleService = Depends(Provide[Container.role_service]),
     current_user: User = Depends(get_current_user_with_permission("update_roles")),
-
 ):
     try:
         role = service.get_by_uuid(role_uuid)
@@ -107,7 +104,6 @@ async def get_role_handler(
     role_uuid: str,
     service: RoleService = Depends(Provide[Container.role_service]),
     current_user: User = Depends(get_current_user_with_permission("view_roles")),
-
 ):
     try:
         role = service.get_role(role_uuid)

@@ -22,22 +22,26 @@ class PermissionService(BaseService):
 
                 # Check if the permission already exists
                 existing_permission = next(
-                    (ep for ep in existing_permissions if ep.permission_name == permission_name and ep.model == model),
-                    None
+                    (
+                        ep
+                        for ep in existing_permissions
+                        if ep.permission_name == permission_name and ep.model == model
+                    ),
+                    None,
                 )
 
                 if existing_permission:
                     # Update the permission_type if it's None
                     if existing_permission.permission_type is None:
                         self.permission_repository.update_attr_by_uuid(
-                            existing_permission.uuid,
-                            "permission_type",
-                            permission_type
+                            existing_permission.uuid, "permission_type", permission_type
                         )
                 else:
                     # Create a new Permission object if it doesn't exist
                     permission_obj = Permission(
-                        permission_name=permission_name, model=model, permission_type=permission_type
+                        permission_name=permission_name,
+                        model=model,
+                        permission_type=permission_type,
                     )
                     # Save it to the database
                     self.permission_repository.create(permission_obj)
@@ -55,7 +59,7 @@ class PermissionService(BaseService):
                 permission = {
                     "permission_name": entry.permission_name,
                     "uuid": entry.uuid,
-                    "permission_type": entry.permission_type
+                    "permission_type": entry.permission_type,
                 }
 
                 if model not in permissions:

@@ -3,7 +3,7 @@ from contextlib import AbstractContextManager
 from datetime import datetime, timedelta
 from typing import Callable, Optional
 
-from sqlalchemy import Date, and_, cast, desc, func, or_
+from sqlalchemy import Date, and_, case, cast, desc, func, or_
 from sqlalchemy.orm import Session, joinedload
 
 from app.core import messages
@@ -120,7 +120,6 @@ class AlertPolicyRepository(BaseRepository):
 
             # Start building the query
             query = session.query(self.model).filter(self.model.user_uuid == user_uuid)
-
 
             query = query.join(self.model.assets)
 
@@ -325,11 +324,9 @@ class AlertPolicyRepository(BaseRepository):
 
             # Apply date filter
             if start_date and end_date:
-                # Both start_date and end_date are provided
                 try:
                     start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
                     end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
-                    # Include the entire end date
                     end_date_obj += timedelta(days=1)
                     query = query.filter(
                         AlertPolicyViolation.created_at >= start_date_obj,
@@ -338,7 +335,6 @@ class AlertPolicyRepository(BaseRepository):
                 except ValueError:
                     raise ValueError("Invalid date format. Expected 'YYYY-MM-DD'.")
             elif start_date:
-                # Only start_date is provided
                 try:
                     date_obj = datetime.strptime(start_date, "%Y-%m-%d")
                     next_day = date_obj + timedelta(days=1)
@@ -349,10 +345,8 @@ class AlertPolicyRepository(BaseRepository):
                 except ValueError:
                     raise ValueError("Invalid date format. Expected 'YYYY-MM-DD'.")
             elif end_date:
-                # Only end_date is provided
                 try:
                     end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
-                    # Include the entire end date
                     end_date_obj += timedelta(days=1)
                     query = query.filter(AlertPolicyViolation.created_at < end_date_obj)
                 except ValueError:
@@ -374,9 +368,16 @@ class AlertPolicyRepository(BaseRepository):
             # Calculate total pages
             total_pages = (total_alerts + page_size - 1) // page_size
 
-            # Fetch paginated results
+            # Apply custom ordering: "active" first, then order by created_at
             alerts = (
-                query.order_by(desc(AlertPolicyViolation.created_at))
+                query.order_by(
+                    case(
+                        (AlertPolicyViolation.status == ActiveStatus.ACTIVE, 1), else_=2
+                    ),  # Give priority to active violations
+                    desc(
+                        AlertPolicyViolation.created_at
+                    ),  # Sort remaining by created_at
+                )
                 .offset(offset)
                 .limit(page_size)
                 .options(joinedload(AlertPolicyViolation.alert_policy))
@@ -386,6 +387,7 @@ class AlertPolicyRepository(BaseRepository):
                 .options(joinedload(AlertPolicyViolation.user).defer(User.password))
                 .all()
             )
+
             return {
                 "alerts": alerts,
                 "total_alerts": total_alerts,
@@ -408,6 +410,7 @@ class AlertPolicyRepository(BaseRepository):
         with self.session_factory() as session:
             offset = (page - 1) * page_size
 
+            # Start building the query
             query = session.query(AlertPolicyViolation).filter(
                 AlertPolicyViolation.business_profile_uuid == business_uuid
             )
@@ -428,11 +431,9 @@ class AlertPolicyRepository(BaseRepository):
 
             # Apply date filter
             if start_date and end_date:
-                # Both start_date and end_date are provided
                 try:
                     start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
                     end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
-                    # Include the entire end date
                     end_date_obj += timedelta(days=1)
                     query = query.filter(
                         AlertPolicyViolation.created_at >= start_date_obj,
@@ -441,7 +442,6 @@ class AlertPolicyRepository(BaseRepository):
                 except ValueError:
                     raise ValueError("Invalid date format. Expected 'YYYY-MM-DD'.")
             elif start_date:
-                # Only start_date is provided
                 try:
                     date_obj = datetime.strptime(start_date, "%Y-%m-%d")
                     next_day = date_obj + timedelta(days=1)
@@ -452,10 +452,8 @@ class AlertPolicyRepository(BaseRepository):
                 except ValueError:
                     raise ValueError("Invalid date format. Expected 'YYYY-MM-DD'.")
             elif end_date:
-                # Only end_date is provided
                 try:
                     end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
-                    # Include the entire end date
                     end_date_obj += timedelta(days=1)
                     query = query.filter(AlertPolicyViolation.created_at < end_date_obj)
                 except ValueError:
@@ -477,9 +475,16 @@ class AlertPolicyRepository(BaseRepository):
             # Calculate total pages
             total_pages = (total_alerts + page_size - 1) // page_size
 
-            # Fetch paginated results
+            # Apply custom ordering: "active" first, then order by created_at
             alerts = (
-                query.order_by(desc(AlertPolicyViolation.created_at))
+                query.order_by(
+                    case(
+                        (AlertPolicyViolation.status == ActiveStatus.ACTIVE, 1), else_=2
+                    ),  # Give priority to active violations
+                    desc(
+                        AlertPolicyViolation.created_at
+                    ),  # Sort remaining by created_at
+                )
                 .offset(offset)
                 .limit(page_size)
                 .options(joinedload(AlertPolicyViolation.alert_policy))
@@ -489,6 +494,7 @@ class AlertPolicyRepository(BaseRepository):
                 .options(joinedload(AlertPolicyViolation.user).defer(User.password))
                 .all()
             )
+
             return {
                 "alerts": alerts,
                 "total_alerts": total_alerts,

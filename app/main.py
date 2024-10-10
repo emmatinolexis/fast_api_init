@@ -80,7 +80,6 @@ mqtt_service = app_creator.mqtt_service
 async def startup_event():
     scheduler.start()
     if settings.ENV != "test":
-
         # check over speeding every 2 minutes
         scheduler.add_job(
             check_over_speeding_violation_handler,
