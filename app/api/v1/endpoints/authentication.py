@@ -110,4 +110,4 @@ async def login(
     except AuthError as e:
         return send_internal_server_error(user_msg=str(e.detail), error=e)
     except Exception as e:
-        return send_internal_server_error(user_msg="Invalid Credentials", error=e)
+        return send_internal_server_error(user_msg="Invalid Credential", error=e)
