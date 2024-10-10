@@ -25,7 +25,7 @@ from app.repository.user_subscription_repository import UserSubscriptionReposito
 from app.schema.auth_schema import UserEmailVerification, VerifyToken
 from app.schema.user_schema import UserLogin
 from app.service.base_service import BaseService
-from app.util.enums import ActiveStatus
+from app.util.enums import ActiveStatus, RoleType
 
 log = get_logger()
 
@@ -89,13 +89,13 @@ class AuthService(BaseService):
 
             log.info("Access token generated successfully")
 
-            user["package"] = user_package
+            if user.get("role") == RoleType.CUSTOMER:
+                user["package"] = user_package
 
             login_result = {
                 "access_token": access_token,
                 "expiration": expiration_datetime,
                 "user": user,
-                "permission": "",
             }
             return login_result
         except Exception as e:

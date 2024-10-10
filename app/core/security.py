@@ -164,7 +164,7 @@ def extract_user_data(user: User) -> Dict[str, str]:
         "business_profile": user.business_profile,
         "avatar_url": user.avatar_url,
         "role": user.role,
-        "user_role": user.user_role,
+        # "user_role": user.user_role,
         "status": user.status,
         "country": user.country,
     }
