@@ -1,10 +1,9 @@
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends
 from fastapi.responses import ORJSONResponse
-
 from app.core import messages
 from app.core.container import Container
-from app.core.dependencies import get_current_user_with_permission
+from app.core.dependencies import get_current_user_with_permission, get_current_user
 from app.model.user import User
 from app.schema.permission_schema import RolePayload
 from app.service.permission_service import PermissionService
@@ -108,6 +107,20 @@ async def get_role_handler(
 ):
     try:
         role = service.get_role(role_uuid)
+        return send_data(role)
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/user", response_class=ORJSONResponse)
+@inject
+async def get_user_role_handler(
+    service: RoleService = Depends(Provide[Container.role_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        role = service.get_role(current_user.user_role_uuid)
         return send_data(role)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
