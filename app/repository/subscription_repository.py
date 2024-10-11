@@ -1,5 +1,6 @@
 from contextlib import AbstractContextManager
 from datetime import date
+import math
 from typing import Callable, List, Tuple
 
 import requests
@@ -119,25 +120,45 @@ class SubscriptionRepository(BaseRepository):
             # For any other exceptions, return a generic error message
             return f"Error creating subscription: {str(err)}"
 
-    def read_all_paystack_subscriptions(self):
+    def read_all_paystack_subscriptions(self, page=1, page_size=10):
+        # Ensure page and page_size are integers
+        page = int(page)
+        page_size = int(page_size)
+
         with self.session_factory() as session:
+            # Prepare pagination parameters for Paystack API
+            params = {
+                'page': page,
+                'perPage': page_size
+            }
+
             paystack_subscription = requests.get(
                 settings.PAYSTACK_SUBSCRIPTION_URL,
                 headers=settings.PAYSTACK_HEADERS,
+                params=params  # Adding pagination parameters to the request
             )
 
             if paystack_subscription.status_code == 200:
                 subscriptions = []
-                for subscription in paystack_subscription.json()["data"]:
+                response_data = paystack_subscription.json()
+
+                # Extract metadata (total count, etc.) and ensure they are integers
+                total_subscriptions = int(response_data.get("meta", {}).get("total", 0))
+                current_page = int(response_data.get("meta", {}).get("page", page))
+                per_page = int(response_data.get("meta", {}).get("perPage", page_size))
+
+                # Calculate total pages
+                total_pages = math.ceil(total_subscriptions / per_page)
+
+                for subscription in response_data["data"]:
                     user_email = subscription["customer"]["email"]
 
-                    user = (
-                        session.query(User).filter_by(email_address=user_email).first()
-                    )
+                    user = session.query(User).filter_by(email_address=user_email).first()
 
                     if not user:
                         return f"{user_email} not found"
 
+                    # Update subscription with user details
                     subscription["customer"]["first_name"] = user.first_name
                     subscription["customer"]["last_name"] = user.last_name
                     subscription["customer"]["phone"] = user.phone_number
@@ -145,6 +166,7 @@ class SubscriptionRepository(BaseRepository):
 
                     plan_code = subscription["plan"]["plan_code"]
 
+                    # Fetch package items based on plan code
                     package_items = (
                         session.query(PackageItemAssignment)
                         .filter(PackageItemAssignment.paystack_plan_code == plan_code)
@@ -155,7 +177,16 @@ class SubscriptionRepository(BaseRepository):
                     subscription["package_items"] = package_items
                     subscriptions.append(subscription)
 
-                return subscriptions
+                # Return result with pagination metadata
+                result = {
+                    "subscriptions": subscriptions,
+                    "page": current_page,
+                    "page_size": per_page,
+                    "total": total_subscriptions,
+                    "total_pages": total_pages
+                }
+                return result
+
             return paystack_subscription.json()
 
     def read_all_subscriptions(
