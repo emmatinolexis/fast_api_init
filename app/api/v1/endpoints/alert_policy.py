@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional,List
 
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
@@ -58,7 +58,6 @@ async def get_alert_policies_handler(
 @inject
 async def get_alert_policies_by_user_handler(
     user_uuid: str,
-    alert_policy_type_uuid: str = None,
     service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
     page: int = Query(1, ge=1, description="Page number, default is set to 1"),
     page_size: int = Query(
@@ -67,9 +66,9 @@ async def get_alert_policies_by_user_handler(
     policy_status: Optional[ActiveStatus] = Query(
         None, description="Filter by policy status. Possible values: active, inactive"
     ),
-    policy_type: Optional[str] = Query(
+    policy_types: List[str] = Query(
         None,
-        description="Filter by policy type. Possible values: Geofence alert policy, Over speeding alert policy",
+        description="UUIDs of the policy types to filter by",
     ),
     start_date: Optional[str] = Query(
         None,
@@ -88,11 +87,10 @@ async def get_alert_policies_by_user_handler(
         return send_data(
             service.get_all_alert_policies_by_user(
                 user_uuid,
-                alert_policy_type_uuid,
                 page,
                 page_size,
                 policy_status,
-                policy_type,
+                policy_types,
                 start_date,
                 end_date,
                 search,
@@ -107,7 +105,6 @@ async def get_alert_policies_by_user_handler(
 @inject
 async def get_alert_policies_by_business_handler(
     business_uuid: str,
-    alert_policy_type_uuid: str = None,
     service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
     page: int = Query(1, ge=1, description="Page number, default is set to 1"),
     page_size: int = Query(
@@ -116,9 +113,9 @@ async def get_alert_policies_by_business_handler(
     policy_status: Optional[ActiveStatus] = Query(
         None, description="Filter by policy status. Possible values: active, inactive"
     ),
-    policy_type: Optional[str] = Query(
+    policy_types: List[str] = Query(
         None,
-        description="Filter by policy type. Possible values: Geofence alert policy, Over speeding alert policy",
+        description="UUIDs of the policy types to filter by",
     ),
     start_date: Optional[str] = Query(
         None,
@@ -137,11 +134,10 @@ async def get_alert_policies_by_business_handler(
         return send_data(
             service.get_all_alert_policies_by_business(
                 business_uuid,
-                alert_policy_type_uuid,
                 page,
                 page_size,
                 policy_status,
-                policy_type,
+                policy_types,
                 start_date,
                 end_date,
                 search,
@@ -210,7 +206,7 @@ async def get_alert_violations_by_business_handler(
     policy_status: ActiveStatus = Query(
         None, description="Filter by policy status. Possible values: active, inactive"
     ),
-    policy_type: Optional[str] = Query(
+    policy_types: List[str] = Query(
         None,
         description="Filter by policy type. Possible values: Geofence alert policy, Over speeding alert policy",
     ),
@@ -234,7 +230,7 @@ async def get_alert_violations_by_business_handler(
                 page,
                 page_size,
                 policy_status,
-                policy_type,
+                policy_types,
                 start_date,
                 end_date,
                 search,

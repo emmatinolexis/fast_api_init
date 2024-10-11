@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import List
 
 from pydantic import EmailStr
 
@@ -27,11 +28,11 @@ class InvitationService(BaseService):
         page=1,
         page_size=10,
         search: str = None,
-        role_uuid: str = None,
+        role_uuids: List[str]   = None,
         status: InvitationStatus = None,
     ):
         return self.invitation_repository.get_user_invitations(
-            business_uuid, page, page_size, search, role_uuid, status
+            business_uuid, page, page_size, search, role_uuids, status
         )
 
     def get_all_admin_invites(

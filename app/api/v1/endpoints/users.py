@@ -527,13 +527,13 @@ async def get_all_user_invitations_handler(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
     search: str = Query(None, description="Email or Name"),
-    role_uuid: str = Query(None, description="Role uuid"),
+    role_uuids: List[str] = Query(None, description="Role UUIDs"),
     status: InvitationStatus = Query(None, description="Invitation Status"),
     current_user: User = Depends(get_current_user),
 ):
     try:
         invitations = invitation_service.get_all_user_invites(
-            business_uuid, page, page_size, search, role_uuid, status
+            business_uuid, page, page_size, search, role_uuids, status
         )
         return send_data(invitations)
     except Exception as e:
