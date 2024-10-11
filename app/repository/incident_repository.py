@@ -3,7 +3,8 @@ from typing import Callable, List
 
 from sqlalchemy import text
 
-from app.model.incident import Incident
+from app.core.constants import LATITUDE, LONGITUDE, RADIUS
+from app.model.incident import IncidenceType, Incident
 from app.repository.base_repository import BaseRepository
 from app.util.enums import IncidenceType
 
@@ -46,7 +47,44 @@ class IncidentRepository(BaseRepository):
             )
 
         result = session.execute(
-            query, {"longitude": longitude, "latitude": latitude, "radius": radius}
+            query, {LONGITUDE: longitude, LATITUDE: latitude, RADIUS: radius}
+        )
+
+        incidents = []
+        for row in result:
+            row_dict = dict(row._mapping)
+            incidents.append(Incident(**row_dict))
+
+        return incidents
+
+    def get_incidents_by_location_incident_type(
+        self,
+        incident_type: IncidenceType,
+        longitude: float,
+        latitude: float,
+        radius: int = 2000,
+    ) -> List[Incident]:
+        with self.session_factory() as session:
+            query = text(
+                """
+            SELECT *
+            FROM incidents
+            WHERE incident_type = :incident_type and  ST_DWithin(
+                geography(ST_MakePoint(longitude, latitude)),
+                geography(ST_MakePoint(:longitude, :latitude)),
+                :radius
+            )
+            """
+            )
+
+        result = session.execute(
+            query,
+            {
+                LONGITUDE: longitude,
+                LATITUDE: latitude,
+                RADIUS: radius,
+                "incident_type": incident_type.name,
+            },
         )
 
         incidents = []

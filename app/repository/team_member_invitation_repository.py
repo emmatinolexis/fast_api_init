@@ -1,5 +1,6 @@
 from contextlib import AbstractContextManager
 from typing import Callable
+from uuid import UUID
 
 from pydantic import EmailStr
 from sqlalchemy import desc, func
@@ -79,7 +80,7 @@ class TeamMemberInvitationRepository(BaseRepository):
             }
 
     def get_admin_invitations(
-        self, page=1, page_size=10, email: str = None, role_uuid: str = None
+        self, page=1, page_size=10, email: str = None, role_uuids: list[str] = None
     ):
         with self.session_factory() as session:
             offset = (page - 1) * page_size
@@ -92,8 +93,18 @@ class TeamMemberInvitationRepository(BaseRepository):
             # Add filters based on provided parameters
             if email:
                 query = query.filter(self.model.email.ilike(f"%{email}%"))
-            if role_uuid:
-                query = query.filter(self.model.role_uuid == role_uuid)
+
+
+            if role_uuids:
+                valid_role_uuids = []
+                for role_uuid in role_uuids:
+                    try:
+                        valid_role_uuids.append(UUID(role_uuid))
+                    except ValueError:
+                        # Skip invalid UUIDs
+                        continue
+                if valid_role_uuids:
+                    query = query.filter(self.model.role_uuid.in_(valid_role_uuids))
 
             # Query to get the total count of invitations with filters
             total_invitations = query.with_entities(func.count(self.model.id)).scalar()

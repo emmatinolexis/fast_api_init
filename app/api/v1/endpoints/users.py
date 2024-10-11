@@ -4,6 +4,7 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import ORJSONResponse
 from pydantic import EmailStr
+from typing import List
 
 from app.core import messages
 from app.core.container import Container
@@ -273,6 +274,7 @@ async def get_user_by_uuid_handler(
 @inject
 async def user_account(
     business_uuid: str,
+    role_uuids: List[str] = Query(None, description="List of role UUIDs"),
     service: UserService = Depends(Provide[Container.user_service]),
     business_service: BusinessProfileService = Depends(
         Provide[Container.business_profile_service]
@@ -282,7 +284,6 @@ async def user_account(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
     search: str = Query(None, description="Email or Name"),
-    role_uuid: str = Query(None, description="Role uuid"),
     status: ActiveStatus = Query(None, description="Account Status"),
     current_user: User = Depends(get_current_user),
 ):
@@ -293,7 +294,7 @@ async def user_account(
             return send_internal_server_error(user_msg=msg, error=msg)
         return send_data(
             service.get_account_users(
-                business_uuid, page, page_size, search, role_uuid, status
+                business_uuid, page, page_size, search, role_uuids, status
             )
         )
     except Exception as e:
@@ -682,7 +683,7 @@ async def create_admin_user_invitation(
 @inject
 async def get_all_user_invitations_handler(
     email: str = None,
-    role_uuid: str = None,
+    role_uuids: List[str] = Query(None, description="List of role UUIDs"),
     invitation_service: InvitationService = Depends(
         Provide[Container.invitation_service]
     ),
@@ -694,7 +695,7 @@ async def get_all_user_invitations_handler(
 ):
     try:
         invitations = invitation_service.get_all_admin_invites(
-            page, page_size, email, role_uuid
+            page, page_size, email, role_uuids
         )
         return send_data(invitations)
     except Exception as e:
