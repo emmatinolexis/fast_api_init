@@ -28,6 +28,7 @@ from app.util.utils import (
     send_data_with_info,
     send_info,
     send_internal_server_error,
+    allow_admins_only
 )
 
 router = APIRouter(
@@ -37,7 +38,7 @@ router = APIRouter(
 msg_prefix = "alert policy"
 
 
-@router.get("/", response_class=ORJSONResponse)
+@router.get("/", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def get_alert_policies_handler(
     service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
