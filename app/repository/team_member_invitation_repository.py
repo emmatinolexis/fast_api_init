@@ -1,6 +1,7 @@
 from contextlib import AbstractContextManager
 from typing import Callable
 from uuid import UUID
+from typing import List
 
 from pydantic import EmailStr
 from sqlalchemy import desc, func
@@ -30,7 +31,7 @@ class TeamMemberInvitationRepository(BaseRepository):
         page: int = 1,
         page_size: int = 10,
         search: str = None,
-        role_uuid: str = None,
+        role_uuids: List[str]  = None,
         status: InvitationStatus = None,
     ):
         with self.session_factory() as session:
@@ -41,8 +42,14 @@ class TeamMemberInvitationRepository(BaseRepository):
             # Apply filters
             if search:
                 query = query.filter(self.model.email.ilike(f"%{search}%"))
-            if role_uuid:
-                query = query.filter(self.model.role_uuid == role_uuid)
+            if role_uuids:
+                valid_role_uuids = []
+                for role_uuid in role_uuids:
+                    try:
+                        valid_role_uuids.append(UUID(role_uuid))
+                    except ValueError:
+                        continue
+                query = query.filter(self.model.role_uuid.in_(valid_role_uuids))
             if status:
                 query = query.filter(self.model.status == status)
 

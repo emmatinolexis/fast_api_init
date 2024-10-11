@@ -1,7 +1,8 @@
 import logging
 from contextlib import AbstractContextManager
 from datetime import datetime, timedelta
-from typing import Callable, Optional
+from typing import Callable, Optional,List
+from uuid import UUID
 
 from sqlalchemy import Date, and_, case, cast, desc, func, or_
 from sqlalchemy.orm import Session, joinedload
@@ -106,11 +107,10 @@ class AlertPolicyRepository(BaseRepository):
     def read_all_alert_policies_by_user(
         self,
         user_uuid: str,
-        alert_policy_type_uuid: str = None,
         page=1,
         page_size=10,
         policy_status: Optional[ActiveStatus] = None,
-        policy_type: Optional[str] = None,
+        policy_types: Optional[List[str]] = None,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
         search: Optional[str] = None,
@@ -123,19 +123,19 @@ class AlertPolicyRepository(BaseRepository):
 
             query = query.join(self.model.assets)
 
-            # Apply the asset_type_uuid filter if provided
-            if alert_policy_type_uuid:
-                query = query.filter(
-                    self.model.alert_policy_type_uuid == alert_policy_type_uuid
-                )
-
             # Apply policy status filter
             if policy_status:
                 query = query.filter(self.model.status == policy_status)
 
             # Apply policy type filter
-            if policy_type:
-                query = query.filter(self.model.alert_policy_type.has(name=policy_type))
+            if policy_types:
+                valid_alert_policy_type = []
+                for policy_type in policy_types:
+                    try:
+                        valid_alert_policy_type.append(UUID(policy_type))
+                    except ValueError:
+                        continue
+                query = query.filter(self.model.alert_policy_type_uuid.in_(valid_alert_policy_type))
 
             # Apply date filter
             if start_date and end_date:
@@ -183,11 +183,10 @@ class AlertPolicyRepository(BaseRepository):
     def read_all_alert_policies_by_business(
         self,
         business_uuid: str,
-        alert_policy_type_uuid: str = None,
         page=1,
         page_size=10,
         policy_status: Optional[ActiveStatus] = None,
-        policy_type: Optional[str] = None,
+        policy_types: Optional[List[str]] = None,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
         search: Optional[str] = None,
@@ -202,18 +201,20 @@ class AlertPolicyRepository(BaseRepository):
 
             query = query.join(self.model.assets)
 
-            # Apply the asset_type_uuid filter if provided
-            if alert_policy_type_uuid:
-                query = query.filter(
-                    self.model.alert_policy_type_uuid == alert_policy_type_uuid
-                )
 
             if policy_status:
                 query = query.filter(self.model.status == policy_status)
 
             # Apply policy type filter
-            if policy_type:
-                query = query.filter(self.model.alert_policy_type.has(name=policy_type))
+            if policy_types:
+                valid_alert_policy_type = []
+                for policy_type in policy_types:
+                    try:
+                        valid_alert_policy_type.append(UUID(policy_type))
+                    except ValueError:
+                        continue
+                if valid_alert_policy_type:
+                    query = query.filter(self.model.alert_policy_type_uuid.in_(valid_alert_policy_type))
 
             # Apply date filter
             if start_date and end_date:
@@ -402,7 +403,7 @@ class AlertPolicyRepository(BaseRepository):
         page=1,
         page_size=10,
         policy_status: Optional[str] = None,
-        policy_type: Optional[str] = None,
+        policy_types: List[str] = None,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
         search: Optional[str] = None,
@@ -420,10 +421,15 @@ class AlertPolicyRepository(BaseRepository):
             query = query.join(AlertPolicy.alert_policy_type)
 
             # Apply policy type filter
-            if policy_type:
-                query = query.filter(
-                    AlertPolicy.alert_policy_type.has(name=policy_type)
-                )
+            if policy_types:
+                valid_alert_policy_type = []
+                for violation in policy_types:
+                    try:
+                        valid_alert_policy_type.append(UUID(violation))
+                    except ValueError:
+                        continue
+                if valid_alert_policy_type:
+                    query = query.filter(AlertPolicy.alert_policy_type_uuid.in_(valid_alert_policy_type))
 
             # Apply policy status filter
             if policy_status:
