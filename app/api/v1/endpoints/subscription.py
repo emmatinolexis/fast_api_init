@@ -1,5 +1,5 @@
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
 
 from app.core import messages
@@ -9,7 +9,7 @@ from app.model.user import User
 from app.schema.subscription import PaystackSubscriptionPayload
 from app.service.subscription_service import SubscriptionService
 from app.service.user_subscription_service import UserSubscriptionService
-from app.util.utils import send_data, send_info, send_internal_server_error
+from app.util.utils import send_data, send_info, send_internal_server_error, allow_admins_only
 
 router = APIRouter(
     prefix="/subscriptions",
@@ -18,14 +18,18 @@ router = APIRouter(
 msg_prefix = "subscription"
 
 
-@router.get("", response_class=ORJSONResponse)
+@router.get("", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def paystack_subscriptions_handler(
+    page: int = Query(1, ge=1, description="Page number, default is set to 1"),
+    page_size: int = Query(
+        10, ge=1, le=1000, description="Items per page, default is 10"
+    ),
     service: SubscriptionService = Depends(Provide[Container.subscription_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.get_all_paystack_subscriptions())
+        return send_data(service.get_all_paystack_subscriptions(page, page_size))
     except Exception as e:
         msg = f"{messages.GET_FAILED} {msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)

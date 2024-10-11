@@ -54,9 +54,9 @@ class SubscriptionService(BaseService):
         except Exception as e:
             raise e
 
-    def get_all_paystack_subscriptions(self):
+    def get_all_paystack_subscriptions(self, page, page_size):
         try:
-            return self.subscription_repository.read_all_paystack_subscriptions()
+            return self.subscription_repository.read_all_paystack_subscriptions(page, page_size)
         except Exception as e:
             raise e
 
