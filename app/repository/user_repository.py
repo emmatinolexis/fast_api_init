@@ -49,6 +49,7 @@ class UserRepository(BaseRepository):
                 user_to_update.address = user.address
                 user_to_update.phone_number = user.phone_number
                 user_to_update.country = user.country
+                user_to_update.license_url = user.license_url
 
                 # set onboarding status
                 if user_to_update.onboarding_status is None:
