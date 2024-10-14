@@ -49,7 +49,7 @@ async def get_all_permission_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/roles", dependencies=[allow_admins_only], response_class=ORJSONResponse)
+@router.get("/roles", response_class=ORJSONResponse)
 @inject
 async def get_all_roles_handler(
     role_type: RoleType = None,
