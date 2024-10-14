@@ -49,6 +49,7 @@ class UserRepository(BaseRepository):
                 user_to_update.address = user.address
                 user_to_update.phone_number = user.phone_number
                 user_to_update.country = user.country
+                user_to_update.license_url = user.license_url
 
                 # set onboarding status
                 if user_to_update.onboarding_status is None:
@@ -156,7 +157,6 @@ class UserRepository(BaseRepository):
             session.refresh(user)
             return extract_user_data(user)
 
-
     def get_account_users(
         self,
         business_uuid: str,
@@ -191,7 +191,9 @@ class UserRepository(BaseRepository):
                         # Skip invalid UUIDs
                         continue
                 if valid_role_uuids:
-                    query = query.filter(self.model.user_role_uuid.in_(valid_role_uuids))
+                    query = query.filter(
+                        self.model.user_role_uuid.in_(valid_role_uuids)
+                    )
 
             if status:
                 query = query.filter(self.model.status == status)

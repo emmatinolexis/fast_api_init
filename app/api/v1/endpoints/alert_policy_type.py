@@ -10,11 +10,11 @@ from app.model.user import User
 from app.schema.alert_policy_schema import AlertPolicyTypePayload
 from app.service.alert_policy_type_service import AlertPolicyTypeService
 from app.util.utils import (
+    allow_admins_only,
     send_client_side_error,
     send_data,
     send_info,
     send_internal_server_error,
-    allow_admins_only
 )
 
 router = APIRouter(
@@ -46,7 +46,9 @@ async def create_alert_policy_type_handler(
     service: AlertPolicyTypeService = Depends(
         Provide[Container.alert_policy_type_service]
     ),
-    current_user: User = Depends(get_current_user_with_permission("create_policy_type")),
+    current_user: User = Depends(
+        get_current_user_with_permission("create_policy_type")
+    ),
 ):
     try:
         alert_policy_type = service.add(payload)
@@ -64,7 +66,9 @@ async def update_alert_policy_type_handler(
     service: AlertPolicyTypeService = Depends(
         Provide[Container.alert_policy_type_service]
     ),
-    current_user: User = Depends(get_current_user_with_permission("update_policy_type")),
+    current_user: User = Depends(
+        get_current_user_with_permission("update_policy_type")
+    ),
 ):
     try:
         alert_policy_type = service.patch_by_uuid(uuid, payload)

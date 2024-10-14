@@ -1,7 +1,6 @@
 from contextlib import AbstractContextManager
-from typing import Callable
+from typing import Callable, List
 from uuid import UUID
-from typing import List
 
 from pydantic import EmailStr
 from sqlalchemy import desc, func
@@ -31,7 +30,7 @@ class TeamMemberInvitationRepository(BaseRepository):
         page: int = 1,
         page_size: int = 10,
         search: str = None,
-        role_uuids: List[str]  = None,
+        role_uuids: List[str] = None,
         status: InvitationStatus = None,
     ):
         with self.session_factory() as session:
@@ -100,7 +99,6 @@ class TeamMemberInvitationRepository(BaseRepository):
             # Add filters based on provided parameters
             if email:
                 query = query.filter(self.model.email.ilike(f"%{email}%"))
-
 
             if role_uuids:
                 valid_role_uuids = []

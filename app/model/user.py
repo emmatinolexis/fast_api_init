@@ -42,6 +42,7 @@ class User(BaseModel):
         UUID(as_uuid=True), ForeignKey("business_profiles.uuid"), nullable=True
     )
     user_role_uuid = Column(UUID(as_uuid=True), ForeignKey("roles.uuid"), nullable=True)
+    license_url = Column(String, nullable=True)
     business_profile = relationship(
         "BusinessProfile", uselist=False, back_populates="users"
     )

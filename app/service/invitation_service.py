@@ -28,7 +28,7 @@ class InvitationService(BaseService):
         page=1,
         page_size=10,
         search: str = None,
-        role_uuids: List[str]   = None,
+        role_uuids: List[str] = None,
         status: InvitationStatus = None,
     ):
         return self.invitation_repository.get_user_invitations(
