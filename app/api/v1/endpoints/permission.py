@@ -9,7 +9,7 @@ from app.schema.permission_schema import RolePayload
 from app.service.permission_service import PermissionService
 from app.service.role_service import RoleService
 from app.util.enums import PermissionType, RoleType
-from app.util.utils import send_data, send_data_with_info, send_internal_server_error
+from app.util.utils import send_data, send_data_with_info, send_internal_server_error, allow_admins_only
 
 router = APIRouter(
     prefix="/permissions",
@@ -18,7 +18,7 @@ router = APIRouter(
 msg_prefix = "permission"
 
 
-@router.post("/synchronize/", response_class=ORJSONResponse)
+@router.post("/synchronize/", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def synchronize_permissions_handler(
     service: PermissionService = Depends(Provide[Container.permission_service]),
@@ -34,7 +34,7 @@ async def synchronize_permissions_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/", response_class=ORJSONResponse)
+@router.get("/", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def get_all_permission_handler(
     permission_type: PermissionType = None,
@@ -49,7 +49,7 @@ async def get_all_permission_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/roles", response_class=ORJSONResponse)
+@router.get("/roles", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def get_all_roles_handler(
     role_type: RoleType = None,
@@ -63,7 +63,7 @@ async def get_all_roles_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.post("/roles", response_class=ORJSONResponse)
+@router.post("/roles", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def create_role_handler(
     payload: RolePayload,
@@ -98,7 +98,7 @@ async def update_role_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/role/{role_uuid}", response_class=ORJSONResponse)
+@router.get("/role/{role_uuid}", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def get_role_handler(
     role_uuid: str,
