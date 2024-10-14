@@ -28,7 +28,7 @@ router = APIRouter(
 msg_prefix = "package"
 
 
-@router.get("/", dependencies=[allow_admins_only], response_class=ORJSONResponse)
+@router.get("/", response_class=ORJSONResponse)
 @inject
 async def get_packages_handler(
     service: PackageService = Depends(Provide[Container.package_service]),
