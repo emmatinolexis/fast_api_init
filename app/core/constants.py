@@ -428,6 +428,14 @@ PERMISSIONS = {
         {"permission_name": "create_policy", "permission_type": "customer"},
         {"permission_name": "view_policy", "permission_type": "customer"},
         {"permission_name": "update_policy", "permission_type": "customer"},
+        {"permission_name": "view_alert_violations", "permission_type": "customer"},
+        {"permission_name": "update_alert_violations", "permission_type": "customer"},
+        {"permission_name": "create_policy_type", "permission_type": "admin"},
+        {"permission_name": "view_policy_type", "permission_type": "all"},
+        {"permission_name": "update_policy_type", "permission_type": "admin"},
+        {"permission_name": "create_maintenance_type", "permission_type": "admin"},
+        {"permission_name": "view_maintenance_type", "permission_type": "all"},
+        {"permission_name": "update_maintenance_type", "permission_type": "admin"},
     ],
     "driver": [
         {"permission_name": "create_driver", "permission_type": "customer"},
@@ -480,6 +488,7 @@ PERMISSIONS = {
         {"permission_name": "create_package", "permission_type": "admin"},
         {"permission_name": "view_package", "permission_type": "admin"},
         {"permission_name": "update_package", "permission_type": "admin"},
+        {"permission_name": "delete_package_item", "permission_type": "admin"},
     ],
     "inventory": [
         {"permission_name": "create_inventory", "permission_type": "admin"},

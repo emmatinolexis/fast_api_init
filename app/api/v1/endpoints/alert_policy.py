@@ -28,6 +28,7 @@ from app.util.utils import (
     send_data_with_info,
     send_info,
     send_internal_server_error,
+    allow_admins_only
 )
 
 router = APIRouter(
@@ -37,7 +38,7 @@ router = APIRouter(
 msg_prefix = "alert policy"
 
 
-@router.get("/", response_class=ORJSONResponse)
+@router.get("/", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def get_alert_policies_handler(
     service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
@@ -45,7 +46,7 @@ async def get_alert_policies_handler(
     page_size: int = Query(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
-    current_user: User = Depends(get_current_user_with_permission("update_asset")),
+    current_user: User = Depends(get_current_user_with_permission("view_policy")),
 ):
     try:
         return send_data(service.get_all_alert_policies(page, page_size))
@@ -81,7 +82,7 @@ async def get_alert_policies_by_user_handler(
     search: Optional[str] = Query(
         None, description="Search term to filter by relevant fields"
     ),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_policy")),
 ):
     try:
         return send_data(
@@ -128,7 +129,7 @@ async def get_alert_policies_by_business_handler(
     search: Optional[str] = Query(
         None, description="Search term to filter by relevant fields"
     ),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_policy")),
 ):
     try:
         return send_data(
@@ -175,7 +176,7 @@ async def get_alert_violations_by_user_handler(
     search: Optional[str] = Query(
         None, description="Search term to filter by relevant fields"
     ),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_alert_violations")),
 ):
     try:
         alerts = service.get_all_alert_violations_by_user(
@@ -221,7 +222,7 @@ async def get_alert_violations_by_business_handler(
     search: Optional[str] = Query(
         None, description="Search term to filter by relevant fields"
     ),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_alert_violations")),
 ):
     try:
         return send_data(
@@ -246,7 +247,7 @@ async def get_alert_violations_by_business_handler(
 async def create_alert_policy_handler(
     payload: AlertPolicyPayload,
     service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("create_policy")),
 ):
     try:
         alert_policy = service.create_alert_policy(
@@ -265,7 +266,7 @@ async def create_alert_policy_handler(
 async def create_geofence_alert_policy_handler(
     payload: GeofenceAlertPolicyPayload,
     service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("create_policy")),
 ):
     try:
         alert_policy = service.create_geofence_alert_policy(
@@ -285,7 +286,7 @@ async def update_geofence_alert_policy_handler(
     payload: GeofenceAlertPolicyUpdatePayload,
     geofence_uuid: str,
     service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("update_policy")),
 ):
     try:
         alert_policy = service.update_geofence_alert_policy(payload, geofence_uuid)
@@ -450,7 +451,7 @@ async def check_maintenance_handler(
 async def toggle_alert_status_handler(
     alert_uuid: str,
     service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("update_policy")),
 ):
     try:
         return send_data(service.toggle_alert_status(alert_uuid))
@@ -466,7 +467,7 @@ async def toggle_alert_status_handler(
 async def toggle_alert_violations_status_handler(
     alert_violation_uuid: str,
     service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("update_alert_violations")),
 ):
     try:
         return send_data(service.toggle_alert_violation_status(alert_violation_uuid))
@@ -481,7 +482,7 @@ async def update_alert_policy_handler(
     alert_uuid: str,
     payload: AlertPolicyUpdatePayload,
     service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("update_policy")),
 ):
     try:
         data = service.update_alert_policy(alert_uuid, payload)
@@ -495,33 +496,33 @@ async def update_alert_policy_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.delete("/{alert_uuid}", response_class=ORJSONResponse)
-@inject
-async def delete_alert_policy_handler(
-    alert_uuid: str,
-    service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
-    user_service: UserService = Depends(Provide[Container.user_service]),
-    current_user: User = Depends(get_current_user),
-):
-    try:
-        user = user_service.get_user_by_uuid(current_user.uuid)
-
-        if user.get("account_type") == AccountType.INDIVIDUAL:
-            service.delete_alert_policy(
-                alert_policy_uuid=alert_uuid, user_uuid=current_user.uuid
-            )
-        if user.get("account_type") == AccountType.BUSINESS:
-            service.delete_alert_policy(
-                alert_policy_uuid=alert_uuid,
-                business_profile_uuid=current_user.business_profile_uuid,
-            )
-
-        return send_info(messages.DELETE_SUCCESS + "alert policy")
-    except (NotFoundError, UnAuthorizedError) as e:
-        return send_client_side_error(user_msg=e.detail, status_code=e.status_codes)
-    except Exception as e:
-        msg = messages.DELETE_FAILED + msg_prefix
-        return send_internal_server_error(user_msg=msg, error=e)
+# @router.delete("/{alert_uuid}", response_class=ORJSONResponse)
+# @inject
+# async def delete_alert_policy_handler(
+#     alert_uuid: str,
+#     service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
+#     user_service: UserService = Depends(Provide[Container.user_service]),
+#     current_user: User = Depends(get_current_user_with_permission("update_policy")),
+# ):
+#     try:
+#         user = user_service.get_user_by_uuid(current_user.uuid)
+#
+#         if user.get("account_type") == AccountType.INDIVIDUAL:
+#             service.delete_alert_policy(
+#                 alert_policy_uuid=alert_uuid, user_uuid=current_user.uuid
+#             )
+#         if user.get("account_type") == AccountType.BUSINESS:
+#             service.delete_alert_policy(
+#                 alert_policy_uuid=alert_uuid,
+#                 business_profile_uuid=current_user.business_profile_uuid,
+#             )
+#
+#         return send_info(messages.DELETE_SUCCESS + "alert policy")
+#     except (NotFoundError, UnAuthorizedError) as e:
+#         return send_client_side_error(user_msg=e.detail, status_code=e.status_codes)
+#     except Exception as e:
+#         msg = messages.DELETE_FAILED + msg_prefix
+#         return send_internal_server_error(user_msg=msg, error=e)
 
 
 @router.patch("/{maintenance_alert_uuid}/toggle_status", response_class=ORJSONResponse)
@@ -530,7 +531,7 @@ async def toggle_maintenance_alert(
     maintenance_alert_uuid: str,
     date: str = None,
     service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("update_policy")),
 ):
     try:
         updated_alert = service.toggle_maintenance_status(maintenance_alert_uuid, date)
@@ -545,7 +546,7 @@ async def toggle_maintenance_alert(
 async def get_alert_reminders(
     user_uuid: str,
     service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_policy")),
 ):
     try:
         reminders = service.get_all_alert_reminders(user_uuid)

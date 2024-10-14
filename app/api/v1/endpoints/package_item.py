@@ -4,7 +4,7 @@ from fastapi.responses import ORJSONResponse
 
 from app.core import messages
 from app.core.container import Container
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, get_current_user_with_permission
 from app.core.exceptions import NotFoundError
 from app.model.user import User
 from app.schema.package_schema import PackageItemPayload
@@ -14,6 +14,7 @@ from app.util.utils import (
     send_data,
     send_info,
     send_internal_server_error,
+    allow_admins_only
 )
 
 router = APIRouter(
@@ -23,11 +24,11 @@ router = APIRouter(
 msg_prefix = "package item"
 
 
-@router.get("/", response_class=ORJSONResponse)
+@router.get("/", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def get_package_items_handler(
     service: PackageItemService = Depends(Provide[Container.package_item_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_package")),
 ):
     try:
         return send_data(service.get_list())
@@ -36,12 +37,12 @@ async def get_package_items_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.post("/", response_class=ORJSONResponse)
+@router.post("/", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def create_package_item_handler(
     payload: PackageItemPayload,
     service: PackageItemService = Depends(Provide[Container.package_item_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("create_package")),
 ):
     try:
         package_item = service.add(payload)
@@ -51,13 +52,13 @@ async def create_package_item_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.put("/{uuid}", response_class=ORJSONResponse)
+@router.put("/{uuid}", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def update_package_item_handler(
     uuid: str,
     payload: PackageItemPayload,
     service: PackageItemService = Depends(Provide[Container.package_item_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("update_package")),
 ):
     try:
         package_item = service.patch_by_uuid(uuid, payload)
@@ -71,12 +72,12 @@ async def update_package_item_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.delete("/{uuid}", response_class=ORJSONResponse)
+@router.delete("/{uuid}", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def delete_package_item_handler(
     uuid: str,
     service: PackageItemService = Depends(Provide[Container.package_item_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("delete_package_item")),
 ):
     try:
         service.remove_by_uuid(uuid)
