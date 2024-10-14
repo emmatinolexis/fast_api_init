@@ -531,5 +531,5 @@ PERMISSIONS = {
     ],
     "tracking_devices": [
         {"permission_name": "view_device_list", "permission_type": "admin"}
-    ]
+    ],
 }

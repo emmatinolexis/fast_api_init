@@ -1,10 +1,10 @@
 from datetime import datetime, timedelta
+from typing import List
 
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import ORJSONResponse
 from pydantic import EmailStr
-from typing import List
 
 from app.core import messages
 from app.core.container import Container

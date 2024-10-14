@@ -1,7 +1,7 @@
 import logging
 from contextlib import AbstractContextManager
 from datetime import datetime, timedelta
-from typing import Callable, Optional,List
+from typing import Callable, List, Optional
 from uuid import UUID
 
 from sqlalchemy import Date, and_, case, cast, desc, func, or_
@@ -135,7 +135,9 @@ class AlertPolicyRepository(BaseRepository):
                         valid_alert_policy_type.append(UUID(policy_type))
                     except ValueError:
                         continue
-                query = query.filter(self.model.alert_policy_type_uuid.in_(valid_alert_policy_type))
+                query = query.filter(
+                    self.model.alert_policy_type_uuid.in_(valid_alert_policy_type)
+                )
 
             # Apply date filter
             if start_date and end_date:
@@ -201,7 +203,6 @@ class AlertPolicyRepository(BaseRepository):
 
             query = query.join(self.model.assets)
 
-
             if policy_status:
                 query = query.filter(self.model.status == policy_status)
 
@@ -214,7 +215,9 @@ class AlertPolicyRepository(BaseRepository):
                     except ValueError:
                         continue
                 if valid_alert_policy_type:
-                    query = query.filter(self.model.alert_policy_type_uuid.in_(valid_alert_policy_type))
+                    query = query.filter(
+                        self.model.alert_policy_type_uuid.in_(valid_alert_policy_type)
+                    )
 
             # Apply date filter
             if start_date and end_date:
@@ -429,7 +432,9 @@ class AlertPolicyRepository(BaseRepository):
                     except ValueError:
                         continue
                 if valid_alert_policy_type:
-                    query = query.filter(AlertPolicy.alert_policy_type_uuid.in_(valid_alert_policy_type))
+                    query = query.filter(
+                        AlertPolicy.alert_policy_type_uuid.in_(valid_alert_policy_type)
+                    )
 
             # Apply policy status filter
             if policy_status:

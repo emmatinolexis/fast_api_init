@@ -9,7 +9,12 @@ from app.model.user import User
 from app.schema.subscription import PaystackSubscriptionPayload
 from app.service.subscription_service import SubscriptionService
 from app.service.user_subscription_service import UserSubscriptionService
-from app.util.utils import send_data, send_info, send_internal_server_error, allow_admins_only
+from app.util.utils import (
+    allow_admins_only,
+    send_data,
+    send_info,
+    send_internal_server_error,
+)
 
 router = APIRouter(
     prefix="/subscriptions",

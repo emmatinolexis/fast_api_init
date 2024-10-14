@@ -157,7 +157,6 @@ class UserRepository(BaseRepository):
             session.refresh(user)
             return extract_user_data(user)
 
-
     def get_account_users(
         self,
         business_uuid: str,
@@ -192,7 +191,9 @@ class UserRepository(BaseRepository):
                         # Skip invalid UUIDs
                         continue
                 if valid_role_uuids:
-                    query = query.filter(self.model.user_role_uuid.in_(valid_role_uuids))
+                    query = query.filter(
+                        self.model.user_role_uuid.in_(valid_role_uuids)
+                    )
 
             if status:
                 query = query.filter(self.model.status == status)

@@ -31,7 +31,7 @@ class UpdateUserPayload(BaseModel):
     address: str
     phone_number: str
     country: str
-    license_url : Optional[str] = None
+    license_url: Optional[str] = None
 
     @field_validator("phone_number")
     @classmethod

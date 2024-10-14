@@ -1,4 +1,4 @@
-from typing import Optional,List
+from typing import List, Optional
 
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
@@ -23,12 +23,12 @@ from app.util.email import (
 )
 from app.util.enums import AccountType, ActiveStatus
 from app.util.utils import (
+    allow_admins_only,
     send_client_side_error,
     send_data,
     send_data_with_info,
     send_info,
     send_internal_server_error,
-    allow_admins_only
 )
 
 router = APIRouter(
@@ -176,7 +176,9 @@ async def get_alert_violations_by_user_handler(
     search: Optional[str] = Query(
         None, description="Search term to filter by relevant fields"
     ),
-    current_user: User = Depends(get_current_user_with_permission("view_alert_violations")),
+    current_user: User = Depends(
+        get_current_user_with_permission("view_alert_violations")
+    ),
 ):
     try:
         alerts = service.get_all_alert_violations_by_user(
@@ -222,7 +224,9 @@ async def get_alert_violations_by_business_handler(
     search: Optional[str] = Query(
         None, description="Search term to filter by relevant fields"
     ),
-    current_user: User = Depends(get_current_user_with_permission("view_alert_violations")),
+    current_user: User = Depends(
+        get_current_user_with_permission("view_alert_violations")
+    ),
 ):
     try:
         return send_data(
@@ -467,7 +471,9 @@ async def toggle_alert_status_handler(
 async def toggle_alert_violations_status_handler(
     alert_violation_uuid: str,
     service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
-    current_user: User = Depends(get_current_user_with_permission("update_alert_violations")),
+    current_user: User = Depends(
+        get_current_user_with_permission("update_alert_violations")
+    ),
 ):
     try:
         return send_data(service.toggle_alert_violation_status(alert_violation_uuid))

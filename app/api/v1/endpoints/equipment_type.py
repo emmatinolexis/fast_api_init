@@ -28,7 +28,9 @@ msg_prefix = "equipment type"
 @inject
 async def get_all_equipment_types_handler(
     service: EquipmentTypeService = Depends(Provide[Container.equipment_type_service]),
-    current_user: User = Depends(get_current_user_with_permission("view_equipment_type")),
+    current_user: User = Depends(
+        get_current_user_with_permission("view_equipment_type")
+    ),
 ):
     try:
         return send_data(service.get_all_equipment_types())
@@ -42,7 +44,9 @@ async def get_all_equipment_types_handler(
 async def create_equipment_type_handler(
     payload: EquipmentTypePayload,
     service: EquipmentTypeService = Depends(Provide[Container.equipment_type_service]),
-    current_user: User = Depends(get_current_user_with_permission("create_equipment_type")),
+    current_user: User = Depends(
+        get_current_user_with_permission("create_equipment_type")
+    ),
 ):
     try:
         equipment_type = service.create_equipment_type(payload)
@@ -62,7 +66,9 @@ async def update_equipment_type_handler(
     uuid: str,
     payload: EquipmentTypePayload,
     service: EquipmentTypeService = Depends(Provide[Container.equipment_type_service]),
-    current_user: User = Depends(get_current_user_with_permission("update_equipment_type")),
+    current_user: User = Depends(
+        get_current_user_with_permission("update_equipment_type")
+    ),
 ):
     try:
         equipment_type = service.update_equipment_type(uuid, payload)
@@ -88,7 +94,9 @@ async def update_equipment_type_handler(
 async def get_equipment_type_by_equipment_uuid_handler(
     equipment_uuid: str,
     service: EquipmentTypeService = Depends(Provide[Container.equipment_type_service]),
-    current_user: User = Depends(get_current_user_with_permission("update_equipment_type")),
+    current_user: User = Depends(
+        get_current_user_with_permission("update_equipment_type")
+    ),
 ):
     try:
         equipment_type = service.get_equipment_type_by_equipment_uuid(equipment_uuid)
