@@ -332,9 +332,14 @@ class UserRepository(BaseRepository):
             # Calculate offset for pagination
             offset = (page - 1) * page_size
 
+            # Initialize date variables
+            start_date_obj = None
+            end_date_obj = None
+
             # Parse start and end dates
-            start_date_obj = parse_date(start_date)
-            end_date_obj = parse_date(end_date)
+            if start_date and end_date:
+                start_date_obj = parse_date(start_date)
+                end_date_obj = parse_date(end_date)
 
             # Build the base query
             query = session.query(self.model).filter(self.model.role != RoleType.ADMIN)
