@@ -110,19 +110,40 @@ async def get_users(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/customers", dependencies=[allow_admins_only], response_class=ORJSONResponse)
+@router.get("/admin/accounts", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
-async def get_users(
+async def get_all_accounts(
     service: UserService = Depends(Provide[Container.user_service]),
+    role_uuid: str = None,
+    email_address: str = None,
+    start_date: str = Query(None, description="Start date should be in the format dd/mm/yyyy"),
+    end_date: str = Query(None, description="End date should be in the format dd/mm/yyyy"),
+    page: int = Query(1, ge=1, description="Page number, default is set to 1"),
+    page_size: int = Query(
+        10, ge=1, le=1000, description="Items per page, default is 10"
+    ),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        users = service.get_list()
-        users_info = [extract_user_data(user) for user in users]
-        return send_data(users_info)
+        users = service.get_all_accounts(page, page_size, email_address, role_uuid, start_date, end_date)
+        return send_data(users)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
+
+# @router.get("/customers", dependencies=[allow_admins_only], response_class=ORJSONResponse)
+# @inject
+# async def get_users(
+#     service: UserService = Depends(Provide[Container.user_service]),
+#     current_user: User = Depends(get_current_user),
+# ):
+#     try:
+#         users = service.get_list()
+#         users_info = [extract_user_data(user) for user in users]
+#         return send_data(users_info)
+#     except Exception as e:
+#         msg = messages.GET_FAILED + f"{msg_prefix}s"
+#         return send_internal_server_error(user_msg=msg, error=e)
 
 
 @router.put("/phone", response_class=ORJSONResponse)
