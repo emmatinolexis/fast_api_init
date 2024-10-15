@@ -50,7 +50,9 @@ async def generate_distance_traveled_report_handler(
     end_date: str = Query(description="End date should be in the format dd/mm/yyyy"),
     report_service: AssetService = Depends(Provide[Container.asset_service]),
     user_service: UserService = Depends(Provide[Container.user_service]),
-    current_user: User = Depends(get_current_user_with_permission("distance_traveled_report")),
+    current_user: User = Depends(
+        get_current_user_with_permission("distance_traveled_report")
+    ),
 ):
     try:
         user = user_service.get_user_by_uuid(user_uuid)

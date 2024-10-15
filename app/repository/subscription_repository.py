@@ -1,6 +1,6 @@
+import math
 from contextlib import AbstractContextManager
 from datetime import date
-import math
 from typing import Callable, List, Tuple
 
 import requests
@@ -127,15 +127,12 @@ class SubscriptionRepository(BaseRepository):
 
         with self.session_factory() as session:
             # Prepare pagination parameters for Paystack API
-            params = {
-                'page': page,
-                'perPage': page_size
-            }
+            params = {"page": page, "perPage": page_size}
 
             paystack_subscription = requests.get(
                 settings.PAYSTACK_SUBSCRIPTION_URL,
                 headers=settings.PAYSTACK_HEADERS,
-                params=params  # Adding pagination parameters to the request
+                params=params,  # Adding pagination parameters to the request
             )
 
             if paystack_subscription.status_code == 200:
@@ -153,7 +150,9 @@ class SubscriptionRepository(BaseRepository):
                 for subscription in response_data["data"]:
                     user_email = subscription["customer"]["email"]
 
-                    user = session.query(User).filter_by(email_address=user_email).first()
+                    user = (
+                        session.query(User).filter_by(email_address=user_email).first()
+                    )
 
                     if not user:
                         return f"{user_email} not found"
@@ -183,7 +182,7 @@ class SubscriptionRepository(BaseRepository):
                     "page": current_page,
                     "page_size": per_page,
                     "total": total_subscriptions,
-                    "total_pages": total_pages
+                    "total_pages": total_pages,
                 }
                 return result
 

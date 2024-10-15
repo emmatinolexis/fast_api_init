@@ -6,8 +6,8 @@ from fastapi.responses import ORJSONResponse
 
 from app.core import messages
 from app.core.container import Container
-from app.core.dependencies import get_current_user, get_current_user_with_permission
-from app.core.exceptions import NotFoundError, UnAuthorizedError
+from app.core.dependencies import get_current_user_with_permission
+from app.core.exceptions import NotFoundError
 from app.model.user import User
 from app.schema.alert_policy_schema import (
     AlertPolicyPayload,
@@ -16,19 +16,17 @@ from app.schema.alert_policy_schema import (
     GeofenceAlertPolicyUpdatePayload,
 )
 from app.service.alert_policy_service import AlertPolicyService
-from app.service.user_service import UserService
 from app.util.email import (
     send_alert_policy_violation_email,
     send_maintenance_alert_email,
 )
-from app.util.enums import AccountType, ActiveStatus
+from app.util.enums import ActiveStatus
 from app.util.utils import (
+    allow_admins_only,
     send_client_side_error,
     send_data,
     send_data_with_info,
-    send_info,
     send_internal_server_error,
-    allow_admins_only
 )
 
 router = APIRouter(
@@ -180,7 +178,9 @@ async def get_alert_violations_by_user_handler(
     search: Optional[str] = Query(
         None, description="Search term to filter by relevant fields"
     ),
-    current_user: User = Depends(get_current_user_with_permission("view_alert_violations")),
+    current_user: User = Depends(
+        get_current_user_with_permission("view_alert_violations")
+    ),
 ):
     try:
         alerts = service.get_all_alert_violations_by_user(
@@ -226,7 +226,9 @@ async def get_alert_violations_by_business_handler(
     search: Optional[str] = Query(
         None, description="Search term to filter by relevant fields"
     ),
-    current_user: User = Depends(get_current_user_with_permission("view_alert_violations")),
+    current_user: User = Depends(
+        get_current_user_with_permission("view_alert_violations")
+    ),
 ):
     try:
         return send_data(
@@ -471,7 +473,9 @@ async def toggle_alert_status_handler(
 async def toggle_alert_violations_status_handler(
     alert_violation_uuid: str,
     service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
-    current_user: User = Depends(get_current_user_with_permission("update_alert_violations")),
+    current_user: User = Depends(
+        get_current_user_with_permission("update_alert_violations")
+    ),
 ):
     try:
         return send_data(service.toggle_alert_violation_status(alert_violation_uuid))

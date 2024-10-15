@@ -14,11 +14,11 @@ from app.schema.package_schema import (
 )
 from app.service.package_service import PackageService
 from app.util.utils import (
+    allow_admins_only,
     send_client_side_error,
     send_data,
     send_info,
     send_internal_server_error,
-    allow_admins_only
 )
 
 router = APIRouter(
@@ -56,7 +56,9 @@ async def create_package_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.put("/{plan_code}", dependencies=[allow_admins_only], response_class=ORJSONResponse)
+@router.put(
+    "/{plan_code}", dependencies=[allow_admins_only], response_class=ORJSONResponse
+)
 @inject
 async def update_package_handler(
     plan_code: str,
@@ -76,7 +78,9 @@ async def update_package_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/{plan_code}", dependencies=[allow_admins_only], response_class=ORJSONResponse)
+@router.get(
+    "/{plan_code}", dependencies=[allow_admins_only], response_class=ORJSONResponse
+)
 @inject
 async def get_package_by_uuid_handler(
     plan_code: str,
@@ -114,7 +118,11 @@ async def get_package_by_uuid_handler(
 #         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.post("/package_assignment", dependencies=[allow_admins_only], response_class=ORJSONResponse)
+@router.post(
+    "/package_assignment",
+    dependencies=[allow_admins_only],
+    response_class=ORJSONResponse,
+)
 @inject
 async def assign_package_handler(
     payload: PackageItemAssignmentPayload,

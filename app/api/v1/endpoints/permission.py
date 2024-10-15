@@ -1,15 +1,21 @@
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends
 from fastapi.responses import ORJSONResponse
+
 from app.core import messages
 from app.core.container import Container
-from app.core.dependencies import get_current_user_with_permission, get_current_user
+from app.core.dependencies import get_current_user, get_current_user_with_permission
 from app.model.user import User
 from app.schema.permission_schema import RolePayload
 from app.service.permission_service import PermissionService
 from app.service.role_service import RoleService
 from app.util.enums import PermissionType, RoleType
-from app.util.utils import send_data, send_data_with_info, send_internal_server_error, allow_admins_only
+from app.util.utils import (
+    allow_admins_only,
+    send_data,
+    send_data_with_info,
+    send_internal_server_error,
+)
 
 router = APIRouter(
     prefix="/permissions",
@@ -18,7 +24,9 @@ router = APIRouter(
 msg_prefix = "permission"
 
 
-@router.post("/synchronize/", dependencies=[allow_admins_only], response_class=ORJSONResponse)
+@router.post(
+    "/synchronize/", dependencies=[allow_admins_only], response_class=ORJSONResponse
+)
 @inject
 async def synchronize_permissions_handler(
     service: PermissionService = Depends(Provide[Container.permission_service]),
@@ -98,7 +106,9 @@ async def update_role_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/role/{role_uuid}", dependencies=[allow_admins_only], response_class=ORJSONResponse)
+@router.get(
+    "/role/{role_uuid}", dependencies=[allow_admins_only], response_class=ORJSONResponse
+)
 @inject
 async def get_role_handler(
     role_uuid: str,

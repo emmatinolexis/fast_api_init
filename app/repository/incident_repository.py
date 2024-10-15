@@ -4,7 +4,7 @@ from typing import Callable, List
 from sqlalchemy import text
 
 from app.core.constants import LATITUDE, LONGITUDE, RADIUS
-from app.model.incident import IncidenceType, Incident
+from app.model.incident import Incident
 from app.repository.base_repository import BaseRepository
 from app.util.enums import IncidenceType
 

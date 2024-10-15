@@ -94,7 +94,6 @@ class TeamMemberInvitationRepository(BaseRepository):
             if email:
                 query = query.filter(self.model.email.ilike(f"%{email}%"))
 
-
             if role_uuids:
                 valid_role_uuids = []
                 for role_uuid in role_uuids:
