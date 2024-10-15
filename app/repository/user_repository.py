@@ -30,7 +30,7 @@ from app.util.enums import (
     InvitationStatus,
     RoleType,
 )
-from app.util.utils import toggle_status
+from app.util.utils import parse_date, toggle_status
 
 
 class UserRepository(BaseRepository):
@@ -248,7 +248,7 @@ class UserRepository(BaseRepository):
             if email:
                 query = query.filter(self.model.email_address.ilike(f"%{email}%"))
             if role_uuid:
-                query = query.filter(self.model.role_uuid == role_uuid)
+                query = query.filter(self.model.user_role_uuid == role_uuid)
 
             # Query to get the total count of invitations with filters
             total_team_members = query.with_entities(func.count(self.model.id)).scalar()
@@ -288,51 +288,83 @@ class UserRepository(BaseRepository):
                 "page_size": page_size,
             }
 
+    def apply_filters(
+        self,
+        query,
+        email: str = None,
+        role_uuid: str = None,
+        start_date_obj=None,
+        end_date_obj=None,
+    ):
+        """Applies optional filters to the query."""
+        if email:
+            query = query.filter(self.model.email_address.ilike(f"%{email}%"))
+        if role_uuid:
+            query = query.filter(self.model.user_role_uuid == role_uuid)
+        if start_date_obj:
+            query = query.filter(self.model.created_at >= start_date_obj)
+        if end_date_obj:
+            query = query.filter(self.model.created_at <= end_date_obj)
+        return query
+
+    def get_total_businesses(self, session, start_date_obj=None, end_date_obj=None):
+        """Fetches the count of businesses within the date range, if provided."""
+        business_query = session.query(BusinessProfile).with_entities(
+            func.count(BusinessProfile.id)
+        )
+
+        if start_date_obj and end_date_obj:
+            business_query = business_query.filter(
+                BusinessProfile.created_at.between(start_date_obj, end_date_obj)
+            )
+
+        return business_query.scalar()
+
     def get_all_accounts(
-        self, page=1, page_size=10, email: str = None, role_uuid: str = None, start_date: str = None, end_date: str = None
+        self,
+        page=1,
+        page_size=10,
+        email: str = None,
+        role_uuid: str = None,
+        start_date: str = None,
+        end_date: str = None,
     ):
         with self.session_factory() as session:
+            # Calculate offset for pagination
             offset = (page - 1) * page_size
-            # Build the query for invitations with optional filters
+
+            # Parse start and end dates
+            start_date_obj = parse_date(start_date)
+            end_date_obj = parse_date(end_date)
+
+            # Build the base query
             query = session.query(self.model).filter(self.model.role != RoleType.ADMIN)
 
-            # Add filters based on provided parameters
-            if email:
-                query = query.filter(self.model.email_address.ilike(f"%{email}%"))
-            if role_uuid:
-                query = query.filter(self.model.role_uuid == role_uuid)
+            # Apply filters (email, role, and date range)
+            query = self.apply_filters(
+                query, email, role_uuid, start_date_obj, end_date_obj
+            )
 
-            # Apply date range filter
-            if start_date:
-                start_date_obj = datetime.strptime(start_date, "%d/%m/%Y")
-                query = query.filter(self.model.created_at >= start_date_obj)
-            if end_date:
-                end_date_obj = datetime.strptime(end_date, "%d/%m/%Y")
-                query = query.filter(self.model.created_at <= end_date_obj)
-
-            # Query to get the total count of invitations with filters
+            # Fetch the total number of businesses, active, and inactive users
+            total_businesses = self.get_total_businesses(
+                session, start_date_obj, end_date_obj
+            )
             total_team_members = query.with_entities(func.count(self.model.id)).scalar()
-
-            # Get the count of active users
             total_active_users = (
                 query.filter(self.model.status == ActiveStatus.ACTIVE)
                 .with_entities(func.count(self.model.id))
                 .scalar()
             )
-
-            # Get the count of inactive users
             total_inactive_users = (
                 query.filter(self.model.status == ActiveStatus.INACTIVE)
                 .with_entities(func.count(self.model.id))
                 .scalar()
             )
 
-            total_businesses = session.query(BusinessProfile).with_entities(func.count(self.model.id)).scalar()
-
             # Calculate total pages
             total_pages = (total_team_members + page_size - 1) // page_size
 
-            # Get the invitations with filters, pagination, and sorting
+            # Fetch users with pagination and eager loading
             users = (
                 query.order_by(desc(self.model.created_at))
                 .offset(offset)
@@ -342,6 +374,7 @@ class UserRepository(BaseRepository):
                 .all()
             )
 
+            # Prepare the user data for output
             users_data = [
                 {
                     "email": user.email_address,
@@ -349,11 +382,14 @@ class UserRepository(BaseRepository):
                     "status": user.status,
                     "registered_on": user.created_at,
                     "name": f"{user.first_name} {user.last_name}",
-                    "business_name": user.business_profile.business_name if user.business_profile else None,
+                    "business_name": user.business_profile.business_name
+                    if user.business_profile
+                    else None,
                 }
                 for user in users
             ]
 
+            # Return the result
             return {
                 "users": users_data,
                 "total_users": total_team_members,
@@ -364,6 +400,94 @@ class UserRepository(BaseRepository):
                 "current_page": page,
                 "page_size": page_size,
             }
+
+    # def get_all_accounts(
+    #     self, page=1, page_size=10, email: str = None, role_uuid: str = None, start_date: str = None, end_date: str = None
+    # ):
+    #     with self.session_factory() as session:
+    #         offset = (page - 1) * page_size
+    #         # Build the query for invitations with optional filters
+    #         query = session.query(self.model).filter(self.model.role != RoleType.ADMIN)
+    #
+    #         # Add filters based on provided parameters
+    #         if email:
+    #             query = query.filter(self.model.email_address.ilike(f"%{email}%"))
+    #         if role_uuid:
+    #             query = query.filter(self.model.user_role_uuid == role_uuid)
+    #
+    #         # Apply date range filter
+    #         if start_date:
+    #             start_date_obj = parse_date(start_date)
+    #             query = query.filter(self.model.created_at >= start_date_obj)
+    #         if end_date:
+    #             end_date_obj = parse_date(end_date)
+    #             query = query.filter(self.model.created_at <= end_date_obj)
+    #         if end_date and start_date:
+    #             total_businesses = (
+    #                 session.query(BusinessProfile)
+    #                 .with_entities(func.count(BusinessProfile.id))
+    #                 .filter(BusinessProfile.created_at.between(start_date_obj, end_date_obj))  # Apply date range
+    #                 .scalar()
+    #             )
+    #         else:
+    #             total_businesses = (
+    #                 session.query(BusinessProfile)
+    #                 .with_entities(func.count(BusinessProfile.id))
+    #                 .scalar()
+    #             )
+    #
+    #         # Query to get the total count of invitations with filters
+    #         total_team_members = query.with_entities(func.count(self.model.id)).scalar()
+    #
+    #         # Get the count of active users
+    #         total_active_users = (
+    #             query.filter(self.model.status == ActiveStatus.ACTIVE)
+    #             .with_entities(func.count(self.model.id))
+    #             .scalar()
+    #         )
+    #
+    #         # Get the count of inactive users
+    #         total_inactive_users = (
+    #             query.filter(self.model.status == ActiveStatus.INACTIVE)
+    #             .with_entities(func.count(self.model.id))
+    #             .scalar()
+    #         )
+    #
+    #         # Calculate total pages
+    #         total_pages = (total_team_members + page_size - 1) // page_size
+    #
+    #         # Get the invitations with filters, pagination, and sorting
+    #         users = (
+    #             query.order_by(desc(self.model.created_at))
+    #             .offset(offset)
+    #             .limit(page_size)
+    #             .options(joinedload(self.model.business_profile))
+    #             .options(joinedload(self.model.user_role))
+    #             .all()
+    #         )
+    #
+    #         users_data = [
+    #             {
+    #                 "email": user.email_address,
+    #                 "role": user.user_role.role_name if user.user_role else None,
+    #                 "status": user.status,
+    #                 "registered_on": user.created_at,
+    #                 "name": f"{user.first_name} {user.last_name}",
+    #                 "business_name": user.business_profile.business_name if user.business_profile else None,
+    #             }
+    #             for user in users
+    #         ]
+    #
+    #         return {
+    #             "users": users_data,
+    #             "total_users": total_team_members,
+    #             "total_pages": total_pages,
+    #             "total_active_users": total_active_users,
+    #             "total_inactive_users": total_inactive_users,
+    #             "total_businesses": total_businesses,
+    #             "current_page": page,
+    #             "page_size": page_size,
+    #         }
 
     def get_admin_team_member(self, team_member_uuid: str):
         with self.session_factory() as session:

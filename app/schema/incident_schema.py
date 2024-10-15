@@ -1,6 +1,4 @@
-from typing import List
-
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from app.util.enums import IncidenceType
 

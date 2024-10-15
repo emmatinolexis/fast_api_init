@@ -110,14 +110,20 @@ async def get_users(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/admin/accounts", dependencies=[allow_admins_only], response_class=ORJSONResponse)
+@router.get(
+    "/admin/accounts", dependencies=[allow_admins_only], response_class=ORJSONResponse
+)
 @inject
 async def get_all_accounts(
     service: UserService = Depends(Provide[Container.user_service]),
     role_uuid: str = None,
     email_address: str = None,
-    start_date: str = Query(None, description="Start date should be in the format dd/mm/yyyy"),
-    end_date: str = Query(None, description="End date should be in the format dd/mm/yyyy"),
+    start_date: str = Query(
+        None, description="Start date should be in the format dd/mm/yyyy"
+    ),
+    end_date: str = Query(
+        None, description="End date should be in the format dd/mm/yyyy"
+    ),
     page: int = Query(1, ge=1, description="Page number, default is set to 1"),
     page_size: int = Query(
         10, ge=1, le=1000, description="Items per page, default is 10"
@@ -125,11 +131,14 @@ async def get_all_accounts(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        users = service.get_all_accounts(page, page_size, email_address, role_uuid, start_date, end_date)
+        users = service.get_all_accounts(
+            page, page_size, email_address, role_uuid, start_date, end_date
+        )
         return send_data(users)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
+
 
 # @router.get("/customers", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 # @inject
@@ -553,7 +562,7 @@ async def create_team_member_invitation(
 
 @router.get("/businesses/invitations/{business_uuid}", response_class=ORJSONResponse)
 @inject
-async def get_all_user_invitations_handler(
+async def get_all_user_invitations_by_business_handler(
     business_uuid: str,
     invitation_service: InvitationService = Depends(
         Provide[Container.invitation_service]
@@ -852,7 +861,7 @@ async def get_team_member_handler(
     response_class=ORJSONResponse,
 )
 @inject
-async def get_team_member_handler(
+async def update_team_member_handler(
     team_member_uuid: str,
     payload: UpdateAdminTeamMemberPayload,
     user_service: UserService = Depends(Provide[Container.user_service]),

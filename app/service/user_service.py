@@ -217,10 +217,14 @@ class UserService(BaseService):
             raise e
 
     def get_all_accounts(
-        self, page=1, page_size=10, email: str = None, role_uuid: str = None, start_date: str = None, end_date: str = None
+        self,
+        page=1,
+        page_size=10,
+        email: str = None,
+        role_uuid: str = None,
+        start_date: str = None,
+        end_date: str = None,
     ):
         return self.user_repository.get_all_accounts(
             page, page_size, email, role_uuid, start_date, end_date
         )
-
-
