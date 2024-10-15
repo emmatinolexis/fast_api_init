@@ -49,7 +49,7 @@ class Device(BaseModel):
     inventory = relationship("Inventory", backref="device")
 
     # Relationship to get the associated inventory with device manufacturer
-    user = relationship("User", backref="device")
+    user = relationship("User", back_populates="user_devices")
 
     # Relationship to get the device manufacturer
     manufacturer = relationship(
@@ -66,4 +66,4 @@ class Device(BaseModel):
         primaryjoin="foreign(Device.device_imei) == remote(Asset.device_imei)",
         viewonly=True,
     )
-    tracking_events = relationship("TrackingEvent", back_populates="device")
+    tracking_events = relationship("TrackingEvent")

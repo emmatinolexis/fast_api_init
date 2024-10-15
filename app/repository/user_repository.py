@@ -286,6 +286,83 @@ class UserRepository(BaseRepository):
                 "page_size": page_size,
             }
 
+    def get_all_accounts(
+        self, page=1, page_size=10, email: str = None, role_uuid: str = None, start_date: str = None, end_date: str = None
+    ):
+        with self.session_factory() as session:
+            offset = (page - 1) * page_size
+            # Build the query for invitations with optional filters
+            query = session.query(self.model).filter(self.model.role != RoleType.ADMIN)
+
+            # Add filters based on provided parameters
+            if email:
+                query = query.filter(self.model.email_address.ilike(f"%{email}%"))
+            if role_uuid:
+                query = query.filter(self.model.role_uuid == role_uuid)
+
+            # Apply date range filter
+            if start_date:
+                start_date_obj = datetime.strptime(start_date, "%d/%m/%Y")
+                query = query.filter(self.model.created_at >= start_date_obj)
+            if end_date:
+                end_date_obj = datetime.strptime(end_date, "%d/%m/%Y")
+                query = query.filter(self.model.created_at <= end_date_obj)
+
+            # Query to get the total count of invitations with filters
+            total_team_members = query.with_entities(func.count(self.model.id)).scalar()
+
+            # Get the count of active users
+            total_active_users = (
+                query.filter(self.model.status == ActiveStatus.ACTIVE)
+                .with_entities(func.count(self.model.id))
+                .scalar()
+            )
+
+            # Get the count of inactive users
+            total_inactive_users = (
+                query.filter(self.model.status == ActiveStatus.INACTIVE)
+                .with_entities(func.count(self.model.id))
+                .scalar()
+            )
+
+            total_businesses = session.query(BusinessProfile).with_entities(func.count(self.model.id)).scalar()
+
+            # Calculate total pages
+            total_pages = (total_team_members + page_size - 1) // page_size
+
+            # Get the invitations with filters, pagination, and sorting
+            users = (
+                query.order_by(desc(self.model.created_at))
+                .offset(offset)
+                .limit(page_size)
+                .options(joinedload(self.model.business_profile))
+                .options(joinedload(self.model.user_role))
+                .all()
+            )
+
+            users_data = [
+                {
+                    "email": user.email_address,
+                    "role": user.user_role.role_name if user.user_role else None,
+                    "status": user.status,
+                    "registered_on": user.created_at,
+                    "name": f"{user.first_name} {user.last_name}",
+                    "business_name": user.business_profile.business_name if user.business_profile else None,
+                }
+                for user in users
+            ]
+
+            return {
+                "users": users_data,
+                "total_users": total_team_members,
+                "total_pages": total_pages,
+                "total_active_users": total_active_users,
+                "total_inactive_users": total_inactive_users,
+                "total_businesses": total_businesses,
+                "current_page": page,
+                "page_size": page_size,
+            }
+
     def get_admin_team_member(self, team_member_uuid: str):
         with self.session_factory() as session:
             user = (

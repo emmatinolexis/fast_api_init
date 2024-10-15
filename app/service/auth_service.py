@@ -126,7 +126,6 @@ class AuthService(BaseService):
 
     def verify_token(self, token_data: VerifyToken):
         user_token = self.email_verification_repository.get_by_token(token_data.Token)
-
         if user_token:
             current_datetime = datetime.now()
             date_format = "%Y-%m-%d %H:%M:%S.%f"
