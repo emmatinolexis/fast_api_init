@@ -222,5 +222,12 @@ class UserService(BaseService):
         return self.user_repository.get_all_accounts(
             page, page_size, email, role_uuid, start_date, end_date
         )
+    
+
+    def get_drivers_by_business_uuid(self,business_uuid,role_uuid,page,page_size):
+        return self.user_repository.get_drivers_by_business_uuid(
+            business_uuid,role_uuid,page,page_size
+        )
+
 
 
