@@ -733,6 +733,7 @@ class UserRepository(BaseRepository):
                         "email_address": driver.email_address,
                         "phone_number": driver.phone_number,
                         "license_url": driver.license_url,
+                        "profile_picture": driver.avatar_url,
                         "operator_type": driver.operator_type,
                         "status": driver.status,
                         "created_at": driver.created_at,

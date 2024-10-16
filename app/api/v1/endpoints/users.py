@@ -857,7 +857,6 @@ async def get_team_member_handler(
 
 @router.patch(
     "/admin/team_members/{team_member_uuid}",
-    dependencies=[allow_admins_only],
     response_class=ORJSONResponse,
 )
 @inject
