@@ -289,7 +289,13 @@ class UserRepository(BaseRepository):
             }
 
     def get_all_accounts(
-        self, page=1, page_size=10, email: str = None, role_uuid: str = None, start_date: str = None, end_date: str = None
+        self,
+        page=1,
+        page_size=10,
+        email: str = None,
+        role_uuid: str = None,
+        start_date: str = None,
+        end_date: str = None,
     ):
         with self.session_factory() as session:
             offset = (page - 1) * page_size
@@ -327,7 +333,11 @@ class UserRepository(BaseRepository):
                 .scalar()
             )
 
-            total_businesses = session.query(BusinessProfile).with_entities(func.count(self.model.id)).scalar()
+            total_businesses = (
+                session.query(BusinessProfile)
+                .with_entities(func.count(self.model.id))
+                .scalar()
+            )
 
             # Calculate total pages
             total_pages = (total_team_members + page_size - 1) // page_size
@@ -349,7 +359,9 @@ class UserRepository(BaseRepository):
                     "status": user.status,
                     "registered_on": user.created_at,
                     "name": f"{user.first_name} {user.last_name}",
-                    "business_name": user.business_profile.business_name if user.business_profile else None,
+                    "business_name": user.business_profile.business_name
+                    if user.business_profile
+                    else None,
                 }
                 for user in users
             ]
@@ -563,16 +575,21 @@ class UserRepository(BaseRepository):
                 return user_to_update
         except Exception as e:
             raise e
-        
 
-    def get_drivers_by_business_uuid(self, business_uuid, role_uuid, page=1, page_size=10):
+    def get_drivers_by_business_uuid(
+        self, business_uuid, role_uuid, page=1, page_size=10
+    ):
         try:
             with self.session_factory() as session:
                 # Build the query to filter drivers by business and role, and order by created_at descending
-                query = session.query(self.model).filter(
-                    User.business_profile_uuid == business_uuid,
-                    User.user_role_uuid == role_uuid
-                ).order_by(desc(User.created_at))  # Order by created_at in descending order
+                query = (
+                    session.query(self.model)
+                    .filter(
+                        User.business_profile_uuid == business_uuid,
+                        User.user_role_uuid == role_uuid,
+                    )
+                    .order_by(desc(User.created_at))
+                )  # Order by created_at in descending order
 
                 # Get total count of drivers
                 total_drivers = query.count()
@@ -599,7 +616,6 @@ class UserRepository(BaseRepository):
                     }
                     for driver in drivers
                 ]
-                
 
                 return {
                     "drivers": drivers_data,
