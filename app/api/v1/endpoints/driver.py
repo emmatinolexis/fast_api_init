@@ -95,14 +95,14 @@ async def unassign_driver_handler(
 @inject
 async def get_driver_by_uuid_handler(
     uuid: str,
-    service: DriverService = Depends(Provide[Container.driver_service]),
+    user_service : UserService = Depends(Provide[Container.user_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        driver = service.get_by_uuid(uuid)
-        if driver is None:
-            return send_client_side_error(user_msg=messages.DRIVER_NOT_FOUND + uuid)
+        driver = user_service.get_driver_by_uuid(uuid)
         return send_data(driver)
+    except NotFoundError as e:
+        return send_client_side_error(e.detail)
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)

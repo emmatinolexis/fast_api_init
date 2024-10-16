@@ -233,3 +233,12 @@ class UserService(BaseService):
         return self.user_repository.get_drivers_by_business_uuid(
             business_uuid, role_uuid, page, page_size
         )
+    
+    def get_driver_by_uuid(self,driver_uuid:str):
+
+        driver = self.user_repository.get_driver_by_uuid(driver_uuid=driver_uuid)
+        if driver is None:
+            raise NotFoundError(messages.USER_NOT_FOUND + driver_uuid)
+        return driver
+
+       
