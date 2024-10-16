@@ -4,8 +4,7 @@ from fastapi.responses import ORJSONResponse
 
 from app.core import messages
 from app.core.container import Container
-from app.core.dependencies import get_current_user, get_current_user_with_permission
-from app.core.exceptions import NotFoundError
+from app.core.dependencies import get_current_user_with_permission
 from app.model.user import User
 from app.schema.alert_policy_schema import AlertPolicyTypePayload
 from app.service.alert_policy_type_service import AlertPolicyTypeService
@@ -13,7 +12,6 @@ from app.util.utils import (
     allow_admins_only,
     send_client_side_error,
     send_data,
-    send_info,
     send_internal_server_error,
 )
 

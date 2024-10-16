@@ -2,7 +2,6 @@ from app.repository.role_permission_assignment_repository import (
     RolePermissionAssignmentRepository,
 )
 from app.repository.role_repository import RoleRepository
-from app.repository.user_repository import UserRepository
 from app.schema.permission_schema import RolePayload
 from app.service.base_service import BaseService
 from app.util.utils import format_compound_words

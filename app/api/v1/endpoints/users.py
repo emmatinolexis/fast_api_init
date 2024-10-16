@@ -562,7 +562,7 @@ async def create_team_member_invitation(
 
 @router.get("/businesses/invitations/{business_uuid}", response_class=ORJSONResponse)
 @inject
-async def get_all_user_invitations_handler(
+async def get_all_user_invitations_by_business_handler(
     business_uuid: str,
     invitation_service: InvitationService = Depends(
         Provide[Container.invitation_service]
@@ -861,7 +861,7 @@ async def get_team_member_handler(
     response_class=ORJSONResponse,
 )
 @inject
-async def get_team_member_handler(
+async def update_team_member_handler(
     team_member_uuid: str,
     payload: UpdateAdminTeamMemberPayload,
     user_service: UserService = Depends(Provide[Container.user_service]),

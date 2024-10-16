@@ -16,7 +16,6 @@ from app.schema.asset_schema import (
 )
 from app.schema.peripheral_device_schema import (
     CreateBuildingWithDevice,
-    CreateBuildingWithDeviceFull,
     UpdateBuildingWithDevice,
 )
 from app.service.base_service import BaseService

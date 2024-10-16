@@ -2,7 +2,7 @@ from contextlib import AbstractContextManager
 from datetime import datetime
 from typing import Any, Callable, Dict, List, Tuple
 
-from sqlalchemy import Date, and_, asc, cast, desc, label, or_
+from sqlalchemy import Date, and_, cast, desc, label, or_
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.settings import get_settings

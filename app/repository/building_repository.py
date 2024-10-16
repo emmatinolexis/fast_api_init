@@ -1,7 +1,7 @@
 from contextlib import AbstractContextManager
 from typing import Any, Callable, Dict
 
-from sqlalchemy import asc, desc
+from sqlalchemy import desc
 from sqlalchemy.orm import Session, joinedload
 
 from app.model.buildings import Building
