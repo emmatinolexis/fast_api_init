@@ -9,6 +9,7 @@ from app.core.exceptions import BadRequestError, NotFoundError
 from app.model.user import User
 from app.schema.asset_schema import DriverPayload
 from app.service.driver_service import DriverService
+from app.service.user_service import UserService
 from app.util.utils import (
     send_client_side_error,
     send_data,
@@ -134,7 +135,8 @@ async def get_drivers_by_user_uuid_handler(
 @inject
 async def get_drivers_by_business_uuid_handler(
     business_uuid: str,
-    service: DriverService = Depends(Provide[Container.driver_service]),
+    role_uuid: str,
+    user_service: UserService = Depends(Provide[Container.user_service]),
     page: int = Query(1, ge=1, description="Page number, default is set to 1"),
     page_size: int = Query(
         10, ge=1, le=1000, description="Items per page, default is 10"
@@ -142,7 +144,9 @@ async def get_drivers_by_business_uuid_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        drivers = service.get_drivers_by_business_uuid(business_uuid, page, page_size)
+        drivers = user_service.get_drivers_by_business_uuid(
+            business_uuid, role_uuid, page, page_size
+        )
         if drivers is None:
             return send_client_side_error(
                 user_msg=messages.DRIVER_NOT_FOUND + business_uuid

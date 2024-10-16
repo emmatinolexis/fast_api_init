@@ -366,6 +366,12 @@ class UserRepository(BaseRepository):
                 .scalar()
             )
 
+            total_businesses = (
+                session.query(BusinessProfile)
+                .with_entities(func.count(self.model.id))
+                .scalar()
+            )
+
             # Calculate total pages
             total_pages = (total_team_members + page_size - 1) // page_size
 
@@ -690,5 +696,56 @@ class UserRepository(BaseRepository):
                 session.refresh(user_to_update)
 
                 return user_to_update
+        except Exception as e:
+            raise e
+
+    def get_drivers_by_business_uuid(
+        self, business_uuid, role_uuid, page=1, page_size=10
+    ):
+        try:
+            with self.session_factory() as session:
+                # Build the query to filter drivers by business and role, and order by created_at descending
+                query = (
+                    session.query(self.model)
+                    .filter(
+                        User.business_profile_uuid == business_uuid,
+                        User.user_role_uuid == role_uuid,
+                    )
+                    .order_by(desc(User.created_at))
+                )  # Order by created_at in descending order
+
+                # Get total count of drivers
+                total_drivers = query.count()
+
+                # Calculate total pages
+                total_pages = (total_drivers + page_size - 1) // page_size
+
+                # Apply pagination
+                offset = (page - 1) * page_size
+                drivers = query.offset(offset).limit(page_size).all()
+
+                # Prepare the driver data
+                drivers_data = [
+                    {
+                        "uuid": driver.uuid,
+                        "first_name": driver.first_name,
+                        "last_name": driver.last_name,
+                        "email_address": driver.email_address,
+                        "phone_number": driver.phone_number,
+                        "license_url": driver.license_url,
+                        "operator_type": driver.operator_type,
+                        "status": driver.status,
+                        "created_at": driver.created_at,
+                    }
+                    for driver in drivers
+                ]
+
+                return {
+                    "drivers": drivers_data,
+                    "total_drivers": total_drivers,
+                    "total_pages": total_pages,
+                    "current_page": page,
+                    "page_size": page_size,
+                }
         except Exception as e:
             raise e

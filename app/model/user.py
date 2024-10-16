@@ -6,7 +6,7 @@ from sqlalchemy.orm import relationship
 
 from app.core import constants
 from app.model.base_model import BaseModel
-from app.util.enums import AccountType, ActiveStatus, UserRole
+from app.util.enums import AccountType, ActiveStatus, DriverType, UserRole
 
 
 class User(BaseModel):
@@ -43,6 +43,7 @@ class User(BaseModel):
     )
     user_role_uuid = Column(UUID(as_uuid=True), ForeignKey("roles.uuid"), nullable=True)
     license_url = Column(String, nullable=True)
+    operator_type = Column(Enum(DriverType), nullable=True)
     business_profile = relationship(
         "BusinessProfile", uselist=False, back_populates="users"
     )
