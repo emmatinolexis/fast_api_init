@@ -5,7 +5,6 @@ from fastapi.responses import ORJSONResponse
 from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user_with_permission
-
 from app.model.user import User
 from app.schema.asset_schema import AlertMaintenanceTypePayload
 from app.service.alert_maintenance_type_service import AlertMaintenanceTypeService

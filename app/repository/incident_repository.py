@@ -31,7 +31,7 @@ class IncidentRepository(BaseRepository):
             return session.query(self.model).offset(offset).limit(page_size).all()
 
     def get_incidents_by_location(
-        self, longitude: float, latitude: float, radius: int = 2000
+        self, longitude: float, latitude: float, radius: int = 50
     ) -> List[Incident]:
         with self.session_factory() as session:
             query = text(
@@ -62,7 +62,7 @@ class IncidentRepository(BaseRepository):
         incident_type: IncidenceType,
         longitude: float,
         latitude: float,
-        radius: int = 2000,
+        radius: int = 50,
     ) -> List[Incident]:
         with self.session_factory() as session:
             query = text(
@@ -122,7 +122,7 @@ class IncidentRepository(BaseRepository):
                 AND ST_DWithin(
                     geography(ST_MakePoint(i.longitude, i.latitude)),
                     geography(ST_MakePoint(cl.longitude, cl.latitude)),
-                    2000
+                    50
                 )
                ) AS count,
                 cl.created_at as created_at
