@@ -70,6 +70,26 @@ class SubscriptionService(BaseService):
         except Exception as e:
             raise e
 
+    def get_paystack_payments(self):
+        try:
+            paystack_payments = requests.get(
+                settings.PAYSTACK_PAYMENT_URL,
+                headers=settings.PAYSTACK_HEADERS
+            )
+
+            paystack_payments.raise_for_status()  # Raise an error for non-200 responses
+
+            payments = paystack_payments.json()["data"]
+            return payments
+        except Exception as e:
+            raise e
+
+    def get_subscription_by_business_uuid(self, business_profile_uuid: str, plan: str):
+        try:
+            return self.subscription_repository.get_subscription_by_business_uuid(business_profile_uuid, plan)
+        except Exception as e:
+            raise e
+
     def get_paystack_subscription_by_email(self, email):
         try:
             return self.subscription_repository.get_paystack_subscription_by_email(

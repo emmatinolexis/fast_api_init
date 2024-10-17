@@ -36,6 +36,15 @@ class SubscriptionRepository(BaseRepository):
                 .all()
             )
 
+    def get_subscription_by_business_uuid(self, business_profile_uuid: str, plan: str):
+        with self.session_factory() as session:
+            return (
+                session.query(self.model)
+                .filter_by(business_profile_uuid=business_profile_uuid)
+                .filter_by(plan=plan)
+                .first()
+            )
+
     def get_paystack_subscription(self, subscription_code: str):
         with self.session_factory() as session:
             paystack_subscription = requests.get(
@@ -104,6 +113,9 @@ class SubscriptionRepository(BaseRepository):
                 json=payload.dict(),
             )
             subscription_response.raise_for_status()  # Raise exception for HTTP errors
+
+             # save subscription in db
+
 
             # If successful, return subscription data
             subscription_data = subscription_response.json()["data"]

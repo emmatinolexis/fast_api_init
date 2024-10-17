@@ -109,7 +109,8 @@ class PackageItemTrackerType(str, Enum):
 
 
 class PaymentTypes(str, Enum):
-    SUBSCRIPTION_PAYMENT = ("subscription_payment",)
+    SUBSCRIPTION_PAYMENT = "subscription_payment"
+    DEVICE_PURCHASE_PAYMENT = "device_purchase_payment"
     SUBSCRIPTION_UPGRADE_PAYMENT = "subscription_upgrade_payment"
 
 

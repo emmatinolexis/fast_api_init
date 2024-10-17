@@ -3,10 +3,15 @@ from contextlib import AbstractContextManager
 from typing import Callable
 
 from sqlalchemy.orm import Session
+import requests
+from app.schema.subscription import PaystackSubscriptionPayload
+from requests.exceptions import HTTPError
 
 from app.model.user import User
 from app.model.user_subscription import UserSubscription
 from app.repository.base_repository import BaseRepository
+from app.core.settings import settings
+from app.model.payment import Payment
 
 
 class UserSubscriptionRepository(BaseRepository):
@@ -48,6 +53,16 @@ class UserSubscriptionRepository(BaseRepository):
                 self.handle_subscription_creation(
                     session, user_email, subscription_code, existing_subscription
                 )
+            elif event_type == "charge.success":
+                payment_data = Payment(
+                    reference_no=payload["data"]["reference"],
+                    amount=payload["data"]["amount"],
+                    status=payload["data"]["status"],
+                    payment_type=payload["data"]["metadata"]["payment_type"],
+                    business_profile_uuid=payload["data"]["metadata"]["business_profile_uuid"]
+                )
+                session.add(payment_data)
+                session.commit()
             else:
                 logging.info(f"Unhandled event type: {event_type}")
 
@@ -60,6 +75,15 @@ class UserSubscriptionRepository(BaseRepository):
             .filter(UserSubscription.user_email == user_email)
             .first()
         )
+
+    def get_subscription_by_business_uuid(self, business_profile_uuid: str, plan: str):
+        with self.session_factory() as session:
+            return (
+                session.query(self.model)
+                .filter_by(business_profile_uuid=business_profile_uuid)
+                .filter_by(plan_code=plan)
+                .first()
+            )
 
     def handle_subscription_deactivation(
         self, session, user_email, existing_subscription
@@ -83,7 +107,7 @@ class UserSubscriptionRepository(BaseRepository):
             session.commit()
             session.refresh(existing_subscription)
             logging.info("Subscription updated successfully")
-            return "Subscription updated successfully"
+            return
         else:
             user_subscription = UserSubscription(
                 user_email=user_email, subscription_code=subscription_code
@@ -91,4 +115,82 @@ class UserSubscriptionRepository(BaseRepository):
             session.add(user_subscription)
             session.commit()
             logging.info("Subscription created successfully")
-            return "Subscription created successfully"
+            return
+
+    def create_paystack_subscription(self, payload: dict, business_profile_uuid: str, update_subscription: bool = False):
+        try:
+            with self.session_factory() as session:
+
+                payload_email = payload.get("email")
+                payload_plan = payload.get("plan")
+
+                # Create Paystack subscription
+                subscription_response = requests.post(
+                    settings.PAYSTACK_INITIALIZE_SUBSCRIPTION_URL,
+                    headers=settings.PAYSTACK_HEADERS,
+                    json=payload,
+                )
+                subscription_response.raise_for_status()  # Raise exception for HTTP errors
+                if update_subscription:
+                    subscription = (session.query(self.model)
+                                    .filter_by(user_email=payload_email)
+                                    .first())
+                    subscription.plan_code = payload_plan
+                else:
+                    # save subscription in db
+                    data = UserSubscription(
+                        user_email=payload_email,
+                        plan_code=payload_plan,
+                        business_profile_uuid=business_profile_uuid
+                    )
+                    session.add(data)
+
+                session.commit()
+                # If successful, return subscription data
+                subscription_data = subscription_response.json()["data"]
+                return subscription_data
+
+        except HTTPError:
+            # If there's an HTTP error, return the error response from Paystack
+            error_message = subscription_response.json().get(
+                "message", "Unknown HTTP Error"
+            )
+            return f"Error creating subscription: {error_message}"
+
+        except Exception as err:
+            # For any other exceptions, return a generic error message
+            return f"Error creating subscription: {str(err)}"
+
+    def update_existing_paystack_subscription(self, payload: PaystackSubscriptionPayload, business_profile_uuid: str):
+        try:
+            with self.session_factory() as session:
+
+                # Create Paystack subscription
+                subscription_response = requests.post(
+                    settings.PAYSTACK_INITIALIZE_SUBSCRIPTION_URL,
+                    headers=settings.PAYSTACK_HEADERS,
+                    json=payload.dict(),
+                )
+                subscription_response.raise_for_status()  # Raise exception for HTTP errors
+
+                # save subscription in db
+                data = UserSubscription(
+                    plan_code=payload.plan
+                )
+                session.refresh(data)
+                session.commit()
+
+                # If successful, return subscription data
+                subscription_data = subscription_response.json()["data"]
+                return subscription_data
+
+        except HTTPError:
+            # If there's an HTTP error, return the error response from Paystack
+            error_message = subscription_response.json().get(
+                "message", "Unknown HTTP Error"
+            )
+            return f"Error creating subscription: {error_message}"
+
+        except Exception as err:
+            # For any other exceptions, return a generic error message
+            return f"Error creating subscription: {str(err)}"
