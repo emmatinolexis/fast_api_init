@@ -114,8 +114,7 @@ class SubscriptionRepository(BaseRepository):
             )
             subscription_response.raise_for_status()  # Raise exception for HTTP errors
 
-             # save subscription in db
-
+            # save subscription in db
 
             # If successful, return subscription data
             subscription_data = subscription_response.json()["data"]

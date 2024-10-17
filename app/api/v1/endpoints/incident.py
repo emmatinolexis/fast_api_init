@@ -111,6 +111,12 @@ async def get_incidents_by_incident_type(
 @router.get("/report", response_class=ORJSONResponse)
 @inject
 async def get_incidents_report(
+    start_date: str = Query(
+        None, description="Start date should be in the format dd/mm/yyyy"
+    ),
+    end_date: str = Query(
+        None, description="End date should be in the format dd/mm/yyyy"
+    ),
     page: int = Query(1, ge=1, description="Page number, default is set to 1"),
     page_size: int = Query(
         10, ge=1, le=1000, description="Items per page, default is 10"

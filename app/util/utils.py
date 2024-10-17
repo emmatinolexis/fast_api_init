@@ -1001,6 +1001,13 @@ def parse_date(date_str):
     raise ValueError(f"Date format for '{date_str}' not recognized")
 
 
+def convert_date(date_str: str, format: str) -> str:
+    try:
+        return datetime.strptime(date_str, format).strftime("%Y-%m-%d")
+    except ValueError:
+        raise ValueError(f"Date format for '{date_str}' not recognized")
+
+
 def convert_unix_timestamp(unix_timestamp):
     # Convert the timestamp to a datetime object
     dt = datetime.fromtimestamp(unix_timestamp, tz=timezone.utc)

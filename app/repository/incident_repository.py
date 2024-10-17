@@ -98,12 +98,25 @@ class IncidentRepository(BaseRepository):
         with self.session_factory() as session:
             return session.query(self.model).count()
 
-    def get_incidents_report(self, page: int = 1, page_size: int = 10):
+    def get_incidents_report(
+        self, start_date: str = None, end_date: str = None, page: int = 1, page_size: int = 10
+    ):
         with self.session_factory() as session:
             offset = (page - 1) * page_size
             limit = page_size
+
+            date_filter = "1=1"
+            params = {"limit": limit, "offset": offset}
+
+            if start_date:
+                date_filter += " AND cl.created_at >= :start_date"
+                params["start_date"] = start_date
+            if end_date:
+                date_filter += " AND cl.created_at <= :end_date"
+                params["end_date"] = end_date
+
             query = text(
-                """
+                f"""
             with cluster_incidents_by_type AS (
             SELECT i.id, i.incident_type, i.longitude, i.latitude, i.user_uuid, i.created_at,
                 ROW_NUMBER() OVER (PARTITION BY i.incident_type ORDER BY i.id) AS rn
@@ -129,6 +142,7 @@ class IncidentRepository(BaseRepository):
             FROM cluster_incidents_by_type cl
             JOIN users u ON cl.user_uuid = u.uuid
             WHERE cl.rn = 1 
+            {date_filter}
             LIMIT :limit OFFSET :offset;
         """
             )

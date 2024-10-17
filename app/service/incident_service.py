@@ -5,6 +5,7 @@ from app.repository.incident_repository import IncidentRepository
 from app.schema.incident_schema import IncidentPayload
 from app.service.base_service import BaseService
 from app.util.enums import IncidenceType
+from app.util.utils import convert_date
 
 
 class IncidentService(BaseService):
@@ -64,10 +65,18 @@ class IncidentService(BaseService):
         except Exception as e:
             raise e
 
-    def get_incident_reports(self, page: int = 1, page_size: int = 10):
+    def get_incident_reports(
+        self, start_date: str = None, end_date: str = None, page: int = 1, page_size: int = 10
+    ):
         try:
+            date_format = "%d/%m/%Y"
+            if start_date:
+                start_date = convert_date(start_date,format=date_format)
+            if end_date:
+                end_date = convert_date(end_date,format=date_format)
+
             incidents = self.incident_repository.get_incidents_report(
-                page=page, page_size=page_size
+                start_date=start_date, end_date=end_date, page=page, page_size=page_size
             )
 
             total_incidents = len(incidents)

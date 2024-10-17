@@ -10,14 +10,14 @@ from app.schema.subscription import PaystackSubscriptionPayload
 from app.service.subscription_service import SubscriptionService
 from app.service.user_service import UserService
 from app.service.user_subscription_service import UserSubscriptionService
+from app.util.enums import PaymentTypes
 from app.util.utils import (
     allow_admins_only,
+    send_client_side_error,
     send_data,
     send_info,
     send_internal_server_error,
-    send_client_side_error
 )
-from app.util.enums import PaymentTypes
 
 router = APIRouter(
     prefix="/subscriptions",
@@ -102,12 +102,13 @@ async def paystack_subscription_by_email_handler(
 @inject
 async def create_paystack_subscription_handler(
     payload: PaystackSubscriptionPayload,
-    service: UserSubscriptionService = Depends(Provide[Container.user_subscription_service]),
+    service: UserSubscriptionService = Depends(
+        Provide[Container.user_subscription_service]
+    ),
     user_service: UserService = Depends(Provide[Container.user_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
-
         user = user_service.get_user_by_email_address(payload.email)
 
         if not user:
@@ -118,9 +119,9 @@ async def create_paystack_subscription_handler(
             "amount": payload.amount,
             "callback_url": payload.callback_url,
             "metadata": {
-                "business_profile_uuid" : user.business_profile_uuid,
-                "payment_type" : PaymentTypes.SUBSCRIPTION_PAYMENT
-            }
+                "business_profile_uuid": user.business_profile_uuid,
+                "payment_type": PaymentTypes.SUBSCRIPTION_PAYMENT,
+            },
         }
         # payload metadata = {
         #     "business_profile_uuid" : user.business_profile_uuid,
@@ -129,7 +130,9 @@ async def create_paystack_subscription_handler(
 
         # return payload_data.get("plan"), payload_data.get("metadata").get("business_profile_uuid")
 
-        existing_subscription = service.get_subscription_by_business_uuid(user.business_profile_uuid, payload_data.get("plan"))
+        existing_subscription = service.get_subscription_by_business_uuid(
+            user.business_profile_uuid, payload_data.get("plan")
+        )
 
         if existing_subscription:
             return send_client_side_error(messages.SUBSCRIPTION_ALREADY_EXISTS)
@@ -137,11 +140,15 @@ async def create_paystack_subscription_handler(
         package_to_update = service.get_subscription_by_email(payload_data.get("email"))
         if package_to_update:
             # update subscription
-            subscription = service.create_paystack_subscription(payload_data, user.business_profile_uuid, update_subscription=True)
+            subscription = service.create_paystack_subscription(
+                payload_data, user.business_profile_uuid, update_subscription=True
+            )
             return send_data(subscription)
         else:
             # create a new subscription
-            subscription = service.create_paystack_subscription(payload_data, user.business_profile_uuid)
+            subscription = service.create_paystack_subscription(
+                payload_data, user.business_profile_uuid
+            )
             return send_data(subscription)
 
     except Exception as e:
