@@ -21,5 +21,7 @@ class Payment(BaseModel):
     amount = Column(String(length=100), nullable=False, index=True)
     status = Column(Enum(PaymentStatus), nullable=False, index=True)
     payment_type = Column(Enum(PaymentTypes), nullable=False, index=True)
-    user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
-    user = relationship("User")
+    user_email = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
+    business_profile_uuid = Column(UUID(as_uuid=True), ForeignKey("business_profiles.uuid"), nullable=False)
+
+

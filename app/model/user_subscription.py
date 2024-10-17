@@ -22,5 +22,9 @@ class UserSubscription(BaseModel):
         unique=True,
         nullable=False,
     )
-    subscription_code = Column(String(length=50), nullable=False, index=True)
+    business_profile_uuid = Column(
+        UUID(as_uuid=True), ForeignKey("business_profiles.uuid"), nullable=False
+    )
+    subscription_code = Column(String(length=50), nullable=True, index=True)
+    plan_code = Column(String(length=50), nullable=False, index=True)
     user = relationship("User")
