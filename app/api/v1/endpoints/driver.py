@@ -95,7 +95,7 @@ async def unassign_driver_handler(
 @inject
 async def get_driver_by_uuid_handler(
     uuid: str,
-    user_service : UserService = Depends(Provide[Container.user_service]),
+    user_service: UserService = Depends(Provide[Container.user_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:

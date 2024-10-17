@@ -750,13 +750,16 @@ class UserRepository(BaseRepository):
                 }
         except Exception as e:
             raise e
-        
 
     def get_driver_by_uuid(self, driver_uuid: str):
         try:
             with self.session_factory() as session:
-                driver = session.query(self.model).filter(self.model.uuid == driver_uuid).first()
-                
+                driver = (
+                    session.query(self.model)
+                    .filter(self.model.uuid == driver_uuid)
+                    .first()
+                )
+
                 if not driver:
                     return None
 
