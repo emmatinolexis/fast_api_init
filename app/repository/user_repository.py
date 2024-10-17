@@ -1,6 +1,6 @@
 from contextlib import AbstractContextManager
 from datetime import datetime, timedelta
-from typing import Callable, Optional
+from typing import Callable, Optional, List
 from uuid import UUID
 
 from pydantic import EmailStr
@@ -50,6 +50,7 @@ class UserRepository(BaseRepository):
                 user_to_update.phone_number = user.phone_number
                 user_to_update.country = user.country
                 user_to_update.license_url = user.license_url
+                user_to_update.operator_type = user.operator_type
 
                 # set onboarding status
                 if user_to_update.onboarding_status is None:
@@ -612,7 +613,7 @@ class UserRepository(BaseRepository):
             raise e
 
     def get_drivers_by_business_uuid(
-        self, business_uuid, role_uuid, page=1, page_size=10
+        self, business_uuid, role_uuid, page=1, page_size=10, operator_type: List[str] = None, status: str = None
     ):
         try:
             with self.session_factory() as session:
@@ -623,8 +624,15 @@ class UserRepository(BaseRepository):
                         User.business_profile_uuid == business_uuid,
                         User.user_role_uuid == role_uuid,
                     )
-                    .order_by(desc(User.created_at))
                 )  # Order by created_at in descending order
+
+                # Apply additional filters if provided
+                if operator_type:
+                    query = query.filter(User.operator_type.in_(operator_type))
+                if status:
+                    query = query.filter(User.status == status)
+
+                query = query.order_by(desc(User.created_at))  # Order by created_at in descending order
 
                 # Get total count of drivers
                 total_drivers = query.count()
