@@ -99,17 +99,21 @@ class IncidentRepository(BaseRepository):
             return session.query(self.model).count()
 
     def get_incidents_report(
-        self, start_date: str = None, end_date: str = None, page: int = 1, page_size: int = 10
+        self,
+        start_date: str = None,
+        end_date: str = None,
+        page: int = 1,
+        page_size: int = 10,
     ):
         with self.session_factory() as session:
             offset = (page - 1) * page_size
             limit = page_size
 
-            date_filter = "1=1"
+            date_filter = " AND 1=1"
             params = {"limit": limit, "offset": offset}
 
             if start_date:
-                date_filter += " AND cl.created_at >= :start_date"
+                date_filter = " AND cl.created_at >= :start_date"
                 params["start_date"] = start_date
             if end_date:
                 date_filter += " AND cl.created_at <= :end_date"
@@ -147,5 +151,5 @@ class IncidentRepository(BaseRepository):
         """
             )
 
-        result = session.execute(query, {"limit": limit, "offset": offset}).fetchall()
+        result = session.execute(query, params).fetchall()
         return result

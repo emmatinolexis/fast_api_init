@@ -1,5 +1,3 @@
-from typing import Dict
-
 from app.model.incident import Incident
 from app.repository.incident_repository import IncidentRepository
 from app.schema.incident_schema import IncidentPayload
@@ -66,14 +64,18 @@ class IncidentService(BaseService):
             raise e
 
     def get_incident_reports(
-        self, start_date: str = None, end_date: str = None, page: int = 1, page_size: int = 10
+        self,
+        start_date: str = None,
+        end_date: str = None,
+        page: int = 1,
+        page_size: int = 10,
     ):
         try:
             date_format = "%d/%m/%Y"
             if start_date:
-                start_date = convert_date(start_date,format=date_format)
+                start_date = convert_date(start_date, format=date_format)
             if end_date:
-                end_date = convert_date(end_date,format=date_format)
+                end_date = convert_date(end_date, format=date_format)
 
             incidents = self.incident_repository.get_incidents_report(
                 start_date=start_date, end_date=end_date, page=page, page_size=page_size
@@ -100,16 +102,3 @@ class IncidentService(BaseService):
 
         except Exception as e:
             raise e
-
-    def total_pages(self, count: int, limit: int) -> int:
-        return int(count / limit) + (count % limit > 0)
-
-    def pagination(
-        self, total: int, current_page: int, limit: int, total_pages: int
-    ) -> Dict[str, int]:
-        return {
-            "total": total,
-            "page": current_page,
-            "pageSize": limit,
-            "totalPages": total_pages,
-        }
