@@ -25,11 +25,14 @@ msg_prefix = "permission"
 
 
 @router.post(
-    "/synchronize/", response_class=ORJSONResponse
+    "/synchronize/", dependencies=[allow_admins_only], response_class=ORJSONResponse
 )
 @inject
 async def synchronize_permissions_handler(
     service: PermissionService = Depends(Provide[Container.permission_service]),
+    current_user: User = Depends(
+        get_current_user_with_permission("synchronize_permissions")
+    ),
 ):
     try:
         permissions = service.synchronize_permissions()
@@ -39,12 +42,12 @@ async def synchronize_permissions_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/", response_class=ORJSONResponse)
+@router.get("/", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def get_all_permission_handler(
     permission_type: PermissionType = None,
     service: PermissionService = Depends(Provide[Container.permission_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_permissions")),
 ):
     try:
         permissions = service.get_permissions(permission_type)
@@ -59,7 +62,7 @@ async def get_all_permission_handler(
 async def get_all_roles_handler(
     role_type: RoleType = None,
     service: RoleService = Depends(Provide[Container.role_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_roles")),
 ):
     try:
         return send_data(service.get_all_roles(role_type))
@@ -68,12 +71,12 @@ async def get_all_roles_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.post("/roles", response_class=ORJSONResponse)
+@router.post("/roles", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def create_role_handler(
     payload: RolePayload,
     service: RoleService = Depends(Provide[Container.role_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("create_role")),
 ):
     try:
         role = service.create_role_permission(payload)
@@ -89,7 +92,7 @@ async def update_role_handler(
     payload: RolePayload,
     role_uuid: str,
     service: RoleService = Depends(Provide[Container.role_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("update_roles")),
 ):
     try:
         role = service.get_by_uuid(role_uuid)
@@ -104,13 +107,13 @@ async def update_role_handler(
 
 
 @router.get(
-    "/role/{role_uuid}", response_class=ORJSONResponse
+    "/role/{role_uuid}", dependencies=[allow_admins_only], response_class=ORJSONResponse
 )
 @inject
 async def get_role_handler(
     role_uuid: str,
     service: RoleService = Depends(Provide[Container.role_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_roles")),
 ):
     try:
         role = service.get_role(role_uuid)
