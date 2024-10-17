@@ -1162,12 +1162,12 @@ def check_permission(permissions, permission_name):
     raise HTTPException(status_code=403, detail="Not Authorized")
 
 
-def total_pages(self, count: int, limit: int) -> int:
+def total_pages(count: int, limit: int) -> int:
     return int(count / limit) + (count % limit > 0)
 
 
 def pagination(
-    self, total: int, current_page: int, limit: int, total_pages: int
+    total: int, current_page: int, limit: int, total_pages: int
 ) -> Dict[str, int]:
     return {
         "total": total,
