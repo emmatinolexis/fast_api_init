@@ -750,3 +750,33 @@ class UserRepository(BaseRepository):
                 }
         except Exception as e:
             raise e
+
+    def get_driver_by_uuid(self, driver_uuid: str):
+        try:
+            with self.session_factory() as session:
+                driver = (
+                    session.query(self.model)
+                    .filter(self.model.uuid == driver_uuid)
+                    .first()
+                )
+
+                if not driver:
+                    return None
+
+                # Prepare the driver data for output
+                driver_data = {
+                    "uuid": driver.uuid,
+                    "first_name": driver.first_name,
+                    "last_name": driver.last_name,
+                    "email_address": driver.email_address,
+                    "phone_number": driver.phone_number,
+                    "license_url": driver.license_url,
+                    "profile_picture": driver.avatar_url,
+                    "operator_type": driver.operator_type,
+                    "status": driver.status,
+                    "created_at": driver.created_at,
+                }
+
+                return driver_data
+        except Exception as e:
+            raise e
