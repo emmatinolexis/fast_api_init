@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from uuid import UUID
 
 from pydantic import EmailStr
+from typing import List
 
 from app.core import messages
 from app.core.constants import FREE_PACKAGE, FREE_PACKAGE_ITEMS
@@ -229,9 +230,9 @@ class UserService(BaseService):
             page, page_size, email, role_uuid, start_date, end_date
         )
 
-    def get_drivers_by_business_uuid(self, business_uuid, role_uuid, page, page_size):
+    def get_drivers_by_business_uuid(self, business_uuid, role_uuid, page, page_size,operator_type:List[str]=None,status:str=None):
         return self.user_repository.get_drivers_by_business_uuid(
-            business_uuid, role_uuid, page, page_size
+            business_uuid, role_uuid, page, page_size,operator_type=operator_type,status=status
         )
 
     def get_driver_by_uuid(self, driver_uuid: str):

@@ -4,7 +4,7 @@ from uuid import UUID
 import phonenumbers
 from pydantic import BaseModel, EmailStr, Field, ValidationInfo, constr, field_validator
 
-from app.util.enums import AccountType, ActiveStatus, UserRole
+from app.util.enums import AccountType, ActiveStatus, UserRole,DriverType
 
 
 class UserPayload(BaseModel):
@@ -32,6 +32,7 @@ class UpdateUserPayload(BaseModel):
     phone_number: str
     country: str
     license_url: Optional[str] = None
+    operator_type: Optional[DriverType] = None
 
     @field_validator("phone_number")
     @classmethod
