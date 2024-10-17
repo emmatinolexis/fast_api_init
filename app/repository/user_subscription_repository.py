@@ -136,7 +136,9 @@ class UserSubscriptionRepository(BaseRepository):
                     headers=settings.PAYSTACK_HEADERS,
                     json=payload,
                 )
-                subscription_response.raise_for_status()  # Raise exception for HTTP errors
+
+                subscription_response.raise_for_status()
+
                 if update_subscription:
                     subscription = (
                         session.query(self.model)

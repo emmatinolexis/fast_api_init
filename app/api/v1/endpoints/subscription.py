@@ -119,9 +119,9 @@ async def create_paystack_subscription_handler(
             "amount": payload.amount,
             "callback_url": payload.callback_url,
             "metadata": {
-                "business_profile_uuid": user.business_profile_uuid,
-                "payment_type": PaymentTypes.SUBSCRIPTION_PAYMENT,
-            },
+                "business_profile_uuid" : str(user.business_profile_uuid),
+                "payment_type" : PaymentTypes.SUBSCRIPTION_PAYMENT
+            }
         }
         # payload metadata = {
         #     "business_profile_uuid" : user.business_profile_uuid,

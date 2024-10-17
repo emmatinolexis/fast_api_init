@@ -1,6 +1,7 @@
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
+from typing import List
 
 from app.core import messages
 from app.core.container import Container
@@ -16,6 +17,7 @@ from app.util.utils import (
     send_info,
     send_internal_server_error,
 )
+from app.util.enums import ActiveStatus
 
 router = APIRouter(
     prefix="/drivers",
@@ -136,6 +138,8 @@ async def get_drivers_by_user_uuid_handler(
 async def get_drivers_by_business_uuid_handler(
     business_uuid: str,
     role_uuid: str,
+    status: ActiveStatus = Query(None, description="Status of the operator"),
+    operator_type: List[str] = Query(None, description="List of operator types: 'rider', 'driver'"),
     user_service: UserService = Depends(Provide[Container.user_service]),
     page: int = Query(1, ge=1, description="Page number, default is set to 1"),
     page_size: int = Query(
@@ -145,7 +149,7 @@ async def get_drivers_by_business_uuid_handler(
 ):
     try:
         drivers = user_service.get_drivers_by_business_uuid(
-            business_uuid, role_uuid, page, page_size
+            business_uuid, role_uuid, page, page_size, operator_type,status
         )
         if drivers is None:
             return send_client_side_error(
