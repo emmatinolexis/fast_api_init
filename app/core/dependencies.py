@@ -70,7 +70,7 @@ def get_user_permission(
         JWTBearer(allowed_roles=[ADMIN_USER_ROLE, CUSTOMER_USER_ROLE])
     ),
     service: UserService = Depends(Provide[Container.user_service]),
-    permission: str = None,
+    # permission: str = None,
 ):
     try:
         token_data = verify_token(token)
@@ -92,8 +92,8 @@ def get_user_permission(
     ):
         raise AuthError(detail="User is not active or deactivated")
 
-    if permission:
-        check_permission(current_user.user_role.permissions, permission)
+    # if permission:
+    #     check_permission(current_user.user_role.permissions, permission)
 
     return current_user
 
