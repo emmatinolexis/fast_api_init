@@ -522,6 +522,7 @@ class Container(containers.DeclarativeContainer):
         user_subscription_repository=user_subscription_repository,
         subscription_repository=subscription_repository,
         invitation_repository=team_member_invitation_repository,
+        asset_repository = asset_repository
     )
     alert_policy_type_service = providers.Factory(
         alert_policy_type_service.AlertPolicyTypeService,

@@ -700,3 +700,16 @@ class UserRepository(BaseRepository):
                 return driver_data
         except Exception as e:
             raise e
+        
+
+    def get_user_by_assigned_asset_uuid(self, assigned_asset_uuid: str):
+        try:
+            with self.session_factory() as session:
+                # Query the User model to find the user with the given assigned_asset_uuid
+                user = session.query(User).filter(User.assigned_asset_uuid == assigned_asset_uuid).first()
+                if user is None:
+                    return None
+                
+                return user
+        except Exception as e:
+            raise e
