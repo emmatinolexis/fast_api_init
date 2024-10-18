@@ -186,6 +186,7 @@ class ImmobilizerReason(str, Enum):
 class DriverType(str, Enum):
     RIDER = "rider"
     DRIVER = "driver"
+    MACHINERY_OPERATOR = "machinery_operator"
 
 
 class RoleType(str, Enum):
