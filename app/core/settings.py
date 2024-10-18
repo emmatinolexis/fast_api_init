@@ -46,6 +46,9 @@ class Settings(BaseSettings):
     PAYSTACK_PAYMENT_URL: str = os.getenv(
         "PAYSTACK_PAYMENT_URL", "paystack_payment_url"
     )
+    PAYSTACK_PAYMENT_VERIFICATION_URL: str = os.getenv(
+        "PAYSTACK_PAYMENT_VERIFICATION_URL", "paystack_payment_verification_url"
+    )
     PAYSTACK_HEADERS: Dict[str, str] = {
         "Authorization": f"Bearer {PAYSTACK_API_KEY}",
         "Content-Type": "application/json",
