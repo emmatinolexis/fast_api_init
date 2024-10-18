@@ -390,7 +390,6 @@ PERMISSIONS = {
         {"permission_name": "update_package", "permission_type": "admin"},
         {"permission_name": "delete_package_item", "permission_type": "admin"},
         {"permission_name": "create_subscription", "permission_type": "all"},
-
     ],
     "inventory": [
         {"permission_name": "create_inventory", "permission_type": "admin"},

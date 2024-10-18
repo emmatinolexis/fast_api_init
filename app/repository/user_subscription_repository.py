@@ -2,16 +2,16 @@ import logging
 from contextlib import AbstractContextManager
 from typing import Callable
 
-from sqlalchemy.orm import Session
 import requests
-from app.schema.subscription import PaystackSubscriptionPayload
 from requests.exceptions import HTTPError
+from sqlalchemy.orm import Session
 
+from app.core.settings import settings
+from app.model.payment import Payment
 from app.model.user import User
 from app.model.user_subscription import UserSubscription
 from app.repository.base_repository import BaseRepository
-from app.core.settings import settings
-from app.model.payment import Payment
+from app.schema.subscription import PaystackSubscriptionPayload
 
 
 class UserSubscriptionRepository(BaseRepository):
@@ -59,7 +59,9 @@ class UserSubscriptionRepository(BaseRepository):
                     amount=payload["data"]["amount"],
                     status=payload["data"]["status"],
                     payment_type=payload["data"]["metadata"]["payment_type"],
-                    business_profile_uuid=payload["data"]["metadata"]["business_profile_uuid"]
+                    business_profile_uuid=payload["data"]["metadata"][
+                        "business_profile_uuid"
+                    ],
                 )
                 session.add(payment_data)
                 session.commit()
@@ -117,10 +119,14 @@ class UserSubscriptionRepository(BaseRepository):
             logging.info("Subscription created successfully")
             return
 
-    def create_paystack_subscription(self, payload: dict, business_profile_uuid: str, update_subscription: bool = False):
+    def create_paystack_subscription(
+        self,
+        payload: dict,
+        business_profile_uuid: str,
+        update_subscription: bool = False,
+    ):
         try:
             with self.session_factory() as session:
-
                 payload_email = payload.get("email")
                 payload_plan = payload.get("plan")
 
@@ -134,16 +140,18 @@ class UserSubscriptionRepository(BaseRepository):
                 subscription_response.raise_for_status()
 
                 if update_subscription:
-                    subscription = (session.query(self.model)
-                                    .filter_by(user_email=payload_email)
-                                    .first())
+                    subscription = (
+                        session.query(self.model)
+                        .filter_by(user_email=payload_email)
+                        .first()
+                    )
                     subscription.plan_code = payload_plan
                 else:
                     # save subscription in db
                     data = UserSubscription(
                         user_email=payload_email,
                         plan_code=payload_plan,
-                        business_profile_uuid=business_profile_uuid
+                        business_profile_uuid=business_profile_uuid,
                     )
                     session.add(data)
 
@@ -163,10 +171,11 @@ class UserSubscriptionRepository(BaseRepository):
             # For any other exceptions, return a generic error message
             return f"Error creating subscription: {str(err)}"
 
-    def update_existing_paystack_subscription(self, payload: PaystackSubscriptionPayload, business_profile_uuid: str):
+    def update_existing_paystack_subscription(
+        self, payload: PaystackSubscriptionPayload, business_profile_uuid: str
+    ):
         try:
             with self.session_factory() as session:
-
                 # Create Paystack subscription
                 subscription_response = requests.post(
                     settings.PAYSTACK_INITIALIZE_SUBSCRIPTION_URL,
@@ -176,9 +185,7 @@ class UserSubscriptionRepository(BaseRepository):
                 subscription_response.raise_for_status()  # Raise exception for HTTP errors
 
                 # save subscription in db
-                data = UserSubscription(
-                    plan_code=payload.plan
-                )
+                data = UserSubscription(plan_code=payload.plan)
                 session.refresh(data)
                 session.commit()
 
