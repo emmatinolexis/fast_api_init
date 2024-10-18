@@ -30,17 +30,19 @@ class UserSubscriptionRepository(BaseRepository):
 
     def create_user_subscription(self, payload):
         with self.session_factory() as session:
-            event_type = payload["event"]
+            event_type = payload.get("event")
+
             logging.info(payload)
 
             user_email = payload["data"]["customer"]["email"]
             user = self.get_user_by_email(session, user_email)
 
-            if user is None:
+            if not user:
+                user_not_found = f"user with email {user_email} not found, cannot process subscription event: {event_type}"
                 logging.info(
-                    f"user with email {user_email} not found, cannot process subscription event: {event_type}"
+                   user_not_found
                 )
-                return
+                return user_not_found
 
             existing_subscription = self.get_user_subscription_(session, user_email)
 
@@ -58,6 +60,7 @@ class UserSubscriptionRepository(BaseRepository):
                     reference_no=payload["data"]["reference"],
                     amount=payload["data"]["amount"],
                     status=payload["data"]["status"],
+                    user_email=payload["data"]["customer"]["email"],
                     payment_type=payload["data"]["metadata"]["payment_type"],
                     business_profile_uuid=payload["data"]["metadata"][
                         "business_profile_uuid"

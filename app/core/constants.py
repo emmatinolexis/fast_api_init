@@ -423,7 +423,7 @@ PERMISSIONS = {
         },
     ],
     "roles_permissions": [
-        {"permission_name": "view_roles", "permission_type": "admin"},
+        {"permission_name": "view_roles", "permission_type": "all"},
         {"permission_name": "create_role", "permission_type": "admin"},
         {"permission_name": "update_roles", "permission_type": "admin"},
         {"permission_name": "view_permissions", "permission_type": "admin"},
