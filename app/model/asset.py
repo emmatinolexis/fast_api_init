@@ -54,7 +54,6 @@ class Asset(BaseModel):
     asset_stolen_status = Column(Boolean, nullable=True)
     created_by = Column(Enum(AssetCreators), nullable=False, index=True)
     user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=True)
-    operator_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=True)
     business_profile_uuid = Column(
         UUID(as_uuid=True), ForeignKey("business_profiles.uuid"), nullable=True
     )
