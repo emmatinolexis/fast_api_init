@@ -11,6 +11,7 @@ from app.model.alert_policy_violations import AlertPolicyViolation
 from app.model.asset import Asset
 from app.model.device import Device
 from app.model.driver import Driver
+from app.model.asset_operator_assignment import AssetOperatorAssignment
 from app.model.maintenance_alert import MaintenanceAlert
 from app.model.tracking_event import TrackingEvent
 from app.model.user import User
@@ -135,9 +136,9 @@ class AssetRepository(BaseRepository):
 
             assets = (
                 paginated_query.options(joinedload(self.model.asset_type))
-                .options(joinedload(self.model.driver))
                 .options(joinedload(self.model.device).joinedload(Device.inventory))
                 .options(joinedload(self.model.equipment))
+                .join(AssetOperatorAssignment, AssetOperatorAssignment.asset_uuid == self.model.uuid)
                 .all()
             )
 
@@ -187,7 +188,7 @@ class AssetRepository(BaseRepository):
 
     def process_assets(self, session, assets: List[Any]) -> List[Any]:
         for asset in assets:
-            # check if asset has device imei
+            # Check if asset has device IMEI
             if asset.device_imei:
                 # Get device's last known location
                 last_tracking_event = (
@@ -219,6 +220,30 @@ class AssetRepository(BaseRepository):
                     }
                     # Add last_tracking_event_dict to asset dictionary
                     asset.last_tracking_event = last_tracking_event_dict
+
+            # Fetch the assigned operator from AssetOperatorAssignment
+            operator_assignment = session.query(AssetOperatorAssignment).filter(
+                AssetOperatorAssignment.asset_uuid == asset.uuid
+            ).first()
+
+            if operator_assignment:
+                # Fetch the operator (user) details
+                operator = session.query(User).filter(User.uuid == operator_assignment.operator_uuid).first()
+                if operator:
+                    operator_data = {
+                        "uuid": operator.uuid,
+                        "first_name": operator.first_name,
+                        "last_name": operator.last_name,
+                        "email": operator.email_address,
+                        "image_url": operator.avatar_url
+                    }
+                    # Add operator_data to asset dictionary
+                    asset.operator = operator_data
+                else:
+                    asset.operator = None
+            else:
+                asset.operator = None
+
         return assets
 
     def read_all_third_party_assets(

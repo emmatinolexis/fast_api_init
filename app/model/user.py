@@ -60,6 +60,10 @@ class User(BaseModel):
 
     user_devices = relationship("Device", uselist=True, back_populates="user")
 
+    operated_assets = relationship(
+        "Asset", secondary="asset_operator_assignments", back_populates="operators"
+    )
+
     # business_profile_assignments = relationship(UserOrganisationAssignment, back_populates='user')
 
 
