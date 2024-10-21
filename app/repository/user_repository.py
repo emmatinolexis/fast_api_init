@@ -1,6 +1,6 @@
 from contextlib import AbstractContextManager
 from datetime import datetime, timedelta
-from typing import Callable, Optional
+from typing import Callable, Optional, List
 from uuid import UUID
 
 from pydantic import EmailStr
@@ -50,6 +50,7 @@ class UserRepository(BaseRepository):
                 user_to_update.phone_number = user.phone_number
                 user_to_update.country = user.country
                 user_to_update.license_url = user.license_url
+                user_to_update.operator_type = user.operator_type
 
                 # set onboarding status
                 if user_to_update.onboarding_status is None:
@@ -366,6 +367,12 @@ class UserRepository(BaseRepository):
                 .scalar()
             )
 
+            total_businesses = (
+                session.query(BusinessProfile)
+                .with_entities(func.count(self.model.id))
+                .scalar()
+            )
+
             # Calculate total pages
             total_pages = (total_team_members + page_size - 1) // page_size
 
@@ -596,5 +603,107 @@ class UserRepository(BaseRepository):
                 session.refresh(user_to_update)
 
                 return user_to_update
+        except Exception as e:
+            raise e
+
+    def get_drivers_by_business_uuid(
+        self, business_uuid, role_uuid, page=1, page_size=10, operator_type: List[str] = None, status: str = None
+    ):
+        try:
+            with self.session_factory() as session:
+                # Build the query to filter drivers by business and role, and order by created_at descending
+                query = (
+                    session.query(self.model)
+                    .filter(
+                        User.business_profile_uuid == business_uuid,
+                        User.user_role_uuid == role_uuid,
+                    )
+                )  # Order by created_at in descending order
+
+                # Apply additional filters if provided
+                if operator_type:
+                    query = query.filter(User.operator_type.in_(operator_type))
+                if status:
+                    query = query.filter(User.status == status)
+
+                query = query.order_by(desc(User.created_at))  # Order by created_at in descending order
+
+                # Get total count of drivers
+                total_drivers = query.count()
+
+                # Calculate total pages
+                total_pages = (total_drivers + page_size - 1) // page_size
+
+                # Apply pagination
+                offset = (page - 1) * page_size
+                drivers = query.offset(offset).limit(page_size).all()
+
+                # Prepare the driver data
+                drivers_data = [
+                    {
+                        "uuid": driver.uuid,
+                        "first_name": driver.first_name,
+                        "last_name": driver.last_name,
+                        "email_address": driver.email_address,
+                        "phone_number": driver.phone_number,
+                        "license_url": driver.license_url,
+                        "profile_picture": driver.avatar_url,
+                        "operator_type": driver.operator_type,
+                        "status": driver.status,
+                        "created_at": driver.created_at,
+                    }
+                    for driver in drivers
+                ]
+
+                return {
+                    "drivers": drivers_data,
+                    "total_drivers": total_drivers,
+                    "total_pages": total_pages,
+                    "current_page": page,
+                    "page_size": page_size,
+                }
+        except Exception as e:
+            raise e
+
+    def get_driver_by_uuid(self, driver_uuid: str):
+        try:
+            with self.session_factory() as session:
+                driver = (
+                    session.query(self.model)
+                    .filter(self.model.uuid == driver_uuid)
+                    .first()
+                )
+
+                if not driver:
+                    return None
+
+                # Prepare the driver data for output
+                driver_data = {
+                    "uuid": driver.uuid,
+                    "first_name": driver.first_name,
+                    "last_name": driver.last_name,
+                    "email_address": driver.email_address,
+                    "phone_number": driver.phone_number,
+                    "license_url": driver.license_url,
+                    "profile_picture": driver.avatar_url,
+                    "operator_type": driver.operator_type,
+                    "status": driver.status,
+                    "created_at": driver.created_at,
+                }
+
+                return driver_data
+        except Exception as e:
+            raise e
+        
+
+    def get_user_by_assigned_asset_uuid(self, assigned_asset_uuid: str):
+        try:
+            with self.session_factory() as session:
+                # Query the User model to find the user with the given assigned_asset_uuid
+                user = session.query(User).filter(User.assigned_asset_uuid == assigned_asset_uuid).first()
+                if user is None:
+                    return None
+                
+                return user
         except Exception as e:
             raise e

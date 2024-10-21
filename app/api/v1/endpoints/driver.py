@@ -1,6 +1,7 @@
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
+from typing import List
 
 from app.core import messages
 from app.core.container import Container
@@ -9,12 +10,15 @@ from app.core.exceptions import BadRequestError, NotFoundError
 from app.model.user import User
 from app.schema.asset_schema import DriverPayload
 from app.service.driver_service import DriverService
+from app.service.user_service import UserService
 from app.util.utils import (
     send_client_side_error,
     send_data,
     send_info,
     send_internal_server_error,
+    send_data_with_info
 )
+from app.util.enums import ActiveStatus
 
 router = APIRouter(
     prefix="/drivers",
@@ -34,8 +38,7 @@ async def get_all_drivers_handler(
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
-
-
+    
 @router.post("/", response_class=ORJSONResponse)
 @inject
 async def create_driver_handler(
@@ -94,14 +97,14 @@ async def unassign_driver_handler(
 @inject
 async def get_driver_by_uuid_handler(
     uuid: str,
-    service: DriverService = Depends(Provide[Container.driver_service]),
+    user_service: UserService = Depends(Provide[Container.user_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        driver = service.get_by_uuid(uuid)
-        if driver is None:
-            return send_client_side_error(user_msg=messages.DRIVER_NOT_FOUND + uuid)
+        driver = user_service.get_driver_by_uuid(uuid)
         return send_data(driver)
+    except NotFoundError as e:
+        return send_client_side_error(e.detail)
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
@@ -134,7 +137,10 @@ async def get_drivers_by_user_uuid_handler(
 @inject
 async def get_drivers_by_business_uuid_handler(
     business_uuid: str,
-    service: DriverService = Depends(Provide[Container.driver_service]),
+    role_uuid: str,
+    status: ActiveStatus = Query(None, description="Status of the operator"),
+    operator_type: List[str] = Query(None, description="List of operator types: 'rider', 'driver'"),
+    user_service: UserService = Depends(Provide[Container.user_service]),
     page: int = Query(1, ge=1, description="Page number, default is set to 1"),
     page_size: int = Query(
         10, ge=1, le=1000, description="Items per page, default is 10"
@@ -142,7 +148,9 @@ async def get_drivers_by_business_uuid_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        drivers = service.get_drivers_by_business_uuid(business_uuid, page, page_size)
+        drivers = user_service.get_drivers_by_business_uuid(
+            business_uuid, role_uuid, page, page_size, operator_type,status
+        )
         if drivers is None:
             return send_client_side_error(
                 user_msg=messages.DRIVER_NOT_FOUND + business_uuid
@@ -176,12 +184,12 @@ async def delete_driver_by_uuid_handler(
 @inject
 async def change_rider_asset_handler(
     asset_uuid: str,
-    driver_uuid: str,
-    service: DriverService = Depends(Provide[Container.driver_service]),
+    operator_uuid: str,
+    user_service: UserService = Depends(Provide[Container.user_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        driver = service.change_rider_asset(asset_uuid, driver_uuid)
+        driver = user_service.change_operator_asset(asset_uuid=asset_uuid,operator_uuid=operator_uuid,user_uuid=current_user.uuid,business_profile_uuid=current_user.business_profile_uuid)
         return send_data(driver)
     except (NotFoundError, BadRequestError) as e:
         return send_client_side_error(user_msg=str(e.detail), dev_msg=str(e.detail))

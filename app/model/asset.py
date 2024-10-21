@@ -89,7 +89,7 @@ class Asset(BaseModel):
     usage_type = Column(String(length=50), nullable=True)
     marker_color = Column(String(length=100), nullable=True, index=True)
     marker_icon = relationship("MarkerIcon", uselist=False)
-    user = relationship("User", uselist=False)
+    user = relationship("User", uselist=False, foreign_keys=[user_uuid])
     asset_type = relationship("AssetType", uselist=False)
     equipment_type = relationship("EquipmentType", uselist=False)
     equipment = relationship("Equipment", uselist=False)

@@ -4,9 +4,8 @@ import requests
 
 from app.core.settings import settings
 from app.repository.user_subscription_repository import UserSubscriptionRepository
-from app.service.base_service import BaseService
 from app.schema.subscription import PaystackSubscriptionPayload
-
+from app.service.base_service import BaseService
 
 class UserSubscriptionService(BaseService):
     def __init__(self, user_subscription_repository: UserSubscriptionRepository):
@@ -19,15 +18,24 @@ class UserSubscriptionService(BaseService):
         except Exception as e:
             raise e
 
-    def create_paystack_subscription(self, payload: dict, business_profile_uuid: str, update_subscription: bool = False):
+    def create_paystack_subscription(
+        self,
+        payload: dict,
+        business_profile_uuid: str,
+        update_subscription: bool = False,
+    ):
         try:
-            return self.user_subscription_repository.create_paystack_subscription(payload, business_profile_uuid, update_subscription)
+            return self.user_subscription_repository.create_paystack_subscription(
+                payload, business_profile_uuid, update_subscription
+            )
         except Exception as e:
             raise e
 
     def get_subscription_by_business_uuid(self, business_profile_uuid: str, plan: str):
         try:
-            return self.user_subscription_repository.get_subscription_by_business_uuid(business_profile_uuid, plan)
+            return self.user_subscription_repository.get_subscription_by_business_uuid(
+                business_profile_uuid, plan
+            )
         except Exception as e:
             raise e
 

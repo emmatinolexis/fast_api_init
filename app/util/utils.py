@@ -4,7 +4,7 @@ import re
 import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Any, List, Union
+from typing import Any, Dict, List, Union
 
 import boto3
 import pandas as pd
@@ -1001,6 +1001,13 @@ def parse_date(date_str):
     raise ValueError(f"Date format for '{date_str}' not recognized")
 
 
+def convert_date(date_str: str, format: str) -> str:
+    try:
+        return datetime.strptime(date_str, format).strftime("%Y-%m-%d")
+    except ValueError:
+        raise ValueError(f"Date format for '{date_str}' not recognized")
+
+
 def convert_unix_timestamp(unix_timestamp):
     # Convert the timestamp to a datetime object
     dt = datetime.fromtimestamp(unix_timestamp, tz=timezone.utc)
@@ -1153,3 +1160,18 @@ def check_permission(permissions, permission_name):
             return True
     # Raise a 403 Forbidden error if the permission is not found
     raise HTTPException(status_code=403, detail="Not Authorized")
+
+
+def total_pages(count: int, limit: int) -> int:
+    return int(count / limit) + (count % limit > 0)
+
+
+def pagination(
+    total: int, current_page: int, limit: int, total_pages: int
+) -> Dict[str, int]:
+    return {
+        "total": total,
+        "page": current_page,
+        "pageSize": limit,
+        "totalPages": total_pages,
+    }
