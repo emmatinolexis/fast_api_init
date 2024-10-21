@@ -140,19 +140,20 @@ async def get_all_accounts(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-# @router.get("/customers", dependencies=[allow_admins_only], response_class=ORJSONResponse)
-# @inject
-# async def get_users(
-#     service: UserService = Depends(Provide[Container.user_service]),
-#     current_user: User = Depends(get_current_user),
-# ):
-#     try:
-#         users = service.get_list()
-#         users_info = [extract_user_data(user) for user in users]
-#         return send_data(users_info)
-#     except Exception as e:
-#         msg = messages.GET_FAILED + f"{msg_prefix}s"
-#         return send_internal_server_error(user_msg=msg, error=e)
+@router.get("/customers", dependencies=[allow_admins_only], response_class=ORJSONResponse)
+@inject
+async def get_users(
+    service: UserService = Depends(Provide[Container.user_service]),
+    business_service: BusinessProfileService = Depends(Provide[Container.business_profile_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        businesses = business_service.get_businesses()
+
+        return send_data(businesses)
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
 
 
 @router.put("/phone", response_class=ORJSONResponse)

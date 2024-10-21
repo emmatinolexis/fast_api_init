@@ -52,8 +52,9 @@ class UserSubscriptionRepository(BaseRepository):
                 )
             elif event_type == "subscription.create":
                 subscription_code = payload["data"]["subscription_code"]
+                subscription_plan = payload["data"]["plan"]
                 self.handle_subscription_creation(
-                    session, user_email, subscription_code, existing_subscription
+                    session, user_email, subscription_code, existing_subscription, subscription_plan
                 )
             elif event_type == "charge.success":
                 payment_data = Payment(
@@ -62,7 +63,8 @@ class UserSubscriptionRepository(BaseRepository):
                     status=payload["data"]["status"],
                     user_email=payload["data"]["customer"]["email"],
                     payment_type=payload["data"]["metadata"]["payment_type"],
-                    business_profile_uuid=payload["data"]["metadata"]["business_profile_uuid"]
+                    business_profile_uuid=payload["data"]["metadata"]["business_profile_uuid"],
+                    channel=payload["data"]["channel"]
                 )
                 session.add(payment_data)
                 session.commit()
@@ -103,10 +105,11 @@ class UserSubscriptionRepository(BaseRepository):
             )
 
     def handle_subscription_creation(
-        self, session, user_email, subscription_code, existing_subscription
+        self, session, user_email, subscription_code, existing_subscription, subscription_plan
     ):
         if existing_subscription:
             existing_subscription.subscription_code = subscription_code
+            existing_subscription.plan = subscription_plan
             session.commit()
             session.refresh(existing_subscription)
             logging.info("Subscription updated successfully")

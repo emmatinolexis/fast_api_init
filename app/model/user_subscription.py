@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Column, ForeignKey, String
+from sqlalchemy import Column, ForeignKey, String, JSON
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -27,4 +27,6 @@ class UserSubscription(BaseModel):
     )
     subscription_code = Column(String(length=50), nullable=True, index=True)
     plan_code = Column(String(length=50), nullable=False, index=True)
+    plan = Column(JSON, nullable=True)
     user = relationship("User")
+    business_profile = relationship("BusinessProfile", back_populates="subscription")

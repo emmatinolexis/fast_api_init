@@ -125,12 +125,6 @@ async def create_paystack_subscription_handler(
                 "payment_type" : PaymentTypes.SUBSCRIPTION_PAYMENT
             }
         }
-        # payload metadata = {
-        #     "business_profile_uuid" : user.business_profile_uuid,
-        #     "payment_type" : PaymentTypes.SUBSCRIPTION_PAYMENT
-        # }
-
-        # return payload_data.get("plan"), payload_data.get("metadata").get("business_profile_uuid")
 
         existing_subscription = service.get_subscription_by_business_uuid(user.business_profile_uuid, payload_data.get("plan"))
 
