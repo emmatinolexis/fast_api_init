@@ -54,9 +54,6 @@ class User(BaseModel):
     phone_otp_token = relationship(
         "PhoneOtpToken", uselist=False, back_populates="user"
     )
-    assigned_asset_uuid = Column(
-        UUID(as_uuid=True),ForeignKey("assets.uuid"),nullable=True,index=True
-    )
     theft_incidents = relationship("TheftIncidence", back_populates="user")
 
     asset_device_requests = relationship("AssetDeviceRequest", back_populates="user")
