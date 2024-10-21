@@ -23,5 +23,6 @@ class Payment(BaseModel):
     payment_type = Column(Enum(PaymentTypes), nullable=False, index=True)
     user_email = Column(String(length=50), ForeignKey("users.email_address"), nullable=False)
     business_profile_uuid = Column(UUID(as_uuid=True), ForeignKey("business_profiles.uuid"), nullable=False)
-
+    channel = Column(String(length=50), nullable=False, index=True)
+    business_profile = relationship("BusinessProfile", back_populates="payments")
 

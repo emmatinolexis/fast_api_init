@@ -481,15 +481,9 @@ class UserRepository(BaseRepository):
 
     def _handle_invitation_status(self, session, user: UserPayload):
         if user.invite_status:
-            invite = (
-                session.query(Invitation)
-                .filter(Invitation.email == user.email_address)
-                .first()
-            )
-            if invite:
-                invite.status = InvitationStatus.ACCEPTED
-                session.commit()
-                session.refresh(invite)
+            # Delete the invitation where the email matches
+            session.query(Invitation).filter(Invitation.email == user.email_address).delete()
+            session.commit()
 
     def _handle_business_account(self, session, user: UserPayload, db_user):
         business_data = BusinessProfile(
