@@ -292,3 +292,11 @@ class EngineOnPayload(BaseModel):
     type: ImmobilizerType
     user_uuid: UUID
     asset_uuid: UUID
+
+
+
+class AssignAssetPayload(BaseModel):
+    asset_uuid: str
+    operator_uuid: str
+
+

@@ -111,5 +111,6 @@ UNAUTHORIZED_ACTION = "You are not authorized to perform this action"
 INVALID_DEVICE_TYPE = "Invalid device type"
 BUILDING_DATA_REQUIRED = "Building data is required."
 
-NO_ASSET_FOUND = "Asset Not Found"
-NO_OPERATOR_FOUND = "Operator Not Found"
+NO_ASSET_FOUND = "Asset not found"
+NO_OPERATOR_FOUND = "Operator not found"
+ASSIGNMENT_SUCCESS = "Asset assigned to operator successfully"

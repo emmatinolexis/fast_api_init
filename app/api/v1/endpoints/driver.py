@@ -10,6 +10,7 @@ from app.core.exceptions import BadRequestError, NotFoundError
 from app.model.user import User
 from app.schema.asset_schema import DriverPayload
 from app.service.driver_service import DriverService
+from app.service.asset_operator_assignment_service import AssetOperatorAssignmentService
 from app.service.user_service import UserService
 from app.util.utils import (
     send_client_side_error,
@@ -185,12 +186,12 @@ async def delete_driver_by_uuid_handler(
 async def change_rider_asset_handler(
     asset_uuid: str,
     operator_uuid: str,
-    user_service: UserService = Depends(Provide[Container.user_service]),
+    service: AssetOperatorAssignmentService = Depends(Provide[Container.asset_operator_assignment_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        driver = user_service.change_operator_asset(asset_uuid=asset_uuid,operator_uuid=operator_uuid,user_uuid=current_user.uuid,business_profile_uuid=current_user.business_profile_uuid)
-        return send_data(driver)
+        response = service.assign_operator_to_asset(asset_uuid,operator_uuid,current_user.uuid,current_user.business_profile_uuid)
+        return send_info(response)
     except (NotFoundError, BadRequestError) as e:
         return send_client_side_error(user_msg=str(e.detail), dev_msg=str(e.detail))
     except Exception as e:

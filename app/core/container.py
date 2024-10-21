@@ -864,5 +864,7 @@ class Container(containers.DeclarativeContainer):
 
     asset_operator_assignment_service = providers.Factory(
         asset_operator_assignment_service.AssetOperatorAssignmentService,
-        asset_operator_assignment = asset_operator_assignment_repository
+        asset_operator_assignment = asset_operator_assignment_repository,
+        asset_repository = asset_repository,
+        user_repository = user_repository,
     )
