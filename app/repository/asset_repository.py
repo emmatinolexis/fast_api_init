@@ -235,7 +235,8 @@ class AssetRepository(BaseRepository):
                         "first_name": operator.first_name,
                         "last_name": operator.last_name,
                         "email": operator.email_address,
-                        "image_url": operator.avatar_url
+                        "image_url": operator.avatar_url,
+                        "operator_type": operator.operator_type
                     }
                     # Add operator_data to asset dictionary
                     asset.operator = operator_data
