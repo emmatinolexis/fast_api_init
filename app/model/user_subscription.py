@@ -19,7 +19,6 @@ class UserSubscription(BaseModel):
     user_email = Column(
         String(length=100),
         ForeignKey("users.email_address"),
-        unique=True,
         nullable=False,
     )
     business_profile_uuid = Column(
@@ -27,6 +26,7 @@ class UserSubscription(BaseModel):
     )
     subscription_code = Column(String(length=50), nullable=True, index=True)
     plan_code = Column(String(length=50), nullable=False, index=True)
+    status = Column(String(length=50), nullable=False, index=True)
     plan = Column(JSON, nullable=True)
     user = relationship("User")
     business_profile = relationship("BusinessProfile", back_populates="subscription")
