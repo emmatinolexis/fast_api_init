@@ -116,6 +116,7 @@ async def create_paystack_subscription_handler(
 
         if not user:
             return send_client_side_error(messages.USER_NOT_FOUND_MSG)
+
         payload_data = {
             "plan": payload.plan,
             "email": payload.email,
@@ -134,19 +135,26 @@ async def create_paystack_subscription_handler(
         if existing_subscription:
             return send_client_side_error(messages.SUBSCRIPTION_ALREADY_EXISTS)
 
-        package_to_update = service.get_subscription_by_email(payload_data.get("email"))
-        if package_to_update:
-            # update subscription
-            subscription = service.create_paystack_subscription(
-                payload_data, user.business_profile_uuid, update_subscription=True
-            )
-            return send_data(subscription)
-        else:
-            # create a new subscription
-            subscription = service.create_paystack_subscription(
-                payload_data, user.business_profile_uuid
-            )
-            return send_data(subscription)
+        # create a new subscription
+        subscription = service.create_paystack_subscription(
+            payload_data, user.business_profile_uuid
+        )
+        return send_data(subscription)
+
+        # package_to_update = service.get_subscription_by_email(payload_data.get("email"))
+
+        # if package_to_update:
+        #     # update subscription
+        #     subscription = service.create_paystack_subscription(
+        #         payload_data, user.business_profile_uuid, update_subscription=True
+        #     )
+        #     return send_data(subscription)
+        # else:
+        #     # create a new subscription
+        #     subscription = service.create_paystack_subscription(
+        #         payload_data, user.business_profile_uuid
+        #     )
+        #     return send_data(subscription)
 
     except Exception as e:
         msg = f"{messages.GET_FAILED} {msg_prefix}s"
@@ -194,4 +202,5 @@ async def paystack_subscription_webhook_handler(
         return send_info(subscription)
     except Exception as e:
         msg = f"{messages.GET_FAILED} {msg_prefix}s"
+        logging.error(e)
         return send_internal_server_error(user_msg=msg, error=e)

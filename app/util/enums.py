@@ -120,6 +120,12 @@ class PaymentStatus(str, Enum):
     FAILED = "failed"
 
 
+class SubscriptionStatus(str, Enum):
+    SUCCESS = "success"
+    PENDING = "pending"
+    FAILED = "failed"
+
+
 class BuildingStatus(str, Enum):
     PENDING_INSTALLATION = "Pending Installation"
     SAFE = "Safe"

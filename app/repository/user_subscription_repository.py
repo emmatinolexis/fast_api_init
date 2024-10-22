@@ -12,6 +12,7 @@ from app.model.user import User
 from app.model.user_subscription import UserSubscription
 from app.repository.base_repository import BaseRepository
 from app.schema.subscription import PaystackSubscriptionPayload
+from app.util.enums import SubscriptionStatus
 
 
 class UserSubscriptionRepository(BaseRepository):
@@ -53,8 +54,14 @@ class UserSubscriptionRepository(BaseRepository):
             elif event_type == "subscription.create":
                 subscription_code = payload["data"]["subscription_code"]
                 subscription_plan = payload["data"]["plan"]
+                subscription_status = payload["data"]["status"]
                 self.handle_subscription_creation(
-                    session, user_email, subscription_code, existing_subscription, subscription_plan
+                    session,
+                    user_email,
+                    subscription_code,
+                    existing_subscription,
+                    subscription_plan,
+                    subscription_status
                 )
             elif event_type == "charge.success":
                 payment_data = Payment(
@@ -105,11 +112,12 @@ class UserSubscriptionRepository(BaseRepository):
             )
 
     def handle_subscription_creation(
-        self, session, user_email, subscription_code, existing_subscription, subscription_plan
+        self, session, user_email, subscription_code, existing_subscription, subscription_plan, subscription_status
     ):
         if existing_subscription:
             existing_subscription.subscription_code = subscription_code
             existing_subscription.plan = subscription_plan
+            existing_subscription.status = subscription_status
             session.commit()
             session.refresh(existing_subscription)
             logging.info("Subscription updated successfully")
@@ -156,6 +164,7 @@ class UserSubscriptionRepository(BaseRepository):
                         user_email=payload_email,
                         plan_code=payload_plan,
                         business_profile_uuid=business_profile_uuid,
+                        status=SubscriptionStatus.PENDING
                     )
                     session.add(data)
 
