@@ -370,7 +370,7 @@ PERMISSIONS = {
         {"permission_name": "view_team_member", "permission_type": "all"},
         {"permission_name": "view_invitations", "permission_type": "all"},
         {"permission_name": "delete_invitations", "permission_type": "all"},
-        {"permission_name": "manage_subscription", "permission_type": "customer"},
+        {"permission_name": "manage_subscription", "permission_type": "all"},
         {"permission_name": "create_team_member", "permission_type": "admin"},
         {"permission_name": "resend_invitation", "permission_type": "all"},
         {"permission_name": "update_user", "permission_type": "all"},

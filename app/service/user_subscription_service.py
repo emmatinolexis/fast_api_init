@@ -21,12 +21,13 @@ class UserSubscriptionService(BaseService):
     def create_paystack_subscription(
         self,
         payload: dict,
+        plan: dict,
         business_profile_uuid: str,
         update_subscription: bool = False,
     ):
         try:
             return self.user_subscription_repository.create_paystack_subscription(
-                payload, business_profile_uuid, update_subscription
+                payload, plan, business_profile_uuid, update_subscription
             )
         except Exception as e:
             raise e
