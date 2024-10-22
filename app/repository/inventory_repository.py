@@ -33,7 +33,7 @@ class InventoryRepository(BaseRepository):
                 session.rollback()
                 raise e
 
-    def get_all_inventory(self, page=1, page_size=10):
+    def get_all_inventory(self, page=1, page_size=10, search_query=None):
         with self.session_factory() as session:
             try:
                 offset = (page - 1) * page_size
@@ -44,12 +44,19 @@ class InventoryRepository(BaseRepository):
                     joinedload(Inventory.images)
                 )
 
+                if search_query:
+                    base_query = base_query.join(
+                        DeviceManufacturer, 
+                        Inventory.device_manufacturer_uuid == DeviceManufacturer.uuid
+                    ).filter(
+                        or_(
+                            Inventory.device_name.ilike(f"%{search_query}%"),
+                            DeviceManufacturer.manufacturer_name.ilike(f"%{search_query}%")
+                        )
+                    )
+
                 total_inventories = base_query.count()
-
-                total_pages = (total_inventories + page_size - 1) // page_size
-
                 paginated_query = base_query.offset(offset).limit(page_size)
-
                 inventories = paginated_query.all()
 
                 total_in_stock = session.query(self.model).filter(self.model.quantity > 0).count()
@@ -58,7 +65,7 @@ class InventoryRepository(BaseRepository):
                 return {
                     "inventories": inventories,
                     "total_inventories": total_inventories,
-                    "total_pages": total_pages,
+                    "total_pages": (total_inventories + page_size - 1) // page_size,
                     "current_page": page,
                     "page_size": page_size,
                     "total_in_stock": total_in_stock,
@@ -68,28 +75,7 @@ class InventoryRepository(BaseRepository):
                 session.rollback()
                 raise e
             
-    def search_inventory(self, search_query: str):
-        with self.session_factory() as session:
-            try:
-                inventories = session.query(self.model).join(
-                    DeviceManufacturer, 
-                    Inventory.device_manufacturer_uuid == DeviceManufacturer.uuid
-                ).filter(
-                    or_(
-                        Inventory.device_name.ilike(f"%{search_query}%"),
-                        DeviceManufacturer.manufacturer_name.ilike(f"%{search_query}%")
-                    )
-                ).options(
-                    joinedload(Inventory.manufacturer)
-                ).options(
-                    joinedload(Inventory.images)
-                ).all()
-
-                return inventories
-            except Exception as e:
-                session.rollback()
-                raise e
-
+   
 
     def reduce_inventory_no(self, inventory_uuid: uuid, quantity: int):
         with self.session_factory() as session:

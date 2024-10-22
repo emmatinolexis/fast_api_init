@@ -27,17 +27,16 @@ async def get_all_inventory_handler(
     service: InventoryService = Depends(Provide[Container.inventory_service]),
 ):
     try:
-        if search_query:
-            inventories = service.search_inventory(search_query=search_query)
-        else:
-            inventories = service.get_all_inventory(
-                page=page, 
-                page_size=page_size, 
-            )
+        inventories = service.get_all_inventory(
+            page=page, 
+            page_size=page_size, 
+            search_query=search_query  
+        )
         return send_data(inventories)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
+
 
 
 @router.post("/", response_class=ORJSONResponse)

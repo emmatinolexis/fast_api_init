@@ -29,22 +29,18 @@ class InventoryService(BaseService):
         except Exception as e:
             raise e
 
-    def get_all_inventory(self, page=1, page_size=10):
+    def get_all_inventory(self, page=1, page_size=10, search_query=None):
         try:
             inventories = self.inventory_repository.get_all_inventory(
                 page=page, 
                 page_size=page_size, 
+                search_query=search_query  
             )
             return inventories
         except Exception as e:
             raise e
     
-    def search_inventory(self, search_query: str):
-        try:
-            inventories = self.inventory_repository.search_inventory(search_query)
-            return inventories
-        except Exception as e:
-            raise e
+   
         
 
 
