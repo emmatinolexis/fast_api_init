@@ -23,13 +23,17 @@ msg_prefix = "inventory"
 async def get_all_inventory_handler(
     page: int = Query(1, ge=1, description="Page number, default is 1"),
     page_size: int = Query(10, ge=1, le=1000, description="Items per page, default is 10"),
+    search_query: str = Query(None, description="Search by device name or manufacturer name"),
     service: InventoryService = Depends(Provide[Container.inventory_service]),
 ):
     try:
-        inventories = service.get_all_inventory(
-            page=page, 
-            page_size=page_size, 
-        )
+        if search_query:
+            inventories = service.search_inventory(search_query=search_query)
+        else:
+            inventories = service.get_all_inventory(
+                page=page, 
+                page_size=page_size, 
+            )
         return send_data(inventories)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
@@ -55,16 +59,4 @@ async def create_device_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/search", response_class=ORJSONResponse)
-@inject
-async def search_inventory_handler(
-    search_query: str = Query(..., description="Search by device name or manufacturer name"),
-    service: InventoryService = Depends(Provide[Container.inventory_service]),
-):
-    try:
-        inventories = service.search_inventory(search_query=search_query)
-        return send_data(inventories)
-    except Exception as e:
-        msg = messages.GET_FAILED + f"{msg_prefix}s"
-        return send_internal_server_error(user_msg=msg, error=e)
 
