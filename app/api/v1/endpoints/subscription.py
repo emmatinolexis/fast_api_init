@@ -117,29 +117,38 @@ async def create_paystack_subscription_handler(
         if not user:
             return send_client_side_error(messages.USER_NOT_FOUND_MSG)
 
-        payload_data = {
-            "plan": payload.plan,
-            "email": payload.email,
-            "amount": payload.amount,
-            "callback_url": payload.callback_url,
-            "metadata": {
-                "business_profile_uuid" : str(user.business_profile_uuid),
-                "payment_type" : PaymentTypes.SUBSCRIPTION_PAYMENT
+        paystack_plan = requests.get(
+            settings.PAYSTACK_PLAN_URL + f"/{payload.plan}",
+            headers=settings.PAYSTACK_HEADERS,
+        )
+
+        if paystack_plan.json().get("status"):
+            payload_data = {
+                "plan": payload.plan,
+                "email": payload.email,
+                "amount": payload.amount,
+                "callback_url": payload.callback_url,
+                "metadata": {
+                    "business_profile_uuid" : str(user.business_profile_uuid),
+                    "payment_type" : PaymentTypes.SUBSCRIPTION_PAYMENT
+                }
             }
-        }
 
-        existing_subscription = service.get_subscription_by_business_uuid(
-            user.business_profile_uuid, payload_data.get("plan")
-        )
+            existing_subscription = service.get_subscription_by_business_uuid(
+                user.business_profile_uuid, payload_data.get("plan")
+            )
 
-        if existing_subscription:
-            return send_client_side_error(messages.SUBSCRIPTION_ALREADY_EXISTS)
+            if existing_subscription:
+                return send_client_side_error(messages.SUBSCRIPTION_ALREADY_EXISTS)
 
-        # create a new subscription
-        subscription = service.create_paystack_subscription(
-            payload_data, user.business_profile_uuid
-        )
-        return send_data(subscription)
+            # create a new subscription
+            subscription = service.create_paystack_subscription(
+                payload_data, paystack_plan.json()["data"], user.business_profile_uuid
+            )
+            return send_data(subscription)
+
+        else:
+            return send_client_side_error(paystack_plan.json().get("message"))
 
         # package_to_update = service.get_subscription_by_email(payload_data.get("email"))
 

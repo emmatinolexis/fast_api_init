@@ -140,7 +140,7 @@ async def get_all_accounts(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/customers", dependencies=[allow_admins_only], response_class=ORJSONResponse)
+@router.get("/admin/customers", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def get_users(
     service: UserService = Depends(Provide[Container.user_service]),
