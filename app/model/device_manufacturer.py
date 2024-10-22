@@ -21,6 +21,4 @@ class DeviceManufacturer(BaseModel):
     )
     shutdown_on_command = Column(JSON, nullable=True)
     status = Column(Enum(ActiveStatus), nullable=False, index=True)
-    __table_args__ = (
-        Index('ix_device_manufacturer_name_gin', 'manufacturer_name', postgresql_using='gin'),
-    )
+    
