@@ -17,18 +17,28 @@ class BusinessProfileService(BaseService):
                 data = {
                     "uuid": business.uuid,
                     "customer": business.business_name,
-                    "active_plan": active_subscription.plan.name,
+                    "active_plan": active_subscription.plan.name if active_subscription else None,
                     # "package_features": business.package.package_features,
                     "status": "active",
-                    "expiry_date": active_subscription.next_payment_date,
+                    "expiry_date": active_subscription.next_payment_date if active_subscription else None,
                     "email": business.business_email,
                     "phone": business.business_phone,
                     "created_at": business.created_at,
+                    "subscriptions": [
+                        {
+                            "name": sub.plan.get("name") if sub.plan else None,
+                            "amount": sub.plan.get("amount") if sub.plan else None,
+                            "status": sub.status,
+                            "created_at": sub.created_at,
+                            "expired_on": sub.next_payment_date
+                        }
+                        for sub in business.subscriptions
+                    ] if business.subscriptions else None ,
                     "payments": [
                         {
                             "amount": py.amount,
                             "status": py.status,
-                            "payment_ref": py.reference,
+                            "payment_ref": py.reference_no,
                             "created_at": py.created_at,
                             "payment_method": py.channel
                         }

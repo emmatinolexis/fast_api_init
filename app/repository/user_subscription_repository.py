@@ -53,7 +53,6 @@ class UserSubscriptionRepository(BaseRepository):
                 )
             elif event_type == "subscription.create":
                 subscription_code = payload["data"]["subscription_code"]
-                subscription_plan = payload["data"]["plan"]
                 subscription_status = payload["data"]["status"]
                 next_payment_date = payload["data"]["next_payment_date"]
                 self.handle_subscription_creation(
@@ -61,7 +60,6 @@ class UserSubscriptionRepository(BaseRepository):
                     user_email,
                     subscription_code,
                     existing_subscription,
-                    subscription_plan,
                     subscription_status,
                     next_payment_date
                 )
@@ -119,13 +117,11 @@ class UserSubscriptionRepository(BaseRepository):
         user_email,
         subscription_code,
         existing_subscription,
-        subscription_plan,
         subscription_status,
         next_payment_date
     ):
         if existing_subscription:
             existing_subscription.subscription_code = subscription_code
-            existing_subscription.plan = subscription_plan
             existing_subscription.status = subscription_status
             existing_subscription.next_payment_date = next_payment_date
             session.commit()
@@ -144,6 +140,7 @@ class UserSubscriptionRepository(BaseRepository):
     def create_paystack_subscription(
         self,
         payload: dict,
+        plan: dict,
         business_profile_uuid: str,
         update_subscription: bool = False,
     ):
@@ -160,28 +157,33 @@ class UserSubscriptionRepository(BaseRepository):
                 )
 
                 subscription_response.raise_for_status()
+                if subscription_response.json().get("status"):
+                    if update_subscription:
+                        subscription = (
+                            session.query(self.model)
+                            .filter_by(user_email=payload_email)
+                            .first()
+                        )
+                        subscription.plan_code = payload_plan
+                    else:
+                        # save subscription in db
+                        data = UserSubscription(
+                            user_email=payload_email,
+                            plan_code=payload_plan,
+                            business_profile_uuid=business_profile_uuid,
+                            status=SubscriptionStatus.PENDING,
+                            plan={
+                                "name": plan.get("name"),
+                                "amount": plan.get("amount"),
+                                "plan_code": plan.get("plan_code")
+                            }
+                        )
+                        session.add(data)
 
-                if update_subscription:
-                    subscription = (
-                        session.query(self.model)
-                        .filter_by(user_email=payload_email)
-                        .first()
-                    )
-                    subscription.plan_code = payload_plan
-                else:
-                    # save subscription in db
-                    data = UserSubscription(
-                        user_email=payload_email,
-                        plan_code=payload_plan,
-                        business_profile_uuid=business_profile_uuid,
-                        status=SubscriptionStatus.PENDING,
-                    )
-                    session.add(data)
-
-                session.commit()
-                # If successful, return subscription data
-                subscription_data = subscription_response.json()["data"]
-                return subscription_data
+                    session.commit()
+                    # If successful, return subscription data
+                    subscription_data = subscription_response.json()["data"]
+                    return subscription_data
 
         except HTTPError:
             # If there's an HTTP error, return the error response from Paystack
