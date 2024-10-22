@@ -1,5 +1,6 @@
 from app.repository.business_profile_repository import BusinessProfileRepository
 from app.service.base_service import BaseService
+from app.util.enums import SubscriptionStatus
 
 
 class BusinessProfileService(BaseService):
@@ -12,13 +13,14 @@ class BusinessProfileService(BaseService):
             businesses_data = []
             businesses = self.business_profile_repository.get_businesses()
             for business in businesses:
+                active_subscription = next((sub for sub in business.subscriptions if sub.status == SubscriptionStatus.ACTIVE), None)
                 data = {
                     "uuid": business.uuid,
                     "customer": business.business_name,
-                    "active_plan": business.subscription.plan.name,
+                    "active_plan": active_subscription.plan.name,
                     # "package_features": business.package.package_features,
                     "status": "active",
-                    "expiry_date": "",
+                    "expiry_date": active_subscription.next_payment_date,
                     "email": business.business_email,
                     "phone": business.business_phone,
                     "created_at": business.created_at,

@@ -55,13 +55,15 @@ class UserSubscriptionRepository(BaseRepository):
                 subscription_code = payload["data"]["subscription_code"]
                 subscription_plan = payload["data"]["plan"]
                 subscription_status = payload["data"]["status"]
+                next_payment_date = payload["data"]["next_payment_date"]
                 self.handle_subscription_creation(
                     session,
                     user_email,
                     subscription_code,
                     existing_subscription,
                     subscription_plan,
-                    subscription_status
+                    subscription_status,
+                    next_payment_date
                 )
             elif event_type == "charge.success":
                 payment_data = Payment(
@@ -112,12 +114,20 @@ class UserSubscriptionRepository(BaseRepository):
             )
 
     def handle_subscription_creation(
-        self, session, user_email, subscription_code, existing_subscription, subscription_plan, subscription_status
+        self,
+        session,
+        user_email,
+        subscription_code,
+        existing_subscription,
+        subscription_plan,
+        subscription_status,
+        next_payment_date
     ):
         if existing_subscription:
             existing_subscription.subscription_code = subscription_code
             existing_subscription.plan = subscription_plan
             existing_subscription.status = subscription_status
+            existing_subscription.next_payment_date = next_payment_date
             session.commit()
             session.refresh(existing_subscription)
             logging.info("Subscription updated successfully")
@@ -164,7 +174,7 @@ class UserSubscriptionRepository(BaseRepository):
                         user_email=payload_email,
                         plan_code=payload_plan,
                         business_profile_uuid=business_profile_uuid,
-                        status=SubscriptionStatus.PENDING
+                        status=SubscriptionStatus.PENDING,
                     )
                     session.add(data)
 
