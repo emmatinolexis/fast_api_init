@@ -5,9 +5,9 @@ from typing import Callable
 from sqlalchemy.orm import Session, joinedload
 
 from app.model.inventory import Inventory
+from app.model.device import DeviceManufacturer
 from app.repository.base_repository import BaseRepository
-
-
+from sqlalchemy import or_
 class InventoryRepository(BaseRepository):
     def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
         self.session_factory = session_factory
@@ -33,21 +33,63 @@ class InventoryRepository(BaseRepository):
                 session.rollback()
                 raise e
 
-    def get_all_inventory(self):
+    def get_all_inventory(self, page=1, page_size=10):
         with self.session_factory() as session:
             try:
-                inventories = (
-                    session.query(self.model)
-                    .options(joinedload(Inventory.manufacturer))
-                    .options(
-                        joinedload(Inventory.images)
-                    )  # Eagerly load manufacturer relationship
-                    .all()
+                offset = (page - 1) * page_size
+
+                base_query = session.query(self.model).options(
+                    joinedload(Inventory.manufacturer)
+                ).options(
+                    joinedload(Inventory.images)
                 )
+
+                total_inventories = base_query.count()
+
+                total_pages = (total_inventories + page_size - 1) // page_size
+
+                paginated_query = base_query.offset(offset).limit(page_size)
+
+                inventories = paginated_query.all()
+
+                total_in_stock = session.query(self.model).filter(self.model.quantity > 0).count()
+                total_out_of_stock = session.query(self.model).filter(self.model.quantity == 0).count()
+
+                return {
+                    "inventories": inventories,
+                    "total_inventories": total_inventories,
+                    "total_pages": total_pages,
+                    "current_page": page,
+                    "page_size": page_size,
+                    "total_in_stock": total_in_stock,
+                    "total_out_of_stock": total_out_of_stock
+                }
+            except Exception as e:
+                session.rollback()
+                raise e
+            
+    def search_inventory(self, search_query: str):
+        with self.session_factory() as session:
+            try:
+                inventories = session.query(self.model).join(
+                    DeviceManufacturer, 
+                    Inventory.device_manufacturer_uuid == DeviceManufacturer.uuid
+                ).filter(
+                    or_(
+                        Inventory.device_name.ilike(f"%{search_query}%"),
+                        DeviceManufacturer.manufacturer_name.ilike(f"%{search_query}%")
+                    )
+                ).options(
+                    joinedload(Inventory.manufacturer)
+                ).options(
+                    joinedload(Inventory.images)
+                ).all()
+
                 return inventories
             except Exception as e:
                 session.rollback()
                 raise e
+
 
     def reduce_inventory_no(self, inventory_uuid: uuid, quantity: int):
         with self.session_factory() as session:
