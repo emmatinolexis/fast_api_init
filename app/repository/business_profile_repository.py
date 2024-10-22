@@ -21,6 +21,6 @@ class BusinessProfileRepository(BaseRepository):
             with self.session_factory() as session:
                 return (session.query(self.model)
                         .options(joinedload(self.model.payments))
-                        .options(joinedload(self.model.subscription)).all())
+                        .options(joinedload(self.model.subscriptions)).all())
         except Exception as e:
             raise e

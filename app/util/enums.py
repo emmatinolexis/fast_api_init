@@ -121,9 +121,12 @@ class PaymentStatus(str, Enum):
 
 
 class SubscriptionStatus(str, Enum):
-    SUCCESS = "success"
+    NON_RENEWING = "non-renewing"
     PENDING = "pending"
-    FAILED = "failed"
+    ATTENTION = "attention"
+    ACTIVE = "active"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
 
 
 class BuildingStatus(str, Enum):
