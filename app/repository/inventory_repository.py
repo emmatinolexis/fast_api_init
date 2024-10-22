@@ -45,15 +45,10 @@ class InventoryRepository(BaseRepository):
 
                 if search_query:
                     device_name_filter = Inventory.device_name.ilike(f"%{search_query}%")
-                    
-                    manufacturer_subquery = session.query(DeviceManufacturer.uuid).filter(
-                        DeviceManufacturer.manufacturer_name.ilike(f"%{search_query}%")
-                    ).subquery()
-                    
+    
                     base_query = base_query.filter(
                         or_(
                             device_name_filter, 
-                            Inventory.device_manufacturer_uuid.in_(manufacturer_subquery)  
                         )
                     )
 
