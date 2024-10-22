@@ -39,19 +39,21 @@ class InventoryRepository(BaseRepository):
                 offset = (page - 1) * page_size
 
                 base_query = session.query(self.model).options(
-                    joinedload(Inventory.manufacturer)
-                ).options(
+                    joinedload(Inventory.manufacturer), 
                     joinedload(Inventory.images)
                 )
 
                 if search_query:
-                    base_query = base_query.join(
-                        DeviceManufacturer, 
-                        Inventory.device_manufacturer_uuid == DeviceManufacturer.uuid
-                    ).filter(
+                    device_name_filter = Inventory.device_name.ilike(f"%{search_query}%")
+                    
+                    manufacturer_subquery = session.query(DeviceManufacturer.uuid).filter(
+                        DeviceManufacturer.manufacturer_name.ilike(f"%{search_query}%")
+                    ).subquery()
+                    
+                    base_query = base_query.filter(
                         or_(
-                            Inventory.device_name.ilike(f"%{search_query}%"),
-                            DeviceManufacturer.manufacturer_name.ilike(f"%{search_query}%")
+                            device_name_filter, 
+                            Inventory.device_manufacturer_uuid.in_(manufacturer_subquery)  
                         )
                     )
 
@@ -74,7 +76,7 @@ class InventoryRepository(BaseRepository):
             except Exception as e:
                 session.rollback()
                 raise e
-            
+
    
 
     def reduce_inventory_no(self, inventory_uuid: uuid, quantity: int):

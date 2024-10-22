@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Boolean, Column, Enum, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, Enum, ForeignKey, Integer, String, Text,Index
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -29,6 +29,9 @@ class Inventory(BaseModel):
     publish_on_site_status = Column(Boolean, nullable=False)
     manufacturer = relationship("DeviceManufacturer", backref="inventories")
     images = relationship("DeviceImage", backref="inventory")
+    __table_args__ = (
+        Index('ix_inventory_device_name_gin', 'device_name', postgresql_using='gin'),
+    )
 
 
 class DeviceImage(BaseModel):
