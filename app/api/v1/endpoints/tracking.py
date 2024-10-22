@@ -240,7 +240,7 @@ async def create_device_events(
 
     except Exception as e:
         msg = "Failed to process device event"
-        logging.error(msg)
+        logging.error(e)
         return send_internal_server_error(user_msg=msg, error=e)
 
 
