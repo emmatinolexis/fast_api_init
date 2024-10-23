@@ -78,6 +78,7 @@ from app.repository import (
     vehicle_make_repository,
     vehicle_model_repository,
     vehicle_owner_repository,
+    package_item_assignments_repository
 )
 from app.service import (
     alert_maintenance_type_service,
@@ -146,6 +147,7 @@ from app.service import (
     vehicle_make_service,
     vehicle_model_service,
     vehicle_owner_service,
+    package_item_assignments_service
 )
 
 
@@ -313,6 +315,10 @@ class Container(containers.DeclarativeContainer):
     )
     package_item_repository = providers.Factory(
         package_item_repository.PackageItemRepository,
+        session_factory=db.provided.session,
+    )
+    package_item_assignments_repository = providers.Factory(
+        package_item_assignments_repository.PackageItemAssignmentRepository,
         session_factory=db.provided.session,
     )
     package_repository = providers.Factory(
@@ -542,6 +548,10 @@ class Container(containers.DeclarativeContainer):
         alert_maintenance_type_service.AlertMaintenanceTypeService,
         alert_maintenance_type_repository=alert_maintenance_type_repository,
     )
+    package_item_assignments_service = providers.Factory(
+        package_item_assignments_service.PackageItemAssignmentService,
+        package_item_assignments_repository=package_item_assignments_repository,
+    )
     asset_location_service = providers.Factory(
         asset_location_service.AssetLocationService,
         asset_location_repository=asset_location_repository,
@@ -746,6 +756,7 @@ class Container(containers.DeclarativeContainer):
     )
     business_profile_service = providers.Factory(
         business_profile_service.BusinessProfileService,
+        package_item_assignments_service=package_item_assignments_service,
         business_profile_repository=business_profile_repository,
     )
     fine_report_service = providers.Factory(

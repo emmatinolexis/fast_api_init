@@ -191,7 +191,7 @@ async def paystack_subscription_webhook_handler(
             subscription_data = paystack_subscription.json()
 
             if not subscription_data["status"]:
-                logging.info(subscription_data["message"] + f" Subscription code: {subscription_data['']}")
+                logging.info(subscription_data["message"] + f" Subscription code: {subscription_code}")
                 return send_client_side_error(subscription_data["message"])
 
         if event_type == "charge.success":
