@@ -11,6 +11,7 @@ from app.model.alert_policy_violations import AlertPolicyViolation
 from app.model.asset import Asset
 from app.model.device import Device
 from app.model.driver import Driver
+from app.model.asset_operator_assignment import AssetOperatorAssignment
 from app.model.maintenance_alert import MaintenanceAlert
 from app.model.tracking_event import TrackingEvent
 from app.model.user import User
@@ -82,34 +83,34 @@ class AssetRepository(BaseRepository):
             return []
 
     def read_all_assets_by_uuid(
-        self,
-        user_uuid: str = None,
-        business_uuid: str = None,
-        asset_type_uuid: str = None,
-        page=1,
-        page_size=10,
-        search_query: str = None,
-    ) -> Dict[str, Any]:
+    self,
+    user_uuid: str = None,
+    business_uuid: str = None,
+    asset_type_uuid: str = None,
+    page=1,
+    page_size=10,
+    search_query: str = None,
+) -> Dict[str, Any]:
         with self.session_factory() as session:
             # Calculate the offset based on the page and per_page values
             offset = (page - 1) * page_size
 
-            # Start with a base query
-            base_query = session.query(self.model)
+            # Start with a base query, apply joins here before limit and offset
+            base_query = session.query(self.model).join(
+                AssetOperatorAssignment, AssetOperatorAssignment.asset_uuid == self.model.uuid, isouter=True
+            ).join(
+                User, User.uuid == AssetOperatorAssignment.operator_uuid, isouter=True
+            )
 
             # Apply filters first before limit and offset
             if user_uuid is not None:
                 base_query = base_query.filter(self.model.user_uuid == user_uuid)
 
             if business_uuid is not None:
-                base_query = base_query.filter(
-                    self.model.business_profile_uuid == business_uuid
-                )
+                base_query = base_query.filter(self.model.business_profile_uuid == business_uuid)
 
             if asset_type_uuid is not None:
-                base_query = base_query.filter(
-                    self.model.asset_type_uuid == asset_type_uuid
-                )
+                base_query = base_query.filter(self.model.asset_type_uuid == asset_type_uuid)
 
             if search_query:
                 base_query = base_query.filter(
@@ -135,13 +136,12 @@ class AssetRepository(BaseRepository):
 
             assets = (
                 paginated_query.options(joinedload(self.model.asset_type))
-                .options(joinedload(self.model.driver))
                 .options(joinedload(self.model.device).joinedload(Device.inventory))
                 .options(joinedload(self.model.equipment))
                 .all()
             )
 
-            # Process assets
+            # Process assets (including operator info and tracking event)
             processed_assets = self.process_assets(session, assets)
 
             # Get asset status counts (moving, idle, stopped)
@@ -161,6 +161,7 @@ class AssetRepository(BaseRepository):
                 "idle_assets": idle_asset_count,
                 "stopped_assets": stopped_asset_count,
             }
+    
 
     def get_asset_status_counts(self, assets: List[Any]) -> Tuple[int, int, int]:
         moving_asset_count = 0
@@ -187,7 +188,7 @@ class AssetRepository(BaseRepository):
 
     def process_assets(self, session, assets: List[Any]) -> List[Any]:
         for asset in assets:
-            # check if asset has device imei
+            # Check if asset has device IMEI
             if asset.device_imei:
                 # Get device's last known location
                 last_tracking_event = (
@@ -219,6 +220,31 @@ class AssetRepository(BaseRepository):
                     }
                     # Add last_tracking_event_dict to asset dictionary
                     asset.last_tracking_event = last_tracking_event_dict
+
+            # Fetch the assigned operator from AssetOperatorAssignment
+            operator_assignment = session.query(AssetOperatorAssignment).filter(
+                AssetOperatorAssignment.asset_uuid == asset.uuid
+            ).first()
+
+            if operator_assignment:
+                # Fetch the operator (user) details
+                operator = session.query(User).filter(User.uuid == operator_assignment.operator_uuid).first()
+                if operator:
+                    operator_data = {
+                        "uuid": operator.uuid,
+                        "first_name": operator.first_name,
+                        "last_name": operator.last_name,
+                        "email": operator.email_address,
+                        "image_url": operator.avatar_url,
+                        "operator_type": operator.operator_type
+                    }
+                    # Add operator_data to asset dictionary
+                    asset.operator = operator_data
+                else:
+                    asset.operator = None
+            else:
+                asset.operator = None
+
         return assets
 
     def read_all_third_party_assets(

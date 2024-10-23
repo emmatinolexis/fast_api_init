@@ -78,7 +78,8 @@ from app.repository import (
     vehicle_make_repository,
     vehicle_model_repository,
     vehicle_owner_repository,
-    package_item_assignments_repository
+    package_item_assignments_repository,
+    asset_operator_assignment_repository,
 )
 from app.service import (
     alert_maintenance_type_service,
@@ -147,7 +148,8 @@ from app.service import (
     vehicle_make_service,
     vehicle_model_service,
     vehicle_owner_service,
-    package_item_assignments_service
+    package_item_assignments_service,
+    asset_operator_assignment_service
 )
 
 
@@ -514,6 +516,12 @@ class Container(containers.DeclarativeContainer):
         session_factory=db.provided.session,
     )
 
+
+    asset_operator_assignment_repository = providers.Factory(
+        asset_operator_assignment_repository.AssetOperatorTypeAssignmentRepository,
+        session_factory=db.provided.session,
+    )
+
     # Services
     auth_service = providers.Factory(
         auth_service.AuthService,
@@ -863,4 +871,11 @@ class Container(containers.DeclarativeContainer):
     device_alert_notification_service = providers.Factory(
         device_alert_notification_service.DeviceAlertNotificationService,
         device_alert_notification_repository=device_alert_notification_repository,
+    )
+
+    asset_operator_assignment_service = providers.Factory(
+        asset_operator_assignment_service.AssetOperatorAssignmentService,
+        asset_operator_assignment = asset_operator_assignment_repository,
+        asset_repository = asset_repository,
+        user_repository = user_repository,
     )
