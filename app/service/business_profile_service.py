@@ -1,52 +1,87 @@
 from app.repository.business_profile_repository import BusinessProfileRepository
 from app.service.base_service import BaseService
 from app.util.enums import SubscriptionStatus
+from app.core.constants import FREE_PACKAGE
+from app.core.constants import FREE_PACKAGE_ITEMS
+from app.service.package_item_assignments_service import PackageItemAssignmentService
 
 
 class BusinessProfileService(BaseService):
-    def __init__(self, business_profile_repository: BusinessProfileRepository):
+    def __init__(self, business_profile_repository: BusinessProfileRepository, package_item_assignments_service: PackageItemAssignmentService):
         self.business_profile_repository = business_profile_repository
+        self.package_item_assignments_service = package_item_assignments_service
         super().__init__(business_profile_repository)
+
+    def get_active_subscription(self, business):
+        """Return the active subscription for a business."""
+        return next((sub for sub in business.subscriptions if sub.status == SubscriptionStatus.ACTIVE), None)
+
+    def get_package_features(self, active_subscription):
+        """Return package features based on the active subscription."""
+        if active_subscription and active_subscription.plan:
+            features = self.package_item_assignments_service.get_package_items(active_subscription.plan.get("plan_code"))
+            return [{"feature_name": fp.package_item.item_name} for fp in features]
+        else:
+            # Use FREE_PACKAGE_ITEMS if no active subscription
+            return [{"feature_name": fp.get("package_item").get("item_name")} for fp in FREE_PACKAGE_ITEMS]
+
+    def get_subscription_data(self, subscriptions):
+        """Return a list of subscription details."""
+        if not subscriptions:
+            return None
+        return [
+            {
+                "name": sub.plan.get("name") if sub.plan else None,
+                "amount": sub.plan.get("amount") if sub.plan else None,
+                "status": sub.status,
+                "created_at": sub.created_at,
+                "expired_on": sub.next_payment_date
+            }
+            for sub in subscriptions
+        ]
+
+    def get_payment_data(self, payments):
+        """Return a list of payment details."""
+        if not payments:
+            return []
+        return [
+            {
+                "amount": py.amount,
+                "status": py.status,
+                "payment_ref": py.reference_no,
+                "created_at": py.created_at,
+                "payment_method": py.channel
+            }
+            for py in payments
+        ]
 
     def get_businesses(self):
         try:
             businesses_data = []
             businesses = self.business_profile_repository.get_businesses()
+
             for business in businesses:
-                active_subscription = next((sub for sub in business.subscriptions if sub.status == SubscriptionStatus.ACTIVE), None)
+                active_subscription = self.get_active_subscription(business)
+                package_features = self.get_package_features(active_subscription)
+
                 data = {
                     "uuid": business.uuid,
                     "customer": business.business_name,
-                    "active_plan": active_subscription.plan.name if active_subscription else None,
-                    # "package_features": business.package.package_features,
+                    "active_plan": active_subscription.plan.get("name") if active_subscription and active_subscription.plan else FREE_PACKAGE,
+                    "package_features": package_features,
                     "status": "active",
                     "expiry_date": active_subscription.next_payment_date if active_subscription else None,
                     "email": business.business_email,
                     "phone": business.business_phone,
                     "created_at": business.created_at,
-                    "subscriptions": [
-                        {
-                            "name": sub.plan.get("name") if sub.plan else None,
-                            "amount": sub.plan.get("amount") if sub.plan else None,
-                            "status": sub.status,
-                            "created_at": sub.created_at,
-                            "expired_on": sub.next_payment_date
-                        }
-                        for sub in business.subscriptions
-                    ] if business.subscriptions else None ,
-                    "payments": [
-                        {
-                            "amount": py.amount,
-                            "status": py.status,
-                            "payment_ref": py.reference_no,
-                            "created_at": py.created_at,
-                            "payment_method": py.channel
-                        }
-                        for py in business.payments
-                    ]
-
+                    "subscriptions": self.get_subscription_data(business.subscriptions),
+                    "payments": self.get_payment_data(business.payments)
                 }
+
                 businesses_data.append(data)
+
             return businesses_data
+
         except Exception as e:
             raise e
+

@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.model.business_profile import BusinessProfile
 from app.repository.base_repository import BaseRepository
-from app.model.package import Package
+
 
 class BusinessProfileRepository(BaseRepository):
     def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
