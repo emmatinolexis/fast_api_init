@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import JSON, Column, Enum, String
+from sqlalchemy import JSON, Column, Enum, String,Index
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.model.base_model import BaseModel
@@ -21,3 +21,4 @@ class DeviceManufacturer(BaseModel):
     )
     shutdown_on_command = Column(JSON, nullable=True)
     status = Column(Enum(ActiveStatus), nullable=False, index=True)
+    
