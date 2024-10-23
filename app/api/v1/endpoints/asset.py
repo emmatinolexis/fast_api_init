@@ -665,7 +665,7 @@ async def get_building_asset_handler(
             return send_data(buildings)
 
     except Exception as e:
-        msg = messages.GET_FAILED + f"{msg_prefix} theft report"
+        msg = messages.GET_FAILED + f"{msg_prefix}"
         return send_internal_server_error(user_msg=msg, error=e)
 
 
