@@ -271,7 +271,7 @@ class PeripheralDeviceService(BaseService):
                     "device_type": device.device_type.name
                     if device.device_type
                     else None,
-                    "send_alert_status": device.send_alert_status,
+                    # "send_alert_status": device.send_alert_status,
                     "current_device_reading": latest_event.measurements
                     if latest_event
                     else None,
