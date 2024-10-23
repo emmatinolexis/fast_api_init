@@ -12,14 +12,6 @@ class EquipmentRepository(BaseRepository):
         self.session_factory = session_factory
         super().__init__(session_factory, Equipment)
 
-    def get_all_equipments(self):
-        with self.session_factory() as session:
-            return (
-                session.query(self.model)
-                .options(joinedload(self.model.asset_type))
-                .all()
-            )
-
     def get_equipments_by_asset_uuid(self, asset_uuid: str):
         with self.session_factory() as session:
             return (
@@ -37,3 +29,22 @@ class EquipmentRepository(BaseRepository):
                 .options(joinedload(self.model.asset_type))
                 .first()
             )
+        
+    def get_equipments(self, page: int = 1, page_size: int = 10, search_query: str = None):
+        with self.session_factory() as session:
+            query = session.query(self.model).options(joinedload(self.model.asset_type))
+
+            if search_query:
+                query = query.filter(self.model.name.ilike(f"%{search_query}%"))
+
+            total_records = query.count()
+            offset = (page - 1) * page_size
+            equipments = query.offset(offset).limit(page_size).all()
+
+            return {
+                "data": equipments,
+                "total_records": total_records,
+                "page": page,
+                "page_size": page_size,
+                "total_pages": (total_records + page_size - 1) // page_size,
+            }
