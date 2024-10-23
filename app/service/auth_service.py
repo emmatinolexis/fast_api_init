@@ -65,7 +65,7 @@ class AuthService(BaseService):
                 user.get("email_address")
             )
 
-            if user_plan:
+            if user_plan and user_plan.subscription_code:
                 paystack_subscription = (
                     self.subscription_repository.get_paystack_subscription(
                         user_plan.subscription_code

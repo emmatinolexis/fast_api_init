@@ -56,6 +56,7 @@ from app.util.utils import (
     send_info,
     send_internal_server_error,
     serialize_datetime,
+    total_pages,
 )
 
 router = APIRouter(
@@ -143,12 +144,22 @@ async def get_all_accounts(
 @router.get("/admin/customers", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def get_users(
-    service: UserService = Depends(Provide[Container.user_service]),
+    search_parameter: str = None,
+    start_date: str = Query(
+        None, description="Start date should be in the format dd/mm/yyyy"
+    ),
+    end_date: str = Query(
+        None, description="End date should be in the format dd/mm/yyyy"
+    ),
+    page: int = Query(1, ge=1, description="Page number, default is set to 1"),
+    page_size: int = Query(
+        10, ge=1, le=1000, description="Items per page, default is 10"
+    ),
     business_service: BusinessProfileService = Depends(Provide[Container.business_profile_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        businesses = business_service.get_businesses()
+        businesses = business_service.get_businesses(search_parameter, start_date, end_date)
 
         return send_data(businesses)
     except Exception as e:

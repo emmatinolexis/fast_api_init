@@ -55,10 +55,14 @@ class BusinessProfileService(BaseService):
             for py in payments
         ]
 
-    def get_businesses(self):
+    def get_businesses(self,
+                       search_parameter: str = None,
+                       start_date: str = None,
+                       end_date: str = None,
+                       ):
         try:
             businesses_data = []
-            businesses = self.business_profile_repository.get_businesses()
+            businesses = self.business_profile_repository.get_businesses(search_parameter, start_date, end_date)
 
             for business in businesses:
                 active_subscription = self.get_active_subscription(business)

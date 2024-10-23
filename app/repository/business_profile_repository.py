@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.model.business_profile import BusinessProfile
 from app.repository.base_repository import BaseRepository
+from app.util.utils import parse_date
 
 
 class BusinessProfileRepository(BaseRepository):
@@ -16,11 +17,44 @@ class BusinessProfileRepository(BaseRepository):
         with self.session_factory() as session:
             return session.query(self.model).filter(self.model.uuid == uuid).first()
 
-    def get_businesses(self):
+    def get_businesses(self, search_parameter: str = None, start_date: str = None, end_date: str = None):
         try:
             with self.session_factory() as session:
-                return (session.query(self.model)
-                        .options(joinedload(self.model.payments))
-                        .options(joinedload(self.model.subscriptions)).all())
+                # Initialize date variables
+                start_date_obj = None
+                end_date_obj = None
+
+                if start_date and end_date:
+                    start_date_obj = parse_date(start_date)
+                    end_date_obj = parse_date(end_date)
+
+                # Build the query
+                query = (session.query(self.model)
+                         .options(joinedload(self.model.payments))
+                         .options(joinedload(self.model.subscriptions)))
+
+                # Apply filters (search parameter and date range)
+                query = self.apply_filters(query, search_parameter, start_date_obj, end_date_obj)
+
+                # Execute the query and return results
+                businesses = query.all()
+
+                return businesses
+
         except Exception as e:
             raise e
+
+    def apply_filters(self, query, search_parameter, start_date_obj=None, end_date_obj=None):
+        # Filter by search parameter (business name)
+        if search_parameter:
+            query = query.filter(self.model.business_name.ilike(f"%{search_parameter}%"))
+
+        # Filter by start date (business creation date >= start date)
+        if start_date_obj:
+            query = query.filter(self.model.created_at >= start_date_obj)
+
+        # Filter by end date (business creation date <= end date)
+        if end_date_obj:
+            query = query.filter(self.model.created_at <= end_date_obj)
+
+        return query
