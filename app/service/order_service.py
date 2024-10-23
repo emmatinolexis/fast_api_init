@@ -52,9 +52,9 @@ class OrderService(BaseService):
         except Exception as e:
             raise e
 
-    def get_all_orders(self):
+    def get_all_orders(self, page=1, page_size=10, search_query=None):
         try:
-            orders = self.order_repository.get_all_orders()
+            orders = self.order_repository.get_all_orders(page=page, page_size=page_size, search_query=search_query)
             return orders
         except Exception as e:
             raise e
