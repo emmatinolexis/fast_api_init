@@ -80,6 +80,7 @@ from app.repository import (
     vehicle_owner_repository,
     package_item_assignments_repository,
     asset_operator_assignment_repository,
+    driver_license_repository,
 )
 from app.service import (
     alert_maintenance_type_service,
@@ -149,7 +150,9 @@ from app.service import (
     vehicle_model_service,
     vehicle_owner_service,
     package_item_assignments_service,
-    asset_operator_assignment_service
+    asset_operator_assignment_service,
+    driver_license_service,
+
 )
 
 
@@ -522,6 +525,12 @@ class Container(containers.DeclarativeContainer):
         session_factory=db.provided.session,
     )
 
+
+    driver_license_repository = providers.Factory(
+        driver_license_repository.DriverLicenseRepository,
+        session_factory=db.provided.session,
+    )
+
     # Services
     auth_service = providers.Factory(
         auth_service.AuthService,
@@ -536,7 +545,8 @@ class Container(containers.DeclarativeContainer):
         user_subscription_repository=user_subscription_repository,
         subscription_repository=subscription_repository,
         invitation_repository=team_member_invitation_repository,
-        asset_repository = asset_repository
+        asset_repository = asset_repository,
+        driver_license_repository = driver_license_repository
     )
     alert_policy_type_service = providers.Factory(
         alert_policy_type_service.AlertPolicyTypeService,
@@ -878,4 +888,9 @@ class Container(containers.DeclarativeContainer):
         asset_operator_assignment = asset_operator_assignment_repository,
         asset_repository = asset_repository,
         user_repository = user_repository,
+    )
+
+    driver_license_service = providers.Factory(
+        driver_license_service.DriverLicenseService,
+        driver_license_repository = driver_license_repository
     )

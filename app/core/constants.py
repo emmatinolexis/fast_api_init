@@ -487,3 +487,7 @@ PERMISSIONS = {
     ],
 
 }
+
+
+# license expiry alert
+EXPIRY_ALERT_PERIOD = 30

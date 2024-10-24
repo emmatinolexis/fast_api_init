@@ -9,7 +9,7 @@ from pydantic import EmailStr
 from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
-from app.core.exceptions import ExpiredVerificationCodeError, NotFoundError
+from app.core.exceptions import ExpiredVerificationCodeError, NotFoundError,UnAuthorizedError
 from app.core.security import extract_user_data, verify_password
 from app.core.settings import settings
 from app.model.user import User
@@ -231,6 +231,8 @@ async def update_user(
         service.update_user_by_uuid(uuid, payload)
 
         return send_info("User updated successfully")
+    except UnAuthorizedError as e:
+        return send_client_side_error(user_msg=e.detail)
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
