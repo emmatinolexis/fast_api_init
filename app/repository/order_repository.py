@@ -8,6 +8,7 @@ from app.model.order import Order, OrderDeviceAssignment
 from app.repository.base_repository import BaseRepository
 from app.schema.order_schema import OrderPayload
 from app.util.enums import OrderStatus
+from sqlalchemy import cast, Date
 
 
 class OrderRepository(BaseRepository):
@@ -31,27 +32,31 @@ class OrderRepository(BaseRepository):
                 session.rollback()
                 raise e
 
-    def get_all_orders(self, page=1, page_size=10, search_query=None):
+    def get_all_orders(self, page=1, page_size=10, search_query=None, start_date=None, end_date=None):
         with self.session_factory() as session:
             try:
                 offset = (page - 1) * page_size
 
                 base_query = session.query(Order).options(
-                joinedload(Order.order_inventories)
-                .joinedload(OrderDeviceAssignment.inventory)
-                .joinedload(Inventory.images),
-                joinedload(Order.order_shipping_address),
-            )
+                    joinedload(Order.order_inventories)
+                    .joinedload(OrderDeviceAssignment.inventory)
+                    .joinedload(Inventory.images),
+                    joinedload(Order.order_shipping_address),
+                )
 
                 if search_query:
                     base_query = base_query.join(OrderDeviceAssignment).join(Inventory).filter(
                         Inventory.device_name.ilike(f"%{search_query}%")
                     )
+                
+                if start_date:
+                    base_query = base_query.filter(cast(Order.created_at, Date) >= start_date)
+                
+                if end_date:
+                    base_query = base_query.filter(cast(Order.created_at, Date) <= end_date)
 
                 total_orders = base_query.count()
-
                 fulfilled_orders = base_query.filter(Order.order_status == OrderStatus.DELIVERED).count()
-
                 paginated_orders = base_query.offset(offset).limit(page_size).all()
 
                 return {
@@ -60,12 +65,14 @@ class OrderRepository(BaseRepository):
                     "total_pages": (total_orders + page_size - 1) // page_size,
                     "current_page": page,
                     "page_size": page_size,
-                    "fulfilled_orders": fulfilled_orders, 
+                    "fulfilled_orders": fulfilled_orders,
                     "total_orders": total_orders
                 }
             except Exception as e:
                 session.rollback()
                 raise e
+
+
 
 
     def update_order_status(self, order_uuid: str, status: str):

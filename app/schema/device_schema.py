@@ -58,3 +58,16 @@ class InventoryPayload(BaseModel):
 
     class Config:
         orm_model = True
+
+class InventoryUpdatePayload(BaseModel):
+    device_name: Optional[str] = None
+    quantity: Optional[int] = None
+    device_manufacturer_uuid: Optional[UUID] = None
+    cost_price: Optional[int] = None
+    selling_price: Optional[int] = None
+    description: Optional[str] = None
+    device_manufacturer_uuid: Optional[UUID] = None 
+    image: Optional[str] = None
+
+    class Config:
+        orm_mode = True
