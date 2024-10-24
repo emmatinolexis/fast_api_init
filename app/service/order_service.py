@@ -52,9 +52,9 @@ class OrderService(BaseService):
         except Exception as e:
             raise e
 
-    def get_all_orders(self):
+    def get_all_orders(self, page=1, page_size=10, search_query=None, start_date=None, end_date=None):
         try:
-            orders = self.order_repository.get_all_orders()
+            orders = self.order_repository.get_all_orders(page=page, page_size=page_size, search_query=search_query, start_date=start_date, end_date=end_date)
             return orders
         except Exception as e:
             raise e
@@ -117,5 +117,14 @@ class OrderService(BaseService):
                 order_uuid, OrderStatus.DELIVERED
             )
             return order
+        except Exception as e:
+            raise e
+            
+  
+
+    def get_total_orders_count(self, search_query=None):
+        try:
+            total_orders = self.order_repository.get_total_orders_count(search_query=search_query)
+            return total_orders
         except Exception as e:
             raise e

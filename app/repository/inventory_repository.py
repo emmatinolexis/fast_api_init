@@ -2,13 +2,13 @@ import uuid
 from contextlib import AbstractContextManager
 from typing import Callable
 
-from sqlalchemy import or_
 from sqlalchemy.orm import Session, joinedload
 
-from app.model.device import DeviceManufacturer
 from app.model.inventory import Inventory
 from app.repository.base_repository import BaseRepository
 
+from sqlalchemy import or_
+from uuid import UUID
 
 class InventoryRepository(BaseRepository):
     def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
@@ -94,3 +94,22 @@ class InventoryRepository(BaseRepository):
             except Exception as e:
                 session.rollback()
                 raise e
+
+    def get_inventory_by_uuid(self, inventory_uuid: UUID):
+        with self.session_factory() as session:
+            return session.query(self.model).filter(self.model.uuid == inventory_uuid).first()
+
+    def save_inventory(self, inventory):
+        with self.session_factory() as session:
+            try:
+                session.add(inventory)
+                session.commit()
+                session.refresh(inventory)
+                return inventory
+            except Exception as e:
+                session.rollback()
+                raise e
+
+    
+
+            

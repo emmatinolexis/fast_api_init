@@ -10,7 +10,8 @@ from app.model.user import User
 from app.schema.device_schema import InventoryPayload
 from app.service.inventory_service import InventoryService
 from app.util.utils import send_client_side_error, send_data, send_internal_server_error
-
+from app.schema.device_schema import InventoryUpdatePayload
+from uuid import UUID
 router = APIRouter(
     prefix="/inventory",
     tags=["inventory"],
@@ -57,3 +58,20 @@ async def create_device_handler(
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
+@router.patch("/{inventory_uuid}", response_class=ORJSONResponse)
+@inject
+async def update_inventory_handler(
+    inventory_uuid: UUID,
+    payload: InventoryUpdatePayload,
+    service: InventoryService = Depends(Provide[Container.inventory_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        updated_inventory = service.update_inventory(inventory_uuid, payload)
+        return send_data(updated_inventory)
+    except NotFoundError as e:
+        return send_client_side_error(user_msg=messages.DEVICE_NOT_FOUND + str(e.detail))
+    except Exception as e:
+        msg = messages.UPDATE_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+

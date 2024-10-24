@@ -25,14 +25,16 @@ msg_prefix = "equipment type"
 
 @router.get("/", response_class=ORJSONResponse)
 @inject
-async def get_all_equipment_types_handler(
+async def get_paginated_equipment_types_handler(
+    page: int = 1,
+    page_size: int = 10,
+    search_query: str = None,
     service: EquipmentTypeService = Depends(Provide[Container.equipment_type_service]),
-    current_user: User = Depends(
-        get_current_user_with_permission("view_equipment_type")
-    ),
+    current_user: User = Depends(get_current_user_with_permission("view_equipment_type")),
 ):
     try:
-        return send_data(service.get_all_equipment_types())
+        result = service.get_paginated_equipment_types(page=page, page_size=page_size, search_query=search_query)
+        return send_data(result)
     except Exception as e:
         msg = f"{messages.GET_FAILED} {msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)

@@ -7,5 +7,11 @@ class EquipmentService(BaseService):
         self.equipment_repository = equipment_repository
         super().__init__(equipment_repository)
 
-    def get_all_equipments(self):
-        return self.equipment_repository.get_all_equipments()
+   
+    def get_paginated_equipments(self, page=1, page_size=10, search_query=None):
+        try:
+            return self.equipment_repository.get_equipments(
+                page=page, page_size=page_size, search_query=search_query
+            )
+        except Exception as e:
+            raise e
