@@ -40,9 +40,7 @@ class UserSubscriptionRepository(BaseRepository):
 
             if not user:
                 user_not_found = f"user with email {user_email} not found, cannot process subscription event: {event_type}"
-                logging.info(
-                   user_not_found
-                )
+                logging.info(user_not_found)
                 return user_not_found
 
             existing_subscription = self.get_user_subscription_(session, user_email)
@@ -61,7 +59,7 @@ class UserSubscriptionRepository(BaseRepository):
                     subscription_code,
                     existing_subscription,
                     subscription_status,
-                    next_payment_date
+                    next_payment_date,
                 )
             elif event_type == "charge.success":
                 payment_data = Payment(
@@ -70,7 +68,9 @@ class UserSubscriptionRepository(BaseRepository):
                     status=payload["data"]["status"],
                     user_email=payload["data"]["customer"]["email"],
                     payment_type=payload["data"]["metadata"]["payment_type"],
-                    business_profile_uuid=payload["data"]["metadata"]["business_profile_uuid"],
+                    business_profile_uuid=payload["data"]["metadata"][
+                        "business_profile_uuid"
+                    ],
                     channel=payload["data"]["channel"],
                 )
                 session.add(payment_data)
@@ -118,7 +118,7 @@ class UserSubscriptionRepository(BaseRepository):
         subscription_code,
         existing_subscription,
         subscription_status,
-        next_payment_date
+        next_payment_date,
     ):
         if existing_subscription:
             existing_subscription.subscription_code = subscription_code
@@ -175,8 +175,8 @@ class UserSubscriptionRepository(BaseRepository):
                             plan={
                                 "name": plan.get("name"),
                                 "amount": plan.get("amount"),
-                                "plan_code": plan.get("plan_code")
-                            }
+                                "plan_code": plan.get("plan_code"),
+                            },
                         )
                         session.add(data)
 

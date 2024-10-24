@@ -65,7 +65,6 @@ class User(BaseModel):
     )
     driver_license = relationship("DriverLicense", uselist=False, back_populates="user")
 
-
     # business_profile_assignments = relationship(UserOrganisationAssignment, back_populates='user')
 
 

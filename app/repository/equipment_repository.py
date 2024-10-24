@@ -29,8 +29,10 @@ class EquipmentRepository(BaseRepository):
                 .options(joinedload(self.model.asset_type))
                 .first()
             )
-        
-    def get_equipments(self, page: int = 1, page_size: int = 10, search_query: str = None):
+
+    def get_equipments(
+        self, page: int = 1, page_size: int = 10, search_query: str = None
+    ):
         with self.session_factory() as session:
             query = session.query(self.model).options(joinedload(self.model.asset_type))
 

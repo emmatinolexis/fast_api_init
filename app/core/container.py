@@ -13,6 +13,7 @@ from app.repository import (
     alert_policy_type_repository,
     asset_device_request_repository,
     asset_location_repository,
+    asset_operator_assignment_repository,
     asset_repository,
     asset_type_repository,
     building_repository,
@@ -26,6 +27,7 @@ from app.repository import (
     device_manufacturer_repository,
     device_node_configuration_repository,
     device_repository,
+    driver_license_repository,
     driver_repository,
     email_verification_repository,
     equipment_repository,
@@ -53,6 +55,7 @@ from app.repository import (
     order_shipping_address_repository,
     organisation_contact_repository,
     other_cylinder_types_repository,
+    package_item_assignments_repository,
     package_item_repository,
     package_repository,
     payment_repository,
@@ -78,9 +81,6 @@ from app.repository import (
     vehicle_make_repository,
     vehicle_model_repository,
     vehicle_owner_repository,
-    package_item_assignments_repository,
-    asset_operator_assignment_repository,
-    driver_license_repository,
 )
 from app.service import (
     alert_maintenance_type_service,
@@ -88,6 +88,7 @@ from app.service import (
     alert_policy_type_service,
     asset_device_request_service,
     asset_location_service,
+    asset_operator_assignment_service,
     asset_service,
     asset_type_service,
     auth_service,
@@ -101,6 +102,7 @@ from app.service import (
     device_image_service,
     device_manufacturer_service,
     device_service,
+    driver_license_service,
     driver_service,
     equipment_service,
     equipment_type_service,
@@ -126,6 +128,7 @@ from app.service import (
     order_shipping_address_service,
     organisation_contact_service,
     other_cylinder_type_service,
+    package_item_assignments_service,
     package_item_service,
     package_service,
     payment_service,
@@ -149,10 +152,6 @@ from app.service import (
     vehicle_make_service,
     vehicle_model_service,
     vehicle_owner_service,
-    package_item_assignments_service,
-    asset_operator_assignment_service,
-    driver_license_service,
-
 )
 
 
@@ -519,12 +518,10 @@ class Container(containers.DeclarativeContainer):
         session_factory=db.provided.session,
     )
 
-
     asset_operator_assignment_repository = providers.Factory(
         asset_operator_assignment_repository.AssetOperatorTypeAssignmentRepository,
         session_factory=db.provided.session,
     )
-
 
     driver_license_repository = providers.Factory(
         driver_license_repository.DriverLicenseRepository,
@@ -545,8 +542,8 @@ class Container(containers.DeclarativeContainer):
         user_subscription_repository=user_subscription_repository,
         subscription_repository=subscription_repository,
         invitation_repository=team_member_invitation_repository,
-        asset_repository = asset_repository,
-        driver_license_repository = driver_license_repository
+        asset_repository=asset_repository,
+        driver_license_repository=driver_license_repository,
     )
     alert_policy_type_service = providers.Factory(
         alert_policy_type_service.AlertPolicyTypeService,
@@ -885,12 +882,12 @@ class Container(containers.DeclarativeContainer):
 
     asset_operator_assignment_service = providers.Factory(
         asset_operator_assignment_service.AssetOperatorAssignmentService,
-        asset_operator_assignment = asset_operator_assignment_repository,
-        asset_repository = asset_repository,
-        user_repository = user_repository,
+        asset_operator_assignment=asset_operator_assignment_repository,
+        asset_repository=asset_repository,
+        user_repository=user_repository,
     )
 
     driver_license_service = providers.Factory(
         driver_license_service.DriverLicenseService,
-        driver_license_repository = driver_license_repository
+        driver_license_repository=driver_license_repository,
     )

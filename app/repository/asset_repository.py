@@ -9,9 +9,9 @@ from app.core.settings import get_settings
 from app.model.alert_policy import AlertPolicy
 from app.model.alert_policy_violations import AlertPolicyViolation
 from app.model.asset import Asset
+from app.model.asset_operator_assignment import AssetOperatorAssignment
 from app.model.device import Device
 from app.model.driver import Driver
-from app.model.asset_operator_assignment import AssetOperatorAssignment
 from app.model.maintenance_alert import MaintenanceAlert
 from app.model.tracking_event import TrackingEvent
 from app.model.user import User
@@ -83,23 +83,31 @@ class AssetRepository(BaseRepository):
             return []
 
     def read_all_assets_by_uuid(
-    self,
-    user_uuid: str = None,
-    business_uuid: str = None,
-    asset_type_uuid: str = None,
-    page=1,
-    page_size=10,
-    search_query: str = None,
-) -> Dict[str, Any]:
+        self,
+        user_uuid: str = None,
+        business_uuid: str = None,
+        asset_type_uuid: str = None,
+        page=1,
+        page_size=10,
+        search_query: str = None,
+    ) -> Dict[str, Any]:
         with self.session_factory() as session:
             # Calculate the offset based on the page and per_page values
             offset = (page - 1) * page_size
 
             # Start with a base query, apply joins here before limit and offset
-            base_query = session.query(self.model).join(
-                AssetOperatorAssignment, AssetOperatorAssignment.asset_uuid == self.model.uuid, isouter=True
-            ).join(
-                User, User.uuid == AssetOperatorAssignment.operator_uuid, isouter=True
+            base_query = (
+                session.query(self.model)
+                .join(
+                    AssetOperatorAssignment,
+                    AssetOperatorAssignment.asset_uuid == self.model.uuid,
+                    isouter=True,
+                )
+                .join(
+                    User,
+                    User.uuid == AssetOperatorAssignment.operator_uuid,
+                    isouter=True,
+                )
             )
 
             # Apply filters first before limit and offset
@@ -107,10 +115,14 @@ class AssetRepository(BaseRepository):
                 base_query = base_query.filter(self.model.user_uuid == user_uuid)
 
             if business_uuid is not None:
-                base_query = base_query.filter(self.model.business_profile_uuid == business_uuid)
+                base_query = base_query.filter(
+                    self.model.business_profile_uuid == business_uuid
+                )
 
             if asset_type_uuid is not None:
-                base_query = base_query.filter(self.model.asset_type_uuid == asset_type_uuid)
+                base_query = base_query.filter(
+                    self.model.asset_type_uuid == asset_type_uuid
+                )
 
             if search_query:
                 base_query = base_query.filter(
@@ -161,7 +173,6 @@ class AssetRepository(BaseRepository):
                 "idle_assets": idle_asset_count,
                 "stopped_assets": stopped_asset_count,
             }
-    
 
     def get_asset_status_counts(self, assets: List[Any]) -> Tuple[int, int, int]:
         moving_asset_count = 0
@@ -222,13 +233,19 @@ class AssetRepository(BaseRepository):
                     asset.last_tracking_event = last_tracking_event_dict
 
             # Fetch the assigned operator from AssetOperatorAssignment
-            operator_assignment = session.query(AssetOperatorAssignment).filter(
-                AssetOperatorAssignment.asset_uuid == asset.uuid
-            ).first()
+            operator_assignment = (
+                session.query(AssetOperatorAssignment)
+                .filter(AssetOperatorAssignment.asset_uuid == asset.uuid)
+                .first()
+            )
 
             if operator_assignment:
                 # Fetch the operator (user) details
-                operator = session.query(User).filter(User.uuid == operator_assignment.operator_uuid).first()
+                operator = (
+                    session.query(User)
+                    .filter(User.uuid == operator_assignment.operator_uuid)
+                    .first()
+                )
                 if operator:
                     operator_data = {
                         "uuid": operator.uuid,
@@ -236,7 +253,7 @@ class AssetRepository(BaseRepository):
                         "last_name": operator.last_name,
                         "email": operator.email_address,
                         "image_url": operator.avatar_url,
-                        "operator_type": operator.operator_type
+                        "operator_type": operator.operator_type,
                     }
                     # Add operator_data to asset dictionary
                     asset.operator = operator_data

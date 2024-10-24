@@ -36,11 +36,15 @@ async def get_all_gas_cylinder_types_handler(
     search_query: str = Query(None, description="Search by cylinder name"),
     page: int = Query(1, description="Page number", ge=1),
     page_size: int = Query(10, description="Page size", ge=1),
-    service: GasCylinderTypeService = Depends(Provide[Container.gas_cylinder_type_service]),
+    service: GasCylinderTypeService = Depends(
+        Provide[Container.gas_cylinder_type_service]
+    ),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        data = service.filter_by_status_and_name(status=status, search_query=search_query, page=page, page_size=page_size)
+        data = service.filter_by_status_and_name(
+            status=status, search_query=search_query, page=page, page_size=page_size
+        )
         return send_data_with_info(data, messages.SUCCESS_MESSAGE)
     except Exception as e:
         msg = messages.GET_FAILED + f" {msg_prefix}s"

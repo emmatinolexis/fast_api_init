@@ -54,7 +54,9 @@ class OrderService(BaseService):
 
     def get_all_orders(self, page=1, page_size=10, search_query=None):
         try:
-            orders = self.order_repository.get_all_orders(page=page, page_size=page_size, search_query=search_query)
+            orders = self.order_repository.get_all_orders(
+                page=page, page_size=page_size, search_query=search_query
+            )
             return orders
         except Exception as e:
             raise e
@@ -119,7 +121,7 @@ class OrderService(BaseService):
             return order
         except Exception as e:
             raise e
-            
+
     def get_all_orders(self, page=1, page_size=10, search_query=None):
         try:
             orders = self.order_repository.get_all_orders(
@@ -131,7 +133,9 @@ class OrderService(BaseService):
 
     def get_total_orders_count(self, search_query=None):
         try:
-            total_orders = self.order_repository.get_total_orders_count(search_query=search_query)
+            total_orders = self.order_repository.get_total_orders_count(
+                search_query=search_query
+            )
             return total_orders
         except Exception as e:
             raise e

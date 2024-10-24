@@ -9,7 +9,11 @@ from pydantic import EmailStr
 from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
-from app.core.exceptions import ExpiredVerificationCodeError, NotFoundError,UnAuthorizedError
+from app.core.exceptions import (
+    ExpiredVerificationCodeError,
+    NotFoundError,
+    UnAuthorizedError,
+)
 from app.core.security import extract_user_data, verify_password
 from app.core.settings import settings
 from app.model.user import User
@@ -141,7 +145,9 @@ async def get_all_accounts(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/admin/customers", dependencies=[allow_admins_only], response_class=ORJSONResponse)
+@router.get(
+    "/admin/customers", dependencies=[allow_admins_only], response_class=ORJSONResponse
+)
 @inject
 async def get_users(
     search_parameter: str = None,
@@ -155,11 +161,15 @@ async def get_users(
     page_size: int = Query(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
-    business_service: BusinessProfileService = Depends(Provide[Container.business_profile_service]),
+    business_service: BusinessProfileService = Depends(
+        Provide[Container.business_profile_service]
+    ),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        businesses = business_service.get_businesses(search_parameter, start_date, end_date)
+        businesses = business_service.get_businesses(
+            search_parameter, start_date, end_date
+        )
 
         return send_data(businesses)
     except Exception as e:

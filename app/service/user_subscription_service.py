@@ -7,6 +7,7 @@ from app.repository.user_subscription_repository import UserSubscriptionReposito
 from app.schema.subscription import PaystackSubscriptionPayload
 from app.service.base_service import BaseService
 
+
 class UserSubscriptionService(BaseService):
     def __init__(self, user_subscription_repository: UserSubscriptionRepository):
         self.user_subscription_repository = user_subscription_repository

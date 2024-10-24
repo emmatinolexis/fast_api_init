@@ -1,11 +1,11 @@
+from datetime import date
 from typing import Optional
 from uuid import UUID
 
 import phonenumbers
 from pydantic import BaseModel, EmailStr, Field, ValidationInfo, constr, field_validator
 
-from app.util.enums import AccountType, ActiveStatus, UserRole,DriverType
-from datetime import date
+from app.util.enums import AccountType, ActiveStatus, DriverType, UserRole
 
 
 class UserPayload(BaseModel):
@@ -31,14 +31,14 @@ class DriverLicenseUpdates(BaseModel):
     license_number: str
     front_url: str
     back_url: str
-    expiration_date:str 
+    expiration_date: str
 
 
 class DriversLicenseFull(BaseModel):
     license_number: str
     front_url: str
     back_url: str
-    expiration_date:str 
+    expiration_date: str
     user_id: str
 
 
@@ -49,7 +49,6 @@ class UpdateUserPayload(BaseModel):
     country: str
     operator_type: Optional[DriverType] = None
     license: Optional[DriverLicenseUpdates] = None
-
 
     @field_validator("phone_number")
     @classmethod

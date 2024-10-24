@@ -2,12 +2,14 @@ import uuid
 from contextlib import AbstractContextManager
 from typing import Callable
 
+from sqlalchemy import or_
 from sqlalchemy.orm import Session, joinedload
 
-from app.model.inventory import Inventory
 from app.model.device import DeviceManufacturer
+from app.model.inventory import Inventory
 from app.repository.base_repository import BaseRepository
-from sqlalchemy import or_
+
+
 class InventoryRepository(BaseRepository):
     def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
         self.session_factory = session_factory
@@ -39,16 +41,17 @@ class InventoryRepository(BaseRepository):
                 offset = (page - 1) * page_size
 
                 base_query = session.query(self.model).options(
-                    joinedload(Inventory.manufacturer), 
-                    joinedload(Inventory.images)
+                    joinedload(Inventory.manufacturer), joinedload(Inventory.images)
                 )
 
                 if search_query:
-                    device_name_filter = Inventory.device_name.ilike(f"%{search_query}%")
-    
+                    device_name_filter = Inventory.device_name.ilike(
+                        f"%{search_query}%"
+                    )
+
                     base_query = base_query.filter(
                         or_(
-                            device_name_filter, 
+                            device_name_filter,
                         )
                     )
 
@@ -56,8 +59,12 @@ class InventoryRepository(BaseRepository):
                 paginated_query = base_query.offset(offset).limit(page_size)
                 inventories = paginated_query.all()
 
-                total_in_stock = session.query(self.model).filter(self.model.quantity > 0).count()
-                total_out_of_stock = session.query(self.model).filter(self.model.quantity == 0).count()
+                total_in_stock = (
+                    session.query(self.model).filter(self.model.quantity > 0).count()
+                )
+                total_out_of_stock = (
+                    session.query(self.model).filter(self.model.quantity == 0).count()
+                )
 
                 return {
                     "inventories": inventories,
@@ -66,13 +73,11 @@ class InventoryRepository(BaseRepository):
                     "current_page": page,
                     "page_size": page_size,
                     "total_in_stock": total_in_stock,
-                    "total_out_of_stock": total_out_of_stock
+                    "total_out_of_stock": total_out_of_stock,
                 }
             except Exception as e:
                 session.rollback()
                 raise e
-
-   
 
     def reduce_inventory_no(self, inventory_uuid: uuid, quantity: int):
         with self.session_factory() as session:

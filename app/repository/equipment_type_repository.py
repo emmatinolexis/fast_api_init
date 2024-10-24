@@ -20,13 +20,16 @@ class EquipmentTypeRepository(BaseRepository):
                 .all()
             )
 
-   
-    def get_equipment_types(self, page: int = 1, page_size: int = 10, search_query: str = None):
+    def get_equipment_types(
+        self, page: int = 1, page_size: int = 10, search_query: str = None
+    ):
         with self.session_factory() as session:
             query = session.query(self.model).options(joinedload(self.model.equipment))
 
             if search_query:
-                query = query.filter(self.model.equipment_type_name.ilike(f"%{search_query}%"))
+                query = query.filter(
+                    self.model.equipment_type_name.ilike(f"%{search_query}%")
+                )
 
             total_records = query.count()
             offset = (page - 1) * page_size

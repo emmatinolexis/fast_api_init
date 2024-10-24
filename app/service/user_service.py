@@ -1,20 +1,20 @@
 from datetime import datetime, timedelta
+from typing import List
 from uuid import UUID
 
 from pydantic import EmailStr
-from typing import List
 
 from app.core import messages
 from app.core.constants import FREE_PACKAGE, FREE_PACKAGE_ITEMS
 from app.core.exceptions import NotFoundError, UnAuthorizedError
+from app.repository.asset_repository import AssetRepository
+from app.repository.driver_license_repository import DriverLicenseRepository
 from app.repository.subscription_repository import SubscriptionRepository
 from app.repository.team_member_invitation_repository import (
     TeamMemberInvitationRepository,
 )
 from app.repository.user_repository import UserRepository
 from app.repository.user_subscription_repository import UserSubscriptionRepository
-from app.repository.asset_repository import AssetRepository
-from app.repository.driver_license_repository import DriverLicenseRepository
 from app.schema.invitation_schema import (
     AdminInvitationPayload,
     InvitationCreatePayloadSingle,
@@ -22,16 +22,17 @@ from app.schema.invitation_schema import (
 )
 from app.schema.user_schema import (
     AccountDeactivationPayload,
+    DriverLicenseUpdates,
+    DriversLicenseFull,
     UpdateUserPayload,
     UserPayload,
     UserProfileUdatePayload,
-    DriversLicenseFull,
-    DriverLicenseUpdates
 )
 from app.service.base_service import BaseService
-from app.util.enums import InvitationStatus, RoleType
 from app.transfomers.driver_transformer import driver_transformer
+from app.util.enums import InvitationStatus, RoleType
 from app.util.utils import parse_date
+
 
 class UserService(BaseService):
     def __init__(
@@ -40,14 +41,14 @@ class UserService(BaseService):
         user_subscription_repository: UserSubscriptionRepository,
         invitation_repository: TeamMemberInvitationRepository,
         subscription_repository: SubscriptionRepository,
-        asset_repository:AssetRepository,
-        driver_license_repository: DriverLicenseRepository
+        asset_repository: AssetRepository,
+        driver_license_repository: DriverLicenseRepository,
     ):
         self.user_repository = user_repository
         self.invitation_repository = invitation_repository
         self.user_subscription_repository = user_subscription_repository
         self.subscription_repository = subscription_repository
-        self.asset_reposoitory =asset_repository
+        self.asset_reposoitory = asset_repository
         self.driver_license_repository = driver_license_repository
         super().__init__(user_repository)
 
@@ -73,7 +74,7 @@ class UserService(BaseService):
                 uuid_obj = UUID(uuid)
             except ValueError:
                 return None
-            
+
             if payload.license:
                 self._handle_license_update(str(uuid_obj), payload)
 
@@ -84,38 +85,44 @@ class UserService(BaseService):
             raise e
 
     def _handle_license_update(self, uuid: str, payload: UpdateUserPayload):
-            try:
-                existing_license = self.driver_license_repository.get_license_by_license_number(
+        try:
+            existing_license = (
+                self.driver_license_repository.get_license_by_license_number(
                     payload.license.license_number
                 )
+            )
 
-                if existing_license:
-                    self._update_existing_license(existing_license, uuid, payload)
-                else:
-                    self._create_new_license(uuid, payload)
-            except (UnAuthorizedError) as e:
-                raise e
-            except Exception as e:
-                raise e
-
-    def _update_existing_license(self, existing_license, uuid: str, payload: UpdateUserPayload):
-            if existing_license.user_id != uuid:
-                raise UnAuthorizedError(messages.LICENSE_IN_USE)
+            if existing_license:
+                self._update_existing_license(existing_license, uuid, payload)
             else:
-                payload.license.expiration_date = parse_date(payload.license.expiration_date)
-                self.driver_license_repository.update_by_uuid(
-                    uuid=existing_license.uuid, schema=payload.schema
-                )
+                self._create_new_license(uuid, payload)
+        except UnAuthorizedError as e:
+            raise e
+        except Exception as e:
+            raise e
+
+    def _update_existing_license(
+        self, existing_license, uuid: str, payload: UpdateUserPayload
+    ):
+        if existing_license.user_id != uuid:
+            raise UnAuthorizedError(messages.LICENSE_IN_USE)
+        else:
+            payload.license.expiration_date = parse_date(
+                payload.license.expiration_date
+            )
+            self.driver_license_repository.update_by_uuid(
+                uuid=existing_license.uuid, schema=payload.schema
+            )
 
     def _create_new_license(self, uuid: str, payload: UpdateUserPayload):
-            new_license_data = DriversLicenseFull(
-                license_number=payload.license.license_number,
-                front_url=payload.license.front_url,
-                back_url=payload.license.back_url,
-                expiration_date=parse_date(payload.license.expiration_date),
-                user_id=uuid
-            )
-            self.driver_license_repository.create(new_license_data)
+        new_license_data = DriversLicenseFull(
+            license_number=payload.license.license_number,
+            front_url=payload.license.front_url,
+            back_url=payload.license.back_url,
+            expiration_date=parse_date(payload.license.expiration_date),
+            user_id=uuid,
+        )
+        self.driver_license_repository.create(new_license_data)
 
     def patch_user_by_uuid(self, uuid: str, payload: UserProfileUdatePayload):
         try:
@@ -277,9 +284,22 @@ class UserService(BaseService):
             page, page_size, email, role_uuid, start_date, end_date
         )
 
-    def get_drivers_by_business_uuid(self, business_uuid, role_uuid, page, page_size,operator_type:List[str]=None,status:str=None):
+    def get_drivers_by_business_uuid(
+        self,
+        business_uuid,
+        role_uuid,
+        page,
+        page_size,
+        operator_type: List[str] = None,
+        status: str = None,
+    ):
         return self.user_repository.get_drivers_by_business_uuid(
-            business_uuid, role_uuid, page, page_size,operator_type=operator_type,status=status
+            business_uuid,
+            role_uuid,
+            page,
+            page_size,
+            operator_type=operator_type,
+            status=status,
         )
 
     def get_driver_by_uuid(self, driver_uuid: str):
@@ -287,9 +307,14 @@ class UserService(BaseService):
         if driver is None:
             raise NotFoundError(messages.USER_NOT_FOUND + driver_uuid)
         return driver
-    
 
-    def change_operator_asset(self, asset_uuid: str, operator_uuid: str, user_uuid: str, business_profile_uuid: str = None):
+    def change_operator_asset(
+        self,
+        asset_uuid: str,
+        operator_uuid: str,
+        user_uuid: str,
+        business_profile_uuid: str = None,
+    ):
         try:
             asset = self.asset_reposoitory.read_by_uuid(asset_uuid)
             if asset is None:
@@ -300,27 +325,25 @@ class UserService(BaseService):
                 # If not, check if the asset's user_uuid matches the provided user_uuid
                 if asset.user_uuid != user_uuid:
                     raise UnAuthorizedError(messages.ACTION_NOT_ALLOWED)
-                
 
             operator = self.user_repository.read_by_uuid(operator_uuid)
             if operator is None:
                 raise NotFoundError(messages.NO_OPERATOR_FOUND)
-            
 
-            existing_asset_operator = self.user_repository.get_user_by_assigned_asset_uuid(asset.uuid)
+            existing_asset_operator = (
+                self.user_repository.get_user_by_assigned_asset_uuid(asset.uuid)
+            )
             if existing_asset_operator is not None:
-                self.user_repository.update_attr_by_uuid(existing_asset_operator.uuid,"assigned_asset_uuid",None)
+                self.user_repository.update_attr_by_uuid(
+                    existing_asset_operator.uuid, "assigned_asset_uuid", None
+                )
 
-            
-            self.user_repository.update_attr_by_uuid(operator.uuid,"assigned_asset_uuid",asset.uuid)
+            self.user_repository.update_attr_by_uuid(
+                operator.uuid, "assigned_asset_uuid", asset.uuid
+            )
 
-           
-
-            return driver_transformer(operator,self.asset_reposoitory)
-            
-
+            return driver_transformer(operator, self.asset_reposoitory)
 
             # ... continue with the rest of your logic ...
         except Exception as e:
             raise e
-        
