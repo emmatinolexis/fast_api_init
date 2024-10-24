@@ -63,6 +63,7 @@ class User(BaseModel):
     operated_assets = relationship(
         "Asset", secondary="asset_operator_assignments", back_populates="operators"
     )
+    driver_license = relationship("DriverLicense", uselist=False, back_populates="user")
 
     # business_profile_assignments = relationship(UserOrganisationAssignment, back_populates='user')
 

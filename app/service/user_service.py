@@ -8,6 +8,7 @@ from app.core import messages
 from app.core.constants import FREE_PACKAGE, FREE_PACKAGE_ITEMS
 from app.core.exceptions import NotFoundError, UnAuthorizedError
 from app.repository.asset_repository import AssetRepository
+from app.repository.driver_license_repository import DriverLicenseRepository
 from app.repository.subscription_repository import SubscriptionRepository
 from app.repository.team_member_invitation_repository import (
     TeamMemberInvitationRepository,
@@ -21,6 +22,8 @@ from app.schema.invitation_schema import (
 )
 from app.schema.user_schema import (
     AccountDeactivationPayload,
+    DriverLicenseUpdates,
+    DriversLicenseFull,
     UpdateUserPayload,
     UserPayload,
     UserProfileUdatePayload,
@@ -28,6 +31,7 @@ from app.schema.user_schema import (
 from app.service.base_service import BaseService
 from app.transfomers.driver_transformer import driver_transformer
 from app.util.enums import InvitationStatus, RoleType
+from app.util.utils import parse_date
 
 
 class UserService(BaseService):
@@ -38,12 +42,14 @@ class UserService(BaseService):
         invitation_repository: TeamMemberInvitationRepository,
         subscription_repository: SubscriptionRepository,
         asset_repository: AssetRepository,
+        driver_license_repository: DriverLicenseRepository,
     ):
         self.user_repository = user_repository
         self.invitation_repository = invitation_repository
         self.user_subscription_repository = user_subscription_repository
         self.subscription_repository = subscription_repository
         self.asset_reposoitory = asset_repository
+        self.driver_license_repository = driver_license_repository
         super().__init__(user_repository)
 
     def create_user(self, payload: UserPayload):
@@ -64,15 +70,59 @@ class UserService(BaseService):
 
     def update_user_by_uuid(self, uuid: str, payload: UpdateUserPayload):
         try:
-            # check uuid is valid
-            if not UUID(uuid):
+            try:
+                uuid_obj = UUID(uuid)
+            except ValueError:
                 return None
+
+            if payload.license:
+                self._handle_license_update(str(uuid_obj), payload)
+
             user = self.user_repository.update_user_by_uuid(uuid, payload)
             return user if user else None
-        except NotFoundError as e:
+
+        except (NotFoundError, UnAuthorizedError) as e:
+            raise e
+
+    def _handle_license_update(self, uuid: str, payload: UpdateUserPayload):
+        try:
+            existing_license = (
+                self.driver_license_repository.get_license_by_license_number(
+                    payload.license.license_number
+                )
+            )
+
+            if existing_license:
+                self._update_existing_license(existing_license, uuid, payload)
+            else:
+                self._create_new_license(uuid, payload)
+        except UnAuthorizedError as e:
             raise e
         except Exception as e:
             raise e
+
+    def _update_existing_license(
+        self, existing_license, uuid: str, payload: UpdateUserPayload
+    ):
+        if existing_license.user_id != uuid:
+            raise UnAuthorizedError(messages.LICENSE_IN_USE)
+        else:
+            payload.license.expiration_date = parse_date(
+                payload.license.expiration_date
+            )
+            self.driver_license_repository.update_by_uuid(
+                uuid=existing_license.uuid, schema=payload.schema
+            )
+
+    def _create_new_license(self, uuid: str, payload: UpdateUserPayload):
+        new_license_data = DriversLicenseFull(
+            license_number=payload.license.license_number,
+            front_url=payload.license.front_url,
+            back_url=payload.license.back_url,
+            expiration_date=parse_date(payload.license.expiration_date),
+            user_id=uuid,
+        )
+        self.driver_license_repository.create(new_license_data)
 
     def patch_user_by_uuid(self, uuid: str, payload: UserProfileUdatePayload):
         try:

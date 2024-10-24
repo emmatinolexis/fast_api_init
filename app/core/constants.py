@@ -502,3 +502,7 @@ PERMISSIONS = {
         {"permission_name": "create_vehicle_make", "permission_type": "admin"},
     ],
 }
+
+
+# license expiry alert
+EXPIRY_ALERT_PERIOD = 30

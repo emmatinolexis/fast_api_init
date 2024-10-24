@@ -37,7 +37,9 @@ async def create_order_handler(
 @inject
 async def get_all_orders_handler(
     page: int = Query(1, ge=1, description="Page number, default is 1"),
-    page_size: int = Query(10, ge=1, le=100, description="Items per page, default is 10"),
+    page_size: int = Query(
+        10, ge=1, le=100, description="Items per page, default is 10"
+    ),
     search_query: str = Query(None, description="Search by device name"),
     start_date: str = Query(None, description="Filter orders from this date (YYYY-MM-DD)"),
     end_date: str= Query(None, description="Filter orders up to this date (YYYY-MM-DD)"),
@@ -50,7 +52,6 @@ async def get_all_orders_handler(
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
-
 
 
 @router.put("/{order_uuid}/status", response_class=ORJSONResponse)

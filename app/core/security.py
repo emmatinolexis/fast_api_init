@@ -151,6 +151,16 @@ def decode_token(token: str) -> dict:
 
 
 def extract_user_data(user: User) -> Dict[str, str]:
+    # Decrypt the license number if the user has a license
+    license_data = None
+    if user.driver_license:
+        license_data = {
+            "license_number": user.driver_license.license_number,
+            "expiration_date": user.driver_license.expiration_date,
+            "front_url": user.driver_license.front_url,
+            "back_url": user.driver_license.back_url,
+        }
+
     return {
         "first_name": user.first_name,
         "last_name": user.last_name,
@@ -168,6 +178,8 @@ def extract_user_data(user: User) -> Dict[str, str]:
         "user_role": user.user_role if user.role == RoleType.CUSTOMER else None,
         "status": user.status,
         "country": user.country,
+        "operator_type": user.operator_type if user.operator_type else None,
+        "license": license_data,
     }
 
 

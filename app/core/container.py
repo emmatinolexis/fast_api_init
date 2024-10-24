@@ -27,6 +27,7 @@ from app.repository import (
     device_manufacturer_repository,
     device_node_configuration_repository,
     device_repository,
+    driver_license_repository,
     driver_repository,
     email_verification_repository,
     equipment_repository,
@@ -101,6 +102,7 @@ from app.service import (
     device_image_service,
     device_manufacturer_service,
     device_service,
+    driver_license_service,
     driver_service,
     equipment_service,
     equipment_type_service,
@@ -521,6 +523,11 @@ class Container(containers.DeclarativeContainer):
         session_factory=db.provided.session,
     )
 
+    driver_license_repository = providers.Factory(
+        driver_license_repository.DriverLicenseRepository,
+        session_factory=db.provided.session,
+    )
+
     # Services
     auth_service = providers.Factory(
         auth_service.AuthService,
@@ -536,6 +543,7 @@ class Container(containers.DeclarativeContainer):
         subscription_repository=subscription_repository,
         invitation_repository=team_member_invitation_repository,
         asset_repository=asset_repository,
+        driver_license_repository=driver_license_repository,
     )
     alert_policy_type_service = providers.Factory(
         alert_policy_type_service.AlertPolicyTypeService,
@@ -878,4 +886,9 @@ class Container(containers.DeclarativeContainer):
         asset_operator_assignment=asset_operator_assignment_repository,
         asset_repository=asset_repository,
         user_repository=user_repository,
+    )
+
+    driver_license_service = providers.Factory(
+        driver_license_service.DriverLicenseService,
+        driver_license_repository=driver_license_repository,
     )

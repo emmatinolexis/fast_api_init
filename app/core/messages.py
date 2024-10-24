@@ -114,3 +114,5 @@ BUILDING_DATA_REQUIRED = "Building data is required."
 NO_ASSET_FOUND = "Asset not found"
 NO_OPERATOR_FOUND = "Operator not found"
 ASSIGNMENT_SUCCESS = "Asset assigned to operator successfully"
+
+LICENSE_IN_USE = "Drivers license already in use"

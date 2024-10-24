@@ -53,8 +53,6 @@ class EquipmentTypeService(BaseService):
         except Exception as e:
             raise e
 
-
-    
     def get_paginated_equipment_types(self, page=1, page_size=10, search_query=None):
         try:
             return self.equipment_type_repository.get_equipment_types(

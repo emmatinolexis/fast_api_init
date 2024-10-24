@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Optional
 from uuid import UUID
 
@@ -26,13 +27,28 @@ class UserPayload(BaseModel):
         orm_model = True
 
 
+class DriverLicenseUpdates(BaseModel):
+    license_number: str
+    front_url: str
+    back_url: str
+    expiration_date: str
+
+
+class DriversLicenseFull(BaseModel):
+    license_number: str
+    front_url: str
+    back_url: str
+    expiration_date: str
+    user_id: str
+
+
 class UpdateUserPayload(BaseModel):
     location: str
     address: str
     phone_number: str
     country: str
-    license_url: Optional[str] = None
     operator_type: Optional[DriverType] = None
+    license: Optional[DriverLicenseUpdates] = None
 
     @field_validator("phone_number")
     @classmethod

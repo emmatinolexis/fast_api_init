@@ -45,8 +45,10 @@ class OrderRepository(BaseRepository):
                 )
 
                 if search_query:
-                    base_query = base_query.join(OrderDeviceAssignment).join(Inventory).filter(
-                        Inventory.device_name.ilike(f"%{search_query}%")
+                    base_query = (
+                        base_query.join(OrderDeviceAssignment)
+                        .join(Inventory)
+                        .filter(Inventory.device_name.ilike(f"%{search_query}%"))
                     )
                 
                 if start_date:
@@ -105,4 +107,3 @@ class OrderRepository(BaseRepository):
             except Exception as e:
                 session.rollback()
                 raise e
-    

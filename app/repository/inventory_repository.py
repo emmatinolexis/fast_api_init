@@ -2,6 +2,7 @@ import uuid
 from contextlib import AbstractContextManager
 from typing import Callable
 
+from sqlalchemy import or_
 from sqlalchemy.orm import Session, joinedload
 
 from app.model.inventory import Inventory

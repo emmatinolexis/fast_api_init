@@ -49,7 +49,6 @@ class UserRepository(BaseRepository):
                 user_to_update.address = user.address
                 user_to_update.phone_number = user.phone_number
                 user_to_update.country = user.country
-                user_to_update.license_url = user.license_url
                 user_to_update.operator_type = user.operator_type
 
                 # set onboarding status
@@ -71,6 +70,7 @@ class UserRepository(BaseRepository):
                 .filter(self.model.email_address == email)
                 .options(joinedload(User.business_profile))
                 .options(joinedload(User.user_role).joinedload(Role.permissions))
+                .options(joinedload(User.driver_license))
                 .first()
             )
 
@@ -80,6 +80,7 @@ class UserRepository(BaseRepository):
                 session.query(User)
                 .filter(User.phone_number == phone_number)
                 .options(joinedload(User.business_profile))
+                .options(joinedload(User.driver_license))
                 .options(joinedload(User.user_role).joinedload(Role.permissions))
                 .first()
             )
