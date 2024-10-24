@@ -6,6 +6,9 @@ from sqlalchemy.orm import Session, joinedload
 from app.model.business_profile import BusinessProfile
 from app.repository.base_repository import BaseRepository
 from app.util.utils import parse_date
+from app.model.user_subscription import UserSubscription
+from sqlalchemy import and_
+from app.util.enums import SubscriptionStatus
 
 
 class BusinessProfileRepository(BaseRepository):
@@ -50,12 +53,50 @@ class BusinessProfileRepository(BaseRepository):
                 total_records = (
                     query.count()
                 )  # Get total number of records for pagination metadata
-                total_pages = total_records + page_size - 1  # Calculate total pages
+
+                total_pages = (total_records + page_size - 1) // page_size
 
                 query = query.limit(page_size).offset((page - 1) * page_size)
 
                 # Execute the query and return results
                 businesses = query.all()
+
+                # Query total subscriptions with date filters
+                total_subscriptions_query = session.query(UserSubscription)
+
+                # Active subscriptions (status = ACTIVE) with date filters
+                total_active_subscriptions_query = session.query(UserSubscription).filter(
+                    UserSubscription.status == SubscriptionStatus.ACTIVE
+                )
+
+                # Inactive subscriptions (status = NON_RENEWING) with date filters
+                total_inactive_subscriptions_query = session.query(UserSubscription).filter(
+                    UserSubscription.status == SubscriptionStatus.NON_RENEWING
+                )
+
+                if start_date_obj and end_date_obj:
+                    total_subscriptions_query = total_subscriptions_query.filter(
+                        and_(
+                            UserSubscription.created_at >= start_date_obj,
+                            UserSubscription.created_at <= end_date_obj,
+                        )
+                    )
+                    total_inactive_subscriptions_query = total_inactive_subscriptions_query.filter(
+                        and_(
+                            UserSubscription.created_at >= start_date_obj,
+                            UserSubscription.created_at <= end_date_obj,
+                        )
+                    )
+                    total_active_subscriptions_query = total_active_subscriptions_query.filter(
+                        and_(
+                            UserSubscription.created_at >= start_date_obj,
+                            UserSubscription.created_at <= end_date_obj,
+                        )
+                    )
+
+                total_subscriptions = total_subscriptions_query.count()
+                total_active_subscriptions = total_active_subscriptions_query.count()
+                total_inactive_subscriptions = total_inactive_subscriptions_query.count()
 
                 return {
                     "businesses": businesses,
@@ -63,6 +104,9 @@ class BusinessProfileRepository(BaseRepository):
                     "page_size": page_size,
                     "total_records": total_records,
                     "total_pages": total_pages,
+                    "total_subscriptions": total_subscriptions,
+                    "total_active_subscriptions": total_active_subscriptions,
+                    "total_inactive_subscriptions": total_inactive_subscriptions,
                 }
 
         except Exception as e:
