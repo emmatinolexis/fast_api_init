@@ -32,7 +32,9 @@ msg_prefix = "package"
 @inject
 async def get_packages_handler(
     service: PackageService = Depends(Provide[Container.package_service]),
-    current_user: User = Depends(get_current_user_with_permission("manage_subscription")),
+    current_user: User = Depends(
+        get_current_user_with_permission("manage_subscription")
+    ),
 ):
     try:
         return send_data(service.get_all_paystack_plans())

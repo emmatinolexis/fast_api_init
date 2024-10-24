@@ -4,7 +4,7 @@ from uuid import UUID
 import phonenumbers
 from pydantic import BaseModel, EmailStr, Field, ValidationInfo, constr, field_validator
 
-from app.util.enums import AccountType, ActiveStatus, UserRole,DriverType
+from app.util.enums import AccountType, ActiveStatus, DriverType, UserRole
 
 
 class UserPayload(BaseModel):

@@ -294,9 +294,6 @@ class EngineOnPayload(BaseModel):
     asset_uuid: UUID
 
 
-
 class AssignAssetPayload(BaseModel):
     asset_uuid: str
     operator_uuid: str
-
-

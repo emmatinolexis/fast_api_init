@@ -1,6 +1,6 @@
 from contextlib import AbstractContextManager
 from datetime import datetime, timedelta
-from typing import Callable, Optional, List
+from typing import Callable, List, Optional
 from uuid import UUID
 
 from pydantic import EmailStr
@@ -482,7 +482,9 @@ class UserRepository(BaseRepository):
     def _handle_invitation_status(self, session, user: UserPayload):
         if user.invite_status:
             # Delete the invitation where the email matches
-            session.query(Invitation).filter(Invitation.email == user.email_address).delete()
+            session.query(Invitation).filter(
+                Invitation.email == user.email_address
+            ).delete()
             session.commit()
 
     def _handle_business_account(self, session, user: UserPayload, db_user):
@@ -607,17 +609,20 @@ class UserRepository(BaseRepository):
             raise e
 
     def get_drivers_by_business_uuid(
-        self, business_uuid, role_uuid, page=1, page_size=10, operator_type: List[str] = None, status: str = None
+        self,
+        business_uuid,
+        role_uuid,
+        page=1,
+        page_size=10,
+        operator_type: List[str] = None,
+        status: str = None,
     ):
         try:
             with self.session_factory() as session:
                 # Build the query to filter drivers by business and role, and order by created_at descending
-                query = (
-                    session.query(self.model)
-                    .filter(
-                        User.business_profile_uuid == business_uuid,
-                        User.user_role_uuid == role_uuid,
-                    )
+                query = session.query(self.model).filter(
+                    User.business_profile_uuid == business_uuid,
+                    User.user_role_uuid == role_uuid,
                 )  # Order by created_at in descending order
 
                 # Apply additional filters if provided
@@ -626,7 +631,9 @@ class UserRepository(BaseRepository):
                 if status:
                     query = query.filter(User.status == status)
 
-                query = query.order_by(desc(User.created_at))  # Order by created_at in descending order
+                query = query.order_by(
+                    desc(User.created_at)
+                )  # Order by created_at in descending order
 
                 # Get total count of drivers
                 total_drivers = query.count()
@@ -694,16 +701,19 @@ class UserRepository(BaseRepository):
                 return driver_data
         except Exception as e:
             raise e
-        
 
     def get_user_by_assigned_asset_uuid(self, assigned_asset_uuid: str):
         try:
             with self.session_factory() as session:
                 # Query the User model to find the user with the given assigned_asset_uuid
-                user = session.query(User).filter(User.assigned_asset_uuid == assigned_asset_uuid).first()
+                user = (
+                    session.query(User)
+                    .filter(User.assigned_asset_uuid == assigned_asset_uuid)
+                    .first()
+                )
                 if user is None:
                     return None
-                
+
                 return user
         except Exception as e:
             raise e

@@ -35,7 +35,7 @@ FREE_PACKAGE_ITEMS = [
         "package_item": {
             "item_name": "1 User(s)",
             "type": "number_of_user_tracker",
-            "number_of_assets": "",
+            "number_of_assets": None,
             "number_of_users": 1,
         },
     },
@@ -45,7 +45,7 @@ FREE_PACKAGE_ITEMS = [
             "item_name": "One Asset(s)",
             "type": "asset_quantity_tracker",
             "number_of_assets": 1,
-            "number_of_users": "",
+            "number_of_users": None,
         },
     },
     {
@@ -53,8 +53,8 @@ FREE_PACKAGE_ITEMS = [
         "package_item": {
             "item_name": "Live Tracking",
             "type": "",
-            "number_of_assets": "",
-            "number_of_users": "",
+            "number_of_assets": None,
+            "number_of_users": None,
         },
     },
 ]
@@ -374,7 +374,6 @@ PERMISSIONS = {
         {"permission_name": "create_team_member", "permission_type": "admin"},
         {"permission_name": "resend_invitation", "permission_type": "all"},
         {"permission_name": "update_user", "permission_type": "all"},
-
     ],
     "equipments": [
         {"permission_name": "create_equipment", "permission_type": "admin"},
@@ -452,26 +451,44 @@ PERMISSIONS = {
         {"permission_name": "view_gas_cylinder_type", "permission_type": "all"},
         {"permission_name": "create_gas_cylinder_type", "permission_type": "admin"},
         {"permission_name": "update_gas_cylinder_type", "permission_type": "admin"},
-        {"permission_name": "create_other_gas_cylinder_type", "permission_type": "admin"},
+        {
+            "permission_name": "create_other_gas_cylinder_type",
+            "permission_type": "admin",
+        },
     ],
     "marker_icons": [
         {"permission_name": "view_marker_icons", "permission_type": "all"},
-        {"permission_name": "view_marker_icons_by_asset_type", "permission_type": "admin"},
+        {
+            "permission_name": "view_marker_icons_by_asset_type",
+            "permission_type": "admin",
+        },
         {"permission_name": "create_marker_icon", "permission_type": "admin"},
         {"permission_name": "update_marker_icon", "permission_type": "admin"},
         {"permission_name": "delete_marker_icon", "permission_type": "admin"},
     ],
     "onboarding": [
         {"permission_name": "view_onboardings", "permission_type": "admin"},
-        {"permission_name": "create_individual_onboarding", "permission_type": "customer"},
-        {"permission_name": "create_organisation_onboarding", "permission_type": "customer"},
+        {
+            "permission_name": "create_individual_onboarding",
+            "permission_type": "customer",
+        },
+        {
+            "permission_name": "create_organisation_onboarding",
+            "permission_type": "customer",
+        },
         {"permission_name": "update_onboarding", "permission_type": "customer"},
         {"permission_name": "delete_onboarding", "permission_type": "admin"},
     ],
     "organisation_contacts": [
         {"permission_name": "view_organisation_contacts", "permission_type": "admin"},
-        {"permission_name": "create_organisation_contact", "permission_type": "customer"},
-        {"permission_name": "update_organisation_contact", "permission_type": "customer"},
+        {
+            "permission_name": "create_organisation_contact",
+            "permission_type": "customer",
+        },
+        {
+            "permission_name": "update_organisation_contact",
+            "permission_type": "customer",
+        },
         {"permission_name": "delete_organisation_contact", "permission_type": "all"},
     ],
     "payments": [
@@ -480,10 +497,8 @@ PERMISSIONS = {
         {"permission_name": "update_payment", "permission_type": "all"},
         {"permission_name": "delete_payment", "permission_type": "all"},
     ],
-
     "vehicle_make": [
         {"permission_name": "view_vehicle_make", "permission_type": "customer"},
         {"permission_name": "create_vehicle_make", "permission_type": "admin"},
     ],
-
 }

@@ -1,13 +1,14 @@
+import logging
+
+import requests
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
-import logging
-from app.core.settings import settings
 
-import requests
 from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
+from app.core.settings import settings
 from app.model.user import User
 from app.schema.subscription import PaystackSubscriptionPayload
 from app.service.subscription_service import SubscriptionService
@@ -129,9 +130,9 @@ async def create_paystack_subscription_handler(
                 "amount": payload.amount,
                 "callback_url": payload.callback_url,
                 "metadata": {
-                    "business_profile_uuid" : str(user.business_profile_uuid),
-                    "payment_type" : PaymentTypes.SUBSCRIPTION_PAYMENT
-                }
+                    "business_profile_uuid": str(user.business_profile_uuid),
+                    "payment_type": PaymentTypes.SUBSCRIPTION_PAYMENT,
+                },
             }
 
             existing_subscription = service.get_subscription_by_business_uuid(
@@ -183,7 +184,7 @@ async def paystack_subscription_webhook_handler(
         if event_type == "subscription.create":
             # check if subscription exist
             subscription_code = paystack_payload["data"]["subscription_code"]
-
+            # return subscription_code
             paystack_subscription = requests.get(
                 settings.PAYSTACK_SUBSCRIPTION_URL + f"/{subscription_code}",
                 headers=settings.PAYSTACK_HEADERS,
@@ -191,8 +192,14 @@ async def paystack_subscription_webhook_handler(
             subscription_data = paystack_subscription.json()
 
             if not subscription_data["status"]:
-                logging.info(subscription_data["message"] + f" Subscription code: {subscription_code}")
-                return send_client_side_error(subscription_data["message"])
+                logging.info(
+                    subscription_data["message"]
+                    + f" for subscription code: {subscription_code}"
+                )
+                return send_client_side_error(
+                    subscription_data["message"]
+                    + f" for subscription code: {subscription_code}"
+                )
 
         if event_type == "charge.success":
             # validate payment
@@ -205,7 +212,9 @@ async def paystack_subscription_webhook_handler(
 
             if not payment_data["status"]:
                 logging.info(payment_data["message"])
-                return send_client_side_error(payment_data["message"] + f" Transaction code : {payment_reference}")
+                return send_client_side_error(
+                    payment_data["message"] + f" Transaction code : {payment_reference}"
+                )
 
         subscription = service.create_user_subscription(paystack_payload)
         return send_info(subscription)

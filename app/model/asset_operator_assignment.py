@@ -1,10 +1,10 @@
-from app.model.base_model import BaseModel
 import uuid
+
+from sqlalchemy import Column, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy import Column,ForeignKey
 from sqlalchemy.orm import relationship
 
-
+from app.model.base_model import BaseModel
 
 
 class AssetOperatorAssignment(BaseModel):
@@ -19,12 +19,8 @@ class AssetOperatorAssignment(BaseModel):
     )
 
     operator_uuid = Column(
-        UUID(as_uuid=True),
-        ForeignKey("users.uuid"),
-        nullable=False,
-        index=True
+        UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False, index=True
     )
-
 
     asset_uuid = Column(
         UUID(as_uuid=True),
@@ -35,8 +31,3 @@ class AssetOperatorAssignment(BaseModel):
 
     operator = relationship("User", foreign_keys=[operator_uuid])
     asset = relationship("Asset", foreign_keys=[asset_uuid])
-
-
-
-
-
