@@ -41,50 +41,60 @@ class UserSubscriptionRepository(BaseRepository):
             if not user:
                 user_not_found = f"user with email {user_email} not found, cannot process subscription event: {event_type}"
                 logging.info(user_not_found)
-                return user_not_found
+                return
 
-            existing_subscription = self.get_user_subscription_(session, user_email)
+            existing_subscription = self.get_user_subscription_(
+                session, user_email, payload["data"]["plan"]["plan_code"]
+            )
 
-            if event_type in ["subscription.not_renew", "invoice.payment_failed"]:
-                self.handle_subscription_deactivation(
-                    session, user_email, existing_subscription
-                )
-            elif event_type == "subscription.create":
-                subscription_code = payload["data"]["subscription_code"]
-                subscription_status = payload["data"]["status"]
-                next_payment_date = payload["data"]["next_payment_date"]
-                self.handle_subscription_creation(
-                    session,
-                    user_email,
-                    subscription_code,
-                    existing_subscription,
-                    subscription_status,
-                    next_payment_date,
-                )
-            elif event_type == "charge.success":
-                payment_data = Payment(
-                    reference_no=payload["data"]["reference"],
-                    amount=payload["data"]["amount"],
-                    status=payload["data"]["status"],
-                    user_email=payload["data"]["customer"]["email"],
-                    payment_type=payload["data"]["metadata"]["payment_type"],
-                    business_profile_uuid=payload["data"]["metadata"][
-                        "business_profile_uuid"
-                    ],
-                    channel=payload["data"]["channel"],
-                )
-                session.add(payment_data)
-                session.commit()
+            if existing_subscription:
+                if event_type in ["subscription.not_renew", "invoice.payment_failed"]:
+                    self.handle_subscription_deactivation(
+                        session, user_email, existing_subscription
+                    )
+                elif event_type == "subscription.create":
+                    subscription_code = payload["data"]["subscription_code"]
+                    subscription_status = payload["data"]["status"]
+                    next_payment_date = payload["data"]["next_payment_date"]
+                    self.handle_subscription_creation(
+                        session,
+                        user_email,
+                        subscription_code,
+                        existing_subscription,
+                        subscription_status,
+                        next_payment_date,
+                    )
+                elif event_type == "charge.success":
+                    payment_data = Payment(
+                        reference_no=payload["data"]["reference"],
+                        amount=payload["data"]["amount"],
+                        status=payload["data"]["status"],
+                        user_email=payload["data"]["customer"]["email"],
+                        payment_type=payload["data"]["metadata"]["payment_type"],
+                        business_profile_uuid=payload["data"]["metadata"][
+                            "business_profile_uuid"
+                        ],
+                        channel=payload["data"]["channel"],
+                    )
+                    session.add(payment_data)
+                    session.commit()
+                else:
+                    logging.info(f"Unhandled event type: {event_type}")
             else:
-                logging.info(f"Unhandled event type: {event_type}")
+                logging.error("Subscription not found")
+                return
+            success_msg = f"Subscription status: {subscription_status}"
+            logging.info(success_msg)
+            return success_msg
 
     def get_user_by_email(self, session, user_email):
         return session.query(User).filter(User.email_address == user_email).first()
 
-    def get_user_subscription_(self, session, user_email):
+    def get_user_subscription_(self, session, user_email, plan_code):
         return (
             session.query(UserSubscription)
             .filter(UserSubscription.user_email == user_email)
+            .filter(UserSubscription.plan_code == plan_code)
             .first()
         )
 
@@ -120,22 +130,13 @@ class UserSubscriptionRepository(BaseRepository):
         subscription_status,
         next_payment_date,
     ):
-        if existing_subscription:
-            existing_subscription.subscription_code = subscription_code
-            existing_subscription.status = subscription_status
-            existing_subscription.next_payment_date = next_payment_date
-            session.commit()
-            session.refresh(existing_subscription)
-            logging.info("Subscription updated successfully")
-            return
-        else:
-            user_subscription = UserSubscription(
-                user_email=user_email, subscription_code=subscription_code
-            )
-            session.add(user_subscription)
-            session.commit()
-            logging.info("Subscription created successfully")
-            return
+        existing_subscription.subscription_code = subscription_code
+        existing_subscription.status = subscription_status
+        existing_subscription.next_payment_date = next_payment_date
+        session.commit()
+        session.refresh(existing_subscription)
+        logging.info("Subscription updated successfully")
+        return
 
     def create_paystack_subscription(
         self,

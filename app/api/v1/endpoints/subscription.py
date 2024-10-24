@@ -184,7 +184,7 @@ async def paystack_subscription_webhook_handler(
         if event_type == "subscription.create":
             # check if subscription exist
             subscription_code = paystack_payload["data"]["subscription_code"]
-
+            # return subscription_code
             paystack_subscription = requests.get(
                 settings.PAYSTACK_SUBSCRIPTION_URL + f"/{subscription_code}",
                 headers=settings.PAYSTACK_HEADERS,
@@ -194,9 +194,12 @@ async def paystack_subscription_webhook_handler(
             if not subscription_data["status"]:
                 logging.info(
                     subscription_data["message"]
-                    + f" Subscription code: {subscription_code}"
+                    + f" for subscription code: {subscription_code}"
                 )
-                return send_client_side_error(subscription_data["message"])
+                return send_client_side_error(
+                    subscription_data["message"]
+                    + f" for subscription code: {subscription_code}"
+                )
 
         if event_type == "charge.success":
             # validate payment

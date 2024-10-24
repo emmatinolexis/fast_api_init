@@ -75,14 +75,16 @@ class BusinessProfileService(BaseService):
         search_parameter: str = None,
         start_date: str = None,
         end_date: str = None,
+        page: int = None,
+        page_size: int = None,
     ):
         try:
             businesses_data = []
             businesses = self.business_profile_repository.get_businesses(
-                search_parameter, start_date, end_date
+                search_parameter, start_date, end_date, page, page_size
             )
 
-            for business in businesses:
+            for business in businesses.get("businesses"):
                 active_subscription = self.get_active_subscription(business)
                 package_features = self.get_package_features(active_subscription)
 
@@ -106,7 +108,13 @@ class BusinessProfileService(BaseService):
 
                 businesses_data.append(data)
 
-            return businesses_data
+            return {
+                "data": businesses_data,
+                "current_page": businesses.get("current_page"),
+                "page_size": businesses.get("page_size"),
+                "total_records": businesses.get("total_records"),
+                "total_pages": businesses.get("total_pages"),
+            }
 
         except Exception as e:
             raise e

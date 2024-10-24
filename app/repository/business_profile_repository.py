@@ -18,7 +18,12 @@ class BusinessProfileRepository(BaseRepository):
             return session.query(self.model).filter(self.model.uuid == uuid).first()
 
     def get_businesses(
-        self, search_parameter: str = None, start_date: str = None, end_date: str = None
+        self,
+        search_parameter: str = None,
+        start_date: str = None,
+        end_date: str = None,
+        page: int = None,
+        page_size: int = None,
     ):
         try:
             with self.session_factory() as session:
@@ -42,10 +47,23 @@ class BusinessProfileRepository(BaseRepository):
                     query, search_parameter, start_date_obj, end_date_obj
                 )
 
+                total_records = (
+                    query.count()
+                )  # Get total number of records for pagination metadata
+                total_pages = total_records + page_size - 1  # Calculate total pages
+
+                query = query.limit(page_size).offset((page - 1) * page_size)
+
                 # Execute the query and return results
                 businesses = query.all()
 
-                return businesses
+                return {
+                    "businesses": businesses,
+                    "current_page": page,
+                    "page_size": page_size,
+                    "total_records": total_records,
+                    "total_pages": total_pages,
+                }
 
         except Exception as e:
             raise e

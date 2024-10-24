@@ -10,7 +10,6 @@ from app.schema.asset_schema import AlertMaintenanceTypePayload
 from app.service.alert_maintenance_type_service import AlertMaintenanceTypeService
 from app.util.utils import (
     allow_admins_only,
-    allow_customers_only,
     send_client_side_error,
     send_data,
     send_internal_server_error,

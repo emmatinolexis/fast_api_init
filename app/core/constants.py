@@ -35,7 +35,7 @@ FREE_PACKAGE_ITEMS = [
         "package_item": {
             "item_name": "1 User(s)",
             "type": "number_of_user_tracker",
-            "number_of_assets": "",
+            "number_of_assets": None,
             "number_of_users": 1,
         },
     },
@@ -45,7 +45,7 @@ FREE_PACKAGE_ITEMS = [
             "item_name": "One Asset(s)",
             "type": "asset_quantity_tracker",
             "number_of_assets": 1,
-            "number_of_users": "",
+            "number_of_users": None,
         },
     },
     {
@@ -53,8 +53,8 @@ FREE_PACKAGE_ITEMS = [
         "package_item": {
             "item_name": "Live Tracking",
             "type": "",
-            "number_of_assets": "",
-            "number_of_users": "",
+            "number_of_assets": None,
+            "number_of_users": None,
         },
     },
 ]

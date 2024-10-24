@@ -4,16 +4,16 @@ from app.repository.user_repository import UserRepository
 
 
 def fuel_log_transformer(
-    fuel_log: FuelLog, driver_repo: DriverRepository, user_repo: UserRepository
+    fuel_log: FuelLog, user_repo: UserRepository
 ):
-    driver = driver_repo.read_by_uuid(fuel_log.driver_uuid)
+    driver = user_repo.read_by_uuid(fuel_log.driver_uuid)
     logged_by = user_repo.read_by_uuid(fuel_log.user_uuid)
 
     driver_details = {
         "uuid": driver.uuid if driver else None,
         "full_name": f"{driver.first_name} {driver.last_name}" if driver else None,
         "phone_number": driver.phone_number if driver else None,
-        "profile_image": driver.profile_picture_url if driver else None,
+        "profile_image": driver.avatar_url if driver else None,
     }
 
     logged_by = {
