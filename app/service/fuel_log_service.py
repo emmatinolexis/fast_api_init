@@ -4,6 +4,7 @@ from app.repository.asset_repository import AssetRepository
 from app.repository.driver_repository import DriverRepository
 from app.repository.fuel_log_repository import FuelLogRepository
 from app.repository.user_repository import UserRepository
+from app.repository.asset_operator_assignment_repository import AssetOperatorTypeAssignmentRepository
 from app.schema.fuel_log_schema import (
     FleetManagerFuelLog,
     FuelLogCreateSchema,
@@ -23,11 +24,13 @@ class FuelLogService(BaseService):
         asset_repository: AssetRepository,
         driver_repository: DriverRepository,
         user_repository: UserRepository,
+        asset_operator_assignment_repository: AssetOperatorTypeAssignmentRepository
     ):
         self.fuel_log_repository = fuel_log_repository
         self.asset_repository = asset_repository
         self.driver_repository = driver_repository
         self.user_repository = user_repository
+        self.asset_operator_assignment_repository = asset_operator_assignment_repository
         super().__init__(fuel_log_repository)
 
     def create_individual_fuel_log(
@@ -65,28 +68,28 @@ class FuelLogService(BaseService):
 
                 for item in data:
                     driver_email = item.get("driver_email")
-                    driver_details = self.driver_repository.get_driver_by_email(
-                        driver_email
-                    )
+                    driver_details = self.user_repository.get_user_by_email_address(driver_email)
                     if not driver_details:
                         raise NotFoundError(
                             detail=messages.WRONG_DRIVER_EMAIL + driver_email
                         )
 
-                    drivers_asset = self.asset_repository.get_asset_by_driver_email(
-                        driver_email
+                    drivers_asset = self.asset_operator_assignment_repository.get_assignment_by_operator_uuid(
+                        driver_details.uuid
                     )
                     if not drivers_asset:
                         raise NotFoundError(
                             detail=messages.DRIVER_NOT_ASSIGNED.format(driver_email)
                         )
+                    
+                    asset = self.asset_repository.read_by_uuid(drivers_asset.asset_uuid)
 
                     log_payload = FleetManagerFuelLog(
                         amount=item.get("amount"),
                         quantity=item.get("litres"),
                         purchase_date=parse_date(str(item.get("purchase_date"))),
-                        asset_name=drivers_asset.asset_name,
-                        asset_uuid=str(drivers_asset.uuid),
+                        asset_name=asset.asset_name,
+                        asset_uuid=str(drivers_asset.asset_uuid),
                         business_profile_uuid=business_profile_uuid,
                         user_uuid=user_uuid,
                         driver_uuid=str(driver_details.uuid),
@@ -113,7 +116,7 @@ class FuelLogService(BaseService):
         if not asset:
             raise NotFoundError(detail=messages.ASSET_NOT_FOUND)
 
-        driver = self.asset_repository.get_driver_by_asset_uuid(payload.asset_uuid)
+        driver = self.asset_operator_assignment_repository.get_assignment_by_asset_uuid(payload.asset_uuid)
 
         if not driver:
             raise NotFoundError(detail=messages.ASSET_MUST_BE_ASSIGNED)
@@ -126,7 +129,7 @@ class FuelLogService(BaseService):
             receipt_image=payload.receipt_image,
             user_uuid=user_uuid,
             business_profile_uuid=business_profile_uuid,
-            driver_uuid=driver.uuid,
+            driver_uuid=driver.operator_uuid,
             payment_method=payload.payment_method,
             asset_name=asset.asset_name,
             fuel_type=payload.fuel_type,
@@ -194,7 +197,7 @@ class FuelLogService(BaseService):
                 "total_pages": total // page_size + 1,
                 "data": [
                     fuel_log_transformer(
-                        log, self.driver_repository, self.user_repository
+                        log, self.user_repository
                     )
                     for log in paginated_fuel_logs
                 ],
@@ -208,11 +211,11 @@ class FuelLogService(BaseService):
         )
 
         return fuel_log_transformer(
-            updated_fuel_log, self.driver_repository, self.user_repository
+            updated_fuel_log, self.user_repository
         )
 
     def get_receipt_by_uuid(self, fuel_log_uuid: str):
         fuel_log = self.fuel_log_repository.read_by_uuid(fuel_log_uuid)
         return fuel_log_transformer(
-            fuel_log, self.driver_repository, self.user_repository
+            fuel_log, self.user_repository
         )
