@@ -1,5 +1,5 @@
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends,Query,Path
+from fastapi import APIRouter, Depends,Query
 from fastapi.responses import ORJSONResponse
 
 from app.core import messages
