@@ -114,6 +114,9 @@ class BusinessProfileService(BaseService):
                 "page_size": businesses.get("page_size"),
                 "total_records": businesses.get("total_records"),
                 "total_pages": businesses.get("total_pages"),
+                "total_subscriptions": businesses.get("total_subscriptions"),
+                "total_active_subscriptions": businesses.get("total_active_subscriptions"),
+                "total_inactive_subscriptions": businesses.get("total_inactive_subscriptions"),
             }
 
         except Exception as e:
