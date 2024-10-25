@@ -19,3 +19,12 @@ class DriverLicenseRepository(BaseRepository):
                 .filter(DriverLicense.license_number == license_number)
                 .first()
             )
+        
+
+    def get_license_by_user_id(self,user_uuid:str) -> DriverLicense:
+        with self.session_factory() as session:
+            return (
+                session.query(DriverLicense)
+                .filter(DriverLicense.user_id == user_uuid)
+                .first()
+                )
