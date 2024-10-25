@@ -151,21 +151,6 @@ async def create_paystack_subscription_handler(
         else:
             return send_client_side_error(paystack_plan.json().get("message"))
 
-        # package_to_update = service.get_subscription_by_email(payload_data.get("email"))
-
-        # if package_to_update:
-        #     # update subscription
-        #     subscription = service.create_paystack_subscription(
-        #         payload_data, user.business_profile_uuid, update_subscription=True
-        #     )
-        #     return send_data(subscription)
-        # else:
-        #     # create a new subscription
-        #     subscription = service.create_paystack_subscription(
-        #         payload_data, user.business_profile_uuid
-        #     )
-        #     return send_data(subscription)
-
     except Exception as e:
         msg = f"{messages.GET_FAILED} {msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)

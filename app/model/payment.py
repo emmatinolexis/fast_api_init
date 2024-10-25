@@ -29,3 +29,4 @@ class Payment(BaseModel):
     )
     channel = Column(String(length=50), nullable=False, index=True)
     business_profile = relationship("BusinessProfile", back_populates="payments")
+    user = relationship("User")
