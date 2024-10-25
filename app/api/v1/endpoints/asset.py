@@ -527,18 +527,22 @@ async def get_last_immobilizer_action(
 )
 @inject
 async def get_all_incidence_handler(
+    page: int = Query(1, ge=1, description="Page number, default is 1"),
+    page_size: int = Query(10, ge=1, le=100, description="Items per page, default is 10"),
+    search_query: str = Query(None, description="Search by vehicle name"),
+    start_date: str = Query(None, description="Filter incidences from this date (YYYY-MM-DD)"),
+    end_date: str = Query(None, description="Filter incidences up to this date (YYYY-MM-DD)"),
     asset_service: AssetService = Depends(Provide[Container.asset_service]),
-    current_user: User = Depends(
-        get_current_user_with_permission("view_reported_incidence")
-    ),
+    current_user: User = Depends(get_current_user_with_permission("view_reported_incidence")),
 ):
     try:
-        incidence = asset_service.get_all_theft_incidence()
-        return send_data(incidence)
+        incidences = asset_service.get_all_theft_incidence(
+            page=page, page_size=page_size, search_query=search_query, start_date=start_date, end_date=end_date
+        )
+        return send_data(incidences)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix} theft incidence"
         return send_internal_server_error(user_msg=msg, error=e)
-
 
 @router.get(
     "/theft_incidence/{incident_uuid}/resolve",
