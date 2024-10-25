@@ -55,15 +55,15 @@ async def get_all_incidents(
 
         incident_count = service.get_all_incidents_count()
 
-        pagination = service.pagination(
+        pagination_data = pagination(
             total=incident_count,
             limit=page_size,
             current_page=page,
-            total_pages=service.total_pages(count=incident_count, limit=page_size),
+            total_pages=total_pages(count=incident_count, limit=page_size),
         )
 
         return send_data_with_pagination(
-            data=[i.dto() for i in incidents], pagination=pagination
+            data=[i.dto() for i in incidents], pagination=pagination_data
         )
     except Exception as e:
         msg = f"{messages.GET_FAILED} {msg_prefix }"
