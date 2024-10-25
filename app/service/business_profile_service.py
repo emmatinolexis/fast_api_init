@@ -94,6 +94,8 @@ class BusinessProfileService(BaseService):
                     "active_plan": active_subscription.plan.get("name")
                     if active_subscription and active_subscription.plan
                     else FREE_PACKAGE,
+                    "active_plan_amount": active_subscription.plan.get("amount")
+                    if active_subscription else None,
                     "package_features": package_features,
                     "status": "active",
                     "expiry_date": active_subscription.next_payment_date
