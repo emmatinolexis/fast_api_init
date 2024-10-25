@@ -56,7 +56,7 @@ def peripheral_device_transformer(
     if device.device_type == PeripheralDeviceType.GAS_NODE_DEVICE:
         cylinder = gas_cylinder_repo.read_by_uuid(device.gas_cylinder_uuid)
         if cylinder:
-            gas_cylinder_data = {"name": cylinder.cylinder_name}
+            gas_cylinder_data = {"name": cylinder.cylinder_name, "uuid": cylinder.uuid}
 
     latest_event = device_event_repository.get_device_latest_reading(device.node_id)
 
