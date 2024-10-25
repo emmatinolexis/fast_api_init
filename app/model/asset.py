@@ -93,11 +93,7 @@ class Asset(BaseModel):
     asset_type = relationship("AssetType", uselist=False)
     equipment_type = relationship("EquipmentType", uselist=False)
     equipment = relationship("Equipment", uselist=False)
-    # driver = relationship("Driver", uselist=False, back_populates="asset")
-    driver = relationship(
-        "AssetOperatorAssignment",
-        back_populates="asset",
-    )
+    driver = relationship("Driver", uselist=False, back_populates="asset")
     device = relationship("Device", uselist=False, back_populates="asset")
     device_request = relationship(
         "AssetDeviceRequest", secondary="device_request_asset_assignments"
