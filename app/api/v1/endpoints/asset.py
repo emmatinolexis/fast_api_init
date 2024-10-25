@@ -108,14 +108,25 @@ async def get_asset_by_business_uuid_handler(
     current_user: User = Depends(get_current_user_with_permission("view_asset")),
 ):
     try:
-        assets = service.get_assets_by_business_uuid(
-            business_uuid=business_uuid,
-            asset_type_uuid=asset_type_uuid,
-            page=page,
-            page_size=page_size,
-            search=search,
-        )
 
+        if current_user.user_role.role_name == "Operator":
+            print(current_user.user_role.role_name)
+            assets = service.read_assigned_assets(
+                operator_uuid=str(current_user.uuid),
+                business_uuid=business_uuid,
+                asset_type_uuid=asset_type_uuid,
+                search=search,
+                page=page,
+                page_size=page_size,
+                )
+        else:
+            assets = service.get_assets_by_business_uuid(
+                business_uuid=business_uuid,
+                asset_type_uuid=asset_type_uuid,
+                page=page,
+                page_size=page_size,
+                search=search,
+            )
         return send_data(assets)
 
     except Exception as e:

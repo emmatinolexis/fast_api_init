@@ -323,6 +323,27 @@ class AssetService(BaseService):
             )
         except Exception as e:
             raise e
+        
+    def read_assigned_assets(
+        self,
+        operator_uuid:str,
+        business_uuid: str,
+        asset_type_uuid: str = None,
+        page=1,
+        page_size=10,
+        search: str = None,
+    ):
+        try:
+            return self.asset_repository.read_assigned_assets_by_uuid(
+                operator_uuid=operator_uuid,
+                business_uuid=business_uuid,
+                page_size=page_size,
+                page=page,
+                asset_type_uuid=asset_type_uuid,
+                search_query=search,
+            )
+        except Exception as e:
+            raise e
 
     def get_assets_by_user_uuid_no_pagination(self, user_uuid: str):
         try:
