@@ -12,7 +12,7 @@ from app.api.v1.endpoints.alert_policy import (
 from app.api.v1.endpoints.report import generate_smart_report_handler
 from app.api.v1.routes import routers as v1_routers
 from app.core.container import Container
-from app.core.logger import get_logger, init_logger
+from app.core.logger import get_logger
 from app.core.settings import settings
 from app.util.class_object import singleton
 
