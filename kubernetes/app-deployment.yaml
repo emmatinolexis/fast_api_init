@@ -118,11 +118,6 @@ spec:
             secretKeyRef:
               name: mvi-tracking
               key: secret_key
-        - name: GRAYLOG_HOST
-          valueFrom:
-            secretKeyRef:
-              name: mvi-tracking
-              key: graylog_host
         - name: ECHO_PARROT_HOST
           valueFrom:
             secretKeyRef:

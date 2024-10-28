@@ -30,9 +30,6 @@ class AppCreator:
             version=settings.API_VERSION,
         )
 
-        # set logger
-        init_logger(settings.PROJECT_NAME, settings.GRAYLOG_HOST, settings.GRAYLOG_PORT)
-
         # Initialize prometheus middleware
         Instrumentator().instrument(self.app).expose(self.app)
 
