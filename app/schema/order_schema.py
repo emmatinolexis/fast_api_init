@@ -37,3 +37,4 @@ class OrderPayload(BaseModel):
     shipping_address: ShippingAddress
     payment_reference: str
     total_amount: int
+    installation_request: Optional[bool] = False
