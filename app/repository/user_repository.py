@@ -49,7 +49,9 @@ class UserRepository(BaseRepository):
                 user_to_update.address = user.address
                 user_to_update.phone_number = user.phone_number
                 user_to_update.country = user.country
-                user_to_update.operator_type = user.operator_type
+
+                if user.phone_number is not None:
+                    user_to_update.operator_type = user.operator_type
 
                 # set onboarding status
                 if user_to_update.onboarding_status is None:
