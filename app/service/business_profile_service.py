@@ -123,3 +123,10 @@ class BusinessProfileService(BaseService):
 
         except Exception as e:
             raise e
+
+    def get_business_by_uuid(self, business_uuid: str):
+        try:
+            devices = self.business_profile_repository.get_by_uuid(business_uuid)
+            return devices
+        except Exception as e:
+            raise e
