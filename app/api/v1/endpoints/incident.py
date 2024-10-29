@@ -113,6 +113,7 @@ async def get_incidents_by_incident_type(
 @router.get("/report", response_class=ORJSONResponse)
 @inject
 async def get_incidents_report(
+    search_parameter:str = None,
     start_date: str = Query(
         None, description="Start date should be in the format dd/mm/yyyy"
     ),
@@ -127,7 +128,7 @@ async def get_incidents_report(
 ):
     try:
         incidents = service.get_incident_reports(
-            start_date=start_date, end_date=end_date, page=page, page_size=page_size
+            start_date=start_date, end_date=end_date, page=page, page_size=page_size,search_parameter=search_parameter
         )
         incident_count = incidents["total"]
 
