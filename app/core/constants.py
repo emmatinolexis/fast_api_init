@@ -377,10 +377,10 @@ PERMISSIONS = {
     ],
     "equipments": [
         {"permission_name": "create_equipment", "permission_type": "admin"},
-        {"permission_name": "view_equipment", "permission_type": "admin"},
+        {"permission_name": "view_equipment", "permission_type": "all"},
         {"permission_name": "update_equipment", "permission_type": "admin"},
         {"permission_name": "create_equipment_type", "permission_type": "admin"},
-        {"permission_name": "view_equipment_type", "permission_type": "admin"},
+        {"permission_name": "view_equipment_type", "permission_type": "all"},
         {"permission_name": "update_equipment_type", "permission_type": "admin"},
     ],
     "cylinder_size": [

@@ -17,6 +17,7 @@ MARKER_ICON_NOT_FOUND = "No marker icon was found with the given uuid : "
 ASSET_TYPE_NOT_FOUND = "No asset type was found with the given uuid : "
 ASSET_NOT_FOUND = "No asset was found with the given uuid : "
 BUSINESS_PROFILE_NOT_FOUND = "No business profile was found with the given uuid : "
+BUSINESS_PROFILE_NOT_FOUND_MSG = "No business profile was found with the given uuid"
 DEVICE_NOT_FOUND = "No device was found with the given uuid : "
 DEVICE_MANUFACTURER_NOT_FOUND = (
     "No device manufacturer was found with the given uuid : "
