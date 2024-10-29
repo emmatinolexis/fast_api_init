@@ -36,17 +36,28 @@ class FuelLogService(BaseService):
     def create_individual_fuel_log(
         self, payload: FuelLogSchema, user_uuid: str, business_profile_uuid: str = None
     ):
-        asset = self.asset_repository.read_by_uuid(payload.asset_uuid)
+        
+
+
+        driver = self.user_repository.read_by_uuid(user_uuid)
+        if not driver:
+            raise NotFoundError(detail=messages.DRIVER_NOT_FOUND + user_uuid)
+        
+        asset_assignment = self.asset_operator_assignment_repository.get_assignment_by_operator_uuid(user_uuid)
+        if not asset_assignment:
+            raise NotFoundError(detail=messages.DRIVER_NOT_ASSIGNED.format(driver.email_address))
+        
+        asset = self.asset_repository.read_by_uuid(asset_assignment.asset_uuid)
         if not asset:
             raise NotFoundError(detail=messages.ASSET_NOT_FOUND)
 
-        driver = self.asset_repository.get_driver_by_asset_uuid(payload.asset_uuid)
+        
 
         log_payload = FuelLogCreateSchema(
             amount=payload.amount,
             quantity=payload.quantity,
             user_uuid=user_uuid,
-            asset_uuid=payload.asset_uuid,
+            asset_uuid=str(asset.uuid),
             business_profile_uuid=business_profile_uuid,
             receipt_image=payload.receipt_image,
             payment_method=payload.payment_method,
@@ -56,7 +67,9 @@ class FuelLogService(BaseService):
             fuel_type=payload.fuel_type,
         )
 
-        return self.fuel_log_repository.create(log_payload)
+        log =  self.fuel_log_repository.create(log_payload)
+
+        return fuel_log_transformer(log,self.user_repository)
 
     def create_bulk_fuel_logs(
         self, user_uuid: str, csv_url: str, business_profile_uuid: str = None
