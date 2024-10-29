@@ -122,7 +122,9 @@ class IncidentRepository(BaseRepository):
 
             search_filter = ""
             if search_parameter:
-                search_filter = " AND (u.first_name ILIKE :search OR u.last_name ILIKE :search)"
+                search_filter = (
+                    " AND (u.first_name ILIKE :search OR u.last_name ILIKE :search)"
+                )
                 params["search"] = f"%{search_parameter}%"
 
             query = text(

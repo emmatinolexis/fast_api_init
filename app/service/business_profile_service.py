@@ -95,7 +95,8 @@ class BusinessProfileService(BaseService):
                     if active_subscription and active_subscription.plan
                     else FREE_PACKAGE,
                     "active_plan_amount": active_subscription.plan.get("amount")
-                    if active_subscription else None,
+                    if active_subscription
+                    else None,
                     "package_features": package_features,
                     "status": "active",
                     "expiry_date": active_subscription.next_payment_date
@@ -117,8 +118,12 @@ class BusinessProfileService(BaseService):
                 "total_records": businesses.get("total_records"),
                 "total_pages": businesses.get("total_pages"),
                 "total_subscriptions": businesses.get("total_subscriptions"),
-                "total_active_subscriptions": businesses.get("total_active_subscriptions"),
-                "total_inactive_subscriptions": businesses.get("total_inactive_subscriptions"),
+                "total_active_subscriptions": businesses.get(
+                    "total_active_subscriptions"
+                ),
+                "total_inactive_subscriptions": businesses.get(
+                    "total_inactive_subscriptions"
+                ),
             }
 
         except Exception as e:

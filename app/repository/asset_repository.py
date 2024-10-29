@@ -173,7 +173,6 @@ class AssetRepository(BaseRepository):
                 "idle_assets": idle_asset_count,
                 "stopped_assets": stopped_asset_count,
             }
-        
 
     def read_assigned_assets_by_uuid(
         self,

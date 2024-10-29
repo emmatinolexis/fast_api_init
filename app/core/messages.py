@@ -116,3 +116,4 @@ NO_OPERATOR_FOUND = "Operator not found"
 ASSIGNMENT_SUCCESS = "Asset assigned to operator successfully"
 
 LICENSE_IN_USE = "Drivers license already in use"
+LICENSE_CHECK_FAILED = "Failed to check licenses expiry"

@@ -239,3 +239,24 @@ async def send_password_change_email(
     except Exception as e:
         log.error(f"Failed to send password change email [{email}]")
         raise Exception(str(e))
+
+
+async def send_license_expiry_email(recipient_name, email, expiry_date, no_days):
+    try:
+        response = await send_email(
+            email_purpose=EmailPurpose.LICENSE_EXPIRY,
+            email_body={
+                "recipient_name": recipient_name,
+                "expiry_date": expiry_date,
+                "email": email,
+                "no_of_days_until_expiry": no_days,
+            },
+            email=email,
+        )
+        if response["data"]["status"] == "success":
+            log.info(f"Password change email [{email}] sent successfully")
+            return
+        log.error(f"Failed to send password change email [{email}]")
+    except Exception as e:
+        log.error(f"Failed to send password change email [{email}]")
+        raise Exception(str(e))

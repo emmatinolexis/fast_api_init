@@ -7,9 +7,18 @@ class PaymentService(BaseService):
         self.payment_repository = payment_repository
         super().__init__(payment_repository)
 
-    def get_payments(self, search_parameter: str = None, start_date: str = None, end_date: str = None, page: int = None, page_size: int = None):
+    def get_payments(
+        self,
+        search_parameter: str = None,
+        start_date: str = None,
+        end_date: str = None,
+        page: int = None,
+        page_size: int = None,
+    ):
         try:
-            payments = self.payment_repository.get_all_payments(search_parameter, start_date, end_date, page, page_size)
+            payments = self.payment_repository.get_all_payments(
+                search_parameter, start_date, end_date, page, page_size
+            )
             payments_data = []
             for payment in payments.get("payments"):
                 data = {
@@ -20,7 +29,7 @@ class PaymentService(BaseService):
                     "payment_type": payment.payment_type,
                     "payment_reference": payment.reference_no,
                     "customer": f"{payment.user.first_name} {payment.user.last_name}",
-                    "account_type": payment.user.account_type
+                    "account_type": payment.user.account_type,
                 }
 
                 payments_data.append(data)
@@ -32,7 +41,7 @@ class PaymentService(BaseService):
                 "total_records": payments.get("total_records"),
                 "total_pages": payments.get("total_pages"),
                 "successful_payments": payments.get("successful_payments"),
-                "failed_payments": payments.get("failed_payments")
+                "failed_payments": payments.get("failed_payments"),
             }
         except Exception as e:
             raise e
