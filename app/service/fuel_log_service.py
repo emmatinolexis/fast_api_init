@@ -138,7 +138,7 @@ class FuelLogService(BaseService):
         fuel_log = self.fuel_log_repository.create(full_payload)
 
         return fuel_log_transformer(
-            fuel_log, self.driver_repository, self.user_repository
+            fuel_log,self.user_repository
         )
 
     def get_fuel_logs_by_user_uuid(
@@ -165,7 +165,7 @@ class FuelLogService(BaseService):
                 "total_pages": total // page_size + 1,
                 "data": [
                     fuel_log_transformer(
-                        log, self.driver_repository, self.user_repository
+                        log,self.user_repository
                     )
                     for log in paginated_fuel_logs
                 ],
