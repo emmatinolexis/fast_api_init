@@ -23,6 +23,7 @@ class OrderRepository(BaseRepository):
                     payment_reference_id=order_payload.payment_reference,
                     total_amount=order_payload.total_amount,
                     order_status=OrderStatus.PROCESSING,
+                    installation_request = order_payload.installation_request
                 )
                 session.add(order_data)
                 session.commit()
