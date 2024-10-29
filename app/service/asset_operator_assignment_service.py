@@ -22,12 +22,12 @@ class AssetOperatorAssignmentService(BaseService):
         super().__init__(asset_operator_assignment)
 
     def assign_operator_to_asset(
-    self,
-    asset_uuid: str,
-    operator_uuid: str,
-    user_uuid: str,
-    business_profile_uuid: str = None,
-):
+        self,
+        asset_uuid: str,
+        operator_uuid: str,
+        user_uuid: str,
+        business_profile_uuid: str = None,
+    ):
         try:
             asset = self.asset_repository.read_by_uuid(asset_uuid)
             if asset is None:
@@ -52,12 +52,14 @@ class AssetOperatorAssignmentService(BaseService):
                     asset_uuid=asset_uuid
                 )
             )
-            
+
             # Update assignment if existing, else create new
             if existing_operator_asset_assignment or existing_asset_operator_assignment:
                 if existing_operator_asset_assignment is not None:
                     self.asset_operator_assignment.update_attr_by_uuid(
-                        existing_operator_asset_assignment.uuid, "asset_uuid", asset_uuid
+                        existing_operator_asset_assignment.uuid,
+                        "asset_uuid",
+                        asset_uuid,
                     )
                     self.asset_operator_assignment.update_attr_by_uuid(
                         existing_operator_asset_assignment.uuid,
@@ -66,7 +68,9 @@ class AssetOperatorAssignmentService(BaseService):
                     )
                 elif existing_asset_operator_assignment is not None:
                     self.asset_operator_assignment.update_attr_by_uuid(
-                        existing_asset_operator_assignment.uuid, "asset_uuid", asset_uuid
+                        existing_asset_operator_assignment.uuid,
+                        "asset_uuid",
+                        asset_uuid,
                     )
                     self.asset_operator_assignment.update_attr_by_uuid(
                         existing_asset_operator_assignment.uuid,
@@ -79,7 +83,7 @@ class AssetOperatorAssignmentService(BaseService):
                     asset_uuid=asset_uuid, operator_uuid=operator_uuid
                 )
                 self.asset_operator_assignment.create(schema=schema)
-                
+
             return messages.ASSIGNMENT_SUCCESS
 
         except Exception as e:

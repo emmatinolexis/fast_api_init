@@ -1,5 +1,4 @@
 from app.repository.user_subscription_repository import UserSubscriptionRepository
-
 from app.service.base_service import BaseService
 
 
