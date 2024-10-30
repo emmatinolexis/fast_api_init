@@ -28,27 +28,25 @@ class InstallationRepository(BaseRepository):
     def create_installation(self, installation_payload: InstallationPayload):
         with self.session_factory() as session:
             try:
-                existing_installation = (
-                    session.query(Installation)
-                    .filter_by(order_uuid=installation_payload.order_uuid)
-                    .first()
-                )
+                existing_installation = session.query(Installation).filter_by(order_uuid=installation_payload.order_uuid).first()
                 if existing_installation:
-                    raise ValueError(
-                        f"Installation already exists for order UUID: {installation_payload.order_uuid}"
-                    )
+                    raise ValueError(f"Installation already exists for order UUID: {installation_payload.order_uuid}")
 
                 installation = Installation(
+                    installer_uuid=installation_payload.installer_uuid,
                     order_uuid=installation_payload.order_uuid,
                 )
                 session.add(installation)
-
-                order = (
-                    session.query(Order)
-                    .filter_by(uuid=installation_payload.order_uuid)
-                    .first()
-                )
+                
+                order = session.query(Order).filter_by(uuid=installation_payload.order_uuid).first()
                 if order:
                     order.date_of_installation = installation_payload.date_of_installation
                     order.time_of_installation = installation_payload.time_of_installation
+                
+                session.commit()
+                session.refresh(installation)
+                return installation
+            except Exception as e:
+                session.rollback()
+                raise e
                 
