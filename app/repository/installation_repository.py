@@ -49,16 +49,6 @@ class InstallationRepository(BaseRepository):
                     .first()
                 )
                 if order:
-                    order.date_of_installation = (
-                        installation_payload.date_of_installation
-                    )
-                    order.time_of_installation = (
-                        installation_payload.time_of_installation
-                    )
-
-                session.commit()
-                session.refresh(installation)
-                return installation
-            except Exception as e:
-                session.rollback()
-                raise e
+                    order.date_of_installation = installation_payload.date_of_installation
+                    order.time_of_installation = installation_payload.time_of_installation
+                

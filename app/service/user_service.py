@@ -22,7 +22,6 @@ from app.schema.invitation_schema import (
 )
 from app.schema.user_schema import (
     AccountDeactivationPayload,
-    DriverLicenseUpdates,
     DriversLicenseFull,
     UpdateUserPayload,
     UserPayload,

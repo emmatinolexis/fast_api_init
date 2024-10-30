@@ -64,6 +64,9 @@ class OrderRepository(BaseRepository):
                         cast(Order.created_at, Date) <= end_date
                     )
 
+                # Sort by 'created_at' in descending order
+                base_query = base_query.order_by(Order.created_at.desc())
+
                 total_orders = base_query.count()
                 fulfilled_orders = base_query.filter(
                     Order.order_status == OrderStatus.DELIVERED
@@ -77,7 +80,6 @@ class OrderRepository(BaseRepository):
                     "current_page": page,
                     "page_size": page_size,
                     "fulfilled_orders": fulfilled_orders,
-                    "total_orders": total_orders,
                 }
             except Exception as e:
                 session.rollback()
