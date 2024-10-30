@@ -323,10 +323,10 @@ class AssetService(BaseService):
             )
         except Exception as e:
             raise e
-        
+
     def read_assigned_assets(
         self,
-        operator_uuid:str,
+        operator_uuid: str,
         business_uuid: str,
         asset_type_uuid: str = None,
         page=1,
@@ -430,7 +430,11 @@ class AssetService(BaseService):
     ):
         try:
             incidences = self.theft_incidence_repository.get_all_incidence(
-                page=page, page_size=page_size, search_query=search_query, start_date=start_date, end_date=end_date
+                page=page,
+                page_size=page_size,
+                search_query=search_query,
+                start_date=start_date,
+                end_date=end_date,
             )
             return incidences
         except Exception as e:

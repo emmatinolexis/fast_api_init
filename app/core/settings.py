@@ -84,10 +84,6 @@ class Settings(BaseSettings):
         )
     )
 
-    # Graylog
-    GRAYLOG_HOST: str = os.getenv("GRAYLOG_HOST", "localhost")
-    GRAYLOG_PORT: int = os.getenv("GRAYLOG_PORT", 12201)
-
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = ["*"]
 

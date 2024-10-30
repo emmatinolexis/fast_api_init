@@ -95,7 +95,6 @@ jobs:
           MQTT_USER: ${{ secrets.MQTT_USER }}
           MQTT_PASSWORD: ${{ secrets.MQTT_PASSWORD }}
           MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
-          GRAYLOG_HOST: ${{ secrets.GRAYLOG_HOST }}
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           ECHO_PARROT_HOST: ${{ secrets.ECHO_PARROT_HOST }}
           RTD_SEND_ORDER_SIGNATURE: ${{ secrets.RTD_SEND_ORDER_SIGNATURE }}

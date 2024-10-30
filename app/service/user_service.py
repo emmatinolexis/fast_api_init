@@ -92,8 +92,8 @@ class UserService(BaseService):
                 )
             )
 
-            existing_user_license = self.driver_license_repository.get_license_by_user_id(
-                user_uuid=uuid
+            existing_user_license = (
+                self.driver_license_repository.get_license_by_user_id(user_uuid=uuid)
             )
 
             if existing_license and existing_license.user_id != uuid:
@@ -101,8 +101,7 @@ class UserService(BaseService):
 
             if existing_user_license:
                 self.driver_license_repository.update_by_uuid(
-                    existing_user_license.uuid,
-                    payload.license
+                    existing_user_license.uuid, payload.license
                 )
                 return
 
@@ -138,7 +137,6 @@ class UserService(BaseService):
             user_id=uuid,
         )
         self.driver_license_repository.create(new_license_data)
-
 
     def patch_user_by_uuid(self, uuid: str, payload: UserProfileUdatePayload):
         try:

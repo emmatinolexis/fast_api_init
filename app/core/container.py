@@ -44,6 +44,7 @@ from app.repository import (
     geofence_violation_tracker_repository,
     immobilizer_report_repository,
     incident_repository,
+    installation_repository,
     inventory_repository,
     maintenance_alert_repository,
     marker_icon_repository,
@@ -118,6 +119,7 @@ from app.service import (
     geofence_violation_tracker_service,
     immobilizer_report_service,
     incident_service,
+    installation_service,
     inventory_service,
     invitation_service,
     maintenance_alert_service,
@@ -198,6 +200,7 @@ class Container(containers.DeclarativeContainer):
             "app.api.v1.endpoints.incident",
             "app.api.v1.endpoints.peripheral_device",
             "app.api.v1.endpoints.gateway_configuration",
+            "app.api.v1.endpoints.installation"
         ]
     )
 
@@ -527,6 +530,11 @@ class Container(containers.DeclarativeContainer):
         driver_license_repository.DriverLicenseRepository,
         session_factory=db.provided.session,
     )
+    installation_repository = providers.Factory(
+        installation_repository.InstallationRepository,
+        session_factory=db.provided.session,
+    )
+
 
     # Services
     auth_service = providers.Factory(
@@ -838,7 +846,7 @@ class Container(containers.DeclarativeContainer):
         asset_repository=asset_repository,
         driver_repository=driver_repository,
         user_repository=user_repository,
-        asset_operator_assignment_repository=asset_operator_assignment_repository
+        asset_operator_assignment_repository=asset_operator_assignment_repository,
     )
 
     device_events_service = providers.Factory(
@@ -891,4 +899,9 @@ class Container(containers.DeclarativeContainer):
     driver_license_service = providers.Factory(
         driver_license_service.DriverLicenseService,
         driver_license_repository=driver_license_repository,
+    )
+
+    installation_service = providers.Factory(
+        installation_service.InstallationService,
+        installation_repository=installation_repository,
     )

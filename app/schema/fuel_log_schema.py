@@ -12,7 +12,6 @@ class FuelLogSchema(BaseModel):
     quantity: float
     receipt_image: Optional[str] = None
     payment_method: FuelLogPaymmentMethod
-    asset_uuid: str
     purchase_date: date
     fuel_type: FuelType
 

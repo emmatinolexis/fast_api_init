@@ -41,7 +41,11 @@ async def get_all_payments_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.get_payments(search_parameter, start_date, end_date, page, page_size))
+        return send_data(
+            service.get_payments(
+                search_parameter, start_date, end_date, page, page_size
+            )
+        )
     except Exception as e:
         msg = f"{messages.GET_FAILED} {msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)

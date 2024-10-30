@@ -102,6 +102,7 @@ class IncidentRepository(BaseRepository):
         self,
         start_date: str = None,
         end_date: str = None,
+        search_parameter: str = None,
         page: int = 1,
         page_size: int = 10,
     ):
@@ -118,6 +119,13 @@ class IncidentRepository(BaseRepository):
             if end_date:
                 date_filter += " AND cl.created_at <= :end_date"
                 params["end_date"] = end_date
+
+            search_filter = ""
+            if search_parameter:
+                search_filter = (
+                    " AND (u.first_name ILIKE :search OR u.last_name ILIKE :search)"
+                )
+                params["search"] = f"%{search_parameter}%"
 
             query = text(
                 f"""
@@ -146,6 +154,7 @@ class IncidentRepository(BaseRepository):
             FROM cluster_incidents_by_type cl
             JOIN users u ON cl.user_uuid = u.uuid
             WHERE cl.rn = 1 
+            {search_filter}
             {date_filter}
             LIMIT :limit OFFSET :offset;
         """

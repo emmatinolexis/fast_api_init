@@ -101,6 +101,7 @@ class FineType(str, Enum):
 
 class CustomerRoles(str, Enum):
     ADMIN = UUID("7d720dbf-f90f-462d-ada2-8fbf0bfba56b")
+    INSTALLER = UUID("f06fc1ac-75b2-4c32-a808-5a5836a836d9")
 
 
 class PackageItemTrackerType(str, Enum):
@@ -300,6 +301,7 @@ class EmailPurpose(str, Enum):
     SMART_REPORT_ALERT = "Smart_Report_Alert"
     PASSWORD_CHANGE = "Password_Change"
     DEVICE_ALERTS = "Device_Alerts"
+    LICENSE_EXPIRY = "License_Expiry"
 
 
 class FileFormat(str, Enum):

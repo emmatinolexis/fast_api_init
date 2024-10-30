@@ -52,21 +52,38 @@ class AssetOperatorAssignmentService(BaseService):
                     asset_uuid=asset_uuid
                 )
             )
+
+            # Update assignment if existing, else create new
             if existing_operator_asset_assignment or existing_asset_operator_assignment:
-                self.asset_operator_assignment.update_attr_by_uuid(
-                    existing_operator_asset_assignment.uuid, "asset_uuid", asset_uuid
-                )
-                self.asset_operator_assignment.update_attr_by_uuid(
-                    existing_operator_asset_assignment.uuid,
-                    "operator_uuid",
-                    operator_uuid,
-                )
+                if existing_operator_asset_assignment is not None:
+                    self.asset_operator_assignment.update_attr_by_uuid(
+                        existing_operator_asset_assignment.uuid,
+                        "asset_uuid",
+                        asset_uuid,
+                    )
+                    self.asset_operator_assignment.update_attr_by_uuid(
+                        existing_operator_asset_assignment.uuid,
+                        "operator_uuid",
+                        operator_uuid,
+                    )
+                elif existing_asset_operator_assignment is not None:
+                    self.asset_operator_assignment.update_attr_by_uuid(
+                        existing_asset_operator_assignment.uuid,
+                        "asset_uuid",
+                        asset_uuid,
+                    )
+                    self.asset_operator_assignment.update_attr_by_uuid(
+                        existing_asset_operator_assignment.uuid,
+                        "operator_uuid",
+                        operator_uuid,
+                    )
             else:
                 # Create a new assignment if none exists
                 schema = AssignAssetPayload(
                     asset_uuid=asset_uuid, operator_uuid=operator_uuid
                 )
                 self.asset_operator_assignment.create(schema=schema)
+
             return messages.ASSIGNMENT_SUCCESS
 
         except Exception as e:

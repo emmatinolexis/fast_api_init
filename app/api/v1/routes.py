@@ -29,6 +29,7 @@ from app.api.v1.endpoints.gateway_configuration import (
 )
 from app.api.v1.endpoints.health_check import router as health_check_router
 from app.api.v1.endpoints.incident import router as incident_router
+from app.api.v1.endpoints.installation import router as installlation_router
 from app.api.v1.endpoints.inventory import router as inventory_router
 from app.api.v1.endpoints.marker_icon import router as marker_icon_router
 from app.api.v1.endpoints.onboarding import router as onboarding_router
@@ -95,6 +96,7 @@ router_list = [
     incident_router,
     peripheral_device_router,
     gateway_configuration_router,
+    installlation_router
 ]
 
 for router in router_list:

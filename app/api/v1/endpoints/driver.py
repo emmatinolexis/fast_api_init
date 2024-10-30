@@ -1,3 +1,4 @@
+from datetime import date
 from typing import List
 
 from dependency_injector.wiring import Provide, inject
@@ -11,8 +12,10 @@ from app.core.exceptions import BadRequestError, NotFoundError
 from app.model.user import User
 from app.schema.asset_schema import DriverPayload
 from app.service.asset_operator_assignment_service import AssetOperatorAssignmentService
+from app.service.driver_license_service import DriverLicenseService
 from app.service.driver_service import DriverService
 from app.service.user_service import UserService
+from app.util.email import send_license_expiry_email
 from app.util.enums import ActiveStatus
 from app.util.utils import (
     send_client_side_error,
@@ -208,3 +211,30 @@ async def change_rider_asset_handler(
     except Exception as e:
         msg = messages.UPDATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/license_expiry")
+@inject
+async def check_drivers_license_expiry(
+    user_service: UserService = Depends(Provide[Container.user_service]),
+    service: DriverLicenseService = Depends(Provide[Container.driver_license_service]),
+):
+    try:
+        licenses = service.get_all_licenses()
+
+        for license in licenses:
+            if license.expires_soon():
+                driver = user_service.get_by_uuid(license.user_id)
+                no_days = (license.expiration_date - date.today()).days
+                await send_license_expiry_email(
+                    recipient_name=f"{driver.first_name} {driver.last_name}",
+                    email=driver.email_address,
+                    expiry_date=license.expiration_date,
+                    no_days=no_days,
+                )
+                pass
+            else:
+                pass
+    except Exception as e:
+        msg = messages.LICENSE_CHECK_FAILED
+        return send_internal_server_error(user_msg=msg, error=str(e))

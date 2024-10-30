@@ -143,6 +143,3 @@ class DeviceRepository(BaseRepository):
                 return device
             except Exception as e:
                 raise e
-            
-   
-    

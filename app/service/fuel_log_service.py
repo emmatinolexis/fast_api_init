@@ -1,10 +1,12 @@
 from app.core import messages
 from app.core.exceptions import NotFoundError
+from app.repository.asset_operator_assignment_repository import (
+    AssetOperatorTypeAssignmentRepository,
+)
 from app.repository.asset_repository import AssetRepository
 from app.repository.driver_repository import DriverRepository
 from app.repository.fuel_log_repository import FuelLogRepository
 from app.repository.user_repository import UserRepository
-from app.repository.asset_operator_assignment_repository import AssetOperatorTypeAssignmentRepository
 from app.schema.fuel_log_schema import (
     FleetManagerFuelLog,
     FuelLogCreateSchema,
@@ -24,7 +26,7 @@ class FuelLogService(BaseService):
         asset_repository: AssetRepository,
         driver_repository: DriverRepository,
         user_repository: UserRepository,
-        asset_operator_assignment_repository: AssetOperatorTypeAssignmentRepository
+        asset_operator_assignment_repository: AssetOperatorTypeAssignmentRepository,
     ):
         self.fuel_log_repository = fuel_log_repository
         self.asset_repository = asset_repository
@@ -36,17 +38,29 @@ class FuelLogService(BaseService):
     def create_individual_fuel_log(
         self, payload: FuelLogSchema, user_uuid: str, business_profile_uuid: str = None
     ):
-        asset = self.asset_repository.read_by_uuid(payload.asset_uuid)
+        driver = self.user_repository.read_by_uuid(user_uuid)
+        if not driver:
+            raise NotFoundError(detail=messages.DRIVER_NOT_FOUND + user_uuid)
+
+        asset_assignment = (
+            self.asset_operator_assignment_repository.get_assignment_by_operator_uuid(
+                user_uuid
+            )
+        )
+        if not asset_assignment:
+            raise NotFoundError(
+                detail=messages.DRIVER_NOT_ASSIGNED.format(driver.email_address)
+            )
+
+        asset = self.asset_repository.read_by_uuid(asset_assignment.asset_uuid)
         if not asset:
             raise NotFoundError(detail=messages.ASSET_NOT_FOUND)
-
-        driver = self.asset_repository.get_driver_by_asset_uuid(payload.asset_uuid)
 
         log_payload = FuelLogCreateSchema(
             amount=payload.amount,
             quantity=payload.quantity,
             user_uuid=user_uuid,
-            asset_uuid=payload.asset_uuid,
+            asset_uuid=str(asset.uuid),
             business_profile_uuid=business_profile_uuid,
             receipt_image=payload.receipt_image,
             payment_method=payload.payment_method,
@@ -56,7 +70,9 @@ class FuelLogService(BaseService):
             fuel_type=payload.fuel_type,
         )
 
-        return self.fuel_log_repository.create(log_payload)
+        log = self.fuel_log_repository.create(log_payload)
+
+        return fuel_log_transformer(log, self.user_repository)
 
     def create_bulk_fuel_logs(
         self, user_uuid: str, csv_url: str, business_profile_uuid: str = None
@@ -68,7 +84,9 @@ class FuelLogService(BaseService):
 
                 for item in data:
                     driver_email = item.get("driver_email")
-                    driver_details = self.user_repository.get_user_by_email_address(driver_email)
+                    driver_details = self.user_repository.get_user_by_email_address(
+                        driver_email
+                    )
                     if not driver_details:
                         raise NotFoundError(
                             detail=messages.WRONG_DRIVER_EMAIL + driver_email
@@ -81,7 +99,7 @@ class FuelLogService(BaseService):
                         raise NotFoundError(
                             detail=messages.DRIVER_NOT_ASSIGNED.format(driver_email)
                         )
-                    
+
                     asset = self.asset_repository.read_by_uuid(drivers_asset.asset_uuid)
 
                     log_payload = FleetManagerFuelLog(
@@ -116,7 +134,9 @@ class FuelLogService(BaseService):
         if not asset:
             raise NotFoundError(detail=messages.ASSET_NOT_FOUND)
 
-        driver = self.asset_operator_assignment_repository.get_assignment_by_asset_uuid(payload.asset_uuid)
+        driver = self.asset_operator_assignment_repository.get_assignment_by_asset_uuid(
+            payload.asset_uuid
+        )
 
         if not driver:
             raise NotFoundError(detail=messages.ASSET_MUST_BE_ASSIGNED)
@@ -137,9 +157,7 @@ class FuelLogService(BaseService):
 
         fuel_log = self.fuel_log_repository.create(full_payload)
 
-        return fuel_log_transformer(
-            fuel_log, self.driver_repository, self.user_repository
-        )
+        return fuel_log_transformer(fuel_log, self.user_repository)
 
     def get_fuel_logs_by_user_uuid(
         self,
@@ -164,9 +182,7 @@ class FuelLogService(BaseService):
                 "page_size": page_size,
                 "total_pages": total // page_size + 1,
                 "data": [
-                    fuel_log_transformer(
-                        log, self.driver_repository, self.user_repository
-                    )
+                    fuel_log_transformer(log, self.user_repository)
                     for log in paginated_fuel_logs
                 ],
             }
@@ -196,9 +212,7 @@ class FuelLogService(BaseService):
                 "page_size": page_size,
                 "total_pages": total // page_size + 1,
                 "data": [
-                    fuel_log_transformer(
-                        log, self.user_repository
-                    )
+                    fuel_log_transformer(log, self.user_repository)
                     for log in paginated_fuel_logs
                 ],
             }
@@ -210,12 +224,8 @@ class FuelLogService(BaseService):
             fuel_log_uuid, "receipt_image", payload.receipt_image
         )
 
-        return fuel_log_transformer(
-            updated_fuel_log, self.user_repository
-        )
+        return fuel_log_transformer(updated_fuel_log, self.user_repository)
 
     def get_receipt_by_uuid(self, fuel_log_uuid: str):
         fuel_log = self.fuel_log_repository.read_by_uuid(fuel_log_uuid)
-        return fuel_log_transformer(
-            fuel_log, self.user_repository
-        )
+        return fuel_log_transformer(fuel_log, self.user_repository)

@@ -9,10 +9,11 @@ from app.api.v1.endpoints.alert_policy import (
     check_maintenance_handler,
     check_over_speeding_violation_handler,
 )
+from app.api.v1.endpoints.driver import check_drivers_license_expiry
 from app.api.v1.endpoints.report import generate_smart_report_handler
 from app.api.v1.routes import routers as v1_routers
 from app.core.container import Container
-from app.core.logger import get_logger, init_logger
+from app.core.logger import get_logger
 from app.core.settings import settings
 from app.util.class_object import singleton
 
@@ -29,9 +30,6 @@ class AppCreator:
             openapi_url=f"{settings.API}/openapi.json",
             version=settings.API_VERSION,
         )
-
-        # set logger
-        init_logger(settings.PROJECT_NAME, settings.GRAYLOG_HOST, settings.GRAYLOG_PORT)
 
         # Initialize prometheus middleware
         Instrumentator().instrument(self.app).expose(self.app)
@@ -118,6 +116,14 @@ async def startup_event():
             "interval",
             minutes=5,
             id="smart_report_generation",
+        )
+
+        # Check driver licences expiry
+        scheduler.add_job(
+            check_drivers_license_expiry,
+            "interval",
+            minutes=1440,
+            id="check_license_expiry",
         )
 
 
