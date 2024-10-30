@@ -42,8 +42,12 @@ async def create_installation_handler(
     try:
         installation = service.create_installation(payload)
         return send_data(installation)
+    except ValueError as ve:
+        return ORJSONResponse({"detail": str(ve)}, status_code=400)
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
+
+
 
 
