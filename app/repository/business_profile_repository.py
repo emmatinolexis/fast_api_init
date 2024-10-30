@@ -1,14 +1,14 @@
 from contextlib import AbstractContextManager
 from typing import Callable
 
+from sqlalchemy import and_
 from sqlalchemy.orm import Session, joinedload
 
 from app.model.business_profile import BusinessProfile
-from app.repository.base_repository import BaseRepository
-from app.util.utils import parse_date
 from app.model.user_subscription import UserSubscription
-from sqlalchemy import and_
+from app.repository.base_repository import BaseRepository
 from app.util.enums import SubscriptionStatus
+from app.util.utils import parse_date
 
 
 class BusinessProfileRepository(BaseRepository):
@@ -65,14 +65,14 @@ class BusinessProfileRepository(BaseRepository):
                 total_subscriptions_query = session.query(UserSubscription)
 
                 # Active subscriptions (status = ACTIVE) with date filters
-                total_active_subscriptions_query = session.query(UserSubscription).filter(
-                    UserSubscription.status == SubscriptionStatus.ACTIVE
-                )
+                total_active_subscriptions_query = session.query(
+                    UserSubscription
+                ).filter(UserSubscription.status == SubscriptionStatus.ACTIVE)
 
                 # Inactive subscriptions (status = NON_RENEWING) with date filters
-                total_inactive_subscriptions_query = session.query(UserSubscription).filter(
-                    UserSubscription.status == SubscriptionStatus.NON_RENEWING
-                )
+                total_inactive_subscriptions_query = session.query(
+                    UserSubscription
+                ).filter(UserSubscription.status == SubscriptionStatus.NON_RENEWING)
 
                 if start_date_obj and end_date_obj:
                     total_subscriptions_query = total_subscriptions_query.filter(
@@ -81,22 +81,28 @@ class BusinessProfileRepository(BaseRepository):
                             UserSubscription.created_at <= end_date_obj,
                         )
                     )
-                    total_inactive_subscriptions_query = total_inactive_subscriptions_query.filter(
-                        and_(
-                            UserSubscription.created_at >= start_date_obj,
-                            UserSubscription.created_at <= end_date_obj,
+                    total_inactive_subscriptions_query = (
+                        total_inactive_subscriptions_query.filter(
+                            and_(
+                                UserSubscription.created_at >= start_date_obj,
+                                UserSubscription.created_at <= end_date_obj,
+                            )
                         )
                     )
-                    total_active_subscriptions_query = total_active_subscriptions_query.filter(
-                        and_(
-                            UserSubscription.created_at >= start_date_obj,
-                            UserSubscription.created_at <= end_date_obj,
+                    total_active_subscriptions_query = (
+                        total_active_subscriptions_query.filter(
+                            and_(
+                                UserSubscription.created_at >= start_date_obj,
+                                UserSubscription.created_at <= end_date_obj,
+                            )
                         )
                     )
 
                 total_subscriptions = total_subscriptions_query.count()
                 total_active_subscriptions = total_active_subscriptions_query.count()
-                total_inactive_subscriptions = total_inactive_subscriptions_query.count()
+                total_inactive_subscriptions = (
+                    total_inactive_subscriptions_query.count()
+                )
 
                 return {
                     "businesses": businesses,

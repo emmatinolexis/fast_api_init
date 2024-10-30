@@ -14,6 +14,25 @@ class DeviceService(BaseService):
         except Exception as e:
             raise e
 
+    def get_devices_by_business_uuid(self, business_uuid: str):
+        try:
+            devices = self.device_repository.get_devices_by_business_uuid(business_uuid)
+            # return devices
+            device_data = []
+            for device in devices:
+                data = {
+                    "uuid": device.uuid,
+                    "device_name": device.inventory.device_name,
+                    "device_imei": device.device_imei,
+                    "asset_name": device.asset.asset_name if device.asset else None,
+                    "asset_vehicle_number": device.asset.vehicle_license_no if device.asset else None,
+                    "device_image_url": device.inventory.images[0].image_url
+                }
+                device_data.append(data)
+            return device_data
+        except Exception as e:
+            raise e
+
     def get_user_data_by_device_uuid(self, device_imei: str):
         try:
             device = self.device_repository.get_user_data_by_device_uuid(device_imei)

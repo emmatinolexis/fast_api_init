@@ -1,11 +1,12 @@
 from contextlib import AbstractContextManager
 from typing import Callable
+from uuid import UUID
 
 from sqlalchemy.orm import Session
 
 from app.model.inventory import DeviceImage
 from app.repository.base_repository import BaseRepository
-from uuid import UUID
+
 
 class DeviceImageRepository(BaseRepository):
     def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
@@ -22,13 +23,17 @@ class DeviceImageRepository(BaseRepository):
             except Exception as e:
                 session.rollback()
                 raise e
-            
+
     def update_images(self, inventory_uuid: UUID, new_image: str):
         with self.session_factory() as session:
             try:
-                session.query(DeviceImage).filter(DeviceImage.inventory_uuid == inventory_uuid).delete()
+                session.query(DeviceImage).filter(
+                    DeviceImage.inventory_uuid == inventory_uuid
+                ).delete()
 
-                image_record = DeviceImage(inventory_uuid=inventory_uuid, image_url=new_image)
+                image_record = DeviceImage(
+                    inventory_uuid=inventory_uuid, image_url=new_image
+                )
                 session.add(image_record)
 
                 session.commit()

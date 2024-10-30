@@ -1,14 +1,15 @@
 from contextlib import AbstractContextManager
 from typing import Callable
 
+from sqlalchemy import or_
 from sqlalchemy.orm import Session, joinedload
 
 from app.model.payment import Payment
-from app.repository.base_repository import BaseRepository
 from app.model.user import User
-from app.util.utils import parse_date
+from app.repository.base_repository import BaseRepository
 from app.util.enums import PaymentStatus
-from sqlalchemy import or_
+from app.util.utils import parse_date
+
 
 class PaymentRepository(BaseRepository):
     def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
@@ -16,8 +17,12 @@ class PaymentRepository(BaseRepository):
         super().__init__(session_factory, Payment)
 
     def get_all_payments(
-            self, search_parameter: str = None, start_date: str = None, end_date: str = None, page: int = None,
-            page_size: int = None
+        self,
+        search_parameter: str = None,
+        start_date: str = None,
+        end_date: str = None,
+        page: int = None,
+        page_size: int = None,
     ):
         with self.session_factory() as session:
             # Initialize date variables
@@ -32,7 +37,9 @@ class PaymentRepository(BaseRepository):
             query = session.query(self.model).options(joinedload(self.model.user))
 
             # Apply filters (search parameter and date range)
-            query = self.apply_filters(query, search_parameter, start_date_obj, end_date_obj)
+            query = self.apply_filters(
+                query, search_parameter, start_date_obj, end_date_obj
+            )
 
             # Get total number of records for pagination metadata before applying limit and offset
             total_records = query.count()
@@ -45,8 +52,12 @@ class PaymentRepository(BaseRepository):
             payments = paginated_query.all()
 
             # Count successful and failed payments within the filtered query
-            successful_payments = query.filter(self.model.status == PaymentStatus.SUCCESS).count()
-            failed_payments = query.filter(self.model.status == PaymentStatus.FAILED).count()
+            successful_payments = query.filter(
+                self.model.status == PaymentStatus.SUCCESS
+            ).count()
+            failed_payments = query.filter(
+                self.model.status == PaymentStatus.FAILED
+            ).count()
 
             return {
                 "payments": payments,
@@ -55,18 +66,18 @@ class PaymentRepository(BaseRepository):
                 "total_records": total_records,
                 "total_pages": total_pages,
                 "successful_payments": successful_payments,
-                "failed_payments": failed_payments
+                "failed_payments": failed_payments,
             }
 
     def apply_filters(
-            self, query, search_parameter, start_date_obj=None, end_date_obj=None
+        self, query, search_parameter, start_date_obj=None, end_date_obj=None
     ):
         # Filter by search parameter (user's first name)
         if search_parameter:
             query = query.filter(
                 or_(
                     self.model.user.has(User.first_name.ilike(f"%{search_parameter}%")),
-                    self.model.user.has(User.last_name.ilike(f"%{search_parameter}%"))
+                    self.model.user.has(User.last_name.ilike(f"%{search_parameter}%")),
                 )
             )
 
@@ -79,4 +90,3 @@ class PaymentRepository(BaseRepository):
             query = query.filter(self.model.created_at <= end_date_obj)
 
         return query
-

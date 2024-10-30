@@ -1,6 +1,7 @@
 from contextlib import AbstractContextManager
 from typing import Callable
 
+from sqlalchemy import Date, cast
 from sqlalchemy.orm import Session, joinedload
 
 from app.model.inventory import Inventory
@@ -8,7 +9,6 @@ from app.model.order import Order, OrderDeviceAssignment
 from app.repository.base_repository import BaseRepository
 from app.schema.order_schema import OrderPayload
 from app.util.enums import OrderStatus
-from sqlalchemy import cast, Date
 
 
 class OrderRepository(BaseRepository):
@@ -23,7 +23,7 @@ class OrderRepository(BaseRepository):
                     payment_reference_id=order_payload.payment_reference,
                     total_amount=order_payload.total_amount,
                     order_status=OrderStatus.PROCESSING,
-                    installation_request = order_payload.installation_request
+                    installation_request=order_payload.installation_request,
                 )
                 session.add(order_data)
                 session.commit()
@@ -33,7 +33,9 @@ class OrderRepository(BaseRepository):
                 session.rollback()
                 raise e
 
-    def get_all_orders(self, page=1, page_size=10, search_query=None, start_date=None, end_date=None):
+    def get_all_orders(
+        self, page=1, page_size=10, search_query=None, start_date=None, end_date=None
+    ):
         with self.session_factory() as session:
             try:
                 offset = (page - 1) * page_size
@@ -51,15 +53,21 @@ class OrderRepository(BaseRepository):
                         .join(Inventory)
                         .filter(Inventory.device_name.ilike(f"%{search_query}%"))
                     )
-                
+
                 if start_date:
-                    base_query = base_query.filter(cast(Order.created_at, Date) >= start_date)
-                
+                    base_query = base_query.filter(
+                        cast(Order.created_at, Date) >= start_date
+                    )
+
                 if end_date:
-                    base_query = base_query.filter(cast(Order.created_at, Date) <= end_date)
+                    base_query = base_query.filter(
+                        cast(Order.created_at, Date) <= end_date
+                    )
 
                 total_orders = base_query.count()
-                fulfilled_orders = base_query.filter(Order.order_status == OrderStatus.DELIVERED).count()
+                fulfilled_orders = base_query.filter(
+                    Order.order_status == OrderStatus.DELIVERED
+                ).count()
                 paginated_orders = base_query.offset(offset).limit(page_size).all()
 
                 return {
@@ -69,14 +77,11 @@ class OrderRepository(BaseRepository):
                     "current_page": page,
                     "page_size": page_size,
                     "fulfilled_orders": fulfilled_orders,
-                    "total_orders": total_orders
+                    "total_orders": total_orders,
                 }
             except Exception as e:
                 session.rollback()
                 raise e
-
-
-
 
     def update_order_status(self, order_uuid: str, status: str):
         with self.session_factory() as session:
