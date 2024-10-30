@@ -16,6 +16,19 @@ router = APIRouter(
 msg_prefix = "installation"
 
 
+
+@router.get("/installers", response_class=ORJSONResponse)
+@inject
+async def get_installers_handler(
+    service: InstallationService = Depends(Provide[Container.installation_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        installers = service.fetch_all_installers()
+        return send_data(installers)
+    except Exception as e:
+        return send_internal_server_error(user_msg="Failed to fetch installers.", error=e)
+
 @router.post("/", response_class=ORJSONResponse)
 @inject
 async def create_installation_handler(
@@ -29,3 +42,5 @@ async def create_installation_handler(
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
+
+
