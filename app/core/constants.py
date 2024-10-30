@@ -310,6 +310,7 @@ PERMISSIONS = {
         {"permission_name": "create_peripheral_device", "permission_type": "all"},
         {"permission_name": "assign_peripheral_device", "permission_type": "customer"},
         {"permission_name": "view_peripheral_device", "permission_type": "all"},
+        {"permission_name": "update_peripheral_device", "permission_type": "admin"},
         {"permission_name": "configure_device", "permission_type": "customer"},
         {"permission_name": "link_tracking_device", "permission_type": "admin"},
         {"permission_name": "configure_tracking_device", "permission_type": "admin"},
@@ -361,6 +362,12 @@ PERMISSIONS = {
         {"permission_name": "view_fuel_purchase_log", "permission_type": "customer"},
         {"permission_name": "import_fuel_purchase_log", "permission_type": "customer"},
     ],
+    "device_installation": [
+        {"permission_name": "view_device_installation", "permission_type": "admin"},
+        {"permission_name": "update_device_installation", "permission_type": "admin"},
+        {"permission_name": "create_device_installation", "permission_type": "admin"},
+        {"permission_name": "manage_installation", "permission_type": "admin"},
+    ],
     "settings": [
         {"permission_name": "update_phone_number", "permission_type": "customer"},
         {"permission_name": "change_password", "permission_type": "customer"},
@@ -374,6 +381,7 @@ PERMISSIONS = {
         {"permission_name": "create_team_member", "permission_type": "admin"},
         {"permission_name": "resend_invitation", "permission_type": "all"},
         {"permission_name": "update_user", "permission_type": "all"},
+        {"permission_name": "view_system_users", "permission_type": "admin"},
     ],
     "equipments": [
         {"permission_name": "create_equipment", "permission_type": "admin"},
@@ -394,6 +402,8 @@ PERMISSIONS = {
         {"permission_name": "update_package", "permission_type": "admin"},
         {"permission_name": "delete_package_item", "permission_type": "admin"},
         {"permission_name": "create_subscription", "permission_type": "all"},
+        {"permission_name": "view_subscription", "permission_type": "admin"},
+        {"permission_name": "update_subscription", "permission_type": "admin"},
     ],
     "inventory": [
         {"permission_name": "create_inventory", "permission_type": "admin"},
@@ -445,8 +455,12 @@ PERMISSIONS = {
     "fine_reports": [
         {"permission_name": "view_fine_reports", "permission_type": "all"},
         {"permission_name": "create_fine_reports", "permission_type": "all"},
-        {"permission_name": "update_fine_reports", "permission_type": "all"},
+        {"permission_name": "update_fine_reports", "permission_type": "admin"},
     ],
+    "road_incidents": [
+            {"permission_name": "create_road_incident", "permission_type": "customer"},
+            {"permission_name": "view_road_incident", "permission_type": "all"},
+        ],
     "gas_cylinder_type": [
         {"permission_name": "view_gas_cylinder_type", "permission_type": "all"},
         {"permission_name": "create_gas_cylinder_type", "permission_type": "admin"},
@@ -492,10 +506,11 @@ PERMISSIONS = {
         {"permission_name": "delete_organisation_contact", "permission_type": "all"},
     ],
     "payments": [
-        {"permission_name": "view_payments", "permission_type": "all"},
+        {"permission_name": "view_payments", "permission_type": "admin"},
         {"permission_name": "create_payment", "permission_type": "all"},
-        {"permission_name": "update_payment", "permission_type": "all"},
-        {"permission_name": "delete_payment", "permission_type": "all"},
+        {"permission_name": "update_payment", "permission_type": "admin"},
+        {"permission_name": "delete_payment", "permission_type": "admin"},
+        {"permission_name": "view_billings", "permission_type": "admin"},
     ],
     "vehicle_make": [
         {"permission_name": "view_vehicle_make", "permission_type": "customer"},

@@ -22,7 +22,7 @@ router = APIRouter(
 msg_prefix = "alert policy type"
 
 
-@router.get("/", dependencies=[allow_admins_only], response_class=ORJSONResponse)
+@router.get("/", response_class=ORJSONResponse)
 @inject
 async def get_alert_policy_types_handler(
     service: AlertPolicyTypeService = Depends(

@@ -98,28 +98,22 @@ class UserSubscriptionRepository(BaseRepository):
             .first()
         )
 
-    def get_subscription_by_business_uuid(self, business_profile_uuid: str, plan: str):
+    def get_active_subscription_by_business_uuid(self, business_profile_uuid: str, plan: str):
         with self.session_factory() as session:
             return (
                 session.query(self.model)
                 .filter_by(business_profile_uuid=business_profile_uuid)
                 .filter_by(plan_code=plan)
+                .filter_by(status=SubscriptionStatus.ACTIVE)
                 .first()
             )
 
     def handle_subscription_deactivation(
         self, session, user_email, existing_subscription
     ):
-        if existing_subscription:
-            session.delete(existing_subscription)
-            session.commit()
-            logging.info(
-                f"Subscription for user with email {user_email} has been deleted"
-            )
-        else:
-            logging.info(
-                f"No existing subscription found for user with email {user_email}"
-            )
+        existing_subscription.status = SubscriptionStatus.NON_RENEWING
+        session.commit()
+        session.refresh(existing_subscription)
 
     def handle_subscription_creation(
         self,
