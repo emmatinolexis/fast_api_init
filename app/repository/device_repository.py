@@ -95,6 +95,19 @@ class DeviceRepository(BaseRepository):
 
             return devices
 
+    def get_devices_by_business_uuid(self, business_uuid):
+        with self.session_factory() as session:
+            devices = (
+                session.query(self.model)
+                .filter(
+                    self.model.business_profile_uuid == business_uuid
+                )
+                .options(joinedload(Device.asset))
+                .options(joinedload(Device.inventory).joinedload(Inventory.images))
+                .all()
+            )
+            return devices
+
     def assign_imei(self, device_uuid, imei):
         with self.session_factory() as session:
             try:
@@ -130,6 +143,3 @@ class DeviceRepository(BaseRepository):
                 return device
             except Exception as e:
                 raise e
-            
-   
-    

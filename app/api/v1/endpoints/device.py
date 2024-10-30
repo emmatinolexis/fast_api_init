@@ -15,6 +15,7 @@ from app.util.utils import (
     send_info,
     send_internal_server_error,
 )
+from app.service.business_profile_service import BusinessProfileService
 
 router = APIRouter(
     prefix="/devices",
@@ -45,6 +46,25 @@ async def get_all_user_devices(
 ):
     try:
         return send_data(service.get_devices_by_user_uuid(user_uuid))
+    except Exception as e:
+        msg = f"{messages.GET_FAILED}  {msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/business_devices/{business_uuid}", response_class=ORJSONResponse)
+@inject
+async def get_all_business_devices(
+    business_uuid: str,
+    service: DeviceService = Depends(Provide[Container.device_service]),
+    business_service: BusinessProfileService = Depends(Provide[Container.business_profile_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        business = business_service.get_business_by_uuid(business_uuid)
+
+        if business is None:
+            return send_client_side_error(messages.BUSINESS_PROFILE_NOT_FOUND_MSG)
+        return send_data(service.get_devices_by_business_uuid(business_uuid))
     except Exception as e:
         msg = f"{messages.GET_FAILED}  {msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)

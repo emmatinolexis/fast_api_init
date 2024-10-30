@@ -846,7 +846,7 @@ class Container(containers.DeclarativeContainer):
         asset_repository=asset_repository,
         driver_repository=driver_repository,
         user_repository=user_repository,
-        asset_operator_assignment_repository=asset_operator_assignment_repository
+        asset_operator_assignment_repository=asset_operator_assignment_repository,
     )
 
     device_events_service = providers.Factory(

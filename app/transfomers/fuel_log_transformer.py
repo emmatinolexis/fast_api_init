@@ -3,9 +3,7 @@ from app.repository.driver_repository import DriverRepository
 from app.repository.user_repository import UserRepository
 
 
-def fuel_log_transformer(
-    fuel_log: FuelLog, user_repo: UserRepository
-):
+def fuel_log_transformer(fuel_log: FuelLog, user_repo: UserRepository):
     driver = user_repo.read_by_uuid(fuel_log.driver_uuid)
     logged_by = user_repo.read_by_uuid(fuel_log.user_uuid)
 

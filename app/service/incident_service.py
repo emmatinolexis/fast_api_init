@@ -79,7 +79,11 @@ class IncidentService(BaseService):
                 end_date = convert_date(end_date, format=date_format)
 
             incidents = self.incident_repository.get_incidents_report(
-                start_date=start_date, end_date=end_date, page=page, page_size=page_size,search_parameter=search_parameter,
+                start_date=start_date,
+                end_date=end_date,
+                page=page,
+                page_size=page_size,
+                search_parameter=search_parameter,
             )
 
             total_incidents = len(incidents)
