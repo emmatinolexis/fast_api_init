@@ -4,6 +4,8 @@ from fastapi.responses import ORJSONResponse
 
 from app.core import messages
 from app.core.container import Container
+from app.core.dependencies import get_current_user_with_permission
+from app.model.user import User
 from app.schema.incident_schema import IncidentPayload
 from app.service.incident_service import IncidentService
 from app.util.enums import IncidenceType
@@ -15,8 +17,6 @@ from app.util.utils import (
     send_internal_server_error,
     total_pages,
 )
-from app.core.dependencies import get_current_user_with_permission
-from app.model.user import User
 
 router = APIRouter(
     prefix="/incidents",
@@ -32,7 +32,6 @@ async def create_incident(
     payload: IncidentPayload,
     service: IncidentService = Depends(Provide[Container.incident_service]),
     current_user: User = Depends(get_current_user_with_permission("create_incident")),
-
 ):
     try:
         incident = service.create_incident(payload)

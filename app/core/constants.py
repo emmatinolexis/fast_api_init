@@ -458,9 +458,9 @@ PERMISSIONS = {
         {"permission_name": "update_fine_reports", "permission_type": "admin"},
     ],
     "road_incidents": [
-            {"permission_name": "create_road_incident", "permission_type": "customer"},
-            {"permission_name": "view_road_incident", "permission_type": "all"},
-        ],
+        {"permission_name": "create_road_incident", "permission_type": "customer"},
+        {"permission_name": "view_road_incident", "permission_type": "all"},
+    ],
     "gas_cylinder_type": [
         {"permission_name": "view_gas_cylinder_type", "permission_type": "all"},
         {"permission_name": "create_gas_cylinder_type", "permission_type": "admin"},

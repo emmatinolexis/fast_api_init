@@ -98,7 +98,9 @@ class UserSubscriptionRepository(BaseRepository):
             .first()
         )
 
-    def get_active_subscription_by_business_uuid(self, business_profile_uuid: str, plan: str):
+    def get_active_subscription_by_business_uuid(
+        self, business_profile_uuid: str, plan: str
+    ):
         with self.session_factory() as session:
             return (
                 session.query(self.model)

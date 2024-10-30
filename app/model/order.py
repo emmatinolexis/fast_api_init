@@ -1,6 +1,16 @@
 import uuid
 
-from sqlalchemy import JSON, Column, Enum, ForeignKey, Integer, String,Boolean,Date,Time
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Column,
+    Date,
+    Enum,
+    ForeignKey,
+    Integer,
+    String,
+    Time,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
