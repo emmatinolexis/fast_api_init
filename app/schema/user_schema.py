@@ -159,6 +159,7 @@ class UpdateAdminTeamMemberPayload(BaseModel):
     class Config:
         orm_model = True
 
+
 class InstallerResponse(BaseModel):
     uuid: UUID
     first_name: str
@@ -167,5 +168,4 @@ class InstallerResponse(BaseModel):
 
     class Config:
         orm_mode = True
-        from_attributes = True 
-        
+        from_attributes = True

@@ -9,20 +9,25 @@ class InstallationService:
 
     def create_installation(self, installation_payload: InstallationPayload):
         try:
-            return self.installation_repository.create_installation(installation_payload)
+            return self.installation_repository.create_installation(
+                installation_payload
+            )
         except Exception as e:
             raise e
 
     def fetch_all_installers(self):
         try:
             installers = self.installation_repository.get_installers()
-            return [InstallerResponse(**{
-                "uuid": installer.uuid,
-                "first_name": installer.first_name,
-                "last_name": installer.last_name,
-                "avatar_url": installer.avatar_url
-            }) for installer in installers]
+            return [
+                InstallerResponse(
+                    **{
+                        "uuid": installer.uuid,
+                        "first_name": installer.first_name,
+                        "last_name": installer.last_name,
+                        "avatar_url": installer.avatar_url,
+                    }
+                )
+                for installer in installers
+            ]
         except Exception as e:
             raise e
-            
-    

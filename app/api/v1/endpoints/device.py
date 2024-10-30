@@ -8,6 +8,7 @@ from app.core.dependencies import get_current_app_service, get_current_user
 from app.core.exceptions import NotFoundError
 from app.model.user import User
 from app.schema.device_schema import DevicePayload, ImeiAssignPayload
+from app.service.business_profile_service import BusinessProfileService
 from app.service.device_service import DeviceService
 from app.util.utils import (
     send_client_side_error,
@@ -15,7 +16,6 @@ from app.util.utils import (
     send_info,
     send_internal_server_error,
 )
-from app.service.business_profile_service import BusinessProfileService
 
 router = APIRouter(
     prefix="/devices",
@@ -56,7 +56,9 @@ async def get_all_user_devices(
 async def get_all_business_devices(
     business_uuid: str,
     service: DeviceService = Depends(Provide[Container.device_service]),
-    business_service: BusinessProfileService = Depends(Provide[Container.business_profile_service]),
+    business_service: BusinessProfileService = Depends(
+        Provide[Container.business_profile_service]
+    ),
     current_user: User = Depends(get_current_user),
 ):
     try:
