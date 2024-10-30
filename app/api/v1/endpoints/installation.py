@@ -19,7 +19,6 @@ router = APIRouter(
 )
 msg_prefix = "installation"
 
-
 @router.get(
     "/installers", response_model=List[InstallerResponse], response_class=ORJSONResponse
 )
@@ -35,7 +34,6 @@ async def get_installers_handler(
         return send_internal_server_error(
             user_msg="Failed to fetch installers.", error=e
         )
-
 
 @router.post("/", response_class=ORJSONResponse)
 @inject

@@ -1,17 +1,13 @@
 from contextlib import AbstractContextManager
 from datetime import datetime
 from typing import Callable
-
 from sqlalchemy.orm import Session
-
 from app.model.installation import Installation
 from app.model.order import Order
 from app.model.user import User
 from app.repository.base_repository import BaseRepository
 from app.schema.installation_schema import InstallationPayload
 from app.util.enums import CustomerRoles
-
-
 class InstallationRepository(BaseRepository):
     def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
         self.session_factory = session_factory

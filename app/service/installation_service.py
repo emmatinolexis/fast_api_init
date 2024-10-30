@@ -2,7 +2,6 @@ from app.repository.installation_repository import InstallationRepository
 from app.schema.installation_schema import InstallationPayload
 from app.schema.user_schema import InstallerResponse
 
-
 class InstallationService:
     def __init__(self, installation_repository: InstallationRepository):
         self.installation_repository = installation_repository
