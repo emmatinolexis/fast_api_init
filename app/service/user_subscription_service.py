@@ -27,9 +27,11 @@ class UserSubscriptionService(BaseService):
         except Exception as e:
             raise e
 
-    def get_subscription_by_business_uuid(self, business_profile_uuid: str, plan: str):
+    def get_active_subscription_by_business_uuid(
+        self, business_profile_uuid: str, plan: str
+    ):
         try:
-            return self.user_subscription_repository.get_subscription_by_business_uuid(
+            return self.user_subscription_repository.get_active_subscription_by_business_uuid(
                 business_profile_uuid, plan
             )
         except Exception as e:

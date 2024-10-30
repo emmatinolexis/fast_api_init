@@ -96,7 +96,7 @@ router_list = [
     incident_router,
     peripheral_device_router,
     gateway_configuration_router,
-    installlation_router
+    installlation_router,
 ]
 
 for router in router_list:

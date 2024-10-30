@@ -25,8 +25,10 @@ class DeviceService(BaseService):
                     "device_name": device.inventory.device_name,
                     "device_imei": device.device_imei,
                     "asset_name": device.asset.asset_name if device.asset else None,
-                    "asset_vehicle_number": device.asset.vehicle_license_no if device.asset else None,
-                    "device_image_url": device.inventory.images[0].image_url
+                    "asset_vehicle_number": device.asset.vehicle_license_no
+                    if device.asset
+                    else None,
+                    "device_image_url": device.inventory.images[0].image_url,
                 }
                 device_data.append(data)
             return device_data

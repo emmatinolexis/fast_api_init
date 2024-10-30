@@ -99,9 +99,7 @@ class DeviceRepository(BaseRepository):
         with self.session_factory() as session:
             devices = (
                 session.query(self.model)
-                .filter(
-                    self.model.business_profile_uuid == business_uuid
-                )
+                .filter(self.model.business_profile_uuid == business_uuid)
                 .options(joinedload(Device.asset))
                 .options(joinedload(Device.inventory).joinedload(Inventory.images))
                 .all()

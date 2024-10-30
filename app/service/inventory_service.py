@@ -2,7 +2,6 @@ from uuid import UUID
 
 from app.core.exceptions import NotFoundError
 from app.repository.device_image_repository import DeviceImageRepository
-from app.repository.device_manufacturer_repository import DeviceManufacturerRepository
 from app.repository.device_repository import DeviceRepository
 from app.repository.inventory_repository import InventoryRepository
 from app.schema.device_schema import InventoryPayload, InventoryUpdatePayload
