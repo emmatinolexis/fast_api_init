@@ -200,7 +200,7 @@ class Container(containers.DeclarativeContainer):
             "app.api.v1.endpoints.incident",
             "app.api.v1.endpoints.peripheral_device",
             "app.api.v1.endpoints.gateway_configuration",
-            "app.api.v1.endpoints.installation"
+            "app.api.v1.endpoints.installation",
         ]
     )
 
@@ -534,7 +534,6 @@ class Container(containers.DeclarativeContainer):
         installation_repository.InstallationRepository,
         session_factory=db.provided.session,
     )
-
 
     # Services
     auth_service = providers.Factory(
