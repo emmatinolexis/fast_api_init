@@ -64,6 +64,7 @@ class User(BaseModel):
         "Asset", secondary="asset_operator_assignments", back_populates="operators"
     )
     driver_license = relationship("DriverLicense", uselist=False, back_populates="user")
+    installations = relationship("Installation", back_populates="installer")
 
     # business_profile_assignments = relationship(UserOrganisationAssignment, back_populates='user')
 

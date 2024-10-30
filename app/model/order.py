@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import JSON, Column, Enum, ForeignKey, Integer, String,Boolean
+from sqlalchemy import JSON, Column, Enum, ForeignKey, Integer, String,Boolean,Date,Time
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -23,6 +23,9 @@ class Order(BaseModel):
     order_shipping_address = relationship("OrderShippingAddress", uselist=False)
     order_status = Column(Enum(OrderStatus))
     installation_request = Column(Boolean, default=False, nullable=True)
+    date_of_installation = Column(Date, nullable=True)
+    time_of_installation = Column(Time, nullable=True)
+    installations = relationship("Installation", back_populates="order")
 
 
 class OrderDeviceAssignment(BaseModel):
