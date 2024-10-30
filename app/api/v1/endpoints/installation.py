@@ -8,6 +8,9 @@ from app.core.container import Container
 from app.schema.installation_schema import InstallationPayload
 from app.service.installation_service import InstallationService
 from app.util.utils import send_data, send_internal_server_error
+from typing import List
+from app.schema.user_schema import InstallerResponse
+
 
 router = APIRouter(
     prefix="/installation",
@@ -16,18 +19,18 @@ router = APIRouter(
 msg_prefix = "installation"
 
 
-
-@router.get("/installers", response_class=ORJSONResponse)
+@router.get("/installers", response_model=List[InstallerResponse], response_class=ORJSONResponse)
 @inject
 async def get_installers_handler(
     service: InstallationService = Depends(Provide[Container.installation_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user)
 ):
     try:
         installers = service.fetch_all_installers()
         return send_data(installers)
     except Exception as e:
         return send_internal_server_error(user_msg="Failed to fetch installers.", error=e)
+    
 
 @router.post("/", response_class=ORJSONResponse)
 @inject
