@@ -12,6 +12,7 @@ from app.schema.installation_schema import InstallationPayload
 from app.schema.user_schema import InstallerResponse
 from app.service.installation_service import InstallationService
 from app.util.utils import send_data, send_internal_server_error
+from app.schema.installation_schema import InstallationResponse
 
 router = APIRouter(
     prefix="/installation",
@@ -50,3 +51,19 @@ async def create_installation_handler(
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/", response_model=List[InstallationResponse], response_class=ORJSONResponse)
+@inject
+async def get_installations_handler(
+    service: InstallationService = Depends(Provide[Container.installation_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        installations = service.fetch_installations()
+        return send_data(installations)
+    except Exception as e:
+        return send_internal_server_error(
+            user_msg="Failed to fetch installations.", error=e
+        )
+    

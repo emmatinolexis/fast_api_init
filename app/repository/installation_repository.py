@@ -8,6 +8,8 @@ from app.model.user import User
 from app.repository.base_repository import BaseRepository
 from app.schema.installation_schema import InstallationPayload
 from app.util.enums import CustomerRoles
+from sqlalchemy.orm import joinedload
+
 class InstallationRepository(BaseRepository):
     def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
         self.session_factory = session_factory
@@ -20,6 +22,17 @@ class InstallationRepository(BaseRepository):
                 .filter(User.user_role_uuid == CustomerRoles.INSTALLER)
                 .all()
             )
+        
+    def get_installations(self):
+        with self.session_factory() as session:
+            installations = (
+                session.query(Installation)
+                .options(
+                    joinedload(Installation.order).joinedload(Order.order_shipping_address)
+                )
+                .all()
+            )
+            return installations
 
     def create_installation(self, installation_payload: InstallationPayload):
         with self.session_factory() as session:
@@ -35,7 +48,6 @@ class InstallationRepository(BaseRepository):
                     )
 
                 installation = Installation(
-                    installer_uuid=installation_payload.installer_uuid,
                     order_uuid=installation_payload.order_uuid,
                 )
                 session.add(installation)
