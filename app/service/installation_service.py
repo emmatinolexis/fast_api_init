@@ -15,7 +15,7 @@ class InstallationService:
         except Exception as e:
             raise e
 
-    def get_installation_by_order_uuid(self, order_uuid):
+    def get_installation_by_order_uuid(self, order_uuid: str):
         try:
             return self.installation_repository.get_installation_by_order_uuid(
                 order_uuid
@@ -59,9 +59,9 @@ class InstallationService:
         except Exception as e:
             raise e
         
-    def fetch_installations(self):
+    def fetch_installations(self, page, page_size):
         try:
-            installations = self.installation_repository.get_installations()
+            installations = self.installation_repository.get_installations(page, page_size)
             installation_responses = []
             for installation in installations.get("data"):
                 order = installation.order

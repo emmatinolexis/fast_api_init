@@ -1,7 +1,7 @@
 from typing import List
 
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
 
 from app.core import messages
@@ -19,6 +19,7 @@ router = APIRouter(
     tags=["installation"],
 )
 msg_prefix = "installation"
+
 
 @router.get(
     "/installers", response_model=List[InstallerResponse], response_class=ORJSONResponse
@@ -56,17 +57,37 @@ async def create_installation_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/", response_model=List[InstallationResponse], response_class=ORJSONResponse)
+@router.get("/", response_class=ORJSONResponse)
 @inject
 async def get_installations_handler(
     service: InstallationService = Depends(Provide[Container.installation_service]),
+    page: int = Query(1, ge=1, description="Page number, default is set to 1"),
+    page_size: int = Query(
+        10, ge=1, le=1000, description="Items per page, default is 10"
+    ),
     current_user: User = Depends(get_current_user),
+
 ):
     try:
-        installations = service.fetch_installations()
+        installations = service.fetch_installations(page, page_size)
         return send_data(installations)
     except Exception as e:
         return send_internal_server_error(
             user_msg="Failed to fetch installations.", error=e
         )
-    
+
+
+@router.get("/{installation_uuid}", response_class=ORJSONResponse)
+@inject
+async def get_installation_handler(
+    installation_uuid: str,
+    service: InstallationService = Depends(Provide[Container.installation_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        installation = service.get_installation(installation_uuid)
+        return send_data(installation)
+    except Exception as e:
+        return send_internal_server_error(
+            user_msg="Failed to fetch installations.", error=e
+        )
