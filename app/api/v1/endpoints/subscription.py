@@ -7,7 +7,7 @@ from fastapi.responses import ORJSONResponse
 
 from app.core import messages
 from app.core.container import Container
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user_with_permission
 from app.core.settings import settings
 from app.model.user import User
 from app.schema.subscription import PaystackSubscriptionPayload
@@ -38,7 +38,7 @@ async def paystack_subscriptions_handler(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
     service: SubscriptionService = Depends(Provide[Container.subscription_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_subscription")),
 ):
     try:
         return send_data(service.get_all_paystack_subscriptions(page, page_size))
@@ -52,7 +52,9 @@ async def paystack_subscriptions_handler(
 async def toggle_subscription_status_handler(
     subscription_code: str,
     service: SubscriptionService = Depends(Provide[Container.subscription_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(
+        get_current_user_with_permission("update_subscription")
+    ),
 ):
     try:
         return send_data(service.toggle_subscription_status(subscription_code))
@@ -65,7 +67,7 @@ async def toggle_subscription_status_handler(
 @inject
 async def get_all_paystack_payment_handler(
     service: SubscriptionService = Depends(Provide[Container.subscription_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_payments")),
 ):
     try:
         return send_data(service.get_paystack_payments())
@@ -79,7 +81,7 @@ async def get_all_paystack_payment_handler(
 async def paystack_subscription_handler(
     subscription_code: str,
     service: SubscriptionService = Depends(Provide[Container.subscription_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_subscription")),
 ):
     try:
         return send_data(service.get_paystack_subscription(subscription_code))
@@ -93,7 +95,7 @@ async def paystack_subscription_handler(
 async def paystack_subscription_by_email_handler(
     user_email: str,
     service: SubscriptionService = Depends(Provide[Container.subscription_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_subscription")),
 ):
     try:
         return send_data(service.get_paystack_subscription_by_email(user_email))
@@ -110,7 +112,9 @@ async def create_paystack_subscription_handler(
         Provide[Container.user_subscription_service]
     ),
     user_service: UserService = Depends(Provide[Container.user_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(
+        get_current_user_with_permission("manage_subscription")
+    ),
 ):
     try:
         user = user_service.get_user_by_email_address(payload.email)
@@ -135,7 +139,7 @@ async def create_paystack_subscription_handler(
                 },
             }
 
-            existing_subscription = service.get_subscription_by_business_uuid(
+            existing_subscription = service.get_active_subscription_by_business_uuid(
                 user.business_profile_uuid, payload_data.get("plan")
             )
 

@@ -8,14 +8,14 @@ class InstallationService:
 
     def create_installation(self, installation_payload: InstallationPayload):
         try:
-            return self.installation_repository.create_installation(installation_payload)
+            return self.installation_repository.create_installation(
+                installation_payload
+            )
         except Exception as e:
             raise e
-    
+
     def fetch_all_installers(self):
         try:
             return self.installation_repository.get_installers()
         except Exception as e:
             raise e
-            
-    
