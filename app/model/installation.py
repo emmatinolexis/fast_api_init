@@ -1,8 +1,9 @@
 import uuid
 
-from sqlalchemy import Column, Date, ForeignKey
+from sqlalchemy import Column, Date, ForeignKey, Enum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
+from app.util.enums import InstallationStatus
 
 from app.model.base_model import BaseModel
 
@@ -21,6 +22,8 @@ class Installation(BaseModel):
     installed_at = Column(Date, nullable=True, default=None)
     installer_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=True)
     order_uuid = Column(UUID(as_uuid=True), ForeignKey("orders.uuid"), nullable=False)
-
+    status = Column(Enum(InstallationStatus), nullable=False, index=True, default=InstallationStatus.PENDING_INSTALLATION)
     installer = relationship("User", back_populates="installations")
     order = relationship("Order", back_populates="installations")
+
+

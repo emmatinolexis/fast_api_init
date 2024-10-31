@@ -371,3 +371,8 @@ class CertificateKey(str, Enum):
     SUBJECT_ALT_NAME = "subjectAltName"
     OCSP = "OCSP"
     CA_ISSUERS = "caIssuers"
+
+
+class InstallationStatus(str, Enum):
+    PENDING_INSTALLATION = "pending"
+    COMPLETED = "completed"
