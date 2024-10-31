@@ -9,12 +9,13 @@ from app.repository.base_repository import BaseRepository
 from app.schema.installation_schema import InstallationPayload
 from app.util.enums import CustomerRoles
 from sqlalchemy.orm import joinedload
+from app.util.enums import InstallationStatus
 
 
 class InstallationRepository(BaseRepository):
     def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
         self.session_factory = session_factory
-        super().__init__(session_factory, InstallationRepository)
+        super().__init__(session_factory, Installation)
 
     def get_installers(self):
         with self.session_factory() as session:
@@ -39,7 +40,6 @@ class InstallationRepository(BaseRepository):
                 .filter(self.model.order_uuid == order_uuid)
                 .first()
             )
-
 
     def get_installations(self, page: int = 1, per_page: int = 10):
         with self.session_factory() as session:
@@ -71,7 +71,6 @@ class InstallationRepository(BaseRepository):
     def create_installation(self, installation_payload: InstallationPayload):
         with self.session_factory() as session:
             try:
-
                 installation = Installation(
                     order_uuid=installation_payload.order_uuid,
                 )
