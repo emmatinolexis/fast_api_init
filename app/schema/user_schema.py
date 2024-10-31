@@ -157,3 +157,14 @@ class UpdateAdminTeamMemberPayload(BaseModel):
 
     class Config:
         orm_model = True
+
+
+class InstallerResponse(BaseModel):
+    uuid: UUID
+    first_name: str
+    last_name: str
+    avatar_url: Optional[str] = None
+
+    class Config:
+        orm_mode = True
+        from_attributes = True

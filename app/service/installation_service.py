@@ -1,6 +1,6 @@
 from app.repository.installation_repository import InstallationRepository
 from app.schema.installation_schema import InstallationPayload
-
+from app.schema.user_schema import InstallerResponse
 
 class InstallationService:
     def __init__(self, installation_repository: InstallationRepository):
@@ -16,6 +16,17 @@ class InstallationService:
 
     def fetch_all_installers(self):
         try:
-            return self.installation_repository.get_installers()
+            installers = self.installation_repository.get_installers()
+            return [
+                InstallerResponse(
+                    **{
+                        "uuid": installer.uuid,
+                        "first_name": installer.first_name,
+                        "last_name": installer.last_name,
+                        "avatar_url": installer.avatar_url,
+                    }
+                )
+                for installer in installers
+            ]
         except Exception as e:
             raise e
