@@ -83,7 +83,7 @@ def get_user_permission(
     if not current_user:
         raise AuthError(detail="User not found")
     log.info(
-        "Current user in session", extra={"email_address": current_user.email_address}
+        f"Current user in session {current_user.email_address}", extra={"email_address": current_user.email_address}
     )
 
     if (
@@ -152,5 +152,5 @@ def get_current_user_with_no_exception(
     current_user: User = service.get_user_by_email_address(token_data.username)
     if not current_user:
         return None
-    log.info("Current user in session", extra={"user", current_user})
+    log.info(f"Current user in session {current_user.email_address}", extra={"user", current_user})
     return current_user
