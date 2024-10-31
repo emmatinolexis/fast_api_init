@@ -52,7 +52,7 @@ def get_current_user(
     if not current_user:
         raise AuthError(detail="User not found")
     log.info(
-        "Current user in session", extra={"email_address": current_user.email_address}
+        f"Current user in session {current_user.email_address}", extra={"email_address": current_user.email_address}
     )
 
     if (

@@ -15,6 +15,33 @@ class InstallationService:
         except Exception as e:
             raise e
 
+    def get_installation_by_order_uuid(self, order_uuid):
+        try:
+            return self.installation_repository.get_installation_by_order_uuid(
+                order_uuid
+            )
+        except Exception as e:
+            raise e
+
+    def get_installation(self, installation_uuid: str):
+        try:
+            data = self.installation_repository.get_installation(installation_uuid)
+            order = data.order
+            order_shipping_address = order.order_shipping_address if order else None
+            installation = InstallationResponse(
+                    installation_uuid=str(data.uuid),
+                    status=data.status,
+                    installer_name=f"{data.installer.first_name} {data.installer.last_name}" if data.installer else None,
+                    first_name=order_shipping_address.first_name if order_shipping_address else None,
+                    last_name=order_shipping_address.last_name if order_shipping_address else None,
+                    location=order_shipping_address.address if order_shipping_address else None,
+                    date_of_installation=order.date_of_installation if order else None,
+                    time_of_installation=order.time_of_installation if order else None,
+                )
+            return installation
+        except Exception as e:
+            raise e
+
     def fetch_all_installers(self):
         try:
             installers = self.installation_repository.get_installers()
@@ -36,12 +63,13 @@ class InstallationService:
         try:
             installations = self.installation_repository.get_installations()
             installation_responses = []
-            for installation in installations:
+            for installation in installations.get("data"):
                 order = installation.order
                 order_shipping_address = order.order_shipping_address if order else None
                 installation_response = InstallationResponse(
                     installation_uuid=str(installation.uuid),
-                    order_status=order.order_status.value if order and order.order_status else None,
+                    status=installation.status,
+                    installer_name=f"{installation.installer.first_name} {installation.installer.last_name}" if installation.installer else None,
                     first_name=order_shipping_address.first_name if order_shipping_address else None,
                     last_name=order_shipping_address.last_name if order_shipping_address else None,
                     location=order_shipping_address.address if order_shipping_address else None,
@@ -49,6 +77,12 @@ class InstallationService:
                     time_of_installation=order.time_of_installation if order else None,
                 )
                 installation_responses.append(installation_response)
-            return installation_responses
+            return {
+                "installations": installation_responses,
+                "current_page": installations.get("current_page"),
+                "page_size": installations.get("page_size"),
+                "total_records": installations.get("total_records"),
+                "total_pages": installations.get("total_pages")
+            }
         except Exception as e:
             raise e

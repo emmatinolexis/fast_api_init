@@ -11,7 +11,7 @@ from app.model.user import User
 from app.schema.installation_schema import InstallationPayload
 from app.schema.user_schema import InstallerResponse
 from app.service.installation_service import InstallationService
-from app.util.utils import send_data, send_internal_server_error
+from app.util.utils import send_data, send_internal_server_error, send_client_side_error
 from app.schema.installation_schema import InstallationResponse
 
 router = APIRouter(
@@ -36,6 +36,7 @@ async def get_installers_handler(
             user_msg="Failed to fetch installers.", error=e
         )
 
+
 @router.post("/", response_class=ORJSONResponse)
 @inject
 async def create_installation_handler(
@@ -44,13 +45,16 @@ async def create_installation_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
+        installation = service.get_installation_by_order_uuid(payload.order_uuid)
+        if installation:
+            return send_client_side_error(messages.INSTALLATION_CREATED_MSG)
+
         installation = service.create_installation(payload)
         return send_data(installation)
-    except ValueError as ve:
-        return ORJSONResponse({"detail": str(ve)}, status_code=400)
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
+
 
 @router.get("/", response_model=List[InstallationResponse], response_class=ORJSONResponse)
 @inject

@@ -10,6 +10,7 @@ from app.schema.installation_schema import InstallationPayload
 from app.util.enums import CustomerRoles
 from sqlalchemy.orm import joinedload
 
+
 class InstallationRepository(BaseRepository):
     def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
         self.session_factory = session_factory
@@ -22,17 +23,60 @@ class InstallationRepository(BaseRepository):
                 .filter(User.user_role_uuid == CustomerRoles.INSTALLER)
                 .all()
             )
-        
-    def get_installations(self):
+
+    def get_installation(self, installation_uuid: str):
         with self.session_factory() as session:
-            installations = (
+            return (
+                session.query(self.model)
+                .filter(self.model.uuid == installation_uuid)
+                .first
+            )
+
+    def get_installation_by_order_uuid(self, order_uuid: str):
+        with self.session_factory() as session:
+            return (
+                session.query(self.model)
+                .filter(self.model.order_uuid == order_uuid)
+                .first
+            )
+
+    # def get_installations(self):
+    #     with self.session_factory() as session:
+    #         installations = (
+    #             session.query(Installation)
+    #             .options(
+    #                 joinedload(Installation.order).joinedload(Order.order_shipping_address)
+    #             )
+    #             .all()
+    #         )
+    #         return installations
+
+    def get_installations(self, page: int = 1, per_page: int = 10):
+        with self.session_factory() as session:
+            # Build the query with joinedload
+            query = (
                 session.query(Installation)
                 .options(
-                    joinedload(Installation.order).joinedload(Order.order_shipping_address)
+                    joinedload(Installation.order).joinedload(Order.order_shipping_address),
+                          joinedload(Installation.installer)
                 )
-                .all()
             )
-            return installations
+
+            # Get total number of records for pagination metadata
+            total_records = query.count()
+            total_pages = (total_records + per_page - 1) // per_page
+
+            # Apply pagination
+            paginated_query = query.limit(per_page).offset((page - 1) * per_page)
+            installations = paginated_query.all()
+
+            return {
+                "data": installations,
+                "current_page": page,
+                "page_size": per_page,
+                "total_records": total_records,
+                "total_pages": total_pages
+            }
 
     def create_installation(self, installation_payload: InstallationPayload):
         with self.session_factory() as session:
