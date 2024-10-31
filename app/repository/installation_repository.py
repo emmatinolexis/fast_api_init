@@ -29,7 +29,7 @@ class InstallationRepository(BaseRepository):
             return (
                 session.query(self.model)
                 .filter(self.model.uuid == installation_uuid)
-                .first
+                .first()
             )
 
     def get_installation_by_order_uuid(self, order_uuid: str):
@@ -37,19 +37,9 @@ class InstallationRepository(BaseRepository):
             return (
                 session.query(self.model)
                 .filter(self.model.order_uuid == order_uuid)
-                .first
+                .first()
             )
 
-    # def get_installations(self):
-    #     with self.session_factory() as session:
-    #         installations = (
-    #             session.query(Installation)
-    #             .options(
-    #                 joinedload(Installation.order).joinedload(Order.order_shipping_address)
-    #             )
-    #             .all()
-    #         )
-    #         return installations
 
     def get_installations(self, page: int = 1, per_page: int = 10):
         with self.session_factory() as session:
@@ -81,15 +71,6 @@ class InstallationRepository(BaseRepository):
     def create_installation(self, installation_payload: InstallationPayload):
         with self.session_factory() as session:
             try:
-                existing_installation = (
-                    session.query(Installation)
-                    .filter_by(order_uuid=installation_payload.order_uuid)
-                    .first()
-                )
-                if existing_installation:
-                    raise ValueError(
-                        f"Installation already exists for order UUID: {installation_payload.order_uuid}"
-                    )
 
                 installation = Installation(
                     order_uuid=installation_payload.order_uuid,
