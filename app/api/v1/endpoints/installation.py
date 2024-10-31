@@ -52,7 +52,6 @@ async def create_installation_handler(
         msg = messages.CREATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
 
-
 @router.get("/", response_model=List[InstallationResponse], response_class=ORJSONResponse)
 @inject
 async def get_installations_handler(
