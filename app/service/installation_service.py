@@ -81,6 +81,7 @@ class InstallationService:
     def fetch_installations(self, page, page_size):
         try:
             installations = self.installation_repository.get_installations(page, page_size)
+
             installation_responses = []
             for installation in installations.get("data"):
                 order = installation.order
@@ -99,7 +100,7 @@ class InstallationService:
                     devices=[
                                 {
                                     "device_uuid": inventory.inventory.uuid,
-                                    "device_name": inventory.inventory.device_name
+                                    "device_name": inventory.inventory.device_name,
                                 }
                                 for inventory in order.order_inventories
                         ] if order and order.order_inventories else []

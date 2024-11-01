@@ -63,20 +63,29 @@ class InstallationRepository(BaseRepository):
             session.refresh(installation)
             return installation
 
-    def get_installations(self, page: int = 1, per_page: int = 10):
+    def get_installations(self, page: int = 1, per_page: int = 10, installer_uuid: str = None):
         with self.session_factory() as session:
             # Build the query with joinedload
-            query = (
-                session.query(Installation)
-                .options(
-                    joinedload(Installation.order).joinedload(Order.order_inventories).joinedload(OrderDeviceAssignment.inventory),
-                    joinedload(Installation.order).joinedload(Order.order_shipping_address),
-                    joinedload(Installation.installer)
+            if installer_uuid:
+                query = (
+                    session.query(Installation)
+                    .filter(self.model.installer_uuid == installer_uuid)
+                    .options(
+                        joinedload(Installation.order).joinedload(Order.order_inventories).joinedload(
+                            OrderDeviceAssignment.inventory),
+                        joinedload(Installation.order).joinedload(Order.order_shipping_address),
+                        joinedload(Installation.installer)
+                    )
                 )
-            )
-
-            # joinedload(Order.order_inventories)
-            # .joinedload(OrderDeviceAssignment.inventory)
+            else:
+                query = (
+                    session.query(Installation)
+                    .options(
+                        joinedload(Installation.order).joinedload(Order.order_inventories).joinedload(OrderDeviceAssignment.inventory),
+                        joinedload(Installation.order).joinedload(Order.order_shipping_address),
+                        joinedload(Installation.installer)
+                    )
+                )
 
             # Get total number of records for pagination metadata
             total_records = query.count()
