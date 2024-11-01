@@ -19,10 +19,13 @@ class InstallationResponse(BaseModel):
     installation_uuid: str
     status: Optional[str]
     installer_name: Optional[str]
+    installer_image_url: Optional[str]
+    installer_phone: Optional[str]
     first_name: Optional[str]
     last_name: Optional[str]
     location: Optional[Any] 
     date_of_installation: Optional[date]
     time_of_installation: Optional[time]
     devices: Optional[Any]
+
 
