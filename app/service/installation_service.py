@@ -34,6 +34,8 @@ class InstallationService:
     def get_installation(self, installation_uuid: str):
         try:
             data = self.installation_repository.get_installation(installation_uuid)
+            if data is None:
+                return None
             order = data.order
             order_shipping_address = order.order_shipping_address if order else None
             installation = InstallationResponse(

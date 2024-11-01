@@ -65,7 +65,7 @@ async def assign_installer_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        installation = service.get_installation_by_order_uuid(payload.order_uuid)
+        installation = service.get_installation(payload.installation_uuid)
         if not installation:
             return send_client_side_error(messages.INSTALLATION_NOT_FOUND_MSG)
 
