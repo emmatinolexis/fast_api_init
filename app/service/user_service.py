@@ -15,6 +15,7 @@ from app.repository.team_member_invitation_repository import (
 )
 from app.repository.user_repository import UserRepository
 from app.repository.user_subscription_repository import UserSubscriptionRepository
+from app.repository.role_repository import RoleRepository
 from app.schema.invitation_schema import (
     AdminInvitationPayload,
     InvitationCreatePayloadSingle,
@@ -26,12 +27,14 @@ from app.schema.user_schema import (
     UpdateUserPayload,
     UserPayload,
     UserProfileUdatePayload,
+    UpdateAdminTeamMemberPayload
 )
 from app.service.base_service import BaseService
 from app.transfomers.driver_transformer import driver_transformer
 from app.util.enums import InvitationStatus, RoleType
 from app.util.utils import parse_date
-
+from app.events.subscriber import subscriber
+from app.events.user import RoleUpdated
 
 class UserService(BaseService):
     def __init__(
@@ -42,6 +45,7 @@ class UserService(BaseService):
         subscription_repository: SubscriptionRepository,
         asset_repository: AssetRepository,
         driver_license_repository: DriverLicenseRepository,
+        role_repository: RoleRepository,
     ):
         self.user_repository = user_repository
         self.invitation_repository = invitation_repository
@@ -49,6 +53,7 @@ class UserService(BaseService):
         self.subscription_repository = subscription_repository
         self.asset_reposoitory = asset_repository
         self.driver_license_repository = driver_license_repository
+        self.role_repository = role_repository
         super().__init__(user_repository)
 
     def create_user(self, payload: UserPayload):
@@ -358,5 +363,22 @@ class UserService(BaseService):
             return driver_transformer(operator, self.asset_reposoitory)
 
             # ... continue with the rest of your logic ...
+        except Exception as e:
+            raise e
+
+
+
+    def update_team_member_handler(self,team_member_uuid: str,payload:UpdateAdminTeamMemberPayload):
+        try:
+            self.patch_by_uuid(team_member_uuid,payload)
+
+
+            user = self.user_repository.read_by_uuid(team_member_uuid)
+
+            new_role = self.role_repository.get_role(payload.user_role_uuid)
+
+            if payload.user_role_uuid:
+                subscriber.publish(RoleUpdated,RoleUpdated(role=new_role,user=user))
+
         except Exception as e:
             raise e

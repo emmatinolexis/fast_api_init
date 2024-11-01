@@ -1,5 +1,5 @@
 from contextlib import AbstractContextManager
-from typing import Callable,List
+from typing import Callable,List,Optional
 
 from sqlalchemy.orm import Session
 
@@ -14,16 +14,20 @@ class NotificationRepository(BaseRepository):
         
 
 
-    def get_user_notifications(self,user_uuid:str) -> List[Notification]:
+    def get_user_notifications(self, user_uuid: str, is_read: Optional[bool] = None) -> List[Notification]:
         with self.session_factory() as session:
-            return (
-                session.query(self.model)
-                .filter(self.model.user_id == str(user_uuid))
-                .filter(self.model.is_read==False)
-                .order_by(self.model.created_at.desc())
-                .all()
-            )
-        
+            query = session.query(self.model).filter(self.model.user_id == user_uuid)
+            
+            # Apply the `is_read` filter if it is provided
+            if is_read is not None:
+                query = query.filter(self.model.is_read == is_read)
+            
+            # Execute the query and retrieve the results
+            notifications = query.all()
+            
+        return notifications
+
+
 
     def read_notification(self, notification_uuid: str) -> Notification:
         with self.session_factory() as session:
@@ -36,3 +40,18 @@ class NotificationRepository(BaseRepository):
                 notification.is_read = True
                 session.commit()
             return notification
+
+
+    def clear_all_notifications(self, user_uuid: str):
+        with self.session_factory() as session:
+            notifications = session.query(self.model).filter(self.model.user_id == user_uuid)
+
+            # Mark each unread notification as read
+            for notification in notifications:
+                if not notification.is_read:
+                    notification.is_read = True
+
+            # Commit changes to save updates
+            session.commit()
+
+            return notifications

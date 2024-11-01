@@ -1,4 +1,4 @@
-from fastapi import APIRouter,Depends
+from fastapi import APIRouter,Depends,Query
 from fastapi.responses import ORJSONResponse
 from dependency_injector.wiring import Provide, inject
 from app.service.notification_service import NotificationService
@@ -6,6 +6,8 @@ from app.core.container import Container
 from app.util.utils import send_data,send_internal_server_error,send_info
 from app.schema.notification_schema import CreateNotificationSchema
 from app.core import messages
+from app.model.user import User
+from app.core.dependencies import get_current_user
 
 
 
@@ -21,6 +23,7 @@ msg_prefix = "notification"
 @inject
 async def create_notification_handler(
     payload : CreateNotificationSchema,
+    current_user: User = Depends(get_current_user),
     service : NotificationService = Depends(Provide[Container.notification_service]),
 ):
     try:
@@ -36,13 +39,30 @@ async def create_notification_handler(
 @inject
 async def get_user_notifications_handler(
     user_uuid:str,
+    is_read : bool = Query(None,description="Filter by read status"),
     service : NotificationService = Depends(Provide[Container.notification_service]),
+    current_user: User = Depends(get_current_user),
 ):
     try:
-        notifications = service.get_user_notifications(user_uuid)
+        notifications = service.get_user_notifications(user_uuid,is_read)
         return send_data(notifications)
     except Exception as e:
         msg = messages.GET_FAILED+ msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+    
+
+
+@router.put("/clear",response_class=ORJSONResponse)
+@inject
+async def clear_all_notifications_handler(
+    service : NotificationService = Depends(Provide[Container.notification_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        service.clear_all_notifications(current_user.uuid)
+        return send_info(messages.NOTIFICATIONS_CLEARED)
+    except Exception as e:
+        msg = messages.UPDATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
     
 
@@ -52,6 +72,7 @@ async def get_user_notifications_handler(
 async def read_notification_handler(
     notification_uuid:str,
     service : NotificationService = Depends(Provide[Container.notification_service]),
+    current_user: User = Depends(get_current_user),
 ):
     try:
         notification = service.read_notification(notification_uuid)
@@ -59,4 +80,10 @@ async def read_notification_handler(
     except Exception as e:
         msg = messages.UPDATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
+    
+
+
+
+
+    
     

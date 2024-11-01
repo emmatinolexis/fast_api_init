@@ -1,11 +1,8 @@
 from typing import Dict
 from pyee.asyncio import AsyncIOEventEmitter
 from app.events.fuel_log import FuelLogged
-from app.events.user import InviteAccepted
-
-
-
-
+from app.events.user import InviteAccepted,RoleUpdated
+from app.events.handlers.users import create_role_change_notification
 
 
 
@@ -13,14 +10,17 @@ from app.events.user import InviteAccepted
 
 class Subscriber:
     """
-        The Subscriber class is responsible for registering handlers for events.
+    The Subscriber class is responsible for registering handlers for events.
     """
 
     _instance = None
 
-    event_to_handler_mapping: Dict = {
+    event_to_handler_mappings: Dict = {
         FuelLogged: [],
         InviteAccepted: [], 
+        RoleUpdated:[
+            create_role_change_notification
+        ],
     }
 
 

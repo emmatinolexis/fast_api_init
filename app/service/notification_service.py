@@ -9,9 +9,9 @@ class NotificationService(BaseService):
 
 
     
-    def get_user_notifications(self,user_uuid:str):
+    def get_user_notifications(self,user_uuid:str,is_read:bool=None):
         try:
-            notifications = self.notification_repository.get_user_notifications(user_uuid)
+            notifications = self.notification_repository.get_user_notifications(user_uuid,is_read)
             return {
                 "notifications":notifications,
                 "count": len(notifications)
@@ -25,3 +25,11 @@ class NotificationService(BaseService):
             return notification
         except Exception as e:
             raise e
+        
+
+    def clear_all_notifications(self,user_uuid:str):
+        try:
+            self.notification_repository.clear_all_notifications(user_uuid)
+        except Exception as e:
+            raise e
+        
