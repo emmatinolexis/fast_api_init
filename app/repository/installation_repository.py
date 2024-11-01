@@ -54,7 +54,7 @@ class InstallationRepository(BaseRepository):
         with self.session_factory() as session:
             installation = (
                 session.query(self.model)
-                .filter(self.model.order_uuid == payload.order_uuid)
+                .filter(self.model.uuid == payload.installation_uuid)
                 .first()
             )
             installation.installer_uuid = payload.installer_uuid

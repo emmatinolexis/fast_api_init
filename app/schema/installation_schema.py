@@ -11,7 +11,7 @@ class InstallationPayload(BaseModel):
 
 
 class AssignInstallerPayload(BaseModel):
-    order_uuid: UUID
+    installation_uuid: UUID
     installer_uuid: UUID
 
 
