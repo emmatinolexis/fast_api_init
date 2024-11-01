@@ -10,6 +10,7 @@ from app.schema.installation_schema import InstallationPayload
 from app.util.enums import CustomerRoles
 from sqlalchemy.orm import joinedload
 from app.util.enums import InstallationStatus
+from app.model.order import OrderDeviceAssignment
 
 
 class InstallationRepository(BaseRepository):
@@ -31,6 +32,8 @@ class InstallationRepository(BaseRepository):
                 session.query(self.model)
                 .filter(self.model.uuid == installation_uuid)
                 .options(
+                    joinedload(Installation.order).joinedload(Order.order_inventories).joinedload(
+                        OrderDeviceAssignment.inventory),
                     joinedload(Installation.order).joinedload(Order.order_shipping_address),
                     joinedload(Installation.installer)
                 ).first()
@@ -53,10 +56,14 @@ class InstallationRepository(BaseRepository):
             query = (
                 session.query(Installation)
                 .options(
+                    joinedload(Installation.order).joinedload(Order.order_inventories).joinedload(OrderDeviceAssignment.inventory),
                     joinedload(Installation.order).joinedload(Order.order_shipping_address),
-                          joinedload(Installation.installer)
+                    joinedload(Installation.installer)
                 )
             )
+
+            # joinedload(Order.order_inventories)
+            # .joinedload(OrderDeviceAssignment.inventory)
 
             # Get total number of records for pagination metadata
             total_records = query.count()
