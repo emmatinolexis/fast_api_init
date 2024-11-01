@@ -110,7 +110,7 @@ async def get_installer_installations_handler(
 
 ):
     try:
-        installations = service.fetch_installations(page, page_size)
+        installations = service.fetch_installations(page, page_size, installer_uuid)
         return send_data(installations)
     except Exception as e:
         return send_internal_server_error(

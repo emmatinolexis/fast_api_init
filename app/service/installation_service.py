@@ -78,9 +78,9 @@ class InstallationService:
         except Exception as e:
             raise e
         
-    def fetch_installations(self, page, page_size):
+    def fetch_installations(self, page, page_size, installer_uuid: str = None):
         try:
-            installations = self.installation_repository.get_installations(page, page_size)
+            installations = self.installation_repository.get_installations(page, page_size, installer_uuid)
 
             installation_responses = []
             for installation in installations.get("data"):
