@@ -32,11 +32,20 @@ class InstallationService:
                     installation_uuid=str(data.uuid),
                     status=data.status,
                     installer_name=f"{data.installer.first_name} {data.installer.last_name}" if data.installer else None,
+                    installer_image_url=data.installer.avartar_url if data.installer else None,
+                    installer_phone=data.installer.phone_number if data.installer else None,
                     first_name=order_shipping_address.first_name if order_shipping_address else None,
                     last_name=order_shipping_address.last_name if order_shipping_address else None,
                     location=order_shipping_address.address if order_shipping_address else None,
                     date_of_installation=order.date_of_installation if order else None,
                     time_of_installation=order.time_of_installation if order else None,
+                    devices=[
+                        {
+                            "device_uuid": inventory.inventory.uuid,
+                            "device_name": inventory.inventory.device_name
+                        }
+                        for inventory in order.order_inventories
+                    ] if order and order.order_inventories else []
                 )
             return installation
         except Exception as e:
@@ -70,11 +79,20 @@ class InstallationService:
                     installation_uuid=str(installation.uuid),
                     status=installation.status,
                     installer_name=f"{installation.installer.first_name} {installation.installer.last_name}" if installation.installer else None,
+                    installer_image_url=installation.installer.avartar_url if installation.installer else None,
+                    installer_phone=installation.installer.phone_number if installation.installer else None,
                     first_name=order_shipping_address.first_name if order_shipping_address else None,
                     last_name=order_shipping_address.last_name if order_shipping_address else None,
                     location=order_shipping_address.address if order_shipping_address else None,
                     date_of_installation=order.date_of_installation if order else None,
                     time_of_installation=order.time_of_installation if order else None,
+                    devices=[
+                                {
+                                    "device_uuid": inventory.inventory.uuid,
+                                    "device_name": inventory.inventory.device_name
+                                }
+                                for inventory in order.order_inventories
+                        ] if order and order.order_inventories else []
                 )
                 installation_responses.append(installation_response)
             return {
