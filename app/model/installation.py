@@ -19,7 +19,8 @@ class Installation(BaseModel):
         nullable=False,
     )
     id = None
-    installed_at = Column(Date, nullable=True, default=None)
+    installed_at = Column(Date, nullable=True)
+    assigned_at = Column(Date, nullable=True)
     installer_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=True)
     order_uuid = Column(UUID(as_uuid=True), ForeignKey("orders.uuid"), nullable=False)
     status = Column(Enum(InstallationStatus), nullable=False, index=True, default=InstallationStatus.PENDING_INSTALLATION)

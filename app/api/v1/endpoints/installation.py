@@ -8,10 +8,10 @@ from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
 from app.model.user import User
-from app.schema.installation_schema import InstallationPayload
+from app.schema.installation_schema import InstallationPayload, AssignInstallerPayload
 from app.schema.user_schema import InstallerResponse
 from app.service.installation_service import InstallationService
-from app.util.utils import send_data, send_internal_server_error, send_client_side_error
+from app.util.utils import send_data, send_internal_server_error, send_client_side_error, send_data_with_info
 from app.schema.installation_schema import InstallationResponse
 
 router = APIRouter(
@@ -57,6 +57,26 @@ async def create_installation_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
+@router.post("/assign_installer", response_class=ORJSONResponse)
+@inject
+async def assign_installer_handler(
+    payload: AssignInstallerPayload,
+    service: InstallationService = Depends(Provide[Container.installation_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        installation = service.get_installation_by_order_uuid(payload.order_uuid)
+        if not installation:
+            return send_client_side_error(messages.INSTALLATION_NOT_FOUND_MSG)
+
+        installation_to_update = service.assign_installer_to_installation(payload)
+
+        return send_data_with_info(installation_to_update, messages.SUCCESS_MESSAGE)
+    except Exception as e:
+        msg = messages.CREATE_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
 @router.get("/", response_class=ORJSONResponse)
 @inject
 async def get_installations_handler(
@@ -77,7 +97,7 @@ async def get_installations_handler(
         )
 
 
-@router.get("/{installation_uuid}", response_class=ORJSONResponse)
+@router.get("/get_installation/{installation_uuid}", response_class=ORJSONResponse)
 @inject
 async def get_installation_handler(
     installation_uuid: str,
