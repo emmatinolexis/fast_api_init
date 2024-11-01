@@ -6,7 +6,7 @@ from app.model.installation import Installation
 from app.model.order import Order
 from app.model.user import User
 from app.repository.base_repository import BaseRepository
-from app.schema.installation_schema import InstallationPayload
+from app.schema.installation_schema import InstallationPayload, AssignInstallerPayload
 from app.util.enums import CustomerRoles
 from sqlalchemy.orm import joinedload
 from app.util.enums import InstallationStatus
@@ -49,6 +49,19 @@ class InstallationRepository(BaseRepository):
                     joinedload(Installation.installer)
                 ).first()
             )
+
+    def assign_installer_to_installation(self, payload: AssignInstallerPayload):
+        with self.session_factory() as session:
+            installation = (
+                session.query(self.model)
+                .filter(self.model.order_uuid == payload.order_uuid)
+                .first()
+            )
+            installation.installer_uuid = payload.installer_uuid
+            installation.assigned_at = datetime.now()
+            session.commit()
+            session.refresh(installation)
+            return installation
 
     def get_installations(self, page: int = 1, per_page: int = 10):
         with self.session_factory() as session:

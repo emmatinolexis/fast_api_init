@@ -1,7 +1,7 @@
 from app.repository.installation_repository import InstallationRepository
 from app.schema.installation_schema import InstallationPayload
 from app.schema.user_schema import InstallerResponse
-from app.schema.installation_schema import InstallationResponse
+from app.schema.installation_schema import InstallationResponse, AssignInstallerPayload
 
 class InstallationService:
     def __init__(self, installation_repository: InstallationRepository):
@@ -19,6 +19,14 @@ class InstallationService:
         try:
             return self.installation_repository.get_installation_by_order_uuid(
                 order_uuid
+            )
+        except Exception as e:
+            raise e
+
+    def assign_installer_to_installation(self, payload: AssignInstallerPayload):
+        try:
+            return self.installation_repository.assign_installer_to_installation(
+                payload
             )
         except Exception as e:
             raise e

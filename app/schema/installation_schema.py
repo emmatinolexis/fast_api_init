@@ -10,6 +10,11 @@ class InstallationPayload(BaseModel):
     time_of_installation: time
 
 
+class AssignInstallerPayload(BaseModel):
+    order_uuid: UUID
+    installer_uuid: UUID
+
+
 class InstallationResponse(BaseModel):
     installation_uuid: str
     status: Optional[str]
