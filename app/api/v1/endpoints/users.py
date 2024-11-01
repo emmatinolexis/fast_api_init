@@ -890,7 +890,7 @@ async def update_team_member_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        user_service.patch_by_uuid(team_member_uuid, payload)
+        user_service.update_team_member_handler(team_member_uuid=team_member_uuid,payload=payload)
         return send_info(messages.UPDATE_SUCCESS)
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix

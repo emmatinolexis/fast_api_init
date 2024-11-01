@@ -560,6 +560,7 @@ class Container(containers.DeclarativeContainer):
         invitation_repository=team_member_invitation_repository,
         asset_repository=asset_repository,
         driver_license_repository=driver_license_repository,
+        role_repository = role_repository
     )
     alert_policy_type_service = providers.Factory(
         alert_policy_type_service.AlertPolicyTypeService,

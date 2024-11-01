@@ -120,3 +120,7 @@ ASSIGNMENT_SUCCESS = "Asset assigned to operator successfully"
 
 LICENSE_IN_USE = "Drivers license already in use"
 LICENSE_CHECK_FAILED = "Failed to check licenses expiry"
+
+
+ROLE_UPDATED = "Your role has been changed"
+NOTIFICATIONS_CLEARED = "Notifications cleared successfully"
