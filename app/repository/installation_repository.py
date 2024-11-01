@@ -30,7 +30,10 @@ class InstallationRepository(BaseRepository):
             return (
                 session.query(self.model)
                 .filter(self.model.uuid == installation_uuid)
-                .first()
+                .options(
+                    joinedload(Installation.order).joinedload(Order.order_shipping_address),
+                    joinedload(Installation.installer)
+                ).first()
             )
 
     def get_installation_by_order_uuid(self, order_uuid: str):
@@ -38,7 +41,10 @@ class InstallationRepository(BaseRepository):
             return (
                 session.query(self.model)
                 .filter(self.model.order_uuid == order_uuid)
-                .first()
+                .options(
+                    joinedload(Installation.order).joinedload(Order.order_shipping_address),
+                    joinedload(Installation.installer)
+                ).first()
             )
 
     def get_installations(self, page: int = 1, per_page: int = 10):

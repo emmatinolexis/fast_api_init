@@ -86,6 +86,8 @@ async def get_installation_handler(
 ):
     try:
         installation = service.get_installation(installation_uuid)
+        if not installation:
+            send_client_side_error(messages.INSTALLATION_NOT_FOUND_MSG)
         return send_data(installation)
     except Exception as e:
         return send_internal_server_error(
