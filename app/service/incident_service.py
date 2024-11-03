@@ -100,6 +100,7 @@ class IncidentService(BaseService):
                         "lastName": incident[5],
                         "count": incident[6],
                         "createdAt": incident[7],
+                        "status": "verified" if incident[6] > 1 else "unverified"
                     }
                     for incident in incidents
                 ],
