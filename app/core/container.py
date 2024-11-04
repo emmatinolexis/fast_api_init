@@ -601,6 +601,7 @@ class Container(containers.DeclarativeContainer):
         equipment_type_repository=equipment_type_repository,
         driver_repository=driver_repository,
         subscription_repository=subscription_repository,
+        user_subscription_repository=user_subscription_repository,
         device_repository=device_repository,
         immobilizer_report_repository=immobilizer_report_repository,
         theft_incidence_repository=theft_incidence_repository,
@@ -609,6 +610,7 @@ class Container(containers.DeclarativeContainer):
         tracking_event_repository=tracking_event_repository,
         gas_cylinder_repository=gas_cylinder_repository,
         gas_cylinder_event_repository=gas_cylinder_event_repository,
+
     )
     asset_device_request_service = providers.Factory(
         asset_device_request_service.AssetDeviceRequestService,
