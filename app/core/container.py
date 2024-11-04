@@ -82,7 +82,7 @@ from app.repository import (
     vehicle_make_repository,
     vehicle_model_repository,
     vehicle_owner_repository,
-    notification_repository
+    notification_repository,
 )
 from app.service import (
     alert_maintenance_type_service,
@@ -203,7 +203,8 @@ class Container(containers.DeclarativeContainer):
             "app.api.v1.endpoints.peripheral_device",
             "app.api.v1.endpoints.gateway_configuration",
             "app.api.v1.endpoints.installation",
-            "app.api.v1.endpoints.notification"
+            "app.api.v1.endpoints.notification",
+            "app.api.v1.endpoints.contact_sales"
         ]
     )
 

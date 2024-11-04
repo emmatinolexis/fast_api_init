@@ -53,6 +53,7 @@ from app.api.v1.endpoints.upload import router as upload_router
 from app.api.v1.endpoints.users import router as users_router
 from app.api.v1.endpoints.vehicle_make import router as vehicle_make_router
 from app.api.v1.endpoints.notification import router as notification_router
+from app.api.v1.endpoints.contact_sales import router as contact_sales_router
 
 routers = APIRouter()
 router_list = [
@@ -98,7 +99,8 @@ router_list = [
     peripheral_device_router,
     gateway_configuration_router,
     installlation_router,
-    notification_router
+    notification_router,
+    contact_sales_router
 ]
 
 for router in router_list:
