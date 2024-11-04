@@ -10,6 +10,12 @@ class InstallationPayload(BaseModel):
     time_of_installation: time
 
 
+class DeviceConfigurationPayload(BaseModel):
+    asset_license_no: str
+    device_imei: str
+    sim_phone_number: str
+
+
 class AssignInstallerPayload(BaseModel):
     installation_uuid: UUID
     installer_uuid: UUID

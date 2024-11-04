@@ -22,9 +22,10 @@ class UserSubscriptionRepository(BaseRepository):
 
     def get_user_subscription(self, user_email):
         with self.session_factory() as session:
+            user = session.query(User).filter(User.email_address == user_email).first()
             user_plan = (
                 session.query(self.model)
-                .filter(self.model.user_email == user_email)
+                .filter(self.model.business_profile_uuid == user.business_profile_uuid)
                 .first()
             )
             return user_plan

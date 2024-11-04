@@ -1,7 +1,7 @@
 import uuid
 
 from app.core import messages
-from app.core.constants import FREE_PACKAGE
+from app.core.constants import FREE_PACKAGE, FREE_PACKAGE_ITEMS
 from app.core.exceptions import NotFoundError, UnAuthorizedError
 from app.repository.asset_repository import AssetRepository
 from app.repository.asset_type_repository import AssetTypeRepository
@@ -13,6 +13,7 @@ from app.repository.gas_cylinder_event_repository import GasCylinderEventReposit
 from app.repository.gas_cylinder_repository import GasCylinderRepository
 from app.repository.immobilizer_report_repository import ImmobilizerReportRepository
 from app.repository.subscription_repository import SubscriptionRepository
+from app.repository.user_subscription_repository import UserSubscriptionRepository
 from app.repository.theft_incidence_repository import TheftIncidenceRepository
 from app.repository.theft_report_repository import TheftReportRepository
 from app.repository.tracking_event_repository import TrackingEventRepository
@@ -67,6 +68,7 @@ class AssetService(BaseService):
         tracking_event_repository: TrackingEventRepository,
         gas_cylinder_repository: GasCylinderRepository,
         gas_cylinder_event_repository: GasCylinderEventRepository,
+        user_subscription_repository: UserSubscriptionRepository,
     ):
         self.asset_repository = asset_repository
         self.asset_type_repository = asset_type_repository
@@ -75,6 +77,7 @@ class AssetService(BaseService):
         self.equipment_type_repository = equipment_type_repository
         self.driver_repository = driver_repository
         self.subscription_repository = subscription_repository
+        self.user_subscription_repository = user_subscription_repository
         self.device_repository = device_repository
         self.immobilizer_report_repository = immobilizer_report_repository
         self.theft_incidence_repository = theft_incidence_repository
@@ -146,11 +149,27 @@ class AssetService(BaseService):
 
     def get_user_subscription(self, email_address: str):
         user_subscription = (
-            self.subscription_repository.get_paystack_subscription_by_email(
-                email=email_address
-            )
+            self.user_subscription_repository.get_user_subscription(email_address)
         )
-        return user_subscription
+
+        if user_subscription and user_subscription.subscription_code:
+            paystack_subscription = (
+                self.subscription_repository.get_paystack_subscription(
+                    user_subscription.subscription_code
+                )
+            )
+
+            user_package = {
+                "package_name": paystack_subscription["plan"]["name"],
+                "package_items": paystack_subscription["package_items"],
+            }
+            return user_package
+        else:
+            user_package = {
+                "package_name": FREE_PACKAGE,
+                "package_items": FREE_PACKAGE_ITEMS,
+            }
+            return user_package
 
     def get_filtered_package_item(self, user_subscription: dict):
         package_name = user_subscription.get("package_name")
