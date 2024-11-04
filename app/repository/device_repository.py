@@ -8,6 +8,8 @@ from app.model.inventory import Inventory
 from app.model.user import User
 from app.repository.base_repository import BaseRepository
 from app.util.enums import AccountType
+from app.model.device import DeviceManufacturer
+from typing import Optional
 
 
 class DeviceRepository(BaseRepository):
@@ -15,18 +17,36 @@ class DeviceRepository(BaseRepository):
         self.session_factory = session_factory
         super().__init__(session_factory, Device)
 
-    def get_all_devices(self):
+    def get_all_devices(self, page: int = 1, page_size: int = 10, search_query: Optional[str] = None):
         with self.session_factory() as session:
             try:
-                devices = (
-                    session.query(self.model)
-                    .options(
-                        joinedload(Device.inventory).joinedload(Inventory.manufacturer),
-                        joinedload(Device.inventory).joinedload(Inventory.images),
-                    )
-                    .all()
+                offset = (page - 1) * page_size
+
+                base_query = session.query(self.model).options(
+                    joinedload(Device.inventory).joinedload(Inventory.manufacturer),
+                    joinedload(Device.asset),
+                    joinedload(Device.user),
                 )
-                return devices
+
+                if search_query:
+                    base_query = base_query.join(Device.inventory).join(Inventory.manufacturer).filter(
+                        DeviceManufacturer.manufacturer_name.ilike(f"%{search_query}%")
+                    )
+
+                total_devices = base_query.count()
+
+                paginated_query = base_query.offset(offset).limit(page_size)
+                devices = paginated_query.all()
+
+                total_pages = (total_devices + page_size - 1) // page_size
+
+                return {
+                    "devices":devices,
+                    "total_devices": total_devices,
+                    "total_pages": total_pages,
+                    "current_page": page,
+                    "page_size": page_size,
+                }
             except Exception as e:
                 session.rollback()
                 raise e

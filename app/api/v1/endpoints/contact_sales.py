@@ -5,7 +5,9 @@ from app.core import messages
 from app.core.container import Container
 from app.schema.contact_sale_schema import ContactSale as ContactSaleSchema
 from app.service.contact_sale_service import ContactSaleService
-from app.util.utils import send_data, send_internal_server_error, send_client_side_error
+from app.util.utils import send_data, send_internal_server_error
+from app.core.dependencies import get_current_user
+from app.model.user import User
 
 router = APIRouter(
     prefix="/contact_sales",
@@ -17,6 +19,7 @@ router = APIRouter(
 async def create_contact_sales_handler(
     payload: ContactSaleSchema,
     service: ContactSaleService = Depends(Provide[Container.contact_sale_service]),
+    current_user: User = Depends(get_current_user),
 ):
     try:
         contact_sale = service.create_contact_sale(payload)
