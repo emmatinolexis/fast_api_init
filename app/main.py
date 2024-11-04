@@ -122,7 +122,7 @@ async def startup_event():
         scheduler.add_job(
             check_drivers_license_expiry,
             "interval",
-            minutes=1440,
+            minutes=30,
             id="check_license_expiry",
         )
 
