@@ -92,3 +92,4 @@ class UserOrganisationAssignment(BaseModel):
 
     class Config:
         orm_model = True
+
