@@ -626,6 +626,8 @@ class Container(containers.DeclarativeContainer):
         driver_service.DriverService,
         driver_repository=driver_repository,
         asset_repository=asset_repository,
+        asset_operator_assignment_repository=asset_operator_assignment_repository,
+        user_repository = user_repository
     )
     device_manufacturer_service = providers.Factory(
         device_manufacturer_service.DeviceManufacturerService,

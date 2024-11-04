@@ -124,3 +124,6 @@ LICENSE_CHECK_FAILED = "Failed to check licenses expiry"
 
 ROLE_UPDATED = "Your role has been changed"
 NOTIFICATIONS_CLEARED = "Notifications cleared successfully"
+NOT_ASSIGNED = "Driver not assigned to any asset"
+DRIVER_UNASSIGNED_SUCCESS = "Driver unassigned successfully"
+REMOVAL_SUCCESS = "You have been removed from your vehicle"
