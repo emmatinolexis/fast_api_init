@@ -8,6 +8,7 @@ from app.service.contact_sale_service import ContactSaleService
 from app.util.utils import send_data, send_internal_server_error
 from app.core.dependencies import get_current_user
 from app.model.user import User
+
 router = APIRouter(
     prefix="/contact_sales",
     tags=["contact_sales"],
