@@ -10,6 +10,8 @@ from app.repository.base_repository import BaseRepository
 from app.util.enums import AccountType
 from app.model.device import DeviceManufacturer
 from typing import Optional
+
+
 class DeviceRepository(BaseRepository):
     def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
         self.session_factory = session_factory

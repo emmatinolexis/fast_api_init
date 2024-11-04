@@ -1,7 +1,7 @@
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends,Query
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
-from typing import Optional
+
 from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_app_service, get_current_user
@@ -16,6 +16,7 @@ from app.util.utils import (
     send_info,
     send_internal_server_error,
 )
+from typing import Optional
 
 router = APIRouter(
     prefix="/devices",
