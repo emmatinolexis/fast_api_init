@@ -405,6 +405,14 @@ class AssetService(BaseService):
         except Exception as e:
             raise e
 
+    def get_assets_by_license_no(self, vehicle_license_no: str):
+        try:
+            return self.asset_repository.get_asset_by_license_no(
+                vehicle_license_no
+            )
+        except Exception as e:
+            raise e
+
     def report_immobilizer_activity(self, payload):
         try:
             report = self.immobilizer_report_repository.create(payload)

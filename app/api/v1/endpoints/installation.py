@@ -6,10 +6,12 @@ from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
 from app.model.user import User
-from app.schema.installation_schema import InstallationPayload, AssignInstallerPayload
+from app.schema.installation_schema import InstallationPayload, AssignInstallerPayload, DeviceConfigurationPayload
 
 from app.service.installation_service import InstallationService
 from app.util.utils import send_data, send_internal_server_error, send_client_side_error, send_data_with_info
+from app.service.asset_service import AssetService
+from app.schema.asset_schema import AssignDeviceInputPayload
 
 
 router = APIRouter(
@@ -134,19 +136,28 @@ async def get_installation_handler(
         )
 
 
-# @router.get("/configure", response_class=ORJSONResponse)
-# @inject
-# async def configure_device_handler(
-#     payload: InstallationPayload,
-#     service: InstallationService = Depends(Provide[Container.installation_service]),
-#     current_user: User = Depends(get_current_user),
-# ):
-#     try:
-#         installation = service.get_installation(installation_uuid)
-#         if not installation:
-#             send_client_side_error(messages.INSTALLATION_NOT_FOUND_MSG)
-#         return send_data(installation)
-#     except Exception as e:
-#         return send_internal_server_error(
-#             user_msg="Failed to fetch installations.", error=e
-#         )
+@router.post("/configure", response_class=ORJSONResponse)
+@inject
+async def configure_device_handler(
+    payload: DeviceConfigurationPayload,
+    asset_service: AssetService = Depends(Provide[Container.asset_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        asset = asset_service.get_assets_by_license_no(payload.asset_license_no)
+
+        if not asset:
+            send_client_side_error(f"{messages.ASSET_NOT_FOUND} {payload.asset_license_no}")
+
+        data_to_assign = AssignDeviceInputPayload(
+                device_imei=payload.device_imei,
+                sim_phone_number=payload.sim_phone_number
+            )
+
+        asset_assignment = asset_service.assign_device_imei(asset.uuid, data_to_assign)
+
+        return send_data_with_info(asset_assignment, messages.SUCCESS_MESSAGE)
+    except Exception as e:
+        return send_internal_server_error(
+            user_msg="Failed to fetch installations.", error=e
+        )
