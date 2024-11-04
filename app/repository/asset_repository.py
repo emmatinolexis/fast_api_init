@@ -773,6 +773,14 @@ class AssetRepository(BaseRepository):
                 .first()
             )
 
+    def get_asset_by_license_no(self, vehicle_license_no: str):
+        with self.session_factory() as session:
+            return (
+                session.query(self.model)
+                .filter(self.model.vehicle_license_no == vehicle_license_no)
+                .first()
+            )
+
     def get_driver_by_asset_uuid(self, asset_uuid: str):
         with self.session_factory() as session:
             return (
