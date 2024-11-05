@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Column, Enum, ForeignKey, String,DateTime
+from sqlalchemy import Column, Enum, ForeignKey, String, Time
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -19,7 +19,7 @@ class ContactSale(BaseModel):
         nullable=False,
     )
     phone_number = Column(String(length=30), nullable=True, default="", index=True)
-    call_time = Column(DateTime, nullable=True, index=True) 
+    call_time = Column(Time, nullable=True, index=True)
     user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
     status = Column(
         Enum(ContactSaleStatus), nullable=False, default="not_attended", index=True

@@ -1,20 +1,24 @@
 from app.core import messages
 from app.core.exceptions import BadRequestError, NotFoundError
-from app.repository.asset_repository import AssetRepository
-from app.repository.driver_repository import DriverRepository
-from app.repository.asset_operator_assignment_repository import AssetOperatorTypeAssignmentRepository
-from app.schema.asset_schema import DriverPayload
-from app.service.base_service import BaseService
 from app.events.subscriber import subscriber
 from app.events.user import VehicleUnassignment
+from app.repository.asset_operator_assignment_repository import (
+    AssetOperatorTypeAssignmentRepository,
+)
+from app.repository.asset_repository import AssetRepository
+from app.repository.driver_repository import DriverRepository
 from app.repository.user_repository import UserRepository
-
+from app.schema.asset_schema import DriverPayload
+from app.service.base_service import BaseService
 
 
 class DriverService(BaseService):
     def __init__(
-        self, driver_repository: DriverRepository, asset_repository: AssetRepository,asset_operator_assignment_repository:AssetOperatorTypeAssignmentRepository,
-        user_repository: UserRepository
+        self,
+        driver_repository: DriverRepository,
+        asset_repository: AssetRepository,
+        asset_operator_assignment_repository: AssetOperatorTypeAssignmentRepository,
+        user_repository: UserRepository,
     ):
         self.driver_repository = driver_repository
         self.asset_repository = asset_repository
@@ -65,17 +69,20 @@ class DriverService(BaseService):
 
     def unassign_driver(self, driver_uuid: str):
         try:
-            driver_assset = self.asset_operator_assignment_repository.get_assignment_by_operator_uuid(operator_uuid=driver_uuid)
+            driver_assset = self.asset_operator_assignment_repository.get_assignment_by_operator_uuid(
+                operator_uuid=driver_uuid
+            )
 
             if driver_assset is None:
                 raise BadRequestError(messages.NOT_ASSIGNED)
-            
+
             asset = self.asset_repository.read_by_uuid(driver_assset.asset_uuid)
 
             operator = self.user_repository.read_by_uuid(driver_uuid)
-            
 
-            subscriber.publish(VehicleUnassignment,VehicleUnassignment(asset=asset,user=operator))
+            subscriber.publish(
+                VehicleUnassignment, VehicleUnassignment(asset=asset, user=operator)
+            )
             self.asset_operator_assignment_repository.delete_by_uuid(driver_assset.uuid)
         except Exception as e:
             raise e

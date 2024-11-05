@@ -9,6 +9,7 @@ from app.api.v1.endpoints.asset import router as asset_router
 from app.api.v1.endpoints.asset_location import router as asset_location_router
 from app.api.v1.endpoints.asset_type import router as asset_type_router
 from app.api.v1.endpoints.authentication import router as auth_router
+from app.api.v1.endpoints.contact_sales import router as contact_sales_router
 from app.api.v1.endpoints.device import router as device_router
 from app.api.v1.endpoints.device_manufacturers import (
     router as device_manufacturers_router,
@@ -32,6 +33,7 @@ from app.api.v1.endpoints.incident import router as incident_router
 from app.api.v1.endpoints.installation import router as installlation_router
 from app.api.v1.endpoints.inventory import router as inventory_router
 from app.api.v1.endpoints.marker_icon import router as marker_icon_router
+from app.api.v1.endpoints.notification import router as notification_router
 from app.api.v1.endpoints.onboarding import router as onboarding_router
 from app.api.v1.endpoints.order import router as order_router
 from app.api.v1.endpoints.organisation_contact import (
@@ -52,8 +54,6 @@ from app.api.v1.endpoints.tracking import router as tracking_router
 from app.api.v1.endpoints.upload import router as upload_router
 from app.api.v1.endpoints.users import router as users_router
 from app.api.v1.endpoints.vehicle_make import router as vehicle_make_router
-from app.api.v1.endpoints.notification import router as notification_router
-from app.api.v1.endpoints.contact_sales import router as contact_sales_router
 
 routers = APIRouter()
 router_list = [
@@ -100,7 +100,7 @@ router_list = [
     gateway_configuration_router,
     installlation_router,
     notification_router,
-    contact_sales_router
+    contact_sales_router,
 ]
 
 for router in router_list:

@@ -11,7 +11,7 @@ class Device(BaseModel):
     quantity: int
 
 
-class OrderStatus(BaseModel):
+class OrderStatusSchema(BaseModel):
     order_status: OrderStatusRtd
 
 

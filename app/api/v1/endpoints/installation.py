@@ -6,12 +6,20 @@ from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
 from app.model.user import User
-from app.schema.installation_schema import InstallationPayload, AssignInstallerPayload, DeviceConfigurationPayload
-
-from app.service.installation_service import InstallationService
-from app.util.utils import send_data, send_internal_server_error, send_client_side_error, send_data_with_info
-from app.service.asset_service import AssetService
 from app.schema.asset_schema import AssignDeviceInputPayload
+from app.schema.installation_schema import (
+    AssignInstallerPayload,
+    DeviceConfigurationPayload,
+    InstallationPayload,
+)
+from app.service.asset_service import AssetService
+from app.service.installation_service import InstallationService
+from app.util.utils import (
+    send_client_side_error,
+    send_data,
+    send_data_with_info,
+    send_internal_server_error,
+)
 from app.util.enums import InstallationStatus
 
 
@@ -22,9 +30,7 @@ router = APIRouter(
 msg_prefix = "installation"
 
 
-@router.get(
-    "/installers", response_class=ORJSONResponse
-)
+@router.get("/installers", response_class=ORJSONResponse)
 @inject
 async def get_installers_handler(
     service: InstallationService = Depends(Provide[Container.installation_service]),
@@ -94,7 +100,6 @@ async def get_installations_handler(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
     current_user: User = Depends(get_current_user),
-
 ):
     try:
         installations = service.fetch_installations(page, page_size)
@@ -162,12 +167,13 @@ async def configure_device_handler(
         asset = asset_service.get_assets_by_license_no(payload.asset_license_no)
 
         if not asset:
-            send_client_side_error(f"{messages.ASSET_NOT_FOUND} {payload.asset_license_no}")
+            send_client_side_error(
+                f"{messages.ASSET_NOT_FOUND} {payload.asset_license_no}"
+            )
 
         data_to_assign = AssignDeviceInputPayload(
-                device_imei=payload.device_imei,
-                sim_phone_number=payload.sim_phone_number
-            )
+            device_imei=payload.device_imei, sim_phone_number=payload.sim_phone_number
+        )
 
         asset_assignment = asset_service.assign_device_imei(asset.uuid, data_to_assign)
 
