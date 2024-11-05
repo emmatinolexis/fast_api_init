@@ -12,6 +12,7 @@ from app.service.installation_service import InstallationService
 from app.util.utils import send_data, send_internal_server_error, send_client_side_error, send_data_with_info
 from app.service.asset_service import AssetService
 from app.schema.asset_schema import AssignDeviceInputPayload
+from app.util.enums import InstallationStatus
 
 
 router = APIRouter(
@@ -80,6 +81,13 @@ async def assign_installer_handler(
 @router.get("/", response_class=ORJSONResponse)
 @inject
 async def get_installations_handler(
+    search_parameter: str = None,
+    start_date: str = Query(
+        None, description="Start date should be in the format dd/mm/yyyy"
+    ),
+    end_date: str = Query(
+        None, description="End date should be in the format dd/mm/yyyy"
+    ),
     service: InstallationService = Depends(Provide[Container.installation_service]),
     page: int = Query(1, ge=1, description="Page number, default is set to 1"),
     page_size: int = Query(
@@ -101,16 +109,22 @@ async def get_installations_handler(
 @inject
 async def get_installer_installations_handler(
     installer_uuid: str,
+    status: InstallationStatus = None,
+    start_date: str = Query(
+        None, description="Start date should be in the format dd/mm/yyyy"
+    ),
+    end_date: str = Query(
+        None, description="End date should be in the format dd/mm/yyyy"
+    ),
     service: InstallationService = Depends(Provide[Container.installation_service]),
     page: int = Query(1, ge=1, description="Page number, default is set to 1"),
     page_size: int = Query(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
     current_user: User = Depends(get_current_user),
-
 ):
     try:
-        installations = service.fetch_installations(page, page_size, installer_uuid)
+        installations = service.fetch_installations(page, page_size, installer_uuid, status, start_date, end_date)
         return send_data(installations)
     except Exception as e:
         return send_internal_server_error(
@@ -141,6 +155,7 @@ async def get_installation_handler(
 async def configure_device_handler(
     payload: DeviceConfigurationPayload,
     asset_service: AssetService = Depends(Provide[Container.asset_service]),
+    service: InstallationService = Depends(Provide[Container.installation_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
@@ -155,6 +170,9 @@ async def configure_device_handler(
             )
 
         asset_assignment = asset_service.assign_device_imei(asset.uuid, data_to_assign)
+
+        if asset_assignment:
+            service.update_installation_status(payload.installation_uuid, InstallationStatus.COMPLETED)
 
         return send_data_with_info(asset_assignment, messages.SUCCESS_MESSAGE)
     except Exception as e:
