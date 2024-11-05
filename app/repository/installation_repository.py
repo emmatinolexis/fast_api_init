@@ -1,6 +1,6 @@
 from contextlib import AbstractContextManager
 from datetime import datetime
-from sqlalchemy import and_
+from sqlalchemy import and_, or_
 from typing import Callable
 from sqlalchemy.orm import Session
 from app.model.installation import Installation
@@ -84,7 +84,8 @@ class InstallationRepository(BaseRepository):
                           installer_uuid: str = None,
                           status: InstallationStatus = None,
                           start_date: str = None,
-                          end_date: str = None):
+                          end_date: str = None,
+                          search_parameter: str = None):
         with self.session_factory() as session:
             # Build the base query with joinedload
             query = session.query(Installation).options(
