@@ -4,7 +4,7 @@ from sqlalchemy import Column, Double, Enum, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.model.base_model import BaseModel
-from app.util.enums import IncidenceType
+from app.util.enums import IncidenceType,IncidentStatus
 
 
 class Incident(BaseModel):
@@ -20,6 +20,7 @@ class Incident(BaseModel):
     longitude = Column(Double, nullable=False, index=True)
     latitude = Column(Double, nullable=False, index=True)
     user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
+    status = Column(Enum(IncidentStatus), nullable=True)  
 
     def dto(self):
         return {
@@ -28,6 +29,7 @@ class Incident(BaseModel):
             "userId": self.user_uuid,
             "longitude": self.longitude,
             "latitude": self.latitude,
+            "status": self.status,
             "createdAt": self.created_at,
             "updatedAt": self.updated_at,
         }

@@ -8,7 +8,7 @@ from app.core.dependencies import get_current_user_with_permission
 from app.model.user import User
 from app.schema.incident_schema import IncidentPayload
 from app.service.incident_service import IncidentService
-from app.util.enums import IncidenceType
+from app.util.enums import IncidenceType,IncidentStatus
 from app.util.utils import (
     pagination,
     send_data,
@@ -17,7 +17,7 @@ from app.util.utils import (
     send_internal_server_error,
     total_pages,
 )
-
+from typing import Optional
 router = APIRouter(
     prefix="/incidents",
     tags=["incidents"],
@@ -50,7 +50,10 @@ async def get_all_incidents(
     page_size: int = Query(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
-    status: str = None,
+    status: Optional[IncidentStatus] = Query(
+        None,
+        description='Filter by resolved status'
+    ), 
     current_user: User = Depends(get_current_user_with_permission("view_incident")),
 ):
     try:

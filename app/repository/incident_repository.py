@@ -6,7 +6,7 @@ from sqlalchemy import text
 from app.core.constants import LATITUDE, LONGITUDE, RADIUS
 from app.model.incident import Incident
 from app.repository.base_repository import BaseRepository
-from app.util.enums import IncidenceType
+from app.util.enums import IncidenceType,IncidentStatus
 
 
 class IncidentRepository(BaseRepository):
@@ -24,7 +24,7 @@ class IncidentRepository(BaseRepository):
                 query = query.filter_by(incident_type=incident_type)
 
             if status:
-                query = query.filter_by(status=status) 
+                query = query.filter_by(status= IncidentStatus(status))
 
             offset = (page - 1) * page_size
             incidents = query.offset(offset).limit(page_size).all()
