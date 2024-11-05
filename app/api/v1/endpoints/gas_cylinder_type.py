@@ -1,3 +1,5 @@
+from typing import Optional
+
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
@@ -20,7 +22,6 @@ from app.util.utils import (
     send_data_with_info,
     send_internal_server_error,
 )
-from typing import Optional
 
 router = APIRouter(
     prefix="/gas_cylinder_type",
@@ -33,10 +34,7 @@ msg_prefix = "gas cylinder"
 @router.get("/", response_class=ORJSONResponse)
 @inject
 async def get_all_gas_cylinder_types_handler(
-    status: Optional[ActiveStatus] = Query(
-        None,
-        description='Filter by active status'
-    ), 
+    status: Optional[ActiveStatus] = Query(None, description="Filter by active status"),
     search_query: str = Query(None, description="Search by cylinder name"),
     page: int = Query(1, description="Page number", ge=1),
     page_size: int = Query(10, description="Page size", ge=1),

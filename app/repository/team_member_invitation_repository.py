@@ -86,7 +86,12 @@ class TeamMemberInvitationRepository(BaseRepository):
             }
 
     def get_admin_invitations(
-        self, page=1, page_size=10, email: str = None, role_uuids: list[str] = None,status=None
+        self,
+        page=1,
+        page_size=10,
+        email: str = None,
+        role_uuids: list[str] = None,
+        status=None,
     ):
         with self.session_factory() as session:
             offset = (page - 1) * page_size
@@ -101,8 +106,9 @@ class TeamMemberInvitationRepository(BaseRepository):
                 query = query.filter(self.model.email.ilike(f"%{email}%"))
 
             if status:
-                    base_query = base_query.filter(self.model.status == InvitationStatus(status))  
-
+                query = query.filter(
+                    self.model.status == InvitationStatus(status)
+                )
 
             if role_uuids:
                 valid_role_uuids = []

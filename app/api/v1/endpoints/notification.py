@@ -1,15 +1,14 @@
-from fastapi import APIRouter,Depends,Query
-from fastapi.responses import ORJSONResponse
 from dependency_injector.wiring import Provide, inject
-from app.service.notification_service import NotificationService
-from app.core.container import Container
-from app.util.utils import send_data,send_internal_server_error,send_info
-from app.schema.notification_schema import CreateNotificationSchema
+from fastapi import APIRouter, Depends, Query
+from fastapi.responses import ORJSONResponse
+
 from app.core import messages
-from app.model.user import User
+from app.core.container import Container
 from app.core.dependencies import get_current_user
-
-
+from app.model.user import User
+from app.schema.notification_schema import CreateNotificationSchema
+from app.service.notification_service import NotificationService
+from app.util.utils import send_data, send_info, send_internal_server_error
 
 router = APIRouter(
     prefix="/notification",
@@ -19,12 +18,12 @@ router = APIRouter(
 msg_prefix = "notification"
 
 
-@router.post("",response_class=ORJSONResponse)
+@router.post("", response_class=ORJSONResponse)
 @inject
 async def create_notification_handler(
-    payload : CreateNotificationSchema,
+    payload: CreateNotificationSchema,
     current_user: User = Depends(get_current_user),
-    service : NotificationService = Depends(Provide[Container.notification_service]),
+    service: NotificationService = Depends(Provide[Container.notification_service]),
 ):
     try:
         notification = service.add(payload)
@@ -32,30 +31,28 @@ async def create_notification_handler(
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
-    
 
 
-@router.get("/{user_uuid}",response_class=ORJSONResponse)
+@router.get("/{user_uuid}", response_class=ORJSONResponse)
 @inject
 async def get_user_notifications_handler(
-    user_uuid:str,
-    is_read : bool = Query(None,description="Filter by read status"),
-    service : NotificationService = Depends(Provide[Container.notification_service]),
+    user_uuid: str,
+    is_read: bool = Query(None, description="Filter by read status"),
+    service: NotificationService = Depends(Provide[Container.notification_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        notifications = service.get_user_notifications(user_uuid,is_read)
+        notifications = service.get_user_notifications(user_uuid, is_read)
         return send_data(notifications)
     except Exception as e:
-        msg = messages.GET_FAILED+ msg_prefix
+        msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
-    
 
 
-@router.put("/clear",response_class=ORJSONResponse)
+@router.put("/clear", response_class=ORJSONResponse)
 @inject
 async def clear_all_notifications_handler(
-    service : NotificationService = Depends(Provide[Container.notification_service]),
+    service: NotificationService = Depends(Provide[Container.notification_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
@@ -64,14 +61,13 @@ async def clear_all_notifications_handler(
     except Exception as e:
         msg = messages.UPDATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
-    
 
 
-@router.put("/{notification_uuid}",response_class=ORJSONResponse)
+@router.put("/{notification_uuid}", response_class=ORJSONResponse)
 @inject
 async def read_notification_handler(
-    notification_uuid:str,
-    service : NotificationService = Depends(Provide[Container.notification_service]),
+    notification_uuid: str,
+    service: NotificationService = Depends(Provide[Container.notification_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
@@ -80,10 +76,3 @@ async def read_notification_handler(
     except Exception as e:
         msg = messages.UPDATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
-    
-
-
-
-
-    
-    

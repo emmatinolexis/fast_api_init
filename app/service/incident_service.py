@@ -18,11 +18,18 @@ class IncidentService(BaseService):
             raise e
 
     def get_all_incidents(
-        self, incident_type: IncidenceType, page: int = 1, page_size: int = 10,status=None
+        self,
+        incident_type: IncidenceType,
+        page: int = 1,
+        page_size: int = 10,
+        status=None,
     ):
         try:
             return self.incident_repository.get_all_incidents(
-                incident_type=incident_type, page=page, page_size=page_size,status=status
+                incident_type=incident_type,
+                page=page,
+                page_size=page_size,
+                status=status,
             )
         except Exception as e:
             raise e
@@ -70,7 +77,7 @@ class IncidentService(BaseService):
         search_parameter: str = None,
         page: int = 1,
         page_size: int = 10,
-        status=None
+        status=None,
     ):
         try:
             date_format = "%d/%m/%Y"
@@ -102,7 +109,7 @@ class IncidentService(BaseService):
                         "lastName": incident[5],
                         "count": incident[6],
                         "createdAt": incident[7],
-                        "status": "verified" if incident[6] > 1 else "unverified"
+                        "status": "verified" if incident[6] > 1 else "unverified",
                     }
                     for incident in incidents
                 ],

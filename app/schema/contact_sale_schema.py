@@ -1,9 +1,9 @@
+from datetime import time
 from uuid import UUID
 
 from pydantic import BaseModel
 
 from app.util.enums import ContactSaleStatus
-from datetime import time
 
 
 class ContactSale(BaseModel):

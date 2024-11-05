@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
@@ -38,8 +39,6 @@ from app.util.enums import (
     IncidentType,
 )
 from app.util.sms import send_sms
-from typing import Optional
-
 from app.util.utils import (
     allow_admins_only,
     send_client_side_error,
@@ -548,9 +547,8 @@ async def get_all_incidence_handler(
         None, description="Filter incidences from this date (YYYY-MM-DD)"
     ),
     status: Optional[IncidentStatus] = Query(
-        None,
-        description='Filter by resolved status'
-    ), 
+        None, description="Filter by resolved status"
+    ),
     end_date: str = Query(
         None, description="Filter incidences up to this date (YYYY-MM-DD)"
     ),

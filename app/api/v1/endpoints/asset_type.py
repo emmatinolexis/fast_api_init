@@ -1,5 +1,7 @@
+from typing import Optional
+
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends,Query
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
 
 from app.core import messages
@@ -10,7 +12,6 @@ from app.model.user import User
 from app.schema.asset_schema import AssetTypePayload
 from app.service.asset_type_service import AssetTypeService
 from app.util.enums import ActiveStatus
-from typing import Optional
 from app.util.utils import (
     allow_admins_only,
     send_client_side_error,
@@ -29,15 +30,12 @@ msg_prefix = "asset type"
 @router.get("/", response_class=ORJSONResponse)
 @inject
 async def get_asset_type_handler(
-    status: Optional[ActiveStatus] = Query(
-        None,
-        description='Filter by active status'
-    ), 
+    status: Optional[ActiveStatus] = Query(None, description="Filter by active status"),
     service: AssetTypeService = Depends(Provide[Container.asset_type_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        result = service.get_asset_list(status=status) 
+        result = service.get_asset_list(status=status)
         return send_data(result)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"

@@ -1,8 +1,6 @@
-from pydantic import BaseModel
 from typing import Optional
 
-
-
+from pydantic import BaseModel
 
 
 class CreateNotificationSchema(BaseModel):
@@ -10,4 +8,3 @@ class CreateNotificationSchema(BaseModel):
     message: str
     user_id: str
     business_profile_uuid: Optional[str] = None
-   

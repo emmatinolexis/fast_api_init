@@ -6,7 +6,7 @@ from sqlalchemy import text
 from app.core.constants import LATITUDE, LONGITUDE, RADIUS
 from app.model.incident import Incident
 from app.repository.base_repository import BaseRepository
-from app.util.enums import IncidenceType,IncidentStatus
+from app.util.enums import IncidenceType, IncidentStatus
 
 
 class IncidentRepository(BaseRepository):
@@ -15,16 +15,20 @@ class IncidentRepository(BaseRepository):
         super().__init__(session_factory, Incident)
 
     def get_all_incidents(
-        self, incident_type: IncidenceType = None, page: int = 1, page_size: int = 10, status: str = None
+        self,
+        incident_type: IncidenceType = None,
+        page: int = 1,
+        page_size: int = 10,
+        status: str = None,
     ) -> List[Incident]:
         with self.session_factory() as session:
             query = session.query(self.model)
-            
+
             if incident_type:
                 query = query.filter_by(incident_type=incident_type)
 
             if status:
-                query = query.filter_by(status= IncidentStatus(status))
+                query = query.filter_by(status=IncidentStatus(status))
 
             offset = (page - 1) * page_size
             incidents = query.offset(offset).limit(page_size).all()
@@ -106,7 +110,7 @@ class IncidentRepository(BaseRepository):
         search_parameter: str = None,
         page: int = 1,
         page_size: int = 10,
-        status=None
+        status=None,
     ):
         with self.session_factory() as session:
             offset = (page - 1) * page_size
@@ -128,7 +132,7 @@ class IncidentRepository(BaseRepository):
                     " AND (u.first_name ILIKE :search OR u.last_name ILIKE :search)"
                 )
                 params["search"] = f"%{search_parameter}%"
-                
+
             status_filter = ""
             if status:
                 status_filter = " AND cl.status = :status"

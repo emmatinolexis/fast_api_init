@@ -9,6 +9,6 @@ class AssetTypeService(BaseService):
 
     def get_asset_list(self, status: str = None):
         try:
-            return self.asset_type_repository.get_asset_types(status=status) 
+            return self.asset_type_repository.get_asset_types(status=status)
         except Exception as e:
             raise e

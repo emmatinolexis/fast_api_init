@@ -7,6 +7,7 @@ from app.model.equipment_type import EquipmentType
 from app.repository.base_repository import BaseRepository
 from app.util.enums import ActiveStatus
 
+
 class EquipmentTypeRepository(BaseRepository):
     def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
         self.session_factory = session_factory
@@ -21,7 +22,11 @@ class EquipmentTypeRepository(BaseRepository):
             )
 
     def get_equipment_types(
-        self, page: int = 1, page_size: int = 10, search_query: str = None,status: str = None
+        self,
+        page: int = 1,
+        page_size: int = 10,
+        search_query: str = None,
+        status: str = None,
     ):
         with self.session_factory() as session:
             query = session.query(self.model).options(joinedload(self.model.equipment))
@@ -31,7 +36,7 @@ class EquipmentTypeRepository(BaseRepository):
                     self.model.equipment_type_name.ilike(f"%{search_query}%")
                 )
             if status:
-                query = query.filter(self.model.status == ActiveStatus(status))  
+                query = query.filter(self.model.status == ActiveStatus(status))
 
             total_records = query.count()
             offset = (page - 1) * page_size

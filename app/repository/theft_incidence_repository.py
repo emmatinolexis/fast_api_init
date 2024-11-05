@@ -17,7 +17,13 @@ class TheftIncidenceRepository(BaseRepository):
         super().__init__(session_factory, TheftIncidence)
 
     def get_all_incidence(
-        self, page=1, page_size=10, search_query=None, start_date=None, end_date=None,status=None
+        self,
+        page=1,
+        page_size=10,
+        search_query=None,
+        start_date=None,
+        end_date=None,
+        status=None,
     ):
         with self.session_factory() as session:
             try:
@@ -36,7 +42,9 @@ class TheftIncidenceRepository(BaseRepository):
                         )
                     )
                 if status:
-                    base_query = base_query.filter(self.model.status == IncidentStatus(status))  
+                    base_query = base_query.filter(
+                        self.model.status == IncidentStatus(status)
+                    )
 
                 if start_date:
                     base_query = base_query.filter(

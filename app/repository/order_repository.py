@@ -34,7 +34,13 @@ class OrderRepository(BaseRepository):
                 raise e
 
     def get_all_orders(
-        self, page=1, page_size=10, search_query=None, start_date=None, end_date=None,status=None
+        self,
+        page=1,
+        page_size=10,
+        search_query=None,
+        start_date=None,
+        end_date=None,
+        status=None,
     ):
         with self.session_factory() as session:
             try:
@@ -54,7 +60,9 @@ class OrderRepository(BaseRepository):
                         .filter(Inventory.device_name.ilike(f"%{search_query}%"))
                     )
                 if status:
-                    base_query = base_query.filter(Order.order_status == OrderStatus(status))
+                    base_query = base_query.filter(
+                        Order.order_status == OrderStatus(status)
+                    )
 
                 if start_date:
                     base_query = base_query.filter(

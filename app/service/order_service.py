@@ -1,3 +1,5 @@
+from typing import Optional
+
 import requests
 
 from app.core.settings import settings
@@ -13,7 +15,8 @@ from app.repository.order_shipping_address_repository import (
 from app.schema.order_schema import OrderPayload
 from app.service.base_service import BaseService
 from app.util.enums import OrderPickUpLocation, OrderStatus
-from typing import Optional
+
+
 class OrderService(BaseService):
     def __init__(
         self,
@@ -52,7 +55,13 @@ class OrderService(BaseService):
             raise e
 
     def get_all_orders(
-        self, page=1, page_size=10, search_query=None, start_date=None, end_date=None,status: Optional[OrderStatus]=None
+        self,
+        page=1,
+        page_size=10,
+        search_query=None,
+        start_date=None,
+        end_date=None,
+        status: Optional[OrderStatus] = None,
     ):
         try:
             orders = self.order_repository.get_all_orders(
@@ -61,7 +70,7 @@ class OrderService(BaseService):
                 search_query=search_query,
                 start_date=start_date,
                 end_date=end_date,
-                status=status.value if status else None 
+                status=status.value if status else None,
             )
             return orders
         except Exception as e:

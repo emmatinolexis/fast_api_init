@@ -1,15 +1,13 @@
 from contextlib import AbstractContextManager
-from typing import Callable
+from typing import Callable, Optional
 
 from sqlalchemy.orm import Session, joinedload
 
-from app.model.device import Device
+from app.model.device import Device, DeviceManufacturer
 from app.model.inventory import Inventory
 from app.model.user import User
 from app.repository.base_repository import BaseRepository
-from app.util.enums import AccountType,DeviceStatus
-from app.model.device import DeviceManufacturer
-from typing import Optional
+from app.util.enums import AccountType, DeviceStatus
 
 
 class DeviceRepository(BaseRepository):
@@ -17,7 +15,13 @@ class DeviceRepository(BaseRepository):
         self.session_factory = session_factory
         super().__init__(session_factory, Device)
 
-    def get_all_devices(self, page: int = 1, page_size: int = 10, search_query: Optional[str] = None,status=None):
+    def get_all_devices(
+        self,
+        page: int = 1,
+        page_size: int = 10,
+        search_query: Optional[str] = None,
+        status=None,
+    ):
         with self.session_factory() as session:
             try:
                 offset = (page - 1) * page_size
@@ -29,11 +33,19 @@ class DeviceRepository(BaseRepository):
                 )
 
                 if search_query:
-                    base_query = base_query.join(Device.inventory).join(Inventory.manufacturer).filter(
-                        DeviceManufacturer.manufacturer_name.ilike(f"%{search_query}%")
+                    base_query = (
+                        base_query.join(Device.inventory)
+                        .join(Inventory.manufacturer)
+                        .filter(
+                            DeviceManufacturer.manufacturer_name.ilike(
+                                f"%{search_query}%"
+                            )
+                        )
                     )
                 if status:
-                    base_query = base_query.filter(self.model.status == DeviceStatus(status))
+                    base_query = base_query.filter(
+                        self.model.status == DeviceStatus(status)
+                    )
 
                 total_devices = base_query.count()
 
@@ -43,7 +55,7 @@ class DeviceRepository(BaseRepository):
                 total_pages = (total_devices + page_size - 1) // page_size
 
                 return {
-                    "devices":devices,
+                    "devices": devices,
                     "total_devices": total_devices,
                     "total_pages": total_pages,
                     "current_page": page,

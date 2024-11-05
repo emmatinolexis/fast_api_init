@@ -8,6 +8,7 @@ from app.model.gas_cylinders import CylinderTypes
 from app.repository.base_repository import BaseRepository
 from app.util.enums import ActiveStatus
 
+
 class GasCylinderTypeRepository(BaseRepository):
     def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
         self.session_factory = session_factory

@@ -36,10 +36,15 @@ class InvitationService(BaseService):
         )
 
     def get_all_admin_invites(
-        self, page=1, page_size=10, email: str = None, role_uuids: list[str] = None,status=None
+        self,
+        page=1,
+        page_size=10,
+        email: str = None,
+        role_uuids: list[str] = None,
+        status=None,
     ):
         return self.invitation_repository.get_admin_invitations(
-            page, page_size, email, role_uuids,status
+            page, page_size, email, role_uuids, status
         )
 
     def update_invitation_expiry(self, invitation_uuid: str, expiry_date: datetime):

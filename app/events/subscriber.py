@@ -1,11 +1,19 @@
 from typing import Dict
+
 from pyee.asyncio import AsyncIOEventEmitter
+
 from app.events.fuel_log import FuelLogged
-from app.events.user import InviteAccepted,RoleUpdated,VehicleAssignment,VehicleUnassignment
-from app.events.handlers.users import create_role_change_notification,asset_change_notification,asset_removal_notification
-
-
-
+from app.events.handlers.users import (
+    asset_change_notification,
+    asset_removal_notification,
+    create_role_change_notification,
+)
+from app.events.user import (
+    InviteAccepted,
+    RoleUpdated,
+    VehicleAssignment,
+    VehicleUnassignment,
+)
 
 
 class Subscriber:
@@ -17,18 +25,11 @@ class Subscriber:
 
     event_to_handler_mappings: Dict = {
         FuelLogged: [],
-        InviteAccepted: [], 
-        RoleUpdated:[
-            create_role_change_notification
-        ],
-        VehicleAssignment: [
-            asset_change_notification
-        ],
-        VehicleUnassignment: [
-            asset_removal_notification
-        ]
+        InviteAccepted: [],
+        RoleUpdated: [create_role_change_notification],
+        VehicleAssignment: [asset_change_notification],
+        VehicleUnassignment: [asset_removal_notification],
     }
-
 
     def __new__(cls):
         """
@@ -39,7 +40,6 @@ class Subscriber:
             cls._instance.events = AsyncIOEventEmitter()
             cls._instance._subscribe_to_events()
         return cls._instance
-    
 
     def _subscribe_to_events(self):
         """
@@ -49,18 +49,12 @@ class Subscriber:
             for handler in handlers:
                 self.events.on(event, handler)
 
-
     def subscribe(self, event, handler):
         self.events.on(event, handler)
-
 
     def publish(self, event, data):
         self.events.emit(event, data)
 
 
-
-
 # Initialize the Subscriber instance
 subscriber = Subscriber()
-
-

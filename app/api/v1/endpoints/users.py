@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import List
+from typing import List, Optional
 
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query, Request
@@ -61,7 +61,7 @@ from app.util.utils import (
     send_internal_server_error,
     serialize_datetime,
 )
-from typing import Optional
+
 router = APIRouter(
     prefix="/users",
     tags=["users"],
@@ -132,15 +132,12 @@ async def get_all_accounts(
     page_size: int = Query(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
-    status: Optional[ActiveStatus] = Query(
-        None,
-        description='Filter by active status'
-    ), 
+    status: Optional[ActiveStatus] = Query(None, description="Filter by active status"),
     current_user: User = Depends(get_current_user),
 ):
     try:
         users = service.get_all_accounts(
-            page, page_size, email_address, role_uuid, start_date, end_date,status
+            page, page_size, email_address, role_uuid, start_date, end_date, status
         )
         return send_data(users)
     except Exception as e:
@@ -164,10 +161,7 @@ async def get_all_customers(
     page_size: int = Query(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
-    status: Optional[ActiveStatus] = Query(
-        None,
-        description='Filter by active status'
-    ), 
+    status: Optional[ActiveStatus] = Query(None, description="Filter by active status"),
     business_service: BusinessProfileService = Depends(
         Provide[Container.business_profile_service]
     ),
@@ -175,7 +169,7 @@ async def get_all_customers(
 ):
     try:
         businesses = business_service.get_businesses(
-            search_parameter, start_date, end_date, page, page_size,status
+            search_parameter, start_date, end_date, page, page_size, status
         )
 
         return send_data(businesses)
@@ -768,14 +762,13 @@ async def get_all_user_invitations_handler(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
     status: Optional[InvitationStatus] = Query(
-        None,
-        description='Filter by invitation status'
-    ), 
+        None, description="Filter by invitation status"
+    ),
     current_user: User = Depends(get_current_user),
 ):
     try:
         invitations = invitation_service.get_all_admin_invites(
-            page, page_size, email, role_uuids,status
+            page, page_size, email, role_uuids, status
         )
         return send_data(invitations)
     except Exception as e:
@@ -859,15 +852,16 @@ async def get_all_admin_team_members_handler(
     page_size: int = Query(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
-    status: Optional[ActiveStatus] = Query(
-        None,
-        description='Filter by active status'
-    ), 
+    status: Optional[ActiveStatus] = Query(None, description="Filter by active status"),
     current_user: User = Depends(get_current_user),
 ):
     try:
         team_members = user_service.get_all_admin_team_members(
-            page=page, page_size=page_size, email=email, role_uuid=role_uuid,status=status
+            page=page,
+            page_size=page_size,
+            email=email,
+            role_uuid=role_uuid,
+            status=status,
         )
         return send_data(team_members)
     except Exception as e:
@@ -906,7 +900,9 @@ async def update_team_member_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        user_service.update_team_member_handler(team_member_uuid=team_member_uuid,payload=payload)
+        user_service.update_team_member_handler(
+            team_member_uuid=team_member_uuid, payload=payload
+        )
         return send_info(messages.UPDATE_SUCCESS)
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
