@@ -275,10 +275,10 @@ class UserService(BaseService):
             raise e
 
     def get_all_admin_team_members(
-        self, page=1, page_size=10, email: str = None, role_uuid: str = None
+        self, page=1, page_size=10, email: str = None, role_uuid: str = None,status=None
     ):
         return self.user_repository.get_admin_team_members(
-            page, page_size, email, role_uuid
+            page, page_size, email, role_uuid,status
         )
 
     def get_admin_team_member(self, team_member_uuid: str):
@@ -297,9 +297,10 @@ class UserService(BaseService):
         role_uuid: str = None,
         start_date: str = None,
         end_date: str = None,
+        status=None
     ):
         return self.user_repository.get_all_accounts(
-            page, page_size, email, role_uuid, start_date, end_date
+            page, page_size, email, role_uuid, start_date, end_date,status
         )
 
     def get_drivers_by_business_uuid(

@@ -1,5 +1,5 @@
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends,Query
 from fastapi.responses import ORJSONResponse
 
 from app.core import messages
@@ -15,6 +15,8 @@ from app.util.utils import (
     send_data,
     send_internal_server_error,
 )
+from typing import Optional
+from app.util.enums import ActiveStatus
 
 router = APIRouter(
     prefix="/equipment_types",
@@ -29,6 +31,10 @@ async def get_paginated_equipment_types_handler(
     page: int = 1,
     page_size: int = 10,
     search_query: str = None,
+    status: Optional[ActiveStatus] = Query(
+        None,
+        description='Filter by active status'
+    ), 
     service: EquipmentTypeService = Depends(Provide[Container.equipment_type_service]),
     current_user: User = Depends(
         get_current_user_with_permission("view_equipment_type")
@@ -36,7 +42,7 @@ async def get_paginated_equipment_types_handler(
 ):
     try:
         result = service.get_paginated_equipment_types(
-            page=page, page_size=page_size, search_query=search_query
+            page=page, page_size=page_size, search_query=search_query,status=status
         )
         return send_data(result)
     except Exception as e:

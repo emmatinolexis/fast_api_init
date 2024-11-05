@@ -6,3 +6,9 @@ class AssetTypeService(BaseService):
     def __init__(self, asset_type_repository: AssetTypeRepository):
         self.asset_type_repository = asset_type_repository
         super().__init__(asset_type_repository)
+
+    def get_asset_list(self, status: str = None):
+        try:
+            return self.asset_type_repository.get_asset_types(status=status) 
+        except Exception as e:
+            raise e

@@ -42,10 +42,10 @@ class DeviceService(BaseService):
         except Exception as e:
             raise e
 
-    def get_all_devices(self, page: int = 1, page_size: int = 10, search_query: Optional[str] = None):
+    def get_all_devices(self, page: int = 1, page_size: int = 10, search_query: Optional[str] = None,status=None):
         try:
             devices = self.device_repository.get_all_devices(
-                page=page, page_size=page_size, search_query=search_query
+                page=page, page_size=page_size, search_query=search_query,status=status
             )
             return devices
         except Exception as e:

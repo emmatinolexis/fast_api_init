@@ -38,6 +38,8 @@ from app.util.enums import (
     IncidentType,
 )
 from app.util.sms import send_sms
+from typing import Optional
+
 from app.util.utils import (
     allow_admins_only,
     send_client_side_error,
@@ -545,6 +547,10 @@ async def get_all_incidence_handler(
     start_date: str = Query(
         None, description="Filter incidences from this date (YYYY-MM-DD)"
     ),
+    status: Optional[IncidentStatus] = Query(
+        None,
+        description='Filter by resolved status'
+    ), 
     end_date: str = Query(
         None, description="Filter incidences up to this date (YYYY-MM-DD)"
     ),
@@ -558,6 +564,7 @@ async def get_all_incidence_handler(
             page=page,
             page_size=page_size,
             search_query=search_query,
+            status=status,
             start_date=start_date,
             end_date=end_date,
         )

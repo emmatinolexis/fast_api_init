@@ -50,11 +50,12 @@ async def get_all_incidents(
     page_size: int = Query(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
+    status: str = None,
     current_user: User = Depends(get_current_user_with_permission("view_incident")),
 ):
     try:
         incidents = service.get_all_incidents(
-            incident_type=incident_type, page_size=page_size, page=page
+            incident_type=incident_type, page_size=page_size, page=page,status=status
         )
 
         incident_count = service.get_all_incidents_count()
@@ -130,6 +131,7 @@ async def get_incidents_report(
     page_size: int = Query(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
+    status: str = None,
     service: IncidentService = Depends(Provide[Container.incident_service]),
     current_user: User = Depends(get_current_user_with_permission("view_incident")),
 ):
@@ -139,6 +141,7 @@ async def get_incidents_report(
             end_date=end_date,
             page=page,
             page_size=page_size,
+            status=status,
             search_parameter=search_parameter,
         )
         incident_count = incidents["total"]

@@ -6,10 +6,11 @@ from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_app_service, get_current_user
 from app.model.user import User
-from app.schema.order_schema import OrderPayload, OrderStatus
+from app.schema.order_schema import OrderPayload, OrderStatusSchema
+from app.util.enums import OrderStatus
 from app.service.order_service import OrderService
 from app.util.utils import send_data, send_internal_server_error
-
+from typing import Optional
 router = APIRouter(
     prefix="/order",
     tags=["order"],
@@ -39,11 +40,15 @@ async def get_all_orders_handler(
         10, ge=1, le=100, description="Items per page, default is 10"
     ),
     search_query: str = Query(None, description="Search by device name"),
+    status: Optional[OrderStatus] = Query(
+        None,
+        description='Filter by order status'
+    ), 
     start_date: str = Query(
         None, description="Filter orders from this date (YYYY-MM-DD)"
     ),
     end_date: str = Query(
-        None, description="Filter orders up to this date (YYYY-MM-DD)"
+        None, description="Filter orders up to this date (YYYY-MM-DD)"  
     ),
     service: OrderService = Depends(Provide[Container.order_service]),
     current_user: User = Depends(get_current_user),
@@ -53,6 +58,7 @@ async def get_all_orders_handler(
             page=page,
             page_size=page_size,
             search_query=search_query,
+            status=status,
             start_date=start_date,
             end_date=end_date,
         )

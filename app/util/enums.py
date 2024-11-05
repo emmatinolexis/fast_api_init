@@ -150,7 +150,6 @@ class ContactSaleStatus(str, Enum):
     ATTENDED = "attended"
     NOT_ATTENDED = "not_attended"
 
-
 class GeofenceType(str, Enum):
     ZONE_EXIT = "zone_exit"
     ZONE_ENTRY = "zone_entry"

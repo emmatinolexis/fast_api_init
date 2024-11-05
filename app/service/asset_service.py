@@ -453,13 +453,14 @@ class AssetService(BaseService):
             raise e
 
     def get_all_theft_incidence(
-        self, page=1, page_size=10, search_query=None, start_date=None, end_date=None
+        self, page=1, page_size=10, search_query=None, start_date=None, end_date=None,status=None
     ):
         try:
             incidences = self.theft_incidence_repository.get_all_incidence(
                 page=page,
                 page_size=page_size,
                 search_query=search_query,
+                status=status,
                 start_date=start_date,
                 end_date=end_date,
             )

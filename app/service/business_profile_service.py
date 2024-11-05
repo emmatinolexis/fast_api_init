@@ -77,11 +77,12 @@ class BusinessProfileService(BaseService):
         end_date: str = None,
         page: int = None,
         page_size: int = None,
+        status=None
     ):
         try:
             businesses_data = []
             businesses = self.business_profile_repository.get_businesses(
-                search_parameter, start_date, end_date, page, page_size
+                search_parameter, start_date, end_date, page, page_size,status
             )
 
             for business in businesses.get("businesses"):

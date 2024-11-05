@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.model.business_profile import BusinessProfile
 from app.model.user_subscription import UserSubscription
 from app.repository.base_repository import BaseRepository
-from app.util.enums import SubscriptionStatus
+from app.util.enums import SubscriptionStatus,ActiveStatus
 from app.util.utils import parse_date
 
 
@@ -27,6 +27,7 @@ class BusinessProfileRepository(BaseRepository):
         end_date: str = None,
         page: int = None,
         page_size: int = None,
+        status=None
     ):
         try:
             with self.session_factory() as session:
@@ -37,6 +38,7 @@ class BusinessProfileRepository(BaseRepository):
                 if start_date and end_date:
                     start_date_obj = parse_date(start_date)
                     end_date_obj = parse_date(end_date)
+               
 
                 # Build the query
                 query = (
@@ -45,9 +47,11 @@ class BusinessProfileRepository(BaseRepository):
                     .options(joinedload(self.model.subscriptions))
                 )
 
+         
+
                 # Apply filters (search parameter and date range)
                 query = self.apply_filters(
-                    query, search_parameter, start_date_obj, end_date_obj
+                    query, search_parameter, start_date_obj, end_date_obj,status
                 )
 
                 total_records = (
@@ -119,7 +123,7 @@ class BusinessProfileRepository(BaseRepository):
             raise e
 
     def apply_filters(
-        self, query, search_parameter, start_date_obj=None, end_date_obj=None
+        self, query, search_parameter, start_date_obj=None, end_date_obj=None,status=None
     ):
         # Filter by search parameter (business name)
         if search_parameter:
@@ -134,5 +138,8 @@ class BusinessProfileRepository(BaseRepository):
         # Filter by end date (business creation date <= end date)
         if end_date_obj:
             query = query.filter(self.model.created_at <= end_date_obj)
+
+        if status:
+            query = query.filter(self.model.status == ActiveStatus(status))
 
         return query
