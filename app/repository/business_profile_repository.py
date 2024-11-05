@@ -5,6 +5,7 @@ from sqlalchemy import and_
 from sqlalchemy.orm import Session, joinedload
 
 from app.model.business_profile import BusinessProfile
+from app.model.user import User
 from app.model.user_subscription import UserSubscription
 from app.repository.base_repository import BaseRepository
 from app.util.enums import SubscriptionStatus,ActiveStatus
@@ -138,8 +139,8 @@ class BusinessProfileRepository(BaseRepository):
         # Filter by end date (business creation date <= end date)
         if end_date_obj:
             query = query.filter(self.model.created_at <= end_date_obj)
-
+            
         if status:
-            query = query.filter(self.model.status == ActiveStatus(status))
+            query = query.join(self.model.users).filter(User.status == ActiveStatus(status))
 
         return query
