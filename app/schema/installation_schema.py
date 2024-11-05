@@ -15,6 +15,7 @@ class DeviceConfigurationPayload(BaseModel):
     asset_license_no: str
     device_imei: str
     sim_phone_number: str
+    installation_uuid: str
 
 
 class AssignInstallerPayload(BaseModel):

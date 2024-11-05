@@ -6,6 +6,9 @@ from app.schema.installation_schema import (
 )
 from app.schema.user_schema import InstallerResponse
 
+from app.schema.installation_schema import InstallationResponse, AssignInstallerPayload
+from app.util.enums import InstallationStatus
+
 
 class InstallationService:
     def __init__(self, installation_repository: InstallationRepository):
@@ -32,6 +35,12 @@ class InstallationService:
             return self.installation_repository.assign_installer_to_installation(
                 payload
             )
+        except Exception as e:
+            raise e
+
+    def update_installation_status(self, installation_uuid: str, status: InstallationStatus):
+        try:
+            return self.installation_repository.update_installation_status(installation_uuid, status)
         except Exception as e:
             raise e
 
@@ -94,11 +103,16 @@ class InstallationService:
         except Exception as e:
             raise e
 
-    def fetch_installations(self, page, page_size, installer_uuid: str = None):
+        
+    def fetch_installations(self,
+                            page,
+                            page_size,
+                            installer_uuid: str = None,
+                            status: InstallationStatus = None,
+                            start_date: str = None,
+                            end_date: str = None):
         try:
-            installations = self.installation_repository.get_installations(
-                page, page_size, installer_uuid
-            )
+            installations = self.installation_repository.get_installations(page, page_size, installer_uuid, status, start_date, end_date)
 
             installation_responses = []
             for installation in installations.get("data"):

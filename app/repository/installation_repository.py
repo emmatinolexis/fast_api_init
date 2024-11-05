@@ -1,5 +1,6 @@
 from contextlib import AbstractContextManager
 from datetime import datetime
+from sqlalchemy import and_
 from typing import Callable
 
 from sqlalchemy.orm import Session, joinedload
@@ -8,8 +9,13 @@ from app.model.installation import Installation
 from app.model.order import Order, OrderDeviceAssignment
 from app.model.user import User
 from app.repository.base_repository import BaseRepository
-from app.schema.installation_schema import AssignInstallerPayload, InstallationPayload
-from app.util.enums import CustomerRoles, InstallationStatus
+
+from app.schema.installation_schema import InstallationPayload, AssignInstallerPayload
+from app.util.enums import CustomerRoles
+from sqlalchemy.orm import joinedload
+from app.util.enums import InstallationStatus
+from app.model.order import OrderDeviceAssignment
+from app.util.utils import parse_date
 
 
 class InstallationRepository(BaseRepository):
@@ -69,35 +75,69 @@ class InstallationRepository(BaseRepository):
             session.refresh(installation)
             return installation
 
-    def get_installations(
-        self, page: int = 1, per_page: int = 10, installer_uuid: str = None
-    ):
+
+    def update_installation_status(self, installation_uuid: str, status: InstallationStatus):
         with self.session_factory() as session:
-            # Build the query with joinedload
+            installation = (
+                session.query(self.model)
+                .filter(self.model.uuid == installation_uuid)
+                .first()
+            )
+            installation.status = status
+            installation.installed_at = datetime.now()
+            session.commit()
+            session.refresh(installation)
+            return installation
+
+    def get_installations(self,
+                          page: int = 1,
+                          per_page: int = 10,
+                          installer_uuid: str = None,
+                          status: InstallationStatus = None,
+                          start_date: str = None,
+                          end_date: str = None):
+        with self.session_factory() as session:
+            # Build the base query with joinedload
+            query = session.query(Installation).options(
+                joinedload(Installation.order).joinedload(Order.order_inventories).joinedload(
+                    OrderDeviceAssignment.inventory),
+                joinedload(Installation.order).joinedload(Order.order_shipping_address),
+                joinedload(Installation.installer)
+            )
+
+            # Filter by installer_uuid if provided
             if installer_uuid:
-                query = (
-                    session.query(Installation)
-                    .filter(self.model.installer_uuid == installer_uuid)
-                    .options(
-                        joinedload(Installation.order)
-                        .joinedload(Order.order_inventories)
-                        .joinedload(OrderDeviceAssignment.inventory),
-                        joinedload(Installation.order).joinedload(
-                            Order.order_shipping_address
-                        ),
-                        joinedload(Installation.installer),
+                query = query.filter(Installation.installer_uuid == installer_uuid)
+
+            # Filter by status if provided
+            if status:
+                query = query.filter(Installation.status == status)
+
+            # Filter by date range if provided
+            if start_date:
+                start_date = parse_date(start_date)
+                query = query.filter(Installation.created_at >= start_date)
+
+            if end_date:
+                end_date = parse_date(end_date)
+                query = query.filter(Installation.created_at <= end_date)
+
+            # Apply date range filtering with and_
+            if start_date and end_date:
+                start_date_obj = parse_date(start_date)
+                end_date_obj = parse_date(end_date)
+                query = query.filter(
+                    and_(
+                        Installation.created_at >= start_date_obj,
+                        Installation.created_at <= end_date_obj
                     )
                 )
-            else:
-                query = session.query(Installation).options(
-                    joinedload(Installation.order)
-                    .joinedload(Order.order_inventories)
-                    .joinedload(OrderDeviceAssignment.inventory),
-                    joinedload(Installation.order).joinedload(
-                        Order.order_shipping_address
-                    ),
-                    joinedload(Installation.installer),
-                )
+            elif start_date:
+                start_date_obj = parse_date(start_date)
+                query = query.filter(Installation.created_at >= start_date_obj)
+            elif end_date:
+                end_date_obj = parse_date(end_date)
+                query = query.filter(Installation.created_at <= end_date_obj)
 
             # Get total number of records for pagination metadata
             total_records = query.count()
