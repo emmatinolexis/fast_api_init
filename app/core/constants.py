@@ -368,6 +368,8 @@ PERMISSIONS = {
         {"permission_name": "update_device_installation", "permission_type": "admin"},
         {"permission_name": "create_device_installation", "permission_type": "admin"},
         {"permission_name": "manage_installation", "permission_type": "admin"},
+        {"permission_name": "view_device_installers", "permission_type": "admin"},
+        {"permission_name": "assign_installer", "permission_type": "admin"}
     ],
     "settings": [
         {"permission_name": "update_phone_number", "permission_type": "customer"},
