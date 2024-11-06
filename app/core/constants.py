@@ -1,3 +1,4 @@
+from enum import Enum
 # USER ROLE CONSTANTS
 
 CUSTOMER_USER_ROLE = "customer"
@@ -521,3 +522,28 @@ PERMISSIONS = {
 
 # license expiry alert
 EXPIRY_ALERT_PERIOD = 30
+
+
+class NotificationType(str, Enum):
+    INSTALLATION = "INSTALLATION"
+    ORDER = "ORDER"
+    CRITICAL = "CRITICAL"
+    SUPPORT  = "SUPPORT"
+    TECH     = "TECH"
+
+
+
+ADMIN_NOTIFICATION_MAPPING = {
+    # Super Admin has access to all notifications
+    "Super Admin": [NotificationType.CRITICAL, NotificationType.INSTALLATION,NotificationType.ORDER,NotificationType.SUPPORT],
+    
+    # Tech team and IT Support get all notifications
+    "Tech team": [NotificationType.TECH],
+    "IT Support": [NotificationType.SUPPORT],
+    
+    # Support gets info and warnings
+    "Support": [NotificationType.SUPPORT],
+    
+    # Installer gets info and warnings
+    "Installer": [NotificationType.INSTALLATION],
+}

@@ -83,6 +83,7 @@ from app.repository import (
     vehicle_model_repository,
     vehicle_owner_repository,
     notification_repository,
+    admin_notification_repository
 )
 from app.service import (
     alert_maintenance_type_service,
@@ -156,6 +157,7 @@ from app.service import (
     vehicle_model_service,
     vehicle_owner_service,
     notification_service,
+    admin_notification_service
 )
 
 
@@ -204,7 +206,8 @@ class Container(containers.DeclarativeContainer):
             "app.api.v1.endpoints.gateway_configuration",
             "app.api.v1.endpoints.installation",
             "app.api.v1.endpoints.notification",
-            "app.api.v1.endpoints.contact_sales"
+            "app.api.v1.endpoints.contact_sales",
+            "app.api.v1.endpoints.admin_notification",
         ]
     )
 
@@ -541,6 +544,11 @@ class Container(containers.DeclarativeContainer):
 
     notification_repository = providers.Factory(
         notification_repository.NotificationRepository,
+        session_factory=db.provided.session,
+    )
+
+    admin_notification_repository = providers.Factory(
+        admin_notification_repository.AdminNotificationRepository,
         session_factory=db.provided.session,
     )
 
@@ -918,10 +926,17 @@ class Container(containers.DeclarativeContainer):
     installation_service = providers.Factory(
         installation_service.InstallationService,
         installation_repository=installation_repository,
+        user_repository = user_repository
     )
 
 
     notification_service = providers.Factory(
         notification_service.NotificationService,
         notification_repository=notification_repository,
+    )
+
+
+    admin_notification_service = providers.Factory(
+        admin_notification_service.AdminNotificationService,
+        admin_notification_repository=admin_notification_repository
     )

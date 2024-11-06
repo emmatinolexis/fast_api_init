@@ -127,3 +127,5 @@ NOTIFICATIONS_CLEARED = "Notifications cleared successfully"
 NOT_ASSIGNED = "Driver not assigned to any asset"
 DRIVER_UNASSIGNED_SUCCESS = "Driver unassigned successfully"
 REMOVAL_SUCCESS = "You have been removed from your vehicle"
+
+DEVICE_INSTALLATION_ASSIGNED = "You Have been assigned an installation"

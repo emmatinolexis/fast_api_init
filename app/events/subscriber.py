@@ -1,8 +1,10 @@
 from typing import Dict
 from pyee.asyncio import AsyncIOEventEmitter
 from app.events.fuel_log import FuelLogged
+from app.events.installation import InstallationCreated
 from app.events.user import InviteAccepted,RoleUpdated,VehicleAssignment,VehicleUnassignment
 from app.events.handlers.users import create_role_change_notification,asset_change_notification,asset_removal_notification
+from app.events.handlers.installation import create_installation_assigned_notification
 
 
 
@@ -26,6 +28,9 @@ class Subscriber:
         ],
         VehicleUnassignment: [
             asset_removal_notification
+        ],
+        InstallationCreated: [
+            create_installation_assigned_notification
         ]
     }
 
