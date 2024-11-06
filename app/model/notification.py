@@ -1,12 +1,10 @@
-from app.model.base_model import BaseModel
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy import Column, ForeignKey, String, Text, Boolean
-from sqlalchemy.orm import relationship
 import uuid
 
+from sqlalchemy import Boolean, Column, ForeignKey, String, Text
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
-
-
+from app.model.base_model import BaseModel
 
 
 class Notification(BaseModel):
@@ -25,5 +23,3 @@ class Notification(BaseModel):
     business_profile_uuid = Column(
         UUID(as_uuid=True), ForeignKey("business_profiles.uuid"), nullable=True
     )
-
-

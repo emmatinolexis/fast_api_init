@@ -1,6 +1,11 @@
 from app.repository.installation_repository import InstallationRepository
-from app.schema.installation_schema import InstallationPayload
+from app.schema.installation_schema import (
+    AssignInstallerPayload,
+    InstallationPayload,
+    InstallationResponse,
+)
 from app.schema.user_schema import InstallerResponse
+
 from app.schema.installation_schema import InstallationResponse, AssignInstallerPayload
 from app.util.enums import InstallationStatus
 
@@ -47,24 +52,36 @@ class InstallationService:
             order = data.order
             order_shipping_address = order.order_shipping_address if order else None
             installation = InstallationResponse(
-                    installation_uuid=str(data.uuid),
-                    status=data.status,
-                    installer_name=f"{data.installer.first_name} {data.installer.last_name}" if data.installer else None,
-                    installer_image_url=data.installer.avatar_url if data.installer else None,
-                    installer_phone=data.installer.phone_number if data.installer else None,
-                    first_name=order_shipping_address.first_name if order_shipping_address else None,
-                    last_name=order_shipping_address.last_name if order_shipping_address else None,
-                    location=order_shipping_address.address if order_shipping_address else None,
-                    date_of_installation=order.date_of_installation if order else None,
-                    time_of_installation=order.time_of_installation if order else None,
-                    devices=[
-                        {
-                            "device_uuid": inventory.inventory.uuid,
-                            "device_name": inventory.inventory.device_name
-                        }
-                        for inventory in order.order_inventories
-                    ] if order and order.order_inventories else []
-                )
+                installation_uuid=str(data.uuid),
+                status=data.status,
+                installer_name=f"{data.installer.first_name} {data.installer.last_name}"
+                if data.installer
+                else None,
+                installer_image_url=data.installer.avatar_url
+                if data.installer
+                else None,
+                installer_phone=data.installer.phone_number if data.installer else None,
+                first_name=order_shipping_address.first_name
+                if order_shipping_address
+                else None,
+                last_name=order_shipping_address.last_name
+                if order_shipping_address
+                else None,
+                location=order_shipping_address.address
+                if order_shipping_address
+                else None,
+                date_of_installation=order.date_of_installation if order else None,
+                time_of_installation=order.time_of_installation if order else None,
+                devices=[
+                    {
+                        "device_uuid": inventory.inventory.uuid,
+                        "device_name": inventory.inventory.device_name,
+                    }
+                    for inventory in order.order_inventories
+                ]
+                if order and order.order_inventories
+                else [],
+            )
             return installation
         except Exception as e:
             raise e
@@ -85,6 +102,7 @@ class InstallationService:
             ]
         except Exception as e:
             raise e
+
         
     def fetch_installations(self,
                             page,
@@ -104,21 +122,35 @@ class InstallationService:
                 installation_response = InstallationResponse(
                     installation_uuid=str(installation.uuid),
                     status=installation.status,
-                    installer_name=f"{installation.installer.first_name} {installation.installer.last_name}" if installation.installer else None,
-                    installer_image_url=installation.installer.avatar_url if installation.installer else None,
-                    installer_phone=installation.installer.phone_number if installation.installer else None,
-                    first_name=order_shipping_address.first_name if order_shipping_address else None,
-                    last_name=order_shipping_address.last_name if order_shipping_address else None,
-                    location=order_shipping_address.address if order_shipping_address else None,
+                    installer_name=f"{installation.installer.first_name} {installation.installer.last_name}"
+                    if installation.installer
+                    else None,
+                    installer_image_url=installation.installer.avatar_url
+                    if installation.installer
+                    else None,
+                    installer_phone=installation.installer.phone_number
+                    if installation.installer
+                    else None,
+                    first_name=order_shipping_address.first_name
+                    if order_shipping_address
+                    else None,
+                    last_name=order_shipping_address.last_name
+                    if order_shipping_address
+                    else None,
+                    location=order_shipping_address.address
+                    if order_shipping_address
+                    else None,
                     date_of_installation=order.date_of_installation if order else None,
                     time_of_installation=order.time_of_installation if order else None,
                     devices=[
-                                {
-                                    "device_uuid": inventory.inventory.uuid,
-                                    "device_name": inventory.inventory.device_name,
-                                }
-                                for inventory in order.order_inventories
-                        ] if order and order.order_inventories else []
+                        {
+                            "device_uuid": inventory.inventory.uuid,
+                            "device_name": inventory.inventory.device_name,
+                        }
+                        for inventory in order.order_inventories
+                    ]
+                    if order and order.order_inventories
+                    else [],
                 )
                 # Apply search filter to installation_response if search_parameter is provided
                 if search_parameter:
@@ -137,7 +169,7 @@ class InstallationService:
                 "current_page": installations.get("current_page"),
                 "page_size": installations.get("page_size"),
                 "total_records": installations.get("total_records"),
-                "total_pages": installations.get("total_pages")
+                "total_pages": installations.get("total_pages"),
             }
         except Exception as e:
             raise e

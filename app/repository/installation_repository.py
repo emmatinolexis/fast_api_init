@@ -2,11 +2,14 @@ from contextlib import AbstractContextManager
 from datetime import datetime
 from sqlalchemy import and_, or_
 from typing import Callable
-from sqlalchemy.orm import Session
+
+from sqlalchemy.orm import Session, joinedload
+
 from app.model.installation import Installation
-from app.model.order import Order
+from app.model.order import Order, OrderDeviceAssignment
 from app.model.user import User
 from app.repository.base_repository import BaseRepository
+
 from app.schema.installation_schema import InstallationPayload, AssignInstallerPayload
 from app.util.enums import CustomerRoles
 from sqlalchemy.orm import joinedload
@@ -34,11 +37,15 @@ class InstallationRepository(BaseRepository):
                 session.query(self.model)
                 .filter(self.model.uuid == installation_uuid)
                 .options(
-                    joinedload(Installation.order).joinedload(Order.order_inventories).joinedload(
-                        OrderDeviceAssignment.inventory),
-                    joinedload(Installation.order).joinedload(Order.order_shipping_address),
-                    joinedload(Installation.installer)
-                ).first()
+                    joinedload(Installation.order)
+                    .joinedload(Order.order_inventories)
+                    .joinedload(OrderDeviceAssignment.inventory),
+                    joinedload(Installation.order).joinedload(
+                        Order.order_shipping_address
+                    ),
+                    joinedload(Installation.installer),
+                )
+                .first()
             )
 
     def get_installation_by_order_uuid(self, order_uuid: str):
@@ -47,9 +54,12 @@ class InstallationRepository(BaseRepository):
                 session.query(self.model)
                 .filter(self.model.order_uuid == order_uuid)
                 .options(
-                    joinedload(Installation.order).joinedload(Order.order_shipping_address),
-                    joinedload(Installation.installer)
-                ).first()
+                    joinedload(Installation.order).joinedload(
+                        Order.order_shipping_address
+                    ),
+                    joinedload(Installation.installer),
+                )
+                .first()
             )
 
     def assign_installer_to_installation(self, payload: AssignInstallerPayload):
@@ -64,6 +74,7 @@ class InstallationRepository(BaseRepository):
             session.commit()
             session.refresh(installation)
             return installation
+
 
     def update_installation_status(self, installation_uuid: str, status: InstallationStatus):
         with self.session_factory() as session:
@@ -142,7 +153,7 @@ class InstallationRepository(BaseRepository):
                 "current_page": page,
                 "page_size": per_page,
                 "total_records": total_records,
-                "total_pages": total_pages
+                "total_pages": total_pages,
             }
 
     def create_installation(self, installation_payload: InstallationPayload):

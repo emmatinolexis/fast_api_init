@@ -1,5 +1,7 @@
+from typing import Optional
+
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
 
 from app.core import messages
@@ -10,6 +12,7 @@ from app.model.user import User
 from app.schema.device_schema import DevicePayload, ImeiAssignPayload
 from app.service.business_profile_service import BusinessProfileService
 from app.service.device_service import DeviceService
+from app.util.enums import DeviceStatus
 from app.util.utils import (
     send_client_side_error,
     send_data,
@@ -27,11 +30,22 @@ msg_prefix = "device"
 @router.get("/", response_class=ORJSONResponse)
 @inject
 async def get_all_devices_handler(
+    page: int = Query(1, ge=1, description="Page number, default is 1"),
+    page_size: int = Query(
+        10, ge=1, le=100, description="Items per page, default is 10"
+    ),
+    search_query: Optional[str] = Query(
+        None, description="Search by manufacturer name"
+    ),
+    status: Optional[DeviceStatus] = Query(None, description="Filter by active status"),
     service: DeviceService = Depends(Provide[Container.device_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.get_all_devices())
+        devices = service.get_all_devices(
+            page=page, page_size=page_size, search_query=search_query, status=status
+        )
+        return send_data(devices)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)

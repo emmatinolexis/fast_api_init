@@ -13,11 +13,11 @@ from app.repository.gas_cylinder_event_repository import GasCylinderEventReposit
 from app.repository.gas_cylinder_repository import GasCylinderRepository
 from app.repository.immobilizer_report_repository import ImmobilizerReportRepository
 from app.repository.subscription_repository import SubscriptionRepository
-from app.repository.user_subscription_repository import UserSubscriptionRepository
 from app.repository.theft_incidence_repository import TheftIncidenceRepository
 from app.repository.theft_report_repository import TheftReportRepository
 from app.repository.tracking_event_repository import TrackingEventRepository
 from app.repository.user_repository import UserRepository
+from app.repository.user_subscription_repository import UserSubscriptionRepository
 from app.repository.vehicle_owner_repository import VehicleOwnerRepository
 from app.schema.asset_schema import (
     AssetInput,
@@ -148,8 +148,8 @@ class AssetService(BaseService):
         return user
 
     def get_user_subscription(self, email_address: str):
-        user_subscription = (
-            self.user_subscription_repository.get_user_subscription(email_address)
+        user_subscription = self.user_subscription_repository.get_user_subscription(
+            email_address
         )
 
         if user_subscription and user_subscription.subscription_code:
@@ -407,9 +407,7 @@ class AssetService(BaseService):
 
     def get_assets_by_license_no(self, vehicle_license_no: str):
         try:
-            return self.asset_repository.get_asset_by_license_no(
-                vehicle_license_no
-            )
+            return self.asset_repository.get_asset_by_license_no(vehicle_license_no)
         except Exception as e:
             raise e
 
@@ -453,13 +451,20 @@ class AssetService(BaseService):
             raise e
 
     def get_all_theft_incidence(
-        self, page=1, page_size=10, search_query=None, start_date=None, end_date=None
+        self,
+        page=1,
+        page_size=10,
+        search_query=None,
+        start_date=None,
+        end_date=None,
+        status=None,
     ):
         try:
             incidences = self.theft_incidence_repository.get_all_incidence(
                 page=page,
                 page_size=page_size,
                 search_query=search_query,
+                status=status,
                 start_date=start_date,
                 end_date=end_date,
             )

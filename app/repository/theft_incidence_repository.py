@@ -17,7 +17,13 @@ class TheftIncidenceRepository(BaseRepository):
         super().__init__(session_factory, TheftIncidence)
 
     def get_all_incidence(
-        self, page=1, page_size=10, search_query=None, start_date=None, end_date=None
+        self,
+        page=1,
+        page_size=10,
+        search_query=None,
+        start_date=None,
+        end_date=None,
+        status=None,
     ):
         with self.session_factory() as session:
             try:
@@ -34,6 +40,10 @@ class TheftIncidenceRepository(BaseRepository):
                         self.model.asset.has(
                             Asset.asset_name.ilike(f"%{search_query}%")
                         )
+                    )
+                if status:
+                    base_query = base_query.filter(
+                        self.model.status == IncidentStatus(status)
                     )
 
                 if start_date:

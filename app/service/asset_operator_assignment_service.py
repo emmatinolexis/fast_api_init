@@ -1,5 +1,7 @@
 from app.core import messages
 from app.core.exceptions import NotFoundError, UnAuthorizedError
+from app.events.subscriber import subscriber
+from app.events.user import VehicleAssignment
 from app.repository.asset_operator_assignment_repository import (
     AssetOperatorTypeAssignmentRepository,
 )
@@ -77,12 +79,16 @@ class AssetOperatorAssignmentService(BaseService):
                         "operator_uuid",
                         operator_uuid,
                     )
+
             else:
                 # Create a new assignment if none exists
                 schema = AssignAssetPayload(
                     asset_uuid=asset_uuid, operator_uuid=operator_uuid
                 )
                 self.asset_operator_assignment.create(schema=schema)
+            subscriber.publish(
+                VehicleAssignment, VehicleAssignment(asset=asset, user=operator)
+            )
 
             return messages.ASSIGNMENT_SUCCESS
 

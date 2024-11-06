@@ -1,3 +1,5 @@
+from typing import Optional
+
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
@@ -8,7 +10,7 @@ from app.core.dependencies import get_current_user_with_permission
 from app.model.user import User
 from app.schema.incident_schema import IncidentPayload
 from app.service.incident_service import IncidentService
-from app.util.enums import IncidenceType
+from app.util.enums import IncidenceType, IncidentStatus
 from app.util.utils import (
     pagination,
     send_data,
@@ -31,7 +33,7 @@ msg_prefix = "incident"
 async def create_incident(
     payload: IncidentPayload,
     service: IncidentService = Depends(Provide[Container.incident_service]),
-    current_user: User = Depends(get_current_user_with_permission("create_incident")),
+    current_user: User = Depends(get_current_user_with_permission("create_road_incident")),
 ):
     try:
         incident = service.create_incident(payload)
@@ -51,10 +53,13 @@ async def get_all_incidents(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
     current_user: User = Depends(get_current_user_with_permission("view_road_incident")),
+    status: Optional[IncidentStatus] = Query(
+        None, description="Filter by resolved status"
+    ),
 ):
     try:
         incidents = service.get_all_incidents(
-            incident_type=incident_type, page_size=page_size, page=page
+            incident_type=incident_type, page_size=page_size, page=page, status=status
         )
 
         incident_count = service.get_all_incidents_count()
@@ -130,6 +135,7 @@ async def get_incidents_report(
     page_size: int = Query(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
+    status: str = None,
     service: IncidentService = Depends(Provide[Container.incident_service]),
     current_user: User = Depends(get_current_user_with_permission("view_road_incident")),
 ):
@@ -139,6 +145,7 @@ async def get_incidents_report(
             end_date=end_date,
             page=page,
             page_size=page_size,
+            status=status,
             search_parameter=search_parameter,
         )
         incident_count = incidents["total"]
