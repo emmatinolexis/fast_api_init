@@ -1175,3 +1175,11 @@ def pagination(
         "pageSize": limit,
         "totalPages": total_pages,
     }
+
+
+def calculate_percentage_change(current, previous):
+    if previous == 0:
+        return (
+            None if current == 0 else 100
+        )  # Return 100% if there's a new count from zero
+    return round(((current - previous) / previous) * 100, 2)

@@ -5,8 +5,6 @@ from app.schema.installation_schema import (
     InstallationResponse,
 )
 from app.schema.user_schema import InstallerResponse
-
-from app.schema.installation_schema import InstallationResponse, AssignInstallerPayload
 from app.util.enums import InstallationStatus
 
 
@@ -38,9 +36,13 @@ class InstallationService:
         except Exception as e:
             raise e
 
-    def update_installation_status(self, installation_uuid: str, status: InstallationStatus):
+    def update_installation_status(
+        self, installation_uuid: str, status: InstallationStatus
+    ):
         try:
-            return self.installation_repository.update_installation_status(installation_uuid, status)
+            return self.installation_repository.update_installation_status(
+                installation_uuid, status
+            )
         except Exception as e:
             raise e
 
@@ -103,17 +105,20 @@ class InstallationService:
         except Exception as e:
             raise e
 
-        
-    def fetch_installations(self,
-                            page,
-                            page_size,
-                            installer_uuid: str = None,
-                            status: InstallationStatus = None,
-                            start_date: str = None,
-                            end_date: str = None,
-                            search_parameter: str = None):
+    def fetch_installations(
+        self,
+        page,
+        page_size,
+        installer_uuid: str = None,
+        status: InstallationStatus = None,
+        start_date: str = None,
+        end_date: str = None,
+        search_parameter: str = None,
+    ):
         try:
-            installations = self.installation_repository.get_installations(page, page_size, installer_uuid, status, start_date, end_date, search_parameter)
+            installations = self.installation_repository.get_installations(
+                page, page_size, installer_uuid, status, start_date, end_date
+            )
 
             installation_responses = []
             for installation in installations.get("data"):
@@ -156,9 +161,14 @@ class InstallationService:
                 if search_parameter:
                     search_text = search_parameter.lower()
                     # Check if search parameter matches relevant fields
-                    if (search_text in (installation_response.installer_name or "").lower() or
-                            search_text in (installation_response.first_name or "").lower() or
-                            search_text in (installation_response.last_name or "").lower()):
+                    if (
+                        search_text
+                        in (installation_response.installer_name or "").lower()
+                        or search_text
+                        in (installation_response.first_name or "").lower()
+                        or search_text
+                        in (installation_response.last_name or "").lower()
+                    ):
                         installation_responses.append(installation_response)
                 else:
                     # Append response if no search filter is provided
@@ -170,6 +180,7 @@ class InstallationService:
                 "page_size": installations.get("page_size"),
                 "total_records": installations.get("total_records"),
                 "total_pages": installations.get("total_pages"),
+                "summary": installations.get("summary"),
             }
         except Exception as e:
             raise e
