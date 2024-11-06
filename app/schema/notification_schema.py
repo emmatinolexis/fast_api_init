@@ -1,3 +1,6 @@
+from typing import Optional
+from app.util.enums import NotificationType
+
 from pydantic import BaseModel
 from typing import Optional
 from app.util.enums import NotificationType

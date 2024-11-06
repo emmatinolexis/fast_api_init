@@ -48,6 +48,7 @@ from app.repository import (
     inventory_repository,
     maintenance_alert_repository,
     marker_icon_repository,
+    notification_repository,
     onboarding_asset_type_assignment_repository,
     onboarding_feature_assignment_repository,
     onboarding_repository,
@@ -126,6 +127,7 @@ from app.service import (
     invitation_service,
     maintenance_alert_service,
     marker_icon_service,
+    notification_service,
     onboarding_service,
     order_device_assignment_service,
     order_service,
@@ -569,7 +571,7 @@ class Container(containers.DeclarativeContainer):
         invitation_repository=team_member_invitation_repository,
         asset_repository=asset_repository,
         driver_license_repository=driver_license_repository,
-        role_repository = role_repository
+        role_repository=role_repository,
     )
     alert_policy_type_service = providers.Factory(
         alert_policy_type_service.AlertPolicyTypeService,
@@ -619,7 +621,6 @@ class Container(containers.DeclarativeContainer):
         tracking_event_repository=tracking_event_repository,
         gas_cylinder_repository=gas_cylinder_repository,
         gas_cylinder_event_repository=gas_cylinder_event_repository,
-
     )
     asset_device_request_service = providers.Factory(
         asset_device_request_service.AssetDeviceRequestService,
@@ -635,7 +636,7 @@ class Container(containers.DeclarativeContainer):
         driver_repository=driver_repository,
         asset_repository=asset_repository,
         asset_operator_assignment_repository=asset_operator_assignment_repository,
-        user_repository = user_repository
+        user_repository=user_repository,
     )
     device_manufacturer_service = providers.Factory(
         device_manufacturer_service.DeviceManufacturerService,
@@ -928,7 +929,6 @@ class Container(containers.DeclarativeContainer):
         installation_repository=installation_repository,
         user_repository = user_repository
     )
-
 
     notification_service = providers.Factory(
         notification_service.NotificationService,

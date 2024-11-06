@@ -1,18 +1,20 @@
+from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends
 from fastapi.responses import ORJSONResponse
-from dependency_injector.wiring import Provide, inject
+
 from app.core import messages
 from app.core.container import Container
+from app.core.dependencies import get_current_user
+from app.model.user import User
 from app.schema.contact_sale_schema import ContactSale as ContactSaleSchema
 from app.service.contact_sale_service import ContactSaleService
 from app.util.utils import send_data, send_internal_server_error
-from app.core.dependencies import get_current_user
-from app.model.user import User
 
 router = APIRouter(
     prefix="/contact_sales",
     tags=["contact_sales"],
 )
+
 
 @router.post("/", response_class=ORJSONResponse)
 @inject

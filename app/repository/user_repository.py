@@ -241,7 +241,12 @@ class UserRepository(BaseRepository):
             }
 
     def get_admin_team_members(
-        self, page=1, page_size=10, email: str = None, role_uuid: str = None
+        self,
+        page=1,
+        page_size=10,
+        email: str = None,
+        role_uuid: str = None,
+        status=None,
     ):
         with self.session_factory() as session:
             offset = (page - 1) * page_size
@@ -253,7 +258,8 @@ class UserRepository(BaseRepository):
                 query = query.filter(self.model.email_address.ilike(f"%{email}%"))
             if role_uuid:
                 query = query.filter(self.model.user_role_uuid == role_uuid)
-
+            if status:
+                query = query.filter(self.model.status == ActiveStatus(status))
             # Query to get the total count of invitations with filters
             total_team_members = query.with_entities(func.count(self.model.id)).scalar()
 
@@ -299,6 +305,7 @@ class UserRepository(BaseRepository):
         role_uuid: str = None,
         start_date_obj=None,
         end_date_obj=None,
+        status=None,
     ):
         """Applies optional filters to the query."""
         if email:
@@ -309,6 +316,8 @@ class UserRepository(BaseRepository):
             query = query.filter(self.model.created_at >= start_date_obj)
         if end_date_obj:
             query = query.filter(self.model.created_at <= end_date_obj)
+        if status:
+            query = query.filter(self.model.status == ActiveStatus(status))
         return query
 
     def get_total_businesses(self, session, start_date_obj=None, end_date_obj=None):
@@ -332,6 +341,7 @@ class UserRepository(BaseRepository):
         role_uuid: str = None,
         start_date: str = None,
         end_date: str = None,
+        status=None,
     ):
         with self.session_factory() as session:
             # Calculate offset for pagination
@@ -351,7 +361,7 @@ class UserRepository(BaseRepository):
 
             # Apply filters (email, role, and date range)
             query = self.apply_filters(
-                query, email, role_uuid, start_date_obj, end_date_obj
+                query, email, role_uuid, start_date_obj, end_date_obj, status
             )
 
             # Fetch the total number of businesses, active, and inactive users

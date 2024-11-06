@@ -7,15 +7,17 @@ from pydantic import EmailStr
 from app.core import messages
 from app.core.constants import FREE_PACKAGE, FREE_PACKAGE_ITEMS
 from app.core.exceptions import NotFoundError, UnAuthorizedError
+from app.events.subscriber import subscriber
+from app.events.user import RoleUpdated
 from app.repository.asset_repository import AssetRepository
 from app.repository.driver_license_repository import DriverLicenseRepository
+from app.repository.role_repository import RoleRepository
 from app.repository.subscription_repository import SubscriptionRepository
 from app.repository.team_member_invitation_repository import (
     TeamMemberInvitationRepository,
 )
 from app.repository.user_repository import UserRepository
 from app.repository.user_subscription_repository import UserSubscriptionRepository
-from app.repository.role_repository import RoleRepository
 from app.schema.invitation_schema import (
     AdminInvitationPayload,
     InvitationCreatePayloadSingle,
@@ -24,17 +26,16 @@ from app.schema.invitation_schema import (
 from app.schema.user_schema import (
     AccountDeactivationPayload,
     DriversLicenseFull,
+    UpdateAdminTeamMemberPayload,
     UpdateUserPayload,
     UserPayload,
     UserProfileUdatePayload,
-    UpdateAdminTeamMemberPayload
 )
 from app.service.base_service import BaseService
 from app.transfomers.driver_transformer import driver_transformer
 from app.util.enums import InvitationStatus, RoleType
 from app.util.utils import parse_date
-from app.events.subscriber import subscriber
-from app.events.user import RoleUpdated
+
 
 class UserService(BaseService):
     def __init__(
@@ -275,10 +276,15 @@ class UserService(BaseService):
             raise e
 
     def get_all_admin_team_members(
-        self, page=1, page_size=10, email: str = None, role_uuid: str = None
+        self,
+        page=1,
+        page_size=10,
+        email: str = None,
+        role_uuid: str = None,
+        status=None,
     ):
         return self.user_repository.get_admin_team_members(
-            page, page_size, email, role_uuid
+            page, page_size, email, role_uuid, status
         )
 
     def get_admin_team_member(self, team_member_uuid: str):
@@ -297,9 +303,10 @@ class UserService(BaseService):
         role_uuid: str = None,
         start_date: str = None,
         end_date: str = None,
+        status=None,
     ):
         return self.user_repository.get_all_accounts(
-            page, page_size, email, role_uuid, start_date, end_date
+            page, page_size, email, role_uuid, start_date, end_date, status
         )
 
     def get_drivers_by_business_uuid(
@@ -366,19 +373,18 @@ class UserService(BaseService):
         except Exception as e:
             raise e
 
-
-
-    def update_team_member_handler(self,team_member_uuid: str,payload:UpdateAdminTeamMemberPayload):
+    def update_team_member_handler(
+        self, team_member_uuid: str, payload: UpdateAdminTeamMemberPayload
+    ):
         try:
-            self.patch_by_uuid(team_member_uuid,payload)
-
+            self.patch_by_uuid(team_member_uuid, payload)
 
             user = self.user_repository.read_by_uuid(team_member_uuid)
 
             new_role = self.role_repository.get_role(payload.user_role_uuid)
 
             if payload.user_role_uuid:
-                subscriber.publish(RoleUpdated,RoleUpdated(role=new_role,user=user))
+                subscriber.publish(RoleUpdated, RoleUpdated(role=new_role, user=user))
 
         except Exception as e:
             raise e

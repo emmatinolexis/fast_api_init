@@ -1,7 +1,8 @@
 from datetime import date, time
-from uuid import UUID
-from pydantic import BaseModel
 from typing import Any, Optional
+from uuid import UUID
+
+from pydantic import BaseModel
 
 
 class InstallationPayload(BaseModel):
@@ -14,6 +15,7 @@ class DeviceConfigurationPayload(BaseModel):
     asset_license_no: str
     device_imei: str
     sim_phone_number: str
+    installation_uuid: str
 
 
 class AssignInstallerPayload(BaseModel):
@@ -29,9 +31,7 @@ class InstallationResponse(BaseModel):
     installer_phone: Optional[str]
     first_name: Optional[str]
     last_name: Optional[str]
-    location: Optional[Any] 
+    location: Optional[Any]
     date_of_installation: Optional[date]
     time_of_installation: Optional[time]
     devices: Optional[Any]
-
-

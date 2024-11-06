@@ -1,5 +1,7 @@
 from typing import Dict
+
 from pyee.asyncio import AsyncIOEventEmitter
+
 from app.events.fuel_log import FuelLogged
 from app.events.installation import InstallationCreated
 from app.events.user import InviteAccepted,RoleUpdated,VehicleAssignment,VehicleUnassignment
@@ -34,7 +36,6 @@ class Subscriber:
         ]
     }
 
-
     def __new__(cls):
         """
         Override __new__ method to implement Singleton pattern.
@@ -44,7 +45,6 @@ class Subscriber:
             cls._instance.events = AsyncIOEventEmitter()
             cls._instance._subscribe_to_events()
         return cls._instance
-    
 
     def _subscribe_to_events(self):
         """
@@ -54,18 +54,12 @@ class Subscriber:
             for handler in handlers:
                 self.events.on(event, handler)
 
-
     def subscribe(self, event, handler):
         self.events.on(event, handler)
-
 
     def publish(self, event, data):
         self.events.emit(event, data)
 
 
-
-
 # Initialize the Subscriber instance
 subscriber = Subscriber()
-
-

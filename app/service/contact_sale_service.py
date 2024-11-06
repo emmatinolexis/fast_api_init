@@ -1,5 +1,5 @@
-from app.repository.contact_sale_repository import ContactSaleRepository
 from app.model.contact_sale import ContactSale
+from app.repository.contact_sale_repository import ContactSaleRepository
 from app.schema.contact_sale_schema import ContactSale as ContactSaleSchema
 
 
