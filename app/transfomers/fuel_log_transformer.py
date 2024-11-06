@@ -1,5 +1,4 @@
 from app.model.fuel_log import FuelLog
-from app.repository.driver_repository import DriverRepository
 from app.repository.user_repository import UserRepository
 
 

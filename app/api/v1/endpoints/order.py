@@ -8,7 +8,7 @@ from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_app_service, get_current_user
 from app.model.user import User
-from app.schema.order_schema import OrderPayload, OrderStatusSchema
+from app.schema.order_schema import OrderPayload
 from app.service.order_service import OrderService
 from app.util.enums import OrderStatus
 from app.util.utils import send_data, send_internal_server_error

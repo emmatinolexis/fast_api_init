@@ -1,21 +1,17 @@
 from contextlib import AbstractContextManager
 from datetime import datetime
-from sqlalchemy import and_, or_
 from typing import Callable
 
+from sqlalchemy import and_
 from sqlalchemy.orm import Session, joinedload
 
 from app.model.installation import Installation
 from app.model.order import Order, OrderDeviceAssignment
 from app.model.user import User
 from app.repository.base_repository import BaseRepository
-
-from app.schema.installation_schema import InstallationPayload, AssignInstallerPayload
-from app.util.enums import CustomerRoles
-from sqlalchemy.orm import joinedload
-from app.util.enums import InstallationStatus
-from app.model.order import OrderDeviceAssignment
-from app.util.utils import parse_date
+from app.schema.installation_schema import AssignInstallerPayload, InstallationPayload
+from app.util.enums import CustomerRoles, InstallationStatus
+from app.util.utils import calculate_percentage_change, parse_date
 
 
 class InstallationRepository(BaseRepository):
@@ -75,8 +71,9 @@ class InstallationRepository(BaseRepository):
             session.refresh(installation)
             return installation
 
-
-    def update_installation_status(self, installation_uuid: str, status: InstallationStatus):
+    def update_installation_status(
+        self, installation_uuid: str, status: InstallationStatus
+    ):
         with self.session_factory() as session:
             installation = (
                 session.query(self.model)
@@ -89,21 +86,23 @@ class InstallationRepository(BaseRepository):
             session.refresh(installation)
             return installation
 
-    def get_installations(self,
-                          page: int = 1,
-                          per_page: int = 10,
-                          installer_uuid: str = None,
-                          status: InstallationStatus = None,
-                          start_date: str = None,
-                          end_date: str = None,
-                          search_parameter: str = None):
+    def get_installations(
+        self,
+        page: int = 1,
+        per_page: int = 10,
+        installer_uuid: str = None,
+        status: InstallationStatus = None,
+        start_date: str = None,
+        end_date: str = None,
+    ):
         with self.session_factory() as session:
             # Build the base query with joinedload
             query = session.query(Installation).options(
-                joinedload(Installation.order).joinedload(Order.order_inventories).joinedload(
-                    OrderDeviceAssignment.inventory),
+                joinedload(Installation.order)
+                .joinedload(Order.order_inventories)
+                .joinedload(OrderDeviceAssignment.inventory),
                 joinedload(Installation.order).joinedload(Order.order_shipping_address),
-                joinedload(Installation.installer)
+                joinedload(Installation.installer),
             )
 
             # Filter by installer_uuid if provided
@@ -114,31 +113,67 @@ class InstallationRepository(BaseRepository):
             if status:
                 query = query.filter(Installation.status == status)
 
-            # Filter by date range if provided
+            # Convert start_date and end_date to datetime objects if provided
             if start_date:
-                start_date = parse_date(start_date)
+                start_date = datetime.strptime(parse_date(start_date), "%Y-%m-%d")
                 query = query.filter(Installation.created_at >= start_date)
-
             if end_date:
-                end_date = parse_date(end_date)
+                end_date = datetime.strptime(parse_date(end_date), "%Y-%m-%d")
                 query = query.filter(Installation.created_at <= end_date)
 
-            # Apply date range filtering with and_
+            # Calculate the previous date range
             if start_date and end_date:
-                start_date_obj = parse_date(start_date)
-                end_date_obj = parse_date(end_date)
-                query = query.filter(
+                delta = end_date - start_date
+                previous_start_date = start_date - delta
+                previous_end_date = end_date - delta
+            else:
+                previous_start_date = previous_end_date = None
+
+            # Count the completed, pending installation, and overdue installations
+            current_completed_count = query.filter(
+                Installation.status == InstallationStatus.COMPLETED
+            ).count()
+            current_pending_installation_count = query.filter(
+                Installation.status == InstallationStatus.PENDING_INSTALLATION
+            ).count()
+            current_overdue_count = (
+                query.join(Order)
+                .filter(
                     and_(
-                        Installation.created_at >= start_date_obj,
-                        Installation.created_at <= end_date_obj
+                        Installation.status != InstallationStatus.COMPLETED,
+                        Order.date_of_installation < datetime.utcnow(),
                     )
                 )
-            elif start_date:
-                start_date_obj = parse_date(start_date)
-                query = query.filter(Installation.created_at >= start_date_obj)
-            elif end_date:
-                end_date_obj = parse_date(end_date)
-                query = query.filter(Installation.created_at <= end_date_obj)
+                .count()
+            )
+
+            # Query the previous date range if both dates are provided
+            previous_completed_count = (
+                previous_pending_installation_count
+            ) = previous_overdue_count = 0
+            if previous_start_date and previous_end_date:
+                previous_query = (
+                    session.query(Installation)
+                    .join(Order)
+                    .filter(
+                        and_(
+                            Installation.created_at >= previous_start_date,
+                            Installation.created_at <= previous_end_date,
+                        )
+                    )
+                )
+                previous_completed_count = previous_query.filter(
+                    Installation.status == InstallationStatus.COMPLETED
+                ).count()
+                previous_pending_installation_count = previous_query.filter(
+                    Installation.status == InstallationStatus.PENDING_INSTALLATION
+                ).count()
+                previous_overdue_count = previous_query.filter(
+                    and_(
+                        Installation.status != InstallationStatus.COMPLETED,
+                        Order.date_of_installation < datetime.utcnow(),
+                    )
+                ).count()
 
             # Get total number of records for pagination metadata
             total_records = query.count()
@@ -148,12 +183,35 @@ class InstallationRepository(BaseRepository):
             paginated_query = query.limit(per_page).offset((page - 1) * per_page)
             installations = paginated_query.all()
 
+            # Prepare results
             return {
                 "data": installations,
                 "current_page": page,
                 "page_size": per_page,
                 "total_records": total_records,
                 "total_pages": total_pages,
+                "summary": {
+                    "completed_installations": current_completed_count,
+                    "pending_installations": current_pending_installation_count,
+                    "overdue_installations": current_overdue_count,
+                    "previous_summary": {
+                        "completed": previous_completed_count,
+                        "pending": previous_pending_installation_count,
+                        "overdue": previous_overdue_count,
+                    },
+                    "percentage_change": {
+                        "completed": calculate_percentage_change(
+                            current_completed_count, previous_completed_count
+                        ),
+                        "pending": calculate_percentage_change(
+                            current_pending_installation_count,
+                            previous_pending_installation_count,
+                        ),
+                        "overdue": calculate_percentage_change(
+                            current_overdue_count, previous_overdue_count
+                        ),
+                    },
+                },
             }
 
     def create_installation(self, installation_payload: InstallationPayload):

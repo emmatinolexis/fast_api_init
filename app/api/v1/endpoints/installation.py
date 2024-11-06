@@ -14,14 +14,13 @@ from app.schema.installation_schema import (
 )
 from app.service.asset_service import AssetService
 from app.service.installation_service import InstallationService
+from app.util.enums import InstallationStatus
 from app.util.utils import (
     send_client_side_error,
     send_data,
     send_data_with_info,
     send_internal_server_error,
 )
-from app.util.enums import InstallationStatus
-
 
 router = APIRouter(
     prefix="/installation",
@@ -103,7 +102,14 @@ async def get_installations_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        installations = service.fetch_installations(page, page_size, status=status, start_date=start_date, end_date=end_date, search_parameter=search_parameter)
+        installations = service.fetch_installations(
+            page,
+            page_size,
+            status=status,
+            start_date=start_date,
+            end_date=end_date,
+            search_parameter=search_parameter,
+        )
         return send_data(installations)
     except Exception as e:
         return send_internal_server_error(
@@ -130,7 +136,9 @@ async def get_installer_installations_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        installations = service.fetch_installations(page, page_size, installer_uuid, status, start_date, end_date)
+        installations = service.fetch_installations(
+            page, page_size, installer_uuid, status, start_date, end_date
+        )
         return send_data(installations)
     except Exception as e:
         return send_internal_server_error(
@@ -179,7 +187,9 @@ async def configure_device_handler(
         asset_assignment = asset_service.assign_device_imei(asset.uuid, data_to_assign)
 
         if asset_assignment:
-            service.update_installation_status(payload.installation_uuid, InstallationStatus.COMPLETED)
+            service.update_installation_status(
+                payload.installation_uuid, InstallationStatus.COMPLETED
+            )
 
         return send_data_with_info(asset_assignment, messages.SUCCESS_MESSAGE)
     except Exception as e:

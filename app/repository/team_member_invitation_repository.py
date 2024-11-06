@@ -106,9 +106,7 @@ class TeamMemberInvitationRepository(BaseRepository):
                 query = query.filter(self.model.email.ilike(f"%{email}%"))
 
             if status:
-                query = query.filter(
-                    self.model.status == InvitationStatus(status)
-                )
+                query = query.filter(self.model.status == InvitationStatus(status))
 
             if role_uuids:
                 valid_role_uuids = []
