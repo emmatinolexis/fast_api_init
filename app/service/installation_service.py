@@ -110,9 +110,10 @@ class InstallationService:
                             installer_uuid: str = None,
                             status: InstallationStatus = None,
                             start_date: str = None,
-                            end_date: str = None):
+                            end_date: str = None,
+                            search_parameter: str = None):
         try:
-            installations = self.installation_repository.get_installations(page, page_size, installer_uuid, status, start_date, end_date)
+            installations = self.installation_repository.get_installations(page, page_size, installer_uuid, status, start_date, end_date, search_parameter)
 
             installation_responses = []
             for installation in installations.get("data"):
@@ -151,7 +152,18 @@ class InstallationService:
                     if order and order.order_inventories
                     else [],
                 )
-                installation_responses.append(installation_response)
+                # Apply search filter to installation_response if search_parameter is provided
+                if search_parameter:
+                    search_text = search_parameter.lower()
+                    # Check if search parameter matches relevant fields
+                    if (search_text in (installation_response.installer_name or "").lower() or
+                            search_text in (installation_response.first_name or "").lower() or
+                            search_text in (installation_response.last_name or "").lower()):
+                        installation_responses.append(installation_response)
+                else:
+                    # Append response if no search filter is provided
+                    installation_responses.append(installation_response)
+                # installation_responses.append(installation_response)
             return {
                 "installations": installation_responses,
                 "current_page": installations.get("current_page"),

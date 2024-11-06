@@ -33,7 +33,7 @@ msg_prefix = "incident"
 async def create_incident(
     payload: IncidentPayload,
     service: IncidentService = Depends(Provide[Container.incident_service]),
-    current_user: User = Depends(get_current_user_with_permission("create_incident")),
+    current_user: User = Depends(get_current_user_with_permission("create_road_incident")),
 ):
     try:
         incident = service.create_incident(payload)
@@ -52,10 +52,10 @@ async def get_all_incidents(
     page_size: int = Query(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
+    current_user: User = Depends(get_current_user_with_permission("view_road_incident")),
     status: Optional[IncidentStatus] = Query(
         None, description="Filter by resolved status"
     ),
-    current_user: User = Depends(get_current_user_with_permission("view_incident")),
 ):
     try:
         incidents = service.get_all_incidents(
@@ -86,7 +86,7 @@ async def get_incidents_by_location(
     latitude: float,
     radius: int = Query(50, description="radius is in meters(default is 50)"),
     service: IncidentService = Depends(Provide[Container.incident_service]),
-    current_user: User = Depends(get_current_user_with_permission("view_incident")),
+    current_user: User = Depends(get_current_user_with_permission("view_road_incident")),
 ):
     try:
         incidents = service.get_incidents_by_location(
@@ -106,7 +106,7 @@ async def get_incidents_by_incident_type(
     latitude: float,
     radius: int = Query(50, description="radius is in meters(default is 50)"),
     service: IncidentService = Depends(Provide[Container.incident_service]),
-    current_user: User = Depends(get_current_user_with_permission("view_incident")),
+    current_user: User = Depends(get_current_user_with_permission("view_road_incident")),
 ):
     try:
         incidents = service.get_incidents_by_location_incident_type(
@@ -137,7 +137,7 @@ async def get_incidents_report(
     ),
     status: str = None,
     service: IncidentService = Depends(Provide[Container.incident_service]),
-    current_user: User = Depends(get_current_user_with_permission("view_incident")),
+    current_user: User = Depends(get_current_user_with_permission("view_road_incident")),
 ):
     try:
         incidents = service.get_incident_reports(

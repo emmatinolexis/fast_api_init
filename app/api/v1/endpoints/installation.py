@@ -88,6 +88,7 @@ async def assign_installer_handler(
 @inject
 async def get_installations_handler(
     search_parameter: str = None,
+    status: InstallationStatus = None,
     start_date: str = Query(
         None, description="Start date should be in the format dd/mm/yyyy"
     ),
@@ -102,7 +103,7 @@ async def get_installations_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        installations = service.fetch_installations(page, page_size)
+        installations = service.fetch_installations(page, page_size, status=status, start_date=start_date, end_date=end_date, search_parameter=search_parameter)
         return send_data(installations)
     except Exception as e:
         return send_internal_server_error(
