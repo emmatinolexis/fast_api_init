@@ -18,10 +18,6 @@ async def create_installation_assigned_notification(event: InstallationCreated):
     installation_order:Order = installation.order
     installation_location:OrderShippingAddress = installation_order.order_shipping_address
 
-    print(installation)
-    print(installation_order)
-    print(installation_location)
-    print(user)
 
     with db.session() as session:
         # Create NotificationRepository and temporarily override `session_factory`
@@ -29,7 +25,7 @@ async def create_installation_assigned_notification(event: InstallationCreated):
 
         schema = CreateAdminNotification(
             title=messages.DEVICE_INSTALLATION_ASSIGNED,
-            message=f"You have been assigned to the installation of order #{installation_order.id} at {installation_location.address},{installation_location.city}-{installation_location.country} ",
+            message=f"You have been assigned to the installation of order #{installation_order.id} at {installation_location.city}-{installation_location.country} ",
             user_id=str(user.uuid),
             notification_type=NotificationType.INSTALLATION
         )
