@@ -15,7 +15,7 @@ class AdminNotificationService(BaseService):
     def get_admin_notifications(self, user_uuid: str, user_role: str):
         try:
             # Check if user role is valid
-            if user_role not in ADMIN_NOTIFICATION_MAPPING:
+            if user_role not in ADMIN_NOTIFICATION_MAPPING.keys():
                 raise UnAuthorizedError(messages.ACTION_NOT_ALLOWED)
             
             is_super_admin = user_role == "Super Admin"
