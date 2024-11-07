@@ -450,18 +450,20 @@ class UserService(BaseService):
                 converted_percentage_change = 0
                 unconverted_percentage_change = 0
 
-        current_data.append(
-            {
-                "total_signUps": total_signups,
-                "total_converted": total_converted,
-                "total_unconverted": total_unconverted,
-                "total_signup_percentage_change": signups_percentage_change,
-                "total_converted_percentage_change": converted_percentage_change,
-                "total_unconverted_percentage_change": unconverted_percentage_change,
-            }
-        )
+        summary = {
+            "total_signUps": total_signups,
+            "total_converted": total_converted,
+            "total_unconverted": total_unconverted,
+            "total_signup_percentage_change": signups_percentage_change,
+            "total_converted_percentage_change": converted_percentage_change,
+            "total_unconverted_percentage_change": unconverted_percentage_change,
+        }
 
-        return current_data
+        return {
+            "data": current_data,
+            "summary": summary
+        }
 
+  
     def get_total_users(self, start_date: datetime, end_date: datetime, group_by: str):
         return self.user_repository.get_total_users(start_date, end_date, group_by)

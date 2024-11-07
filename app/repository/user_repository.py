@@ -874,6 +874,8 @@ class UserRepository(BaseRepository):
                 cumulative_total += count
                 data.append({"date": period_key, "User": cumulative_total})
 
-            data.append({"total_users": total_users})
+            return {
+                "data":data,
+                "total_users": total_users
+            }
 
-            return data
