@@ -30,7 +30,7 @@ from app.util.enums import (
     InvitationStatus,
     RoleType,
 )
-from app.util.utils import parse_date, toggle_status
+from app.util.utils import parse_date, toggle_status,calculate_percentage_change
 
 
 class UserRepository(BaseRepository):
@@ -322,16 +322,14 @@ class UserRepository(BaseRepository):
 
     def get_total_businesses(self, session, start_date_obj=None, end_date_obj=None):
         """Fetches the count of businesses within the date range, if provided."""
-        business_query = session.query(BusinessProfile).with_entities(
-            func.count(BusinessProfile.id)
-        )
+        business_query = session.query(BusinessProfile)
 
         if start_date_obj and end_date_obj:
             business_query = business_query.filter(
                 BusinessProfile.created_at.between(start_date_obj, end_date_obj)
             )
 
-        return business_query.scalar()
+        return business_query.count()
 
     def get_all_accounts(
         self,
@@ -350,44 +348,41 @@ class UserRepository(BaseRepository):
             # Initialize date variables
             start_date_obj = None
             end_date_obj = None
+            previous_start_date_obj = None
+            previous_end_date_obj = None
 
             # Parse start and end dates
             if start_date and end_date:
                 start_date_obj = parse_date(start_date)
                 end_date_obj = parse_date(end_date)
+                previous_end_date_obj = start_date_obj - timedelta(days=1)
+                previous_start_date_obj = previous_end_date_obj - (end_date_obj - start_date_obj)
 
-            # Build the base query
+            # Build the base query with filters
             query = session.query(self.model).filter(self.model.role != RoleType.ADMIN)
+            query = self.apply_filters(query, email, role_uuid, start_date_obj, end_date_obj, status)
 
-            # Apply filters (email, role, and date range)
-            query = self.apply_filters(
-                query, email, role_uuid, start_date_obj, end_date_obj, status
-            )
+            # Total records in date range
+            total_records = query.with_entities(func.count(self.model.id)).scalar()
+            total_active_users = query.filter(self.model.status == ActiveStatus.ACTIVE).count()
+            total_inactive_users = query.filter(self.model.status == ActiveStatus.INACTIVE).count()
+            total_organizations = session.query(BusinessProfile).count()
 
-            # Fetch the total number of businesses, active, and inactive users
-            total_businesses = self.get_total_businesses(
-                session, start_date_obj, end_date_obj
-            )
-            total_team_members = query.with_entities(func.count(self.model.id)).scalar()
-            total_active_users = (
-                query.filter(self.model.status == ActiveStatus.ACTIVE)
-                .with_entities(func.count(self.model.id))
-                .scalar()
-            )
-            total_inactive_users = (
-                query.filter(self.model.status == ActiveStatus.INACTIVE)
-                .with_entities(func.count(self.model.id))
-                .scalar()
-            )
+            # Previous period data
+            previous_query = session.query(self.model).filter(self.model.role != RoleType.ADMIN)
+            previous_query = self.apply_filters(previous_query, email, role_uuid, previous_start_date_obj, previous_end_date_obj, status)
+            previous_total_records = previous_query.with_entities(func.count(self.model.id)).scalar()
+            previous_active_users = previous_query.filter(self.model.status == ActiveStatus.ACTIVE).count()
+            previous_inactive_users = previous_query.filter(self.model.status == ActiveStatus.INACTIVE).count()
+            previous_organizations_query = session.query(BusinessProfile)
+            if start_date_obj is not None:
+                previous_organizations_query = previous_organizations_query.filter(BusinessProfile.created_at < start_date_obj)
+            previous_organizations = previous_organizations_query.count()
 
-            total_businesses = (
-                session.query(BusinessProfile)
-                .with_entities(func.count(self.model.id))
-                .scalar()
-            )
+
 
             # Calculate total pages
-            total_pages = (total_team_members + page_size - 1) // page_size
+            total_pages = (total_records + page_size - 1) // page_size
 
             # Fetch users with pagination and eager loading
             users = (
@@ -407,24 +402,44 @@ class UserRepository(BaseRepository):
                     "status": user.status,
                     "registered_on": user.created_at,
                     "name": f"{user.first_name} {user.last_name}",
-                    "business_name": user.business_profile.business_name
-                    if user.business_profile
-                    else None,
+                    "business_name": user.business_profile.business_name if user.business_profile else None,
                 }
                 for user in users
             ]
 
-            # Return the result
+            # Calculate percentage changes
+            percentage_change_total = calculate_percentage_change(total_records, previous_total_records)
+            percentage_change_active = calculate_percentage_change(total_active_users, previous_active_users)
+            percentage_change_inactive = calculate_percentage_change(total_inactive_users, previous_inactive_users)
+            percentage_change_total_organizations = calculate_percentage_change(total_organizations, previous_organizations)
+
+            # Return the result in the desired format
             return {
                 "users": users_data,
-                "total_users": total_team_members,
-                "total_pages": total_pages,
-                "total_active_users": total_active_users,
-                "total_inactive_users": total_inactive_users,
-                "total_businesses": total_businesses,
                 "current_page": page,
                 "page_size": page_size,
+                "total_records": total_records,
+                "total_pages": total_pages,
+                "summary": {
+                    "total_accounts": total_records,
+                    "active_accounts": total_active_users,
+                    "inactive_accounts": total_inactive_users,
+                    "total_organizations": total_organizations,
+                    "previous_summary": {
+                        "total_accounts": previous_total_records,
+                        "active_accounts": previous_active_users,
+                        "inactive_accounts": previous_inactive_users,
+                        "total_organizations": previous_organizations,
+                    },
+                    "percentage_change": {
+                        "total_accounts": percentage_change_total,
+                        "active_accounts": percentage_change_active,
+                        "inactive_accounts": percentage_change_inactive,
+                        "total_organizations": percentage_change_total_organizations,
+                    },
+                },
             }
+
 
     def get_admin_team_member(self, team_member_uuid: str):
         with self.session_factory() as session:
