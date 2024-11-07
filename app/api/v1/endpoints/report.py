@@ -57,28 +57,16 @@ async def generate_distance_traveled_report_handler(
     try:
         user = user_service.get_user_by_uuid(user_uuid)
         if user:
-            if user.get("account_type") == AccountType.INDIVIDUAL:
-                return send_data_with_info(
-                    report_service.generate_distance_speed_report(
-                        user_uuid=user.get("uuid"),
-                        start_date=start_date,
-                        end_date=end_date,
-                        asset_uuid=asset_uuid,
-                        asset_type_uuid=asset_type_uuid,
-                    ),
-                    messages.SUCCESS_MESSAGE,
-                )
-            if user.get("account_type") == AccountType.BUSINESS:
-                return send_data_with_info(
-                    report_service.generate_distance_speed_report(
-                        business_uuid=user.get("business_profile").uuid,
-                        start_date=start_date,
-                        end_date=end_date,
-                        asset_uuid=asset_uuid,
-                        asset_type_uuid=asset_type_uuid,
-                    ),
-                    messages.SUCCESS_MESSAGE,
-                )
+            return send_data_with_info(
+                report_service.generate_distance_speed_report(
+                    business_uuid=user.get("business_profile").uuid,
+                    start_date=start_date,
+                    end_date=end_date,
+                    asset_uuid=asset_uuid,
+                    asset_type_uuid=asset_type_uuid,
+                ),
+                messages.SUCCESS_MESSAGE,
+            )
         else:
             msg = f"{messages.USER_NOT_FOUND} {user_uuid}"
             return send_client_side_error(user_msg=msg, dev_msg=msg)
@@ -104,28 +92,16 @@ async def generate_violation_reminders_report_handler(
     try:
         user = user_service.get_user_by_uuid(user_uuid)
         if user:
-            if user.get("account_type") == AccountType.INDIVIDUAL:
-                return send_data_with_info(
-                    report_service.generate_violation_reminder_report(
-                        user_uuid=user.get("uuid"),
-                        start_date=start_date,
-                        end_date=end_date,
-                        asset_uuid=asset_uuid,
-                        asset_type_uuid=asset_type_uuid,
-                    ),
-                    messages.SUCCESS_MESSAGE,
-                )
-            if user.get("account_type") == AccountType.BUSINESS:
-                return send_data_with_info(
-                    report_service.generate_violation_reminder_report(
-                        business_uuid=user.get("business_profile").uuid,
-                        start_date=start_date,
-                        end_date=end_date,
-                        asset_uuid=asset_uuid,
-                        asset_type_uuid=asset_type_uuid,
-                    ),
-                    messages.SUCCESS_MESSAGE,
-                )
+            return send_data_with_info(
+                report_service.generate_violation_reminder_report(
+                    business_uuid=user.get("business_profile").uuid,
+                    start_date=start_date,
+                    end_date=end_date,
+                    asset_uuid=asset_uuid,
+                    asset_type_uuid=asset_type_uuid,
+                ),
+                messages.SUCCESS_MESSAGE,
+            )
         else:
             msg = f"{messages.USER_NOT_FOUND} {user_uuid}"
             return send_client_side_error(user_msg=msg, dev_msg=msg)
@@ -146,40 +122,23 @@ async def create_smart_report_handler(
 ):
     try:
         user = user_service.get_user_by_uuid(str(smart_report_payload.user_uuid))
+
         if user:
-            if user.get("account_type") == AccountType.INDIVIDUAL:
-                smart_report_input = SmartReportInput(
-                    title=smart_report_payload.title,
-                    start_date=smart_report_payload.start_date,
-                    end_date=smart_report_payload.end_date,
-                    asset_group_uuids=smart_report_payload.asset_group,
-                    asset_type_uuid=smart_report_payload.asset_type_uuid,
-                    user_uuid=smart_report_payload.user_uuid,
-                    report_types=smart_report_payload.report_type,
-                    status=SmartReportStatus.PENDING,
-                )
+            smart_report_input = SmartReportInput(
+                title=smart_report_payload.title,
+                start_date=smart_report_payload.start_date,
+                end_date=smart_report_payload.end_date,
+                asset_group_uuids=smart_report_payload.asset_group,
+                asset_type_uuid=smart_report_payload.asset_type_uuid,
+                user_uuid=smart_report_payload.user_uuid,
+                business_profile_uuid=user.get("business_profile").uuid,
+                report_types=smart_report_payload.report_type,
+                status=SmartReportStatus.PENDING,
+            )
 
-                report = smart_report_service.add(smart_report_input)
+            report = smart_report_service.add(smart_report_input)
 
-                return send_data_with_info(report, messages.SUCCESS_MESSAGE)
-
-            if user.get("account_type") == AccountType.BUSINESS:
-                smart_report_input = SmartReportInput(
-                    title=smart_report_payload.title,
-                    start_date=smart_report_payload.start_date,
-                    end_date=smart_report_payload.end_date,
-                    asset_group_uuids=smart_report_payload.asset_group,
-                    asset_type_uuid=smart_report_payload.asset_type_uuid,
-                    user_uuid=smart_report_payload.user_uuid,
-                    business_profile_uuid=user.get("business_profile").uuid,
-                    report_types=smart_report_payload.report_type,
-                    status=SmartReportStatus.PENDING,
-                )
-
-                report = smart_report_service.add(smart_report_input)
-
-                return send_data_with_info(report, messages.SUCCESS_MESSAGE)
-
+            return send_data_with_info(report, messages.SUCCESS_MESSAGE)
         else:
             msg = f"{messages.USER_NOT_FOUND} {smart_report_payload.user_uuid}"
             return send_client_side_error(user_msg=msg, dev_msg=msg)
@@ -208,28 +167,15 @@ async def get_smart_report_by_user_handler(
     try:
         user = user_service.get_user_by_uuid(str(user_uuid))
         if user:
-            if user.get("account_type") == AccountType.INDIVIDUAL:
-                reports = smart_report_service.get_reports(
-                    user_uuid=user_uuid,
-                    query_parameter=query_parameter,
-                    created_by=created_by,
-                    page=page,
-                    page_size=page_size,
-                )
+            reports = smart_report_service.get_reports(
+                business_profile_uuid=user.get("business_profile").uuid,
+                query_parameter=query_parameter,
+                created_by=created_by,
+                page=page,
+                page_size=page_size,
+            )
 
-                return send_data_with_info(reports, messages.SUCCESS_MESSAGE)
-
-            if user.get("account_type") == AccountType.BUSINESS:
-                reports = smart_report_service.get_reports(
-                    business_profile_uuid=user.get("business_profile").uuid,
-                    query_parameter=query_parameter,
-                    created_by=created_by,
-                    page=page,
-                    page_size=page_size,
-                )
-
-                return send_data_with_info(reports, messages.SUCCESS_MESSAGE)
-
+            return send_data_with_info(reports, messages.SUCCESS_MESSAGE)
         else:
             msg = f"{messages.USER_NOT_FOUND} {user_uuid}"
             return send_internal_server_error(user_msg=msg, error=msg)
@@ -262,26 +208,15 @@ async def get_gas_report(
                 dev_msg=f"User with uuid {user_uuid} not found",
             )
 
-        if user.get("account_type") == AccountType.INDIVIDUAL:
-            return send_data(
-                service.generate_report(
-                    search=search,
-                    user_uuid=user_uuid,
-                    start_date=start_date,
-                    end_date=end_date,
-                )
-            )
-
-        if user.get("account_type") == AccountType.BUSINESS:
-            return send_data_with_info(
-                service.generate_report_business(
-                    business_uuid=user.get("business_profile").uuid,
-                    start_date=start_date,
-                    end_date=end_date,
-                    search=search,
-                ),
-                messages.SUCCESS_MESSAGE,
-            )
+        return send_data_with_info(
+            service.generate_report_business(
+                business_uuid=user.get("business_profile").uuid,
+                start_date=start_date,
+                end_date=end_date,
+                search=search,
+            ),
+            messages.SUCCESS_MESSAGE,
+        )
 
     except Exception as e:
         return send_internal_server_error(user_msg="Failed to get gas report", error=e)
