@@ -1,3 +1,5 @@
+from typing import Optional
+
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
@@ -7,6 +9,7 @@ from app.core.container import Container
 from app.core.dependencies import get_current_user_with_permission
 from app.model.user import User
 from app.service.payment_service import PaymentService
+from app.util.enums import PaymentStatus
 from app.util.utils import send_data, send_internal_server_error
 
 router = APIRouter(
@@ -30,13 +33,16 @@ async def get_all_payments_handler(
     page_size: int = Query(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
+    status: Optional[PaymentStatus] = Query(
+        None, description="Filter by payment status"
+    ),
     service: PaymentService = Depends(Provide[Container.payment_service]),
     current_user: User = Depends(get_current_user_with_permission("view_payments")),
 ):
     try:
         return send_data(
             service.get_payments(
-                search_parameter, start_date, end_date, page, page_size
+                search_parameter, start_date, end_date, page, page_size, status
             )
         )
     except Exception as e:

@@ -3,13 +3,19 @@ from typing import Dict
 from pyee.asyncio import AsyncIOEventEmitter
 
 from app.events.fuel_log import FuelLogged
-from app.events.installation import InstallationCreated
-from app.events.user import InviteAccepted,RoleUpdated,VehicleAssignment,VehicleUnassignment
-from app.events.handlers.users import create_role_change_notification,asset_change_notification,asset_removal_notification
 from app.events.handlers.installation import create_installation_assigned_notification
-
-
-
+from app.events.handlers.users import (
+    asset_change_notification,
+    asset_removal_notification,
+    create_role_change_notification,
+)
+from app.events.installation import InstallationCreated
+from app.events.user import (
+    InviteAccepted,
+    RoleUpdated,
+    VehicleAssignment,
+    VehicleUnassignment,
+)
 
 
 class Subscriber:
@@ -21,19 +27,11 @@ class Subscriber:
 
     event_to_handler_mappings: Dict = {
         FuelLogged: [],
-        InviteAccepted: [], 
-        RoleUpdated:[
-            create_role_change_notification
-        ],
-        VehicleAssignment: [
-            asset_change_notification
-        ],
-        VehicleUnassignment: [
-            asset_removal_notification
-        ],
-        InstallationCreated: [
-            create_installation_assigned_notification
-        ]
+        InviteAccepted: [],
+        RoleUpdated: [create_role_change_notification],
+        VehicleAssignment: [asset_change_notification],
+        VehicleUnassignment: [asset_removal_notification],
+        InstallationCreated: [create_installation_assigned_notification],
     }
 
     def __new__(cls):

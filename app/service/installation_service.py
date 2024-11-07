@@ -1,17 +1,22 @@
+from app.events.installation import InstallationCreated
+from app.events.subscriber import subscriber
 from app.repository.installation_repository import InstallationRepository
 from app.repository.user_repository import UserRepository
-from app.schema.installation_schema import InstallationPayload
+from app.schema.installation_schema import (
+    AssignInstallerPayload,
+    InstallationPayload,
+    InstallationResponse,
+)
 from app.schema.user_schema import InstallerResponse
-
-from app.schema.installation_schema import InstallationResponse, AssignInstallerPayload
-from app.events.subscriber import subscriber
-from app.events.installation import InstallationCreated
-
 from app.util.enums import InstallationStatus
 
 
 class InstallationService:
-    def __init__(self, installation_repository: InstallationRepository,user_repository:UserRepository):
+    def __init__(
+        self,
+        installation_repository: InstallationRepository,
+        user_repository: UserRepository,
+    ):
         self.installation_repository = installation_repository
         self.user_repository = user_repository
 
@@ -34,12 +39,17 @@ class InstallationService:
     def assign_installer_to_installation(self, payload: AssignInstallerPayload):
         try:
             installer = self.user_repository.read_by_uuid(uuid=payload.installer_uuid)
-            installation = self.installation_repository.get_installation(payload.installation_uuid)
+            installation = self.installation_repository.get_installation(
+                payload.installation_uuid
+            )
 
             assignment = self.installation_repository.assign_installer_to_installation(
                 payload
             )
-            subscriber.publish(InstallationCreated,InstallationCreated(installation=installation,user=installer))
+            subscriber.publish(
+                InstallationCreated,
+                InstallationCreated(installation=installation, user=installer),
+            )
             return assignment
         except Exception as e:
             raise e
