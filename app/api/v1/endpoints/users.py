@@ -77,6 +77,7 @@ async def get_user_stats(
     start_date: Optional[date] = Query(None),
     end_date: Optional[date] = Query(None),
     service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
 ):
     try:
         if end_date:
@@ -105,6 +106,7 @@ async def get_total_users(
     start_date: Optional[date] = Query(None),
     end_date: Optional[date] = Query(None),
     service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
 ):
     try:
         if end_date:
