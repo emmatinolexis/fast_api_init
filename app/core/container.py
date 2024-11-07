@@ -5,6 +5,7 @@ from app.client.mqtt_service import MQTTService
 from app.core.database import Database
 from app.core.settings import settings
 from app.repository import (
+    admin_notification_repository,
     alert_maintenance_type_repository,
     alert_notification_assignment_repository,
     alert_policy_asset_assignment_repository,
@@ -83,10 +84,9 @@ from app.repository import (
     vehicle_make_repository,
     vehicle_model_repository,
     vehicle_owner_repository,
-    notification_repository,
-    admin_notification_repository
 )
 from app.service import (
+    admin_notification_service,
     alert_maintenance_type_service,
     alert_policy_service,
     alert_policy_type_service,
@@ -158,8 +158,6 @@ from app.service import (
     vehicle_make_service,
     vehicle_model_service,
     vehicle_owner_service,
-    notification_service,
-    admin_notification_service
 )
 
 
@@ -554,7 +552,6 @@ class Container(containers.DeclarativeContainer):
         session_factory=db.provided.session,
     )
 
-
     # Services
     auth_service = providers.Factory(
         auth_service.AuthService,
@@ -927,7 +924,7 @@ class Container(containers.DeclarativeContainer):
     installation_service = providers.Factory(
         installation_service.InstallationService,
         installation_repository=installation_repository,
-        user_repository = user_repository
+        user_repository=user_repository,
     )
 
     notification_service = providers.Factory(
@@ -935,8 +932,7 @@ class Container(containers.DeclarativeContainer):
         notification_repository=notification_repository,
     )
 
-
     admin_notification_service = providers.Factory(
         admin_notification_service.AdminNotificationService,
-        admin_notification_repository=admin_notification_repository
+        admin_notification_repository=admin_notification_repository,
     )

@@ -1,6 +1,7 @@
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import List, Optional
 
+from dateutil.relativedelta import relativedelta
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import ORJSONResponse
@@ -61,8 +62,6 @@ from app.util.utils import (
     send_internal_server_error,
     serialize_datetime,
 )
-from dateutil.relativedelta import relativedelta
-from datetime import date, datetime
 
 router = APIRouter(
     prefix="/users",
@@ -90,18 +89,24 @@ async def get_user_stats(
             start_date_dt = end_date_dt - relativedelta(months=12)
 
         if start_date and end_date:
-            group_by = 'day'
+            group_by = "day"
         else:
-            group_by = 'month'
+            group_by = "month"
 
         user_provided_dates = start_date is not None and end_date is not None
 
-        data = service.get_user_stats(start_date_dt, end_date_dt, group_by, user_provided_dates=user_provided_dates)
+        data = service.get_user_stats(
+            start_date_dt,
+            end_date_dt,
+            group_by,
+            user_provided_dates=user_provided_dates,
+        )
         return send_data(data)
     except Exception as e:
         msg = messages.GET_FAILED + " user stats"
         return send_internal_server_error(user_msg=msg, error=e)
-    
+
+
 @router.get("/total_users", response_class=ORJSONResponse)
 @inject
 async def get_total_users(
@@ -121,15 +126,16 @@ async def get_total_users(
             start_date_dt = end_date_dt - relativedelta(months=12)
 
         if start_date and end_date:
-            group_by = 'day'
+            group_by = "day"
         else:
-            group_by = 'month'
+            group_by = "month"
 
         data = service.get_total_users(start_date_dt, end_date_dt, group_by)
         return send_data(data)
     except Exception as e:
         msg = messages.GET_FAILED + " total users"
         return send_internal_server_error(user_msg=msg, error=e)
+
 
 @router.post("/", response_class=ORJSONResponse)
 @inject
@@ -969,5 +975,3 @@ async def update_team_member_handler(
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
-
-

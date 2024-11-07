@@ -32,14 +32,14 @@ class EquipmentRepository(BaseRepository):
             )
 
     def get_equipments(
-        self, page: int = 1, page_size: int = 10, search_query: str = None,status=None
+        self, page: int = 1, page_size: int = 10, search_query: str = None, status=None
     ):
         with self.session_factory() as session:
             query = session.query(self.model).options(joinedload(self.model.asset_type))
 
             if search_query:
                 query = query.filter(self.model.name.ilike(f"%{search_query}%"))
-                
+
             if status:
                 query = query.filter(self.model.status == ActiveStatus(status))
 

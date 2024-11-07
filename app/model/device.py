@@ -5,8 +5,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from app.model.base_model import BaseModel
-from app.util.enums import ActiveStatus
-from app.util.enums import DeviceStatus
+from app.util.enums import ActiveStatus, DeviceStatus
 
 
 class DeviceManufacturer(BaseModel):

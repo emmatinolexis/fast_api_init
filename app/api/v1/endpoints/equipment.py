@@ -1,5 +1,7 @@
+from typing import Optional
+
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends,Query
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
 
 from app.core import messages
@@ -8,9 +10,7 @@ from app.core.dependencies import get_current_user_with_permission
 from app.model.user import User
 from app.schema.equipment_schema import EquipmentPayload
 from app.service.equipment_service import EquipmentService
-from typing import Optional
 from app.util.enums import ActiveStatus
-
 from app.util.utils import (
     allow_admins_only,
     send_client_side_error,
@@ -37,7 +37,7 @@ async def get_paginated_equipments_handler(
 ):
     try:
         result = service.get_paginated_equipments(
-            page=page, page_size=page_size, search_query=search_query,status=status
+            page=page, page_size=page_size, search_query=search_query, status=status
         )
         return send_data(result)
     except Exception as e:

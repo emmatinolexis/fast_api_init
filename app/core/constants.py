@@ -1,4 +1,5 @@
 from enum import Enum
+
 # USER ROLE CONSTANTS
 
 CUSTOMER_USER_ROLE = "customer"
@@ -369,7 +370,7 @@ PERMISSIONS = {
         {"permission_name": "create_device_installation", "permission_type": "admin"},
         {"permission_name": "manage_installation", "permission_type": "admin"},
         {"permission_name": "view_device_installers", "permission_type": "admin"},
-        {"permission_name": "assign_installer", "permission_type": "admin"}
+        {"permission_name": "assign_installer", "permission_type": "admin"},
     ],
     "settings": [
         {"permission_name": "update_phone_number", "permission_type": "customer"},
@@ -530,22 +531,23 @@ class NotificationType(str, Enum):
     INSTALLATION = "INSTALLATION"
     ORDER = "ORDER"
     CRITICAL = "CRITICAL"
-    SUPPORT  = "SUPPORT"
-    TECH     = "TECH"
-
+    SUPPORT = "SUPPORT"
+    TECH = "TECH"
 
 
 ADMIN_NOTIFICATION_MAPPING = {
     # Super Admin has access to all notifications
-    "Super Admin": [NotificationType.CRITICAL, NotificationType.INSTALLATION,NotificationType.ORDER,NotificationType.SUPPORT],
-    
+    "Super Admin": [
+        NotificationType.CRITICAL,
+        NotificationType.INSTALLATION,
+        NotificationType.ORDER,
+        NotificationType.SUPPORT,
+    ],
     # Tech team and IT Support get all notifications
     "Tech team": [NotificationType.TECH],
     "IT Support": [NotificationType.SUPPORT],
-    
     # Support gets info and warnings
     "Support": [NotificationType.SUPPORT],
-    
     # Installer gets info and warnings
     "Installer": [NotificationType.INSTALLATION],
 }

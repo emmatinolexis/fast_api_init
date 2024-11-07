@@ -1,10 +1,8 @@
 import firebase_admin
 from firebase_admin import credentials, messaging
+
 from app.core.settings import settings
 from app.util.utils import singleton
-
-
-
 
 
 @singleton
@@ -20,22 +18,18 @@ class Firebase:
             "auth_uri": settings.FIREBASE_AUTH_URI,
             "token_uri": settings.FIREBASE_TOKEN_URI,
             "auth_provider_x509_cert_url": settings.FIREBASE_AUTH_PROVIDER_X509_CERT_URL,
-            "client_x509_cert_url": settings.FIREBASE_CLIENT_X509_CERT_URL
+            "client_x509_cert_url": settings.FIREBASE_CLIENT_X509_CERT_URL,
         }
         self.credential = credentials.Certificate(self.service_account_info)
         self.app = firebase_admin.initialize_app(self.credential)
 
-
-    async def send_notification(self,token:str,title:str,body:str,deeplink_action:str):
+    async def send_notification(
+        self, token: str, title: str, body: str, deeplink_action: str
+    ):
         message = messaging.Message(
-            notification=messaging.Notification(
-                title=title,
-                body=body
-            ),
+            notification=messaging.Notification(title=title, body=body),
             token=token,
-            data={
-               "deeplink_action": deeplink_action
-           }
+            data={"deeplink_action": deeplink_action},
         )
         try:
             response = messaging.send(message)

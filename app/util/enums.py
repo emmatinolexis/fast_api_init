@@ -378,10 +378,9 @@ class InstallationStatus(str, Enum):
     COMPLETED = "completed"
 
 
-
 class NotificationType(str, Enum):
     INSTALLATION = "INSTALLATION"
     ORDER = "ORDER"
     CRITICAL = "CRITICAL"
-    SUPPORT  = "SUPPORT"
-    TECH     = "TECH"
+    SUPPORT = "SUPPORT"
+    TECH = "TECH"
