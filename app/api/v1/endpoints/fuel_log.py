@@ -150,19 +150,28 @@ async def get_fuel_logs_handler(
                 user_msg=messages.USER_NOT_FOUND, status_code=404
             )
 
-        if user.get("account_type") == AccountType.INDIVIDUAL:
-            data = service.get_fuel_logs_by_user_uuid(
-                user_uuid, page, page_size, search, start_date, end_date
-            )
-        else:
-            data = service.get_fuel_logs_by_business_uuid(
-                str(user.get("business_profile").uuid),
-                page,
-                page_size,
-                search,
-                start_date,
-                end_date,
-            )
+        data = service.get_fuel_logs_by_business_uuid(
+            str(user.get("business_profile").uuid),
+            page,
+            page_size,
+            search,
+            start_date,
+            end_date,
+        )
+
+        # if user.get("account_type") == AccountType.INDIVIDUAL:
+        #     data = service.get_fuel_logs_by_user_uuid(
+        #         user_uuid, page, page_size, search, start_date, end_date
+        #     )
+        # else:
+        #     data = service.get_fuel_logs_by_business_uuid(
+        #         str(user.get("business_profile").uuid),
+        #         page,
+        #         page_size,
+        #         search,
+        #         start_date,
+        #         end_date,
+        #     )
 
         return send_data_with_info(data, messages.GET_SUCCESS + "fuel logs")
     except NotFoundError as e:

@@ -72,18 +72,29 @@ async def create_gas_device_handler(
     try:
         user = user_service.get_user_by_uuid(user_id)
 
-        if user.get("account_type") == AccountType.INDIVIDUAL:
-            data = service.create_device(user_id=user_id, payload=payload)
-        if user.get("account_type") == AccountType.BUSINESS:
-            data = service.create_device(
-                business_profile_uuid=user.get("business_profile").uuid,
-                payload=payload,
-                user_uuid=user_id,
-            )
-            return send_data(data)
-        else:
+        if not user:
             msg = f"{messages.USER_NOT_FOUND} {user_id}"
             return send_internal_server_error(user_msg=msg, error=msg)
+
+        data = service.create_device(
+            business_profile_uuid=user.get("business_profile").uuid,
+            payload=payload,
+            user_uuid=user_id,
+        )
+        return send_data(data)
+
+        # if user.get("account_type") == AccountType.INDIVIDUAL:
+        #     data = service.create_device(user_id=user_id, payload=payload)
+        # if user.get("account_type") == AccountType.BUSINESS:
+        #     data = service.create_device(
+        #         business_profile_uuid=user.get("business_profile").uuid,
+        #         payload=payload,
+        #         user_uuid=user_id,
+        #     )
+        #     return send_data(data)
+        # else:
+        #     msg = f"{messages.USER_NOT_FOUND} {user_id}"
+        #     return send_internal_server_error(user_msg=msg, error=msg)
     except (NotFoundError, BadRequestError) as e:
         return send_client_side_error(user_msg=e.detail)
     except Exception as e:
@@ -125,13 +136,15 @@ async def get_gas_devices_by_user_handler(
             msg = f"{messages.USER_NOT_FOUND} {user_id}"
             return send_client_side_error(user_msg=msg, status_code=404)
 
-        if user.get("account_type") == AccountType.INDIVIDUAL:
-            data = service.get_user_devices(user_id)
+        data = service.get_business_devices(user.get("business_profile").uuid)
 
-        if user.get("account_type") == AccountType.BUSINESS:
-            data = service.get_business_devices(user.get("business_profile").uuid)
+        # if user.get("account_type") == AccountType.INDIVIDUAL:
+        #     data = service.get_user_devices(user_id)
+        #
+        # if user.get("account_type") == AccountType.BUSINESS:
+        #     data = service.get_business_devices(user.get("business_profile").uuid)
 
-            return send_data_with_info(data, messages.GET_SUCCESS + " gas devices")
+        return send_data_with_info(data, messages.GET_SUCCESS + " gas devices")
     except NotFoundError as e:
         return send_client_side_error(user_msg=e.detail)
     except Exception as e:

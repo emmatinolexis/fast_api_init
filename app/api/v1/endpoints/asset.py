@@ -682,19 +682,26 @@ async def get_building_asset_handler(
             msg = f"{messages.USER_NOT_FOUND} {user_uuid}"
             return send_internal_server_error(user_msg=msg, error=msg)
 
-        if user.get("account_type") == AccountType.INDIVIDUAL:
-            buildings = building_service.get_all_buildings(
-                user_uuid=user_uuid, page=page, page_size=page_size
-            )
-            return send_data(buildings)
+        buildings = building_service.get_all_buildings(
+            business_uuid=user.get("business_profile").uuid,
+            page=page,
+            page_size=page_size,
+        )
+        return send_data(buildings)
 
-        if user.get("account_type") == AccountType.BUSINESS:
-            buildings = building_service.get_all_buildings(
-                business_uuid=user.get("business_profile").uuid,
-                page=page,
-                page_size=page_size,
-            )
-            return send_data(buildings)
+        # if user.get("account_type") == AccountType.INDIVIDUAL:
+        #     buildings = building_service.get_all_buildings(
+        #         user_uuid=user_uuid, page=page, page_size=page_size
+        #     )
+        #     return send_data(buildings)
+        #
+        # if user.get("account_type") == AccountType.BUSINESS:
+        #     buildings = building_service.get_all_buildings(
+        #         business_uuid=user.get("business_profile").uuid,
+        #         page=page,
+        #         page_size=page_size,
+        #     )
+        #     return send_data(buildings)
 
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}"

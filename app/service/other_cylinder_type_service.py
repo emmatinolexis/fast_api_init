@@ -22,22 +22,31 @@ class OtherCylinderTypeService(BaseService):
         if not user:
             raise NotFoundError(messages.USER_NOT_FOUND + user_uuid)
 
-        if user.get("account_type") == AccountType.BUSINESS:
-            payload = CreateOtherCylinderType(
-                name=payload.name,
-                image_url=payload.image_url,
-                empty_weight=payload.empty_weight,
-                full_weight=payload.full_weight,
-                business_profile_uuid=str(user.get("business_profile").uuid),
-                user_uuid=str(user.get("uuid")),
-            )
-        elif user.get("account_type") == AccountType.INDIVIDUAL:
-            payload = CreateOtherCylinderType(
-                name=payload.name,
-                image_url=payload.image_url,
-                empty_weight=payload.empty_weight,
-                full_weight=payload.full_weight,
-                user_uuid=str(user.get("uuid")),
-            )
+        payload = CreateOtherCylinderType(
+            name=payload.name,
+            image_url=payload.image_url,
+            empty_weight=payload.empty_weight,
+            full_weight=payload.full_weight,
+            business_profile_uuid=str(user.get("business_profile").uuid),
+            user_uuid=str(user.get("uuid")),
+        )
+
+        # if user.get("account_type") == AccountType.BUSINESS:
+        #     payload = CreateOtherCylinderType(
+        #         name=payload.name,
+        #         image_url=payload.image_url,
+        #         empty_weight=payload.empty_weight,
+        #         full_weight=payload.full_weight,
+        #         business_profile_uuid=str(user.get("business_profile").uuid),
+        #         user_uuid=str(user.get("uuid")),
+        #     )
+        # elif user.get("account_type") == AccountType.INDIVIDUAL:
+        #     payload = CreateOtherCylinderType(
+        #         name=payload.name,
+        #         image_url=payload.image_url,
+        #         empty_weight=payload.empty_weight,
+        #         full_weight=payload.full_weight,
+        #         user_uuid=str(user.get("uuid")),
+        #     )
 
         return self.other_cylinder_type_repository.create(payload)
