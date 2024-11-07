@@ -27,7 +27,7 @@ async def get_notifications(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        notifications  = service.get_admin_notifications(current_user.uuid,current_user.user_role.role_name)
+        notifications  = service.get_admin_notifications(current_user.uuid,current_user.user_role.role_name.strip())
         return send_data(notifications)
     except UnAuthorizedError as e:
         return send_client_side_error(user_msg=e.detail)
