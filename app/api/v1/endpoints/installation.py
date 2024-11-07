@@ -4,7 +4,7 @@ from fastapi.responses import ORJSONResponse
 
 from app.core import messages
 from app.core.container import Container
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user_with_permission
 from app.model.user import User
 from app.schema.asset_schema import AssignDeviceInputPayload
 from app.schema.installation_schema import (
@@ -14,14 +14,13 @@ from app.schema.installation_schema import (
 )
 from app.service.asset_service import AssetService
 from app.service.installation_service import InstallationService
+from app.util.enums import InstallationStatus
 from app.util.utils import (
     send_client_side_error,
     send_data,
     send_data_with_info,
     send_internal_server_error,
 )
-from app.util.enums import InstallationStatus
-
 
 router = APIRouter(
     prefix="/installation",
@@ -34,7 +33,7 @@ msg_prefix = "installation"
 @inject
 async def get_installers_handler(
     service: InstallationService = Depends(Provide[Container.installation_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_device_installers")),
 ):
     try:
         installers = service.fetch_all_installers()
@@ -50,7 +49,7 @@ async def get_installers_handler(
 async def create_installation_handler(
     payload: InstallationPayload,
     service: InstallationService = Depends(Provide[Container.installation_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("create_device_installation")),
 ):
     try:
         installation = service.get_installation_by_order_uuid(payload.order_uuid)
@@ -69,7 +68,7 @@ async def create_installation_handler(
 async def assign_installer_handler(
     payload: AssignInstallerPayload,
     service: InstallationService = Depends(Provide[Container.installation_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("assign_installer")),
 ):
     try:
         installation = service.get_installation(payload.installation_uuid)
@@ -100,10 +99,17 @@ async def get_installations_handler(
     page_size: int = Query(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_device_installation")),
 ):
     try:
-        installations = service.fetch_installations(page, page_size, status=status, start_date=start_date, end_date=end_date, search_parameter=search_parameter)
+        installations = service.fetch_installations(
+            page,
+            page_size,
+            status=status,
+            start_date=start_date,
+            end_date=end_date,
+            search_parameter=search_parameter,
+        )
         return send_data(installations)
     except Exception as e:
         return send_internal_server_error(
@@ -127,10 +133,12 @@ async def get_installer_installations_handler(
     page_size: int = Query(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_device_installation")),
 ):
     try:
-        installations = service.fetch_installations(page, page_size, installer_uuid, status, start_date, end_date)
+        installations = service.fetch_installations(
+            page, page_size, installer_uuid, status, start_date, end_date
+        )
         return send_data(installations)
     except Exception as e:
         return send_internal_server_error(
@@ -143,7 +151,7 @@ async def get_installer_installations_handler(
 async def get_installation_handler(
     installation_uuid: str,
     service: InstallationService = Depends(Provide[Container.installation_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_device_installation")),
 ):
     try:
         installation = service.get_installation(installation_uuid)
@@ -162,7 +170,7 @@ async def configure_device_handler(
     payload: DeviceConfigurationPayload,
     asset_service: AssetService = Depends(Provide[Container.asset_service]),
     service: InstallationService = Depends(Provide[Container.installation_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("configure_tracking_device")),
 ):
     try:
         asset = asset_service.get_assets_by_license_no(payload.asset_license_no)
@@ -179,7 +187,9 @@ async def configure_device_handler(
         asset_assignment = asset_service.assign_device_imei(asset.uuid, data_to_assign)
 
         if asset_assignment:
-            service.update_installation_status(payload.installation_uuid, InstallationStatus.COMPLETED)
+            service.update_installation_status(
+                payload.installation_uuid, InstallationStatus.COMPLETED
+            )
 
         return send_data_with_info(asset_assignment, messages.SUCCESS_MESSAGE)
     except Exception as e:
