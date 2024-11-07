@@ -388,3 +388,11 @@ class UserService(BaseService):
 
         except Exception as e:
             raise e
+        
+    def get_user_stats(self, start_date: datetime, end_date: datetime, group_by: str):
+        return self.user_repository.get_user_stats(start_date, end_date, group_by)
+
+    def get_total_users(self, start_date: datetime, end_date: datetime, group_by: str):
+        return self.user_repository.get_total_users(start_date, end_date, group_by)
+    
+

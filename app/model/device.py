@@ -6,6 +6,7 @@ from sqlalchemy.orm import relationship
 
 from app.model.base_model import BaseModel
 from app.util.enums import ActiveStatus
+from app.util.enums import DeviceStatus
 
 
 class DeviceManufacturer(BaseModel):
@@ -47,7 +48,7 @@ class Device(BaseModel):
     )
     # Relationship to get the associated inventory with device manufacturer
     inventory = relationship("Inventory", backref="device")
-
+    status = Column(Enum(DeviceStatus), nullable=True)
     # Relationship to get the associated inventory with device manufacturer
     user = relationship("User", back_populates="user_devices")
 

@@ -31,7 +31,9 @@ from app.util.enums import (
     RoleType,
 )
 from app.util.utils import parse_date, toggle_status
-
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+from app.model.user_subscription import UserSubscription
 
 class UserRepository(BaseRepository):
     def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
@@ -730,3 +732,139 @@ class UserRepository(BaseRepository):
                 return user
         except Exception as e:
             raise e
+    
+    def get_user_stats(self, start_date: datetime, end_date: datetime, group_by: str = 'month'):
+        with self.session_factory() as session:
+            data = {}
+            periods = []
+
+            if group_by == 'month':
+                current_period = datetime(start_date.year, start_date.month, 1)
+                end_period = datetime(end_date.year, end_date.month, 1)
+                while current_period <= end_period:
+                    key = current_period.strftime('%b %y')
+                    periods.append((current_period, key))
+                    data[key] = {'Month': key, 'SignUps': 0, 'Converted': 0}
+                    current_period += relativedelta(months=1)
+
+                trunc_field = 'month'
+                key_format = '%b %y'
+
+            elif group_by == 'day':
+                current_period = start_date
+                while current_period <= end_date:
+                    key = current_period.strftime('%Y-%m-%d')
+                    periods.append((current_period, key))
+                    data[key] = {'Date': key, 'SignUps': 0, 'Converted': 0}
+                    current_period += timedelta(days=1)
+
+                trunc_field = 'day'
+                key_format = '%Y-%m-%d'
+
+            user_counts = (
+                session.query(
+                    func.date_trunc(trunc_field, User.created_at).label('period'),
+                    func.count(User.uuid).label('signups')
+                )
+                .filter(User.created_at >= start_date, User.created_at <= end_date)
+                .group_by('period')
+                .order_by('period')
+                .all()
+            )
+
+            for period, signups in user_counts:
+                key = period.strftime(key_format)
+                if key in data:
+                    data[key]['SignUps'] = signups
+
+            conversion_counts = (
+                session.query(
+                    func.date_trunc(trunc_field, UserSubscription.created_at).label('period'),
+                    func.count(UserSubscription.uuid).label('conversions')
+                )
+                .filter(UserSubscription.created_at >= start_date, UserSubscription.created_at <= end_date)
+                .group_by('period')
+                .order_by('period')
+                .all()
+            )
+
+            for period, conversions in conversion_counts:
+                key = period.strftime(key_format)
+                if key in data:
+                    data[key]['Converted'] = conversions
+
+            for item in data.values():
+                item['Unconverted'] = item['SignUps'] - item['Converted']
+
+            total_signups = sum(item['SignUps'] for item in data.values())
+            total_converted = sum(item['Converted'] for item in data.values())
+            total_unconverted = sum(item['Unconverted'] for item in data.values())
+
+            sorted_data = [data[key] for _, key in sorted(periods)]
+
+            sorted_data.append({
+                'total_signUps': total_signups,
+                'total_converted': total_converted,
+                'total_unconverted': total_unconverted
+            })
+
+            return sorted_data
+    
+    def get_total_users(self, start_date: datetime, end_date: datetime, group_by: str = 'month'):
+        with self.session_factory() as session:
+            data = []
+            total_users = session.query(func.count(User.uuid)).filter(User.created_at <= end_date).scalar()
+
+            if group_by == 'month':
+                trunc_field = 'month'
+                date_format = '%b %y'
+            elif group_by == 'day':
+                trunc_field = 'day'
+                date_format = '%Y-%m-%d'
+            else:
+                trunc_field = 'month'
+                date_format = '%b %y'
+
+            user_counts = (
+                session.query(
+                    func.date_trunc(trunc_field, User.created_at).label('period'),
+                    func.count(User.uuid).label('count')
+                )
+                .filter(User.created_at >= start_date, User.created_at <= end_date)
+                .group_by('period')
+                .order_by('period')
+                .all()
+            )
+
+            period_counts = {}
+            for period, count in user_counts:
+                period_key = period.strftime(date_format)
+                period_counts[period_key] = count
+
+            periods = []
+            if group_by == 'month':
+                current_period = datetime(start_date.year, start_date.month, 1)
+                end_period = datetime(end_date.year, end_date.month, 1)
+                while current_period <= end_period:
+                    periods.append(current_period)
+                    current_period += relativedelta(months=1)
+            elif group_by == 'day':
+                current_period = start_date
+                while current_period <= end_date:
+                    periods.append(current_period)
+                    current_period += timedelta(days=1)
+
+            cumulative_total = 0
+            for period in periods:
+                period_key = period.strftime(date_format)
+                count = period_counts.get(period_key, 0)
+                cumulative_total += count
+                data.append({
+                    'date': period_key,
+                    'User': cumulative_total
+                })
+
+            data.append({'total_users': total_users})
+
+            return data
+        

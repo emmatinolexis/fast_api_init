@@ -14,10 +14,11 @@ class PaymentService(BaseService):
         end_date: str = None,
         page: int = None,
         page_size: int = None,
+        status = None
     ):
         try:
             payments = self.payment_repository.get_all_payments(
-                search_parameter, start_date, end_date, page, page_size
+                search_parameter, start_date, end_date, page, page_size,status
             )
             payments_data = []
             for payment in payments.get("payments"):

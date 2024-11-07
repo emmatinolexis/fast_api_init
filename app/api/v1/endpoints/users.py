@@ -61,6 +61,8 @@ from app.util.utils import (
     send_internal_server_error,
     serialize_datetime,
 )
+from dateutil.relativedelta import relativedelta
+from datetime import date, datetime
 
 router = APIRouter(
     prefix="/users",
@@ -68,6 +70,62 @@ router = APIRouter(
 )
 msg_prefix = "user"
 
+
+@router.get("/stats", response_class=ORJSONResponse)
+@inject
+async def get_user_stats(
+    start_date: Optional[date] = Query(None),
+    end_date: Optional[date] = Query(None),
+    service: UserService = Depends(Provide[Container.user_service]),
+):
+    try:
+        if end_date:
+            end_date_dt = datetime.combine(end_date, datetime.max.time())
+        else:
+            end_date_dt = datetime.utcnow()
+        if start_date:
+            start_date_dt = datetime.combine(start_date, datetime.min.time())
+        else:
+            start_date_dt = end_date_dt - relativedelta(months=12)
+
+        if start_date and end_date:
+            group_by = 'day'
+        else:
+            group_by = 'month'
+
+        data = service.get_user_stats(start_date_dt, end_date_dt, group_by)
+        return send_data(data)
+    except Exception as e:
+        msg = messages.GET_FAILED + " user stats"
+        return send_internal_server_error(user_msg=msg, error=e)
+    
+@router.get("/total_users", response_class=ORJSONResponse)
+@inject
+async def get_total_users(
+    start_date: Optional[date] = Query(None),
+    end_date: Optional[date] = Query(None),
+    service: UserService = Depends(Provide[Container.user_service]),
+):
+    try:
+        if end_date:
+            end_date_dt = datetime.combine(end_date, datetime.max.time())
+        else:
+            end_date_dt = datetime.utcnow()
+        if start_date:
+            start_date_dt = datetime.combine(start_date, datetime.min.time())
+        else:
+            start_date_dt = end_date_dt - relativedelta(months=12)
+
+        if start_date and end_date:
+            group_by = 'day'
+        else:
+            group_by = 'month'
+
+        data = service.get_total_users(start_date_dt, end_date_dt, group_by)
+        return send_data(data)
+    except Exception as e:
+        msg = messages.GET_FAILED + " total users"
+        return send_internal_server_error(user_msg=msg, error=e)
 
 @router.post("/", response_class=ORJSONResponse)
 @inject
@@ -907,3 +965,5 @@ async def update_team_member_handler(
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
+
+

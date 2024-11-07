@@ -8,7 +8,8 @@ from app.core.dependencies import get_current_user
 from app.model.user import User
 from app.service.payment_service import PaymentService
 from app.util.utils import send_data, send_internal_server_error
-
+from typing import Optional
+from app.util.enums import PaymentStatus
 router = APIRouter(
     prefix="/payments",
     tags=["payments"],
@@ -30,13 +31,14 @@ async def get_all_payments_handler(
     page_size: int = Query(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
+    status: Optional[PaymentStatus] = Query(None, description="Filter by payment status"),
     service: PaymentService = Depends(Provide[Container.payment_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
         return send_data(
             service.get_payments(
-                search_parameter, start_date, end_date, page, page_size
+                search_parameter, start_date, end_date, page, page_size,status
             )
         )
     except Exception as e:

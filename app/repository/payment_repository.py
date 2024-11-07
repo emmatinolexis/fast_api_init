@@ -10,7 +10,6 @@ from app.repository.base_repository import BaseRepository
 from app.util.enums import PaymentStatus
 from app.util.utils import parse_date
 
-
 class PaymentRepository(BaseRepository):
     def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
         self.session_factory = session_factory
@@ -23,6 +22,7 @@ class PaymentRepository(BaseRepository):
         end_date: str = None,
         page: int = None,
         page_size: int = None,
+        status=None
     ):
         with self.session_factory() as session:
             # Initialize date variables
@@ -38,7 +38,7 @@ class PaymentRepository(BaseRepository):
 
             # Apply filters (search parameter and date range)
             query = self.apply_filters(
-                query, search_parameter, start_date_obj, end_date_obj
+                query, search_parameter, start_date_obj, end_date_obj,status
             )
 
             # Get total number of records for pagination metadata before applying limit and offset
@@ -70,7 +70,7 @@ class PaymentRepository(BaseRepository):
             }
 
     def apply_filters(
-        self, query, search_parameter, start_date_obj=None, end_date_obj=None
+        self, query, search_parameter, start_date_obj=None, end_date_obj=None,status=None
     ):
         # Filter by search parameter (user's first name)
         if search_parameter:
@@ -88,5 +88,8 @@ class PaymentRepository(BaseRepository):
         # Filter by end date (created_at <= end_date)
         if end_date_obj:
             query = query.filter(self.model.created_at <= end_date_obj)
+
+        if status:
+                query = query.filter(self.model.status == PaymentStatus(status))
 
         return query
