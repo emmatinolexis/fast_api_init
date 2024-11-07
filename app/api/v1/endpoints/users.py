@@ -94,7 +94,9 @@ async def get_user_stats(
         else:
             group_by = 'month'
 
-        data = service.get_user_stats(start_date_dt, end_date_dt, group_by)
+        user_provided_dates = start_date is not None and end_date is not None
+
+        data = service.get_user_stats(start_date_dt, end_date_dt, group_by, user_provided_dates=user_provided_dates)
         return send_data(data)
     except Exception as e:
         msg = messages.GET_FAILED + " user stats"

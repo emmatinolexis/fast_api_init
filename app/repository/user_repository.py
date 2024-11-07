@@ -796,17 +796,7 @@ class UserRepository(BaseRepository):
             for item in data.values():
                 item['Unconverted'] = item['SignUps'] - item['Converted']
 
-            total_signups = sum(item['SignUps'] for item in data.values())
-            total_converted = sum(item['Converted'] for item in data.values())
-            total_unconverted = sum(item['Unconverted'] for item in data.values())
-
             sorted_data = [data[key] for _, key in sorted(periods)]
-
-            sorted_data.append({
-                'total_signUps': total_signups,
-                'total_converted': total_converted,
-                'total_unconverted': total_unconverted
-            })
 
             return sorted_data
     

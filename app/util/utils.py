@@ -1175,3 +1175,22 @@ def pagination(
         "pageSize": limit,
         "totalPages": total_pages,
     }
+
+
+def singleton(class_):
+    instances = {}
+
+    def getinstance(*args, **kwargs):
+        if class_ not in instances:
+            instances[class_] = class_(*args, **kwargs)
+        return instances[class_]
+
+    return getinstance
+
+
+def calculate_percentage_change(current, previous):
+    if previous == 0:
+        return (
+            None if current == 0 else 100
+        )  # Return 100% if there's a new count from zero
+    return round(((current - previous) / previous) * 100, 2)

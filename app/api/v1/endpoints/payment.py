@@ -4,7 +4,7 @@ from fastapi.responses import ORJSONResponse
 
 from app.core import messages
 from app.core.container import Container
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user_with_permission
 from app.model.user import User
 from app.service.payment_service import PaymentService
 from app.util.utils import send_data, send_internal_server_error
@@ -33,7 +33,7 @@ async def get_all_payments_handler(
     ),
     status: Optional[PaymentStatus] = Query(None, description="Filter by payment status"),
     service: PaymentService = Depends(Provide[Container.payment_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_payments")),
 ):
     try:
         return send_data(

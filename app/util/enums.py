@@ -376,3 +376,12 @@ class CertificateKey(str, Enum):
 class InstallationStatus(str, Enum):
     PENDING_INSTALLATION = "pending"
     COMPLETED = "completed"
+
+
+
+class NotificationType(str, Enum):
+    INSTALLATION = "INSTALLATION"
+    ORDER = "ORDER"
+    CRITICAL = "CRITICAL"
+    SUPPORT  = "SUPPORT"
+    TECH     = "TECH"

@@ -71,7 +71,7 @@ async def read_notification_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        notification = service.read_notification(notification_uuid)
+        service.read_notification(notification_uuid)
         return send_info(messages.UPDATE_SUCCESS + msg_prefix)
     except Exception as e:
         msg = messages.UPDATE_FAILED + msg_prefix
