@@ -2,6 +2,7 @@ from contextlib import AbstractContextManager
 from datetime import datetime, timedelta
 from typing import Callable, List, Optional
 from uuid import UUID
+import uuid
 
 from dateutil.relativedelta import relativedelta
 from pydantic import EmailStr
@@ -459,7 +460,7 @@ class UserRepository(BaseRepository):
                 db_user = self._create_user_entry(session, user)
                 self._handle_invitation_status(session, user)
 
-                if user.account_type == AccountType.BUSINESS and not user.invite_status:
+                if (user.account_type == AccountType.BUSINESS or user.account_type == AccountType.INDIVIDUAL) and not user.invite_status:
                     returned_user = self._handle_business_account(
                         session, user, db_user
                     )
@@ -503,11 +504,20 @@ class UserRepository(BaseRepository):
             session.commit()
 
     def _handle_business_account(self, session, user: UserPayload, db_user):
-        business_data = BusinessProfile(
-            business_name=user.business_name,
-            business_email=user.business_email,
-            business_phone=user.business_phone,
-        )
+        if db_user.account_type == AccountType.BUSINESS:
+            business_data = BusinessProfile(
+                business_name=user.business_name,
+                business_email=user.business_email,
+                business_phone=user.business_phone,
+            )
+
+        # generate dummy business if account type is individual
+        if db_user.account_type == AccountType.INDIVIDUAL:
+            business_data = BusinessProfile(
+                business_name=f"{db_user.first_name}_{db_user.last_name}_{uuid.uuid4().hex[:8]}",
+                business_email=f"{db_user.email_address}",
+                business_phone=f"{db_user.phone_number}_{db_user.last_name}_{uuid.uuid4().hex[:8]}",
+            )
 
         session.add(business_data)
         session.commit()
