@@ -27,6 +27,31 @@ class AdminNotificationRepository(BaseRepository):
 
             notifications = query.filter(
                 AdminNotifications.notification_type.in_(notification_types)
+            ).order_by(
+                AdminNotifications.is_read.asc(),  # Unread first
+                AdminNotifications.created_at.desc()  # Newest first
             ).all()
 
             return notifications
+
+        
+
+    def read_notification(self, notification_id: str) -> AdminNotifications:
+        with self.session_factory() as session:
+            notification = session.query(AdminNotifications).filter(
+                AdminNotifications.uuid == notification_id
+            ).first()
+
+            notification.is_read = True
+            session.commit()
+
+            return notification
+        
+
+
+    def clear_notifications(self, user_uuid: str):
+        with self.session_factory() as session:
+            session.query(AdminNotifications).filter(
+                AdminNotifications.user_id == user_uuid
+            ).update({"is_read": True})
+            session.commit()

@@ -40,3 +40,43 @@ async def get_notifications(
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=str(e))
+    
+
+@router.put("/clear")
+@inject
+async def clear_notifications(
+    service: AdminNotificationService = Depends(
+        Provide[Container.admin_notification_service]
+    ),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        response = service.clear_notifications(str(current_user.uuid))
+        return send_info(response)
+    except UnAuthorizedError as e:
+        return send_client_side_error(user_msg=e.detail)
+    except Exception as e:
+        msg = messages.UPDATE_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=str(e))
+
+@router.put("/{notification_uuid}")
+@inject
+async def read_notification(
+    notification_uuid: str,
+    service: AdminNotificationService = Depends(
+        Provide[Container.admin_notification_service]
+    ),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        notification = service.read_notification(notification_uuid, current_user.uuid)
+        return send_info(messages.UPDATE_SUCCESS + msg_prefix)
+    except UnAuthorizedError as e:
+        return send_client_side_error(user_msg=e.detail)
+    except Exception as e:
+        msg = messages.UPDATE_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=str(e))
+    
+
+
+
