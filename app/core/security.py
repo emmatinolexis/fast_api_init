@@ -3,6 +3,8 @@ import secrets
 import string
 from datetime import datetime, timedelta
 from typing import Dict, List, Union
+from uuid import UUID
+
 
 from fastapi import HTTPException, Request, status
 from fastapi.security import (
@@ -20,7 +22,7 @@ from app.model.user import User
 from app.schema.auth_schema import TokenData
 from app.schema.external_app_schema import AppServiceTokenData
 from app.schema.user_schema import UserLogin
-from app.util.enums import RoleType
+from app.util.enums import RoleType, CustomerRoles
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -180,6 +182,7 @@ def extract_user_data(user: User) -> Dict[str, str]:
         "country": user.country,
         "operator_type": user.operator_type if user.operator_type else None,
         "license": license_data,
+        "installer_locations": user.installer_locations if user.user_role_uuid == UUID(CustomerRoles.INSTALLER) else None,
     }
 
 
