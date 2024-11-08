@@ -32,6 +32,7 @@ from app.schema.user_schema import (
     UserPhoneVerificationToken,
     UserProfileUdatePayload,
     UserUpdatePassword,
+    UpdateInstallerLocation
 )
 from app.service.business_profile_service import BusinessProfileService
 from app.service.invitation_service import InvitationService
@@ -242,6 +243,31 @@ async def update_user(
         service.update_user_by_uuid(uuid, payload)
 
         return send_info("User updated successfully")
+    except UnAuthorizedError as e:
+        return send_client_side_error(user_msg=e.detail)
+    except Exception as e:
+        msg = messages.GET_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.patch("/installer/locations/{installer_uuid}", response_class=ORJSONResponse)
+@inject
+async def update_installer_locations(
+    uuid: str,
+    payload: UpdateInstallerLocation,
+    service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        user = service.get_by_uuid(uuid)
+        if user is None:
+            return send_client_side_error(
+                user_msg=messages.USER_NOT_FOUND_MSG,
+            )
+
+        service.patch_by_uuid(uuid, payload)
+
+        return send_info("Installer updated successfully")
     except UnAuthorizedError as e:
         return send_client_side_error(user_msg=e.detail)
     except Exception as e:

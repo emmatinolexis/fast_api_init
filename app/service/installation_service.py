@@ -8,6 +8,9 @@ from app.events.subscriber import subscriber
 from app.events.installation import InstallationCreated
 
 from app.util.enums import InstallationStatus
+import requests
+from app.core.settings import settings
+from app.core.constants import cities
 
 
 class InstallationService:
@@ -51,6 +54,26 @@ class InstallationService:
             return self.installation_repository.update_installation_status(
                 installation_uuid, status
             )
+        except Exception as e:
+            raise e
+
+    def get_towns(self):
+        try:
+            town_data = []
+            for city in cities:
+                query = f"towns in {city.get('name')} Ghana in all"
+                response = requests.get(settings.GOOGLE_MAP_URL, params={
+                    "query": query,
+                    "key": settings.GOOGLE_MAP_API_KEY
+                })
+                if response.status_code == 200:
+                    data = response.json()
+                    towns = [result['name'] for result in data.get('results', [])]
+                    town_data.extend(towns)  # Append towns to town_data list
+                else:
+                    print(f"Failed to retrieve data for {city.get('name')}. Status code: {response.status_code}")
+
+            return town_data
         except Exception as e:
             raise e
 

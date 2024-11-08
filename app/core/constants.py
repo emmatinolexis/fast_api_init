@@ -521,6 +521,59 @@ PERMISSIONS = {
     ],
 }
 
+cities = [
+    {
+      "name": "Accra",
+      "region": "Greater Accra"
+    },
+    {
+      "name": "Kumasi",
+      "region": "Ashanti"
+    },
+    {
+      "name": "Tamale",
+      "region": "Northern"
+    },
+    {
+      "name": "Sekondi-Takoradi",
+      "region": "Western"
+    },
+    {
+      "name": "Cape Coast",
+      "region": "Central"
+    },
+    {
+      "name": "Koforidua",
+      "region": "Eastern"
+    },
+    {
+      "name": "Ho",
+      "region": "Volta"
+    },
+    {
+      "name": "Sunyani",
+      "region": "Bono"
+    },
+    {
+      "name": "Bolgatanga",
+      "region": "Upper East"
+    },
+    {
+      "name": "Wa",
+      "region": "Upper West"
+    },
+    {
+      "name": "Tema",
+      "region": "Greater Accra"
+    },
+    {
+      "name": "Obuasi",
+      "region": "Ashanti"
+    }
+]
+
+
+
 
 # license expiry alert
 EXPIRY_ALERT_PERIOD = 30
