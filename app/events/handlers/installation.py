@@ -29,7 +29,7 @@ async def create_installation_assigned_notification(event: InstallationCreated):
 
         schema = CreateAdminNotification(
             title=messages.DEVICE_INSTALLATION_ASSIGNED,
-            message=f"You have been assigned to the installation of order #{installation_order.id} at {installation_location.city}-{installation_location.country} ",
+            message=f"{user.first_name} {user.last_name} has been assigned to the installation of order #{installation_order.id} at {installation_location.city}-{installation_location.country} ",
             user_id=str(user.uuid),
             notification_type=NotificationType.INSTALLATION,
         )

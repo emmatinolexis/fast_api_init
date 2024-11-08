@@ -129,3 +129,6 @@ DRIVER_UNASSIGNED_SUCCESS = "Driver unassigned successfully"
 REMOVAL_SUCCESS = "You have been removed from your vehicle"
 
 DEVICE_INSTALLATION_ASSIGNED = "You Have been assigned an installation"
+
+
+NOTIFICATION_NOT_FOUND = "No notification was found "

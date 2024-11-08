@@ -58,7 +58,7 @@ async def asset_removal_notification(event: VehicleUnassignment):
 
         schema = CreateNotificationSchema(
             title=messages.REMOVAL_SUCCESS,
-            message=f"You have been removed from {asset.asset_name} with license plate {asset.vehicle_license_no}",
+            message=f"have been removed from {asset.asset_name} with license plate {asset.vehicle_license_no}",
             user_id=str(user.uuid),  # Convert user.uuid to string
         )
 
