@@ -29,14 +29,15 @@ router = APIRouter(
 msg_prefix = "installation"
 
 
-@router.get("/installers", response_class=ORJSONResponse)
+@router.get("/installers/{installation_uuid}", response_class=ORJSONResponse)
 @inject
 async def get_installers_handler(
+    installation_uuid: str,
     service: InstallationService = Depends(Provide[Container.installation_service]),
     current_user: User = Depends(get_current_user_with_permission("view_device_installers")),
 ):
     try:
-        installers = service.fetch_all_installers()
+        installers = service.fetch_all_installers(installation_uuid)
         return send_data(installers)
     except Exception as e:
         return send_internal_server_error(

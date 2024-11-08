@@ -119,20 +119,57 @@ class InstallationService:
         except Exception as e:
             raise e
 
-    def fetch_all_installers(self):
+    # def fetch_all_installers(self, installer_uuid):
+    #     try:
+    #         installers = self.installation_repository.get_installers()
+    #         installation = self.installation_repository.get_installation(installer_uuid)
+    #         installation_location = installation.order.order_shipping_address.address.get("address_name")
+    #
+    #         installers = [
+    #             InstallerResponse(
+    #                 **{
+    #                     "uuid": installer.uuid,
+    #                     "first_name": installer.first_name,
+    #                     "last_name": installer.last_name,
+    #                     "avatar_url": installer.avatar_url,
+    #                     "installer_locations": installer.installer_locations if installer.installer_locations else None
+    #                 }
+    #             )
+    #             for installer in installers
+    #         ]
+    #         return installers, installation_location
+    #     except Exception as e:
+    #         raise e
+
+    def fetch_all_installers(self, installer_uuid):
         try:
             installers = self.installation_repository.get_installers()
-            return [
+            installation = self.installation_repository.get_installation(installer_uuid)
+            installation_location = installation.order.order_shipping_address.address.get("address_name")
+
+            # Create installer responses
+            installers = [
                 InstallerResponse(
                     **{
                         "uuid": installer.uuid,
                         "first_name": installer.first_name,
                         "last_name": installer.last_name,
                         "avatar_url": installer.avatar_url,
+                        "installer_locations": installer.installer_locations if installer.installer_locations else None
                     }
                 )
                 for installer in installers
             ]
+
+            # Sorting installers with partial matching of installation_location
+            installers = sorted(
+                installers,
+                key=lambda x: not any(
+                    installation_location.lower() in loc.lower() for loc in (x.installer_locations or [])
+                )
+            )
+
+            return installers
         except Exception as e:
             raise e
 

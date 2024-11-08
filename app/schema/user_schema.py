@@ -168,6 +168,7 @@ class InstallerResponse(BaseModel):
     first_name: str
     last_name: str
     avatar_url: Optional[str] = None
+    installer_locations: Optional[List[str]] = None
 
     class Config:
         orm_mode = True
