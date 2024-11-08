@@ -775,11 +775,14 @@ class AssetRepository(BaseRepository):
 
     def get_asset_by_license_no(self, vehicle_license_no: str):
         with self.session_factory() as session:
-            return (
+            asset = (
                 session.query(self.model)
                 .filter(self.model.vehicle_license_no == vehicle_license_no)
                 .first()
             )
+            if not asset:
+                return None
+            return asset
 
     def get_driver_by_asset_uuid(self, asset_uuid: str):
         with self.session_factory() as session:
