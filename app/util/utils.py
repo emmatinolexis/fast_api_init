@@ -1183,3 +1183,27 @@ def calculate_percentage_change(current, previous):
             None if current == 0 else 100
         )  # Return 100% if there's a new count from zero
     return round(((current - previous) / previous) * 100, 2)
+
+
+
+def datetime_parser(date_str):
+    # List of potential date formats including date and time
+    date_formats = [
+        "%Y-%m-%d",
+        "%Y-%m-%d %H:%M:%S",
+        "%d/%m/%Y",
+        "%m/%d/%Y",
+        "%d-%m-%Y",
+        "%d-%m-%Y %H:%M:%S",
+    ]
+
+    for fmt in date_formats:
+        try:
+            # Try to parse the date with the current format and return as datetime object
+            return datetime.strptime(date_str, fmt)
+        except ValueError:
+            # Continue to the next format if this one fails
+            continue
+
+    # Raise an exception if none of the formats matched
+    raise ValueError(f"Date format for '{date_str}' not recognized")

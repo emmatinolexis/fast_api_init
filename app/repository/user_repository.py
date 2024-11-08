@@ -30,7 +30,7 @@ from app.util.enums import (
     InvitationStatus,
     RoleType,
 )
-from app.util.utils import parse_date, toggle_status,calculate_percentage_change
+from app.util.utils import parse_date, toggle_status,calculate_percentage_change,datetime_parser
 
 
 class UserRepository(BaseRepository):
@@ -353,8 +353,8 @@ class UserRepository(BaseRepository):
 
             # Parse start and end dates
             if start_date and end_date:
-                start_date_obj = parse_date(start_date)
-                end_date_obj = parse_date(end_date)
+                start_date_obj = datetime_parser(start_date)
+                end_date_obj = datetime_parser(end_date)
                 previous_end_date_obj = start_date_obj - timedelta(days=1)
                 previous_start_date_obj = previous_end_date_obj - (end_date_obj - start_date_obj)
 
