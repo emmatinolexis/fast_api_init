@@ -188,8 +188,8 @@ async def configure_device_handler(
     try:
         asset = asset_service.get_assets_by_license_no(payload.asset_license_no)
 
-        if not asset:
-            send_client_side_error(
+        if asset is None:
+            return send_client_side_error(
                 f"{messages.ASSET_NOT_FOUND} {payload.asset_license_no}"
             )
 
@@ -207,20 +207,6 @@ async def configure_device_handler(
         return send_data_with_info(asset_assignment, messages.SUCCESS_MESSAGE)
     except Exception as e:
         return send_internal_server_error(
-            user_msg="Failed to fetch installations.", error=e
+            user_msg="Failed to configure device.", error=e
         )
 
-
-@router.get("/towns", response_class=ORJSONResponse)
-@inject
-async def get_towns_handler(
-    service: InstallationService = Depends(Provide[Container.installation_service]),
-    current_user: User = Depends(get_current_user_with_permission("configure_tracking_device")),
-):
-    try:
-        towns = service.get_towns()
-        return send_data_with_info(towns, messages.SUCCESS_MESSAGE)
-    except Exception as e:
-        return send_internal_server_error(
-            user_msg="Failed to fetch installations.", error=e
-        )
