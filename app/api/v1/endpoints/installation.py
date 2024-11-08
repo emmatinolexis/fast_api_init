@@ -208,3 +208,18 @@ async def configure_device_handler(
         return send_internal_server_error(
             user_msg="Failed to fetch installations.", error=e
         )
+
+
+@router.get("/towns", response_class=ORJSONResponse)
+@inject
+async def get_towns_handler(
+    service: InstallationService = Depends(Provide[Container.installation_service]),
+    current_user: User = Depends(get_current_user_with_permission("configure_tracking_device")),
+):
+    try:
+        towns = service.get_towns()
+        return send_data_with_info(towns, messages.SUCCESS_MESSAGE)
+    except Exception as e:
+        return send_internal_server_error(
+            user_msg="Failed to fetch installations.", error=e
+        )

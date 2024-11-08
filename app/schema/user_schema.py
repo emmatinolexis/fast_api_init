@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 
 import phonenumbers
@@ -39,6 +39,10 @@ class DriversLicenseFull(BaseModel):
     back_url: str
     expiration_date: str
     user_id: str
+
+
+class UpdateInstallerLocation(BaseModel):
+    installer_locations: List[str]
 
 
 class UpdateUserPayload(BaseModel):

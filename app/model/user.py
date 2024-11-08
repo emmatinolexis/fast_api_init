@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Column, DateTime, Enum, ForeignKey, String, event
+from sqlalchemy import Column, DateTime, Enum, ForeignKey, String, event, JSON
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -33,6 +33,7 @@ class User(BaseModel):
     currency = Column(String(length=50), nullable=True, index=True)
     status = Column(Enum(ActiveStatus), default=ActiveStatus.ACTIVE, nullable=False)
     deactivation_reason = Column(String(length=250), nullable=True)
+    installer_locations = Column(JSON, nullable=True, index=True)
     avatar_url = Column(String(length=200), nullable=True)
     phone_verified_at = Column(DateTime, nullable=True)
     role = Column(
