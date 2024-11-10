@@ -177,8 +177,9 @@ async def configure_device_handler(
         asset = asset_service.get_assets_by_license_no(payload.asset_license_no)
 
         if asset is None:
+            msg = f"Asset not found with license no {payload.asset_license_no}"
             return send_client_side_error(
-                f"{messages.ASSET_NOT_FOUND} {payload.asset_license_no}"
+                msg
             )
 
         data_to_assign = AssignDeviceInputPayload(
