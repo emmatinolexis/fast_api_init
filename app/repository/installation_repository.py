@@ -130,6 +130,7 @@ class InstallationRepository(BaseRepository):
                 previous_start_date = previous_end_date = None
 
             # Count the completed, pending installation, and overdue installations
+
             current_completed_count = query.filter(
                 Installation.status == InstallationStatus.COMPLETED
             ).count()
@@ -150,7 +151,7 @@ class InstallationRepository(BaseRepository):
             # Query the previous date range if both dates are provided
             previous_completed_count = (
                 previous_pending_installation_count
-            ) = previous_overdue_count = 0
+            ) = previous_overdue_count = previous_total_count = 0
             if previous_start_date and previous_end_date:
                 previous_query = (
                     session.query(Installation)
@@ -162,6 +163,7 @@ class InstallationRepository(BaseRepository):
                         )
                     )
                 )
+                previous_total_count = previous_query.count()
                 previous_completed_count = previous_query.filter(
                     Installation.status == InstallationStatus.COMPLETED
                 ).count()
@@ -191,15 +193,20 @@ class InstallationRepository(BaseRepository):
                 "total_records": total_records,
                 "total_pages": total_pages,
                 "summary": {
+                    "total_installations": total_records,
                     "completed_installations": current_completed_count,
                     "pending_installations": current_pending_installation_count,
                     "overdue_installations": current_overdue_count,
                     "previous_summary": {
+                        "total": previous_total_count ,
                         "completed": previous_completed_count,
                         "pending": previous_pending_installation_count,
                         "overdue": previous_overdue_count,
                     },
                     "percentage_change": {
+                        "total": calculate_percentage_change(
+                            total_records, previous_total_count
+                        ),
                         "completed": calculate_percentage_change(
                             current_completed_count, previous_completed_count
                         ),
