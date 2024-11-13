@@ -384,3 +384,17 @@ class NotificationType(str, Enum):
     CRITICAL = "CRITICAL"
     SUPPORT = "SUPPORT"
     TECH = "TECH"
+
+
+class ActivityLogClass(str, Enum):
+    USER = "user"
+    ADMIN = "admin"
+
+
+
+class ActivityLogType(str, Enum):
+    SIGN_IN = ""
+    USER_INVITATION = ""
+    ACCOUNT_DEACTIVATION = ""
+    DEVICE_INSTALLATION = ""
+    ROLE_UPDATE = ""

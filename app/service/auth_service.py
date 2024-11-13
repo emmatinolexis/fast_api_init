@@ -22,10 +22,14 @@ from app.repository.email_verification_repository import EmailVerificationReposi
 from app.repository.subscription_repository import SubscriptionRepository
 from app.repository.user_repository import UserRepository
 from app.repository.user_subscription_repository import UserSubscriptionRepository
+from app.repository.activity_log_repository import ActivityLogRepository
 from app.schema.auth_schema import UserEmailVerification, VerifyToken
 from app.schema.user_schema import UserLogin
 from app.service.base_service import BaseService
-from app.util.enums import ActiveStatus, RoleType
+from app.util.enums import ActiveStatus, RoleType,ActivityLogClass,ActivityLogType
+from fastapi import Request
+from app.schema.activity_log_schema import ActivityLogSchema
+from app.core import activity_log_constants
 
 log = get_logger()
 
@@ -37,14 +41,16 @@ class AuthService(BaseService):
         email_verification_repository: EmailVerificationRepository,
         user_subscription_repository: UserSubscriptionRepository,
         subscription_repository: SubscriptionRepository,
+        activity_log_repository: ActivityLogRepository,
     ):
         self.user_repository = user_repository
         self.email_verification_repository = email_verification_repository
         self.user_subscription_repository = user_subscription_repository
         self.subscription_repository = subscription_repository
+        self.activity_log_respository = activity_log_repository
         super().__init__(user_repository)
 
-    def login(self, login_info: UserLogin):
+    def login(self, login_info: UserLogin,request:Request):
         try:
             db_user = self.user_repository.get_user_by_email_address(
                 login_info.email_address
@@ -91,7 +97,31 @@ class AuthService(BaseService):
 
             if user.get("role") == RoleType.CUSTOMER:
                 user["package"] = user_package
-
+                schema = ActivityLogSchema(
+                    user_uuid=str(user.get("uuid")),
+                    business_profile_uuid=str(user.get("business_profile_uuid")) if user.get("business_profile_uuid") else None,
+                    activity_class=ActivityLogClass.USER,
+                    activity_type=ActivityLogType.SIGN_IN,
+                    activity_title=activity_log_constants.SIGN_IN,
+                    activity_description=activity_log_constants.SIGN_IN_DESC.format(full_name = user.get("first_name")+ " "+ user.get("last_name")),
+                    ip_address=request.client.host,
+                )
+                self.activity_log_respository.create(
+                    schema
+                )
+            if user.get("role") == RoleType.ADMIN:
+                schema = ActivityLogSchema(
+                    user_uuid=str(user.get("uuid")),
+                    business_profile_uuid=str(user.get("business_profile_uuid")) if user.get("business_profile_uuid") else None,
+                    activity_class=ActivityLogClass.ADMIN,
+                    activity_type=ActivityLogType.SIGN_IN,
+                    activity_title=activity_log_constants.SIGN_IN,
+                    activity_description=activity_log_constants.SIGN_IN_DESC.format(full_name = user.get("first_name")+ " "+ user.get("last_name")),
+                    ip_address=request.client.host,
+                )
+                self.activity_log_respository.create(
+                    schema
+                )   
             login_result = {
                 "access_token": access_token,
                 "expiration": expiration_datetime,
