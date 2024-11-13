@@ -44,10 +44,10 @@ async def get_all_orders_handler(
     search_query: str = Query(None, description="Search by device name"),
     status: Optional[OrderStatus] = Query(None, description="Filter by order status"),
     start_date: str = Query(
-        None, description="Filter orders from this date (YYYY-MM-DD)"
+        None, description="Start date should be in the format dd/mm/yyyy"
     ),
     end_date: str = Query(
-        None, description="Filter orders up to this date (YYYY-MM-DD)"
+        None, description="End date should be in the format dd/mm/yyyy"
     ),
     service: OrderService = Depends(Provide[Container.order_service]),
     current_user: User = Depends(get_current_user),
