@@ -172,13 +172,16 @@ class UserRepository(BaseRepository):
         search: str = None,
         role_uuids: list[str] = None,
         status: InvitationStatus = None,
+        exclude_user_uuid: str = None 
     ):
         with self.session_factory() as session:
             query = session.query(self.model).filter(
                 self.model.business_profile_uuid == business_uuid
             )
 
-            # Apply filters
+            if exclude_user_uuid:
+                query = query.filter(self.model.uuid != exclude_user_uuid)
+
             if search:
                 search = f"%{search.strip().lower()}%"
                 search_filter = or_(
@@ -189,13 +192,11 @@ class UserRepository(BaseRepository):
                 query = query.filter(search_filter)
 
             if role_uuids:
-                # Validate and convert role_uuids to proper UUID objects
                 valid_role_uuids = []
                 for role_uuid in role_uuids:
                     try:
                         valid_role_uuids.append(UUID(role_uuid))
                     except ValueError:
-                        # Skip invalid UUIDs
                         continue
                 if valid_role_uuids:
                     query = query.filter(
@@ -205,11 +206,9 @@ class UserRepository(BaseRepository):
             if status:
                 query = query.filter(self.model.status == status)
 
-            # Get total count and pages
             total_users = query.count()
             total_pages = (total_users + page_size - 1) // page_size
 
-            # Apply pagination
             offset = (page - 1) * page_size
             query = (
                 query.order_by(desc(self.model.created_at))
@@ -217,7 +216,6 @@ class UserRepository(BaseRepository):
                 .limit(page_size)
             )
 
-            # Fetch users with roles
             account_users = query.options(joinedload(User.user_role)).all()
 
             users_data = [

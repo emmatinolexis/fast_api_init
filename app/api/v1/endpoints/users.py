@@ -456,14 +456,19 @@ async def user_account(
         if business is None:
             msg = f"{messages.BUSINESS_PROFILE_NOT_FOUND}{business_uuid}"
             return send_internal_server_error(user_msg=msg, error=msg)
-        return send_data(
-            service.get_account_users(
-                business_uuid, page, page_size, search, role_uuids, status
-            )
+
+        exclude_user_uuid = current_user.uuid
+
+        accounts = service.get_account_users(
+            business_uuid, page, page_size, search, role_uuids, status, exclude_user_uuid=exclude_user_uuid
         )
+
+        return send_data(accounts)
+        
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
+
 
 
 @router.put("/password/{user_uuid}", response_class=ORJSONResponse)

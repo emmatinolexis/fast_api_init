@@ -80,6 +80,10 @@ class AssetPayload(BaseModel):
 class PatchAssetPayload(BaseModel):
     asset_name: Optional[str] = None
     image_url: Optional[str] = None
+    make: Optional[str] = None
+    model: Optional[str] = None
+    vin:Optional[str] = None
+    vehicle_license_no:Optional[str] = None
 
 
 class ThirdPartyAssetPayload(BaseModel):

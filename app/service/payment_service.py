@@ -24,10 +24,10 @@ class PaymentService(BaseService):
             for payment in payments.get("payments"):
                 data = {
                     "date": payment.created_at,
-                    "amount": str(payment.amount),  # Convert Decimal to string for JSON serialization
+                    "amount": str(payment.amount), 
                     "payment_method": payment.channel,
-                    "status": payment.status.value,  # Assuming status is an Enum
-                    "payment_type": payment.payment_type.value,  # Assuming payment_type is an Enum
+                    "status": payment.status.value,
+                    "payment_type": payment.payment_type.value, 
                     "payment_reference": payment.reference_no,
                     "customer": f"{payment.user.first_name} {payment.user.last_name}",
                     "account_type": payment.user.account_type,
