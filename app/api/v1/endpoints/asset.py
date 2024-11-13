@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-
+import logging
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
@@ -143,6 +143,7 @@ async def create_asset_handler(
 ):
     try:
         asset = service.create_asset(payload)
+        logging.info(f"Created asset {asset}")
         return send_data(asset)
     except NotFoundError as e:
         return send_client_side_error(str(e.detail))
@@ -238,6 +239,7 @@ async def create_third_party_asset_handler(
 ):
     try:
         asset = service.create_third_party_asset(payload)
+        logging.info(f"Third party asset created: {asset}")
         return send_data(asset)
     except NotFoundError as e:
         return send_client_side_error(str(e.detail))

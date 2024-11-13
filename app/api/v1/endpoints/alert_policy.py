@@ -1,5 +1,5 @@
 from typing import List, Optional
-
+import logging
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
@@ -255,6 +255,7 @@ async def create_alert_policy_handler(
         alert_policy = service.create_alert_policy(
             payload, current_user.uuid, current_user.business_profile_uuid
         )
+        logging.info(f"Created alert policy: {alert_policy}")
         return send_data(alert_policy)
     except NotFoundError as e:
         return send_client_side_error(user_msg=e.detail)
@@ -274,6 +275,7 @@ async def create_geofence_alert_policy_handler(
         alert_policy = service.create_geofence_alert_policy(
             payload, str(current_user.uuid), str(current_user.business_profile_uuid)
         )
+        logging.info(f"Created alert policy: {alert_policy}")
         return send_data(alert_policy)
     except NotFoundError as e:
         return send_client_side_error(user_msg=str(e))
@@ -326,6 +328,7 @@ async def check_geofence_violation_handler(
                             asset_name,
                             policy_name,
                         )
+                        logging.info(f"Policy violation for {policy_name}")
                         pass
                     else:
                         # send sms notification
@@ -366,6 +369,7 @@ async def check_over_speeding_violation_handler(
                             asset_name,
                             policy_name,
                         )
+                        logging.info(f"Policy violation for {policy_name}")
                     else:
                         # send sms notification
                         pass
@@ -403,6 +407,7 @@ async def check_idling_violation_handler(
                             asset_name,
                             policy_name,
                         )
+                        logging.info(f"Policy violation for {policy_name}")
                     else:
                         # send sms notification
                         pass
@@ -437,6 +442,7 @@ async def check_maintenance_handler(
                         await send_maintenance_alert_email(
                             recipient_name, email, asset_name, policy_name
                         )
+                        logging.info(f"Policy violation for {policy_name}")
                     else:
                         # send sms notification
                         pass

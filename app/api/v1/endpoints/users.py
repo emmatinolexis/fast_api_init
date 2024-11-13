@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
 from typing import List, Optional
+import logging
+
 
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query, Request
@@ -94,6 +96,7 @@ async def create_user_handler(
                 )
 
         user = service.create_user(payload)
+        logging.info(f"Created user: {payload.email_address}")
         return send_data(user)
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
@@ -442,7 +445,7 @@ async def change_password_handler(
             user_agent=data.get("user_agent", "Unknown"),
             time_stamp=data.get("timestamp", now.strftime("%B %d, %Y %I:%M %p")),
         )
-
+        logging.info(f"Password changed for user {user_to_update.email_address}")
         return send_info("Password updated successfully")
 
     except Exception as e:
@@ -539,6 +542,7 @@ async def deactivate_account_handler(
                 user_msg=messages.USER_NOT_FOUND + uuid,
             )
         status_message = "User account deactivated"
+        logging.info(f"User account deactivated for: {user.email_address}")
         return send_info(status_message)
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
@@ -597,6 +601,7 @@ async def create_team_member_invitation(
                 recipient_name="",
                 email=invitation.email,
                 invitee_name=f"{user.first_name} {user.last_name}",
+                user_type=user.account_type,
                 business_profile_uuid=str(user.business_profile_uuid),
                 role=str(invitation.role_uuid),
                 expiry_date=serialize_datetime(created_invite.expired_at),
@@ -654,7 +659,8 @@ async def phone_token_verification_handler(
 
     try:
         phone_otp_service.verify_token(payload.token)
-        msg = msg_prefix + " phone number updated successfully"
+        msg = msg_prefix + "phone number updated successfully"
+        logging.info(f"Phone number updated for user {user.email_address}")
         return send_info(info=msg)
     except NotFoundError:
         return send_client_side_error(user_msg=messages.PHONE_OTP_INVALID)

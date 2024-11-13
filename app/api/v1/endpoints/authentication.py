@@ -1,7 +1,7 @@
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import ORJSONResponse
-
+import logging
 from app.core.container import Container
 from app.core.exceptions import AuthError
 from app.core.logger import get_logger
@@ -106,7 +106,8 @@ async def login(
     user: UserLogin, service: AuthService = Depends(Provide[Container.auth_service])
 ):
     try:
-        return send_data(service.login(user))
+        login_user = send_data(service.login(user))
+        logging.info(f"Login user: {login_user}")
     except AuthError as e:
         return send_internal_server_error(user_msg=str(e.detail), error=e)
     except Exception as e:
