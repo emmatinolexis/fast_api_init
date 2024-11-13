@@ -108,6 +108,7 @@ async def login(
     try:
         login_user = send_data(service.login(user))
         logging.info(f"Login user: {login_user}")
+        return login_user
     except AuthError as e:
         return send_internal_server_error(user_msg=str(e.detail), error=e)
     except Exception as e:
