@@ -113,6 +113,7 @@ async def send_email_invitation(
     recipient_name,
     email,
     invitee_name,
+    user_type,
     role,
     expiry_date,
     role_type=RoleType,
@@ -124,6 +125,7 @@ async def send_email_invitation(
             email_body={
                 "recipient_name": recipient_name,
                 "invitee_name": invitee_name,
+                "user_type": user_type,
                 "business_profile_uuid": business_profile_uuid
                 if business_profile_uuid
                 else None,
