@@ -73,7 +73,6 @@ class PaymentRepository(BaseRepository):
             }
 
     def determine_current_period(self, start_date: Optional[str], end_date: Optional[str]):
-        """Determine the current period based on provided start and end dates or default logic."""
         try:
             if start_date and end_date:
                 parsed_start = parse_date(start_date)
@@ -119,7 +118,6 @@ class PaymentRepository(BaseRepository):
         start_date: datetime, 
         end_date: datetime
     ) :
-        """Calculate sum, count_success, and count_failed for a given period."""
         sum_query = session.query(func.sum(self.model.amount.cast(Float))).filter(
             self.model.created_at >= start_date,
             self.model.created_at <= end_date,
@@ -177,7 +175,6 @@ class PaymentRepository(BaseRepository):
         end_date_obj: Optional[datetime] = None,
         status: Optional[PaymentStatus] = None,
     ):
-        """Apply filters to the query based on search parameters, date range, and status."""
         if search_parameter:
             query = query.filter(
                 or_(
