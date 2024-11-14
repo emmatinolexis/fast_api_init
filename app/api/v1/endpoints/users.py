@@ -577,6 +577,7 @@ async def create_team_member_invitation(
                 )
 
             user = service.get_by_uuid(user_uuid)
+
             if not user:
                 raise NotFoundError(
                     detail=messages.USER_NOT_FOUND + f" uuid: {str(user_uuid)}"

@@ -1,5 +1,5 @@
 from typing import Optional
-
+import logging
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
@@ -39,6 +39,7 @@ async def create_incident(
 ):
     try:
         incident = service.create_incident(payload)
+        logging.info(f"Incident reported: {incident}")
         return send_data_with_info(data=incident.dto(), info=messages.CREATE_SUCCESS)
     except Exception as e:
         msg = f"{messages.CREATE_FAILED} {msg_prefix}"

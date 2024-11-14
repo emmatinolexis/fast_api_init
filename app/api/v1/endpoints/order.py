@@ -3,7 +3,7 @@ from typing import Optional
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
-
+import logging
 from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_app_service, get_current_user
@@ -28,6 +28,7 @@ async def create_order_handler(
 ):
     try:
         order = service.create_order(payload)
+        logging.info(f"Order created: {order}")
         return send_data(order)
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
@@ -76,6 +77,7 @@ async def update_status_to_ready_for_pick_handler(
 ):
     try:
         order = service.update_order_status_to_ready(order_uuid)
+        logging.info(f"Role status updated: {order}")
         return order
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
@@ -91,7 +93,8 @@ async def rtd_update_status_handler(
     current_user: User = Depends(get_current_app_service),
 ):
     try:
-        order = service.update_order_status(order_uuid, order_status.order_status)
+        order = service.update_order_status(order_uuid, order_status)
+        logging.info(f"Role status updated: {order}")
         return send_data(order)
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix

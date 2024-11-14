@@ -100,7 +100,7 @@ async def get_installations_handler(
     page_size: int = Query(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
-    current_user: User = Depends(get_current_user_with_permission("view_device_installation")),
+    current_user: User = Depends(get_current_user_with_permission("manage_installation")),
 ):
     try:
         installations = service.fetch_installations(

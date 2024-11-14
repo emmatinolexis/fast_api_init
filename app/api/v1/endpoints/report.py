@@ -137,7 +137,7 @@ async def create_smart_report_handler(
             )
 
             report = smart_report_service.add(smart_report_input)
-
+            logging.info(f"Smart report created: {report}")
             return send_data_with_info(report, messages.SUCCESS_MESSAGE)
         else:
             msg = f"{messages.USER_NOT_FOUND} {smart_report_payload.user_uuid}"
