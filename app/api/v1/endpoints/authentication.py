@@ -1,7 +1,9 @@
+import logging
+
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import ORJSONResponse
-import logging
+
 from app.core.container import Container
 from app.core.exceptions import AuthError
 from app.core.logger import get_logger

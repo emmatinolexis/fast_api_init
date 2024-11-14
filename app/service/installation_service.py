@@ -1,3 +1,7 @@
+import requests
+
+from app.core.constants import cities
+from app.core.settings import settings
 from app.events.installation import InstallationCreated
 from app.events.subscriber import subscriber
 from app.repository.installation_repository import InstallationRepository
@@ -9,9 +13,6 @@ from app.schema.installation_schema import (
 )
 from app.schema.user_schema import InstallerResponse
 from app.util.enums import InstallationStatus
-import requests
-from app.core.settings import settings
-from app.core.constants import cities
 
 
 class InstallationService:
@@ -72,16 +73,18 @@ class InstallationService:
             town_data = []
             for city in cities:
                 query = f"towns in {city.get('name')} Ghana in all"
-                response = requests.get(settings.GOOGLE_MAP_URL, params={
-                    "query": query,
-                    "key": settings.GOOGLE_MAP_API_KEY
-                })
+                response = requests.get(
+                    settings.GOOGLE_MAP_URL,
+                    params={"query": query, "key": settings.GOOGLE_MAP_API_KEY},
+                )
                 if response.status_code == 200:
                     data = response.json()
-                    towns = [result['name'] for result in data.get('results', [])]
+                    towns = [result["name"] for result in data.get("results", [])]
                     town_data.extend(towns)  # Append towns to town_data list
                 else:
-                    print(f"Failed to retrieve data for {city.get('name')}. Status code: {response.status_code}")
+                    print(
+                        f"Failed to retrieve data for {city.get('name')}. Status code: {response.status_code}"
+                    )
 
             return town_data
         except Exception as e:
@@ -133,7 +136,9 @@ class InstallationService:
         try:
             installers = self.installation_repository.get_installers()
             installation = self.installation_repository.get_installation(installer_uuid)
-            installation_location = installation.order.order_shipping_address.address.get("address_name")
+            installation_location = (
+                installation.order.order_shipping_address.address.get("address_name")
+            )
 
             # Create installer responses
             installers = [
@@ -143,7 +148,9 @@ class InstallationService:
                         "first_name": installer.first_name,
                         "last_name": installer.last_name,
                         "avatar_url": installer.avatar_url,
-                        "installer_locations": installer.installer_locations if installer.installer_locations else None
+                        "installer_locations": installer.installer_locations
+                        if installer.installer_locations
+                        else None,
                     }
                 )
                 for installer in installers
@@ -153,8 +160,9 @@ class InstallationService:
             installers = sorted(
                 installers,
                 key=lambda x: not any(
-                    installation_location.lower() in loc.lower() for loc in (x.installer_locations or [])
-                )
+                    installation_location.lower() in loc.lower()
+                    for loc in (x.installer_locations or [])
+                ),
             )
 
             return installers

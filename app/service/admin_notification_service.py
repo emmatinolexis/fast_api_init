@@ -1,6 +1,6 @@
 from app.core import messages
 from app.core.constants import ADMIN_NOTIFICATION_MAPPING
-from app.core.exceptions import UnAuthorizedError,NotFoundError
+from app.core.exceptions import NotFoundError, UnAuthorizedError
 from app.repository.admin_notification_repository import AdminNotificationRepository
 from app.service.base_service import BaseService
 
@@ -26,27 +26,25 @@ class AdminNotificationService(BaseService):
                 user_uuid, notification_types, is_super_admin
             )
 
-
-            return{
+            return {
                 "notifications": notifications,
                 "total": len(notifications),
             }
         except Exception as e:
             raise e
-        
 
     def read_notification(self, notification_uuid: str, user_uuid: str):
         try:
             # Retrieve notification from repository
-            notification = self.admin_notification_repository.read_by_uuid(notification_uuid)
+            notification = self.admin_notification_repository.read_by_uuid(
+                notification_uuid
+            )
 
             if not notification:
                 raise NotFoundError(messages.NOTIFICATION_NOT_FOUND)
-            
 
             if notification.user_id != user_uuid:
                 raise UnAuthorizedError(messages.ACTION_NOT_ALLOWED)
-            
 
             # Mark notification as read
             self.admin_notification_repository.read_notification(notification_uuid)
@@ -54,12 +52,9 @@ class AdminNotificationService(BaseService):
             return notification
         except Exception as e:
             raise e
-        
 
-    
     def clear_notifications(self, user_uuid: str):
-        try:            
-
+        try:
             # Clear all notifications
             self.admin_notification_repository.clear_notifications(user_uuid)
 

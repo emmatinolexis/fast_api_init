@@ -68,12 +68,17 @@ class UserService(BaseService):
         search: str = None,
         role_uuids: list = None,
         status: InvitationStatus = None,
-        exclude_user_uuid: str = None  
+        exclude_user_uuid: str = None,
     ):
         return self.user_repository.get_account_users(
-            business_uuid, page, page_size, search, role_uuids, status, exclude_user_uuid
+            business_uuid,
+            page,
+            page_size,
+            search,
+            role_uuids,
+            status,
+            exclude_user_uuid,
         )
-    
 
     def update_user_by_uuid(self, uuid: str, payload: UpdateUserPayload):
         try:
@@ -461,11 +466,7 @@ class UserService(BaseService):
             "total_unconverted_percentage_change": unconverted_percentage_change,
         }
 
-        return {
-            "data": current_data,
-            "summary": summary
-        }
+        return {"data": current_data, "summary": summary}
 
-  
     def get_total_users(self, start_date: datetime, end_date: datetime, group_by: str):
         return self.user_repository.get_total_users(start_date, end_date, group_by)

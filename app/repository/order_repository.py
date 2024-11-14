@@ -1,6 +1,8 @@
 from contextlib import AbstractContextManager
+from datetime import datetime, timedelta
 from typing import Callable, Optional
 
+from dateutil.relativedelta import relativedelta
 from sqlalchemy import Date, cast
 from sqlalchemy.orm import Session, joinedload, selectinload
 
@@ -9,10 +11,7 @@ from app.model.order import Order, OrderDeviceAssignment
 from app.repository.base_repository import BaseRepository
 from app.schema.order_schema import OrderPayload
 from app.util.enums import OrderStatus
-
-from datetime import datetime, timedelta
-from dateutil.relativedelta import relativedelta
-from app.util.utils import parse_date, calculate_percentage_change
+from app.util.utils import calculate_percentage_change, parse_date
 
 
 class OrderRepository(BaseRepository):
@@ -40,11 +39,10 @@ class OrderRepository(BaseRepository):
     def _get_base_query(self, session: Session):
         return session.query(Order).options(
             joinedload(Order.order_inventories)
-                .joinedload(OrderDeviceAssignment.inventory)
-                .joinedload(Inventory.images),
+            .joinedload(OrderDeviceAssignment.inventory)
+            .joinedload(Inventory.images),
             joinedload(Order.order_shipping_address),
         )
-  
 
     def get_all_orders(
         self,
@@ -71,7 +69,7 @@ class OrderRepository(BaseRepository):
                         parsed_end_str = parse_date(end_date)
                         current_end_date = datetime.combine(
                             datetime.strptime(parsed_end_str, "%Y-%m-%d"),
-                            datetime.max.time()
+                            datetime.max.time(),
                         )
                     except ValueError as ve:
                         raise ValueError(f"Date parsing error: {ve}")
@@ -83,7 +81,7 @@ class OrderRepository(BaseRepository):
                         parsed_start_str = parse_date(start_date)
                         current_start_date = datetime.combine(
                             datetime.strptime(parsed_start_str, "%Y-%m-%d"),
-                            datetime.min.time()
+                            datetime.min.time(),
                         )
                     except ValueError as ve:
                         raise ValueError(f"Date parsing error: {ve}")
@@ -97,19 +95,11 @@ class OrderRepository(BaseRepository):
             base_query = self._get_base_query(session)
 
             query_current = self.apply_filters(
-                base_query,
-                search_query,
-                current_start_date,
-                current_end_date,
-                status
+                base_query, search_query, current_start_date, current_end_date, status
             )
 
             query_previous = self.apply_filters(
-                base_query,
-                search_query,
-                previous_start_date,
-                previous_end_date,
-                status
+                base_query, search_query, previous_start_date, previous_end_date, status
             )
 
             total_orders_current = query_current.count()
@@ -173,10 +163,11 @@ class OrderRepository(BaseRepository):
         end_date_obj: Optional[datetime] = None,
         status: Optional[OrderStatus] = None,
     ):
-  
         if search_query:
-            query = query.join(Order.order_inventories).join(OrderDeviceAssignment.inventory).filter(
-                Inventory.device_name.ilike(f"%{search_query}%")
+            query = (
+                query.join(Order.order_inventories)
+                .join(OrderDeviceAssignment.inventory)
+                .filter(Inventory.device_name.ilike(f"%{search_query}%"))
             )
 
         if status:
@@ -193,7 +184,9 @@ class OrderRepository(BaseRepository):
     def update_order_status(self, order_uuid: str, status: str):
         with self.session_factory() as session:
             try:
-                order_to_update = session.query(Order).filter_by(uuid=order_uuid).first()
+                order_to_update = (
+                    session.query(Order).filter_by(uuid=order_uuid).first()
+                )
 
                 if not order_to_update:
                     raise Exception("Order not found")
@@ -202,12 +195,17 @@ class OrderRepository(BaseRepository):
                 session.commit()
                 session.refresh(order_to_update)
 
-                order = session.query(Order).filter_by(uuid=order_uuid).options(
-                    joinedload(Order.order_inventories)
+                order = (
+                    session.query(Order)
+                    .filter_by(uuid=order_uuid)
+                    .options(
+                        joinedload(Order.order_inventories)
                         .joinedload(OrderDeviceAssignment.inventory)
                         .joinedload(Inventory.images),
-                    joinedload(Order.order_shipping_address),
-                ).first()
+                        joinedload(Order.order_shipping_address),
+                    )
+                    .first()
+                )
 
                 return order
             except Exception as e:

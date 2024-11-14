@@ -1196,7 +1196,6 @@ def calculate_percentage_change(current, previous):
     return round(((current - previous) / previous) * 100, 2)
 
 
-
 def datetime_parser(date_str):
     # List of potential date formats including date and time
     date_formats = [
