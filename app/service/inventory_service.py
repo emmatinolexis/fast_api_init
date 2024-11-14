@@ -6,7 +6,7 @@ from app.repository.device_repository import DeviceRepository
 from app.repository.inventory_repository import InventoryRepository
 from app.schema.device_schema import InventoryPayload, InventoryUpdatePayload
 from app.service.base_service import BaseService
-
+from app.util.utils import send_client_side_error
 
 class InventoryService(BaseService):
     def __init__(
@@ -24,7 +24,7 @@ class InventoryService(BaseService):
         try:
             inventory = self.inventory_repository.get_inventory_by_uuid(inventory_uuid)
             if not inventory:
-                raise NotFoundError(f"Inventory with UUID {inventory_uuid} not found.")
+                raise NotFoundError(detail=inventory)
             return inventory
         except Exception as e:
             raise e

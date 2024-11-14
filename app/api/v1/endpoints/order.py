@@ -12,7 +12,8 @@ from app.model.user import User
 from app.schema.order_schema import OrderPayload
 from app.service.order_service import OrderService
 from app.util.enums import OrderStatus
-from app.util.utils import send_data, send_internal_server_error
+from app.util.utils import send_data, send_internal_server_error,send_client_side_error
+from app.core.exceptions import NotFoundError
 from uuid import UUID
 
 router = APIRouter(
@@ -77,8 +78,12 @@ async def get_order_by_uuid(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        order = service.get_order_by_uuid(str(uuid))
+        order = service.get_order_by_uuid(uuid)
         return send_data(order)
+    except NotFoundError as e:
+        return send_client_side_error(
+            user_msg=messages.GET_FAILED+ "order"
+        )
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)

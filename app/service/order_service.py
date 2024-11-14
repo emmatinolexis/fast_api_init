@@ -16,7 +16,7 @@ from app.schema.order_schema import OrderPayload
 from app.service.base_service import BaseService
 from app.util.enums import OrderPickUpLocation, OrderStatus
 from app.core.exceptions import NotFoundError
-
+from uuid import UUID
 class OrderService(BaseService):
     def __init__(
         self,
@@ -34,11 +34,11 @@ class OrderService(BaseService):
 
         super().__init__(order_repository)
 
-    def get_order_by_uuid(self, order_uuid: str):
+    def get_order_by_uuid(self, order_uuid: UUID):
         try:
             order = self.order_repository.get_order_by_uuid(order_uuid)
             if not order:
-                raise NotFoundError(f"Order with UUID {order_uuid} not found.")
+                raise NotFoundError(detail=order_uuid)
             return order
         except Exception as e:
             raise e

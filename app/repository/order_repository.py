@@ -12,7 +12,7 @@ from app.repository.base_repository import BaseRepository
 from app.schema.order_schema import OrderPayload
 from app.util.enums import OrderStatus
 from app.util.utils import calculate_percentage_change, parse_date
-
+from uuid import UUID
 
 class OrderRepository(BaseRepository):
     def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
@@ -20,7 +20,7 @@ class OrderRepository(BaseRepository):
         super().__init__(session_factory, OrderRepository)
 
     
-    def get_order_by_uuid(self, order_uuid: str):
+    def get_order_by_uuid(self, order_uuid: UUID):
         with self.session_factory() as session:
             try:
                 order = (
@@ -38,7 +38,7 @@ class OrderRepository(BaseRepository):
             except Exception as e:
                 session.rollback()
                 raise e
-                
+
     def create_order(self, order_payload: OrderPayload):
         with self.session_factory() as session:
             try:
