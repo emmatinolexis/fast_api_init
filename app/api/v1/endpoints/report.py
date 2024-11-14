@@ -21,6 +21,7 @@ from app.service.smart_report_service import SmartReportService
 from app.service.user_service import UserService
 from app.util.email import send_smart_report_email
 from app.util.enums import AccountType, EmailPurpose, FileFormat, SmartReportStatus
+from app.service.device_events_service import DeviceEventService
 from app.util.utils import (
     get_content_type,
     send_client_side_error,
@@ -379,11 +380,9 @@ async def share_smart_report_handler(
 @inject
 async def get_cylinder_report(
     cylinder_uuid: str,
-    start_date: str,
-    end_date: str,
-    service: GasCylinderEventService = Depends(
-        Provide[Container.gas_cylinder_event_service]
-    ),
+    start_date: str = Query(..., description="Start date in formats: DD/MM/YYYY, etc."),
+    end_date: str = Query(..., description="End date in formats: DD/MM/YYYY, etc."),
+    service: DeviceEventService = Depends(Provide[Container.device_events_service]),
     user_service: UserService = Depends(Provide[Container.user_service]),
     current_user: User = Depends(get_current_user),
 ):
