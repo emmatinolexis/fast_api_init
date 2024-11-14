@@ -520,6 +520,12 @@ PERMISSIONS = {
         {"permission_name": "view_vehicle_make", "permission_type": "customer"},
         {"permission_name": "create_vehicle_make", "permission_type": "admin"},
     ],
+    "activity_logs": [
+        {"permission_name": "view_admin_activity_log", "permission_type": "admin"},
+        {"permission_name": "view_business_activity_log", "permission_type": "customer"},
+        {"permission_name": "view_activity_log", "permission_type": "all"},
+        {"permission_name": "view_all_activity_log", "permission_type": "admin"},
+    ],
 }
 
 cities = [
