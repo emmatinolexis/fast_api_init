@@ -892,7 +892,7 @@ async def get_all_user_invitations_handler(
 
 @router.delete(
     "/admin/invitations/{invite_uuid}",
-    # dependencies=[allow_admins_only],
+    dependencies=[allow_admins_only],
     response_class=ORJSONResponse,
 )
 @inject
