@@ -5,6 +5,7 @@ from app.client.mqtt_service import MQTTService
 from app.core.database import Database
 from app.core.settings import settings
 from app.repository import (
+    activity_log_repository,
     admin_notification_repository,
     alert_maintenance_type_repository,
     alert_notification_assignment_repository,
@@ -84,9 +85,9 @@ from app.repository import (
     vehicle_make_repository,
     vehicle_model_repository,
     vehicle_owner_repository,
-    activity_log_repository
 )
 from app.service import (
+    activity_log_service,
     admin_notification_service,
     alert_maintenance_type_service,
     alert_policy_service,
@@ -159,7 +160,6 @@ from app.service import (
     vehicle_make_service,
     vehicle_model_service,
     vehicle_owner_service,
-    activity_log_service
 )
 
 
@@ -578,7 +578,7 @@ class Container(containers.DeclarativeContainer):
         asset_repository=asset_repository,
         driver_license_repository=driver_license_repository,
         role_repository=role_repository,
-        activity_log_repository = activity_log_repository
+        activity_log_repository=activity_log_repository,
     )
     alert_policy_type_service = providers.Factory(
         alert_policy_type_service.AlertPolicyTypeService,
@@ -668,7 +668,7 @@ class Container(containers.DeclarativeContainer):
     invitation_service = providers.Factory(
         invitation_service.InvitationService,
         invitation_repository=team_member_invitation_repository,
-        activity_log_repository=activity_log_repository
+        activity_log_repository=activity_log_repository,
     )
     marker_icon_service = providers.Factory(
         marker_icon_service.MarkerIconService,

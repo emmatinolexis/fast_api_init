@@ -1,13 +1,10 @@
-from app.model.base_model import BaseModel
-from sqlalchemy import Column, String, DateTime, ForeignKey, Enum
-from sqlalchemy.dialects.postgresql import UUID
 import uuid
-from app.util.enums import ActivityLogClass,ActivityLogType
 
+from sqlalchemy import Column, DateTime, Enum, ForeignKey, String
+from sqlalchemy.dialects.postgresql import UUID
 
-
-
-
+from app.model.base_model import BaseModel
+from app.util.enums import ActivityLogClass, ActivityLogType
 
 
 class ActivityLog(BaseModel):

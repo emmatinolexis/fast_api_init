@@ -1,5 +1,9 @@
 from fastapi import APIRouter
 
+from app.api.v1.endpoints.activity_logs import (
+    admin_router as admin_activity_logs_router,
+)
+from app.api.v1.endpoints.activity_logs import router as activity_logs_router
 from app.api.v1.endpoints.admin_notification import router as admin_notification_router
 from app.api.v1.endpoints.alert_maintenance_type import (
     router as alert_maintenance_type_router,
@@ -55,8 +59,6 @@ from app.api.v1.endpoints.tracking import router as tracking_router
 from app.api.v1.endpoints.upload import router as upload_router
 from app.api.v1.endpoints.users import router as users_router
 from app.api.v1.endpoints.vehicle_make import router as vehicle_make_router
-from app.api.v1.endpoints.activity_logs import router as activity_logs_router
-from app.api.v1.endpoints.activity_logs import admin_router as admin_activity_logs_router
 
 routers = APIRouter()
 router_list = [

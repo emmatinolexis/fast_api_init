@@ -2,13 +2,16 @@ from datetime import datetime, timedelta
 from typing import List
 from uuid import UUID
 
+from fastapi import Request
 from pydantic import EmailStr
 
-from app.core import messages
+from app.core import activity_log_constants, messages
 from app.core.constants import FREE_PACKAGE, FREE_PACKAGE_ITEMS
 from app.core.exceptions import NotFoundError, UnAuthorizedError
 from app.events.subscriber import subscriber
 from app.events.user import RoleUpdated
+from app.model.user import User
+from app.repository.activity_log_repository import ActivityLogRepository
 from app.repository.asset_repository import AssetRepository
 from app.repository.driver_license_repository import DriverLicenseRepository
 from app.repository.role_repository import RoleRepository
@@ -16,9 +19,9 @@ from app.repository.subscription_repository import SubscriptionRepository
 from app.repository.team_member_invitation_repository import (
     TeamMemberInvitationRepository,
 )
-from app.repository.activity_log_repository import ActivityLogRepository
 from app.repository.user_repository import UserRepository
 from app.repository.user_subscription_repository import UserSubscriptionRepository
+from app.schema.activity_log_schema import ActivityLogSchema
 from app.schema.invitation_schema import (
     AdminInvitationPayload,
     InvitationCreatePayloadSingle,
@@ -34,12 +37,8 @@ from app.schema.user_schema import (
 )
 from app.service.base_service import BaseService
 from app.transfomers.driver_transformer import driver_transformer
-from app.util.enums import InvitationStatus, RoleType,ActivityLogClass,ActivityLogType
+from app.util.enums import ActivityLogClass, ActivityLogType, InvitationStatus, RoleType
 from app.util.utils import calculate_percentage_change, parse_date
-from app.schema.activity_log_schema import ActivityLogSchema
-from app.core import activity_log_constants
-from app.model.user import User
-from fastapi import Request
 
 
 class UserService(BaseService):
@@ -75,12 +74,17 @@ class UserService(BaseService):
         search: str = None,
         role_uuids: list = None,
         status: InvitationStatus = None,
-        exclude_user_uuid: str = None  
+        exclude_user_uuid: str = None,
     ):
         return self.user_repository.get_account_users(
-            business_uuid, page, page_size, search, role_uuids, status, exclude_user_uuid
+            business_uuid,
+            page,
+            page_size,
+            search,
+            role_uuids,
+            status,
+            exclude_user_uuid,
         )
-    
 
     def update_user_by_uuid(self, uuid: str, payload: UpdateUserPayload):
         try:
@@ -236,14 +240,18 @@ class UserService(BaseService):
             raise e
 
     def create_team_member_invitation(
-        self, uuid: str, payload: InvitationCreatePayloadSingle, user:User,request:Request
+        self,
+        uuid: str,
+        payload: InvitationCreatePayloadSingle,
+        user: User,
+        request: Request,
     ):
         try:
             if not user.business_profile_uuid:
                 raise NotFoundError(
                     detail=messages.BUSINESS_PROFILE_NOT_FOUND + str(uuid)
                 )
-            invitations =  self.invitation_repository.create_invitation(
+            invitations = self.invitation_repository.create_invitation(
                 payload=InvitationPayload(
                     business_profile_uuid=str(user.business_profile_uuid),
                     email=payload.email,
@@ -271,7 +279,9 @@ class UserService(BaseService):
         except Exception as e:
             raise e
 
-    def create_admin_user_invitation(self, payload: InvitationCreatePayloadSingle, user:User,request:Request):
+    def create_admin_user_invitation(
+        self, payload: InvitationCreatePayloadSingle, user: User, request: Request
+    ):
         try:
             payload = AdminInvitationPayload(
                 email=payload.email,
@@ -281,7 +291,6 @@ class UserService(BaseService):
                 invitation_type=RoleType.ADMIN,
             )
             invite = self.invitation_repository.create(payload)
-
 
             self.activity_log_repository.create(
                 ActivityLogSchema(
@@ -500,11 +509,7 @@ class UserService(BaseService):
             "total_unconverted_percentage_change": unconverted_percentage_change,
         }
 
-        return {
-            "data": current_data,
-            "summary": summary
-        }
+        return {"data": current_data, "summary": summary}
 
-  
     def get_total_users(self, start_date: datetime, end_date: datetime, group_by: str):
         return self.user_repository.get_total_users(start_date, end_date, group_by)

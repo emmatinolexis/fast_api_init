@@ -198,7 +198,7 @@ class InstallationRepository(BaseRepository):
                     "pending_installations": current_pending_installation_count,
                     "overdue_installations": current_overdue_count,
                     "previous_summary": {
-                        "total": previous_total_count ,
+                        "total": previous_total_count,
                         "completed": previous_completed_count,
                         "pending": previous_pending_installation_count,
                         "overdue": previous_overdue_count,

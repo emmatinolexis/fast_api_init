@@ -1,7 +1,6 @@
+import logging
 from datetime import date, datetime, timedelta
 from typing import List, Optional
-import logging
-
 
 from dateutil.relativedelta import relativedelta
 from dependency_injector.wiring import Provide, inject
@@ -28,6 +27,7 @@ from app.schema.user_schema import (
     AccountDeactivationPayload,
     ResetPasswordPayload,
     UpdateAdminTeamMemberPayload,
+    UpdateInstallerLocation,
     UpdatePhoneNumber,
     UpdateUserAvatar,
     UpdateUserPayload,
@@ -35,7 +35,6 @@ from app.schema.user_schema import (
     UserPhoneVerificationToken,
     UserProfileUdatePayload,
     UserUpdatePassword,
-    UpdateInstallerLocation
 )
 from app.service.business_profile_service import BusinessProfileService
 from app.service.invitation_service import InvitationService
@@ -463,15 +462,20 @@ async def user_account(
         exclude_user_uuid = current_user.uuid
 
         accounts = service.get_account_users(
-            business_uuid, page, page_size, search, role_uuids, status, exclude_user_uuid=exclude_user_uuid
+            business_uuid,
+            page,
+            page_size,
+            search,
+            role_uuids,
+            status,
+            exclude_user_uuid=exclude_user_uuid,
         )
 
         return send_data(accounts)
-        
+
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
-
 
 
 @router.put("/password/{user_uuid}", response_class=ORJSONResponse)
@@ -668,7 +672,7 @@ async def create_team_member_invitation(
                 )
 
             created_invite = service.create_team_member_invitation(
-                user_uuid, invitation_payload, user,request
+                user_uuid, invitation_payload, user, request
             )
 
             # send email invite
@@ -833,7 +837,9 @@ async def create_admin_user_invitation(
                 email=invitation.email, role_uuid=invitation.role_uuid
             )
 
-            created_invite = service.create_admin_user_invitation(invitation_payload,current_user,request)
+            created_invite = service.create_admin_user_invitation(
+                invitation_payload, current_user, request
+            )
 
             # send email invite
             await send_email_invitation(
@@ -899,7 +905,7 @@ async def delete_admin_invite_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        invitation_service.delete_invitation(invite_uuid, current_user,request)
+        invitation_service.delete_invitation(invite_uuid, current_user, request)
         return send_info(messages.DELETE_SUCCESS)
     except NotFoundError as e:
         return send_client_side_error(e.detail)

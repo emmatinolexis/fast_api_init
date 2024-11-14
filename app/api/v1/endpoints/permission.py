@@ -1,7 +1,8 @@
+import logging
+
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends
 from fastapi.responses import ORJSONResponse
-import logging
 
 from app.core import messages
 from app.core.container import Container

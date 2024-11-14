@@ -1,17 +1,18 @@
 from contextlib import AbstractContextManager
-from typing import Callable, Optional
-from decimal import Decimal
 from datetime import datetime, timedelta
-from dateutil.relativedelta import relativedelta
+from decimal import Decimal
+from typing import Callable, Optional
 
-from sqlalchemy import or_, func, Float
+from dateutil.relativedelta import relativedelta
+from sqlalchemy import Float, func, or_
 from sqlalchemy.orm import Session, joinedload
 
 from app.model.payment import Payment
 from app.model.user import User
 from app.repository.base_repository import BaseRepository
 from app.util.enums import PaymentStatus
-from app.util.utils import parse_date, calculate_percentage_change
+from app.util.utils import calculate_percentage_change, parse_date
+
 
 class PaymentRepository(BaseRepository):
     def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
@@ -28,34 +29,52 @@ class PaymentRepository(BaseRepository):
         status=None,
     ):
         with self.session_factory() as session:
-            current_start_date, current_end_date = self.determine_current_period(start_date, end_date)
-            
-            previous_start_date, previous_end_date = self.determine_previous_period(current_start_date, current_end_date)
+            current_start_date, current_end_date = self.determine_current_period(
+                start_date, end_date
+            )
 
-            query_current = session.query(self.model).options(joinedload(self.model.user))
+            previous_start_date, previous_end_date = self.determine_previous_period(
+                current_start_date, current_end_date
+            )
+
+            query_current = session.query(self.model).options(
+                joinedload(self.model.user)
+            )
             query_current = self.apply_filters(
-                query_current, search_parameter, current_start_date, current_end_date, status
+                query_current,
+                search_parameter,
+                current_start_date,
+                current_end_date,
+                status,
             )
 
             total_records = query_current.count()
             total_pages = (total_records + page_size - 1) // page_size
 
-            paginated_query = query_current.limit(page_size).offset((page - 1) * page_size)
+            paginated_query = query_current.limit(page_size).offset(
+                (page - 1) * page_size
+            )
             payments = paginated_query.all()
 
             metrics_current = self.calculate_metrics(
                 session, search_parameter, status, current_start_date, current_end_date
             )
             metrics_previous = self.calculate_metrics(
-                session, search_parameter, status, previous_start_date, previous_end_date
+                session,
+                search_parameter,
+                status,
+                previous_start_date,
+                previous_end_date,
             )
 
-            sum_percentage_change = calculate_percentage_change(metrics_current['sum'], metrics_previous['sum'])
+            sum_percentage_change = calculate_percentage_change(
+                metrics_current["sum"], metrics_previous["sum"]
+            )
             success_percentage_change = calculate_percentage_change(
-                metrics_current['count_success'], metrics_previous['count_success']
+                metrics_current["count_success"], metrics_previous["count_success"]
             )
             failed_percentage_change = calculate_percentage_change(
-                metrics_current['count_failed'], metrics_previous['count_failed']
+                metrics_current["count_failed"], metrics_previous["count_failed"]
             )
 
             return {
@@ -64,15 +83,17 @@ class PaymentRepository(BaseRepository):
                 "page_size": page_size,
                 "total_records": total_records,
                 "total_pages": total_pages,
-                "successful_payments": metrics_current['count_success'],
-                "failed_payments": metrics_current['count_failed'],
-                "total_payment_amount": metrics_current['sum'],
+                "successful_payments": metrics_current["count_success"],
+                "failed_payments": metrics_current["count_failed"],
+                "total_payment_amount": metrics_current["sum"],
                 "total_payment_amount_percentage_change": sum_percentage_change,
                 "successful_payments_percentage_change": success_percentage_change,
                 "failed_payments_percentage_change": failed_percentage_change,
             }
 
-    def determine_current_period(self, start_date: Optional[str], end_date: Optional[str]):
+    def determine_current_period(
+        self, start_date: Optional[str], end_date: Optional[str]
+    ):
         try:
             if start_date and end_date:
                 parsed_start = parse_date(start_date)
@@ -83,17 +104,15 @@ class PaymentRepository(BaseRepository):
                 if end_date:
                     parsed_end = parse_date(end_date)
                     current_end_date = datetime.combine(
-                        datetime.strptime(parsed_end, "%Y-%m-%d"),
-                        datetime.max.time()
+                        datetime.strptime(parsed_end, "%Y-%m-%d"), datetime.max.time()
                     )
                 else:
                     current_end_date = datetime.utcnow()
-                
+
                 if start_date:
                     parsed_start = parse_date(start_date)
                     current_start_date = datetime.combine(
-                        datetime.strptime(parsed_start, "%Y-%m-%d"),
-                        datetime.min.time()
+                        datetime.strptime(parsed_start, "%Y-%m-%d"), datetime.min.time()
                     )
                 else:
                     current_start_date = current_end_date - relativedelta(months=6)
@@ -111,13 +130,13 @@ class PaymentRepository(BaseRepository):
         return previous_start_date, previous_end_date
 
     def calculate_metrics(
-        self, 
-        session: Session, 
-        search_parameter: Optional[str], 
+        self,
+        session: Session,
+        search_parameter: Optional[str],
         status: Optional[str],
-        start_date: datetime, 
-        end_date: datetime
-    ) :
+        start_date: datetime,
+        end_date: datetime,
+    ):
         sum_query = session.query(func.sum(self.model.amount.cast(Float))).filter(
             self.model.created_at >= start_date,
             self.model.created_at <= end_date,
@@ -131,7 +150,7 @@ class PaymentRepository(BaseRepository):
             )
         if status:
             sum_query = sum_query.filter(self.model.status == PaymentStatus(status))
-        total_sum = Decimal(sum_query.scalar() or '0.00')
+        total_sum = Decimal(sum_query.scalar() or "0.00")
 
         count_success = session.query(func.count(self.model.uuid)).filter(
             self.model.status == PaymentStatus.SUCCESS,

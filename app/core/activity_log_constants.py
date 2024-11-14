@@ -6,15 +6,6 @@ ADMIN_INVITATION = "Admin Invitation"
 DELETE_INVITATION = "Delete Invitation"
 
 
-
-
-
-
-
-
-
-
-
 # Description of the activity
 SIGN_IN_DESC = "{full_name} signed in to the application"
 CREATE_INVITATION_DESC = "{full_name} invited {invited_user} to the application"

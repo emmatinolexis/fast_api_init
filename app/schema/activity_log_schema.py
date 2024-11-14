@@ -1,7 +1,8 @@
-from pydantic import BaseModel
 from typing import Optional
-from app.util.enums import ActivityLogClass, ActivityLogType
 
+from pydantic import BaseModel
+
+from app.util.enums import ActivityLogClass, ActivityLogType
 
 
 class ActivityLogSchema(BaseModel):
@@ -12,7 +13,3 @@ class ActivityLogSchema(BaseModel):
     activity_type: ActivityLogType
     activity_description: str
     ip_address: str
-
-
-
-    

@@ -1,7 +1,9 @@
-from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends, HTTPException, status,Request
-from fastapi.responses import ORJSONResponse
 import logging
+
+from dependency_injector.wiring import Provide, inject
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.responses import ORJSONResponse
+
 from app.core.container import Container
 from app.core.exceptions import AuthError
 from app.core.logger import get_logger
@@ -104,7 +106,8 @@ async def verify_user_email(
 @inject
 async def login(
     request: Request,
-    user: UserLogin, service: AuthService = Depends(Provide[Container.auth_service])
+    user: UserLogin,
+    service: AuthService = Depends(Provide[Container.auth_service]),
 ):
     try:
         return send_data(service.login(user, request))

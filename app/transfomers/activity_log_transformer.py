@@ -1,12 +1,13 @@
 from app.model.activity_log import ActivityLog
-from app.repository.user_repository import UserRepository
-from app.repository.role_repository import RoleRepository
 from app.model.user import User
+from app.repository.role_repository import RoleRepository
+from app.repository.user_repository import UserRepository
 
 
-
-def activity_log_transformer(activity_log: ActivityLog, user_repo: UserRepository,role_repo:RoleRepository) -> dict:
-    user:User = user_repo.read_by_uuid(activity_log.user_uuid)
+def activity_log_transformer(
+    activity_log: ActivityLog, user_repo: UserRepository, role_repo: RoleRepository
+) -> dict:
+    user: User = user_repo.read_by_uuid(activity_log.user_uuid)
 
     user_data = {
         "full_name": f"{user.first_name} {user.last_name}",

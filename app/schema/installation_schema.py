@@ -35,4 +35,3 @@ class InstallationResponse(BaseModel):
     date_of_installation: Optional[date]
     time_of_installation: Optional[time]
     devices: Optional[Any]
-

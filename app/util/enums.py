@@ -391,7 +391,6 @@ class ActivityLogClass(str, Enum):
     ADMIN = "admin"
 
 
-
 class ActivityLogType(str, Enum):
     SIGN_IN = "SIGN_IN"
     USER_INVITATION = "USER_INVITATION"

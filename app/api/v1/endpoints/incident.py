@@ -1,5 +1,6 @@
-from typing import Optional
 import logging
+from typing import Optional
+
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
