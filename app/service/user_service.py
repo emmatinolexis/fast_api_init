@@ -75,10 +75,12 @@ class UserService(BaseService):
         search: str = None,
         role_uuids: list = None,
         status: InvitationStatus = None,
+        exclude_user_uuid: str = None  
     ):
         return self.user_repository.get_account_users(
-            business_uuid, page, page_size, search, role_uuids, status
+            business_uuid, page, page_size, search, role_uuids, status, exclude_user_uuid
         )
+    
 
     def update_user_by_uuid(self, uuid: str, payload: UpdateUserPayload):
         try:

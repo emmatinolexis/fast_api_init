@@ -150,6 +150,7 @@ async def create_paystack_subscription_handler(
             subscription = service.create_paystack_subscription(
                 payload_data, paystack_plan.json()["data"], user.business_profile_uuid
             )
+            logging.info(f"Subscription created: {subscription}")
             return send_data(subscription)
 
         else:

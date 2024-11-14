@@ -28,6 +28,7 @@ from app.schema.asset_schema import (
     ThirdPartyAssetInput,
     ThirdPartyAssetPayload,
     VehicleOwnerInput,
+    PatchAssetPayload
 )
 from app.service.base_service import BaseService
 from app.transfomers.asset_transformer import asset_transformer
@@ -1000,7 +1001,7 @@ class AssetService(BaseService):
     def edit_asset(
         self,
         asset_uuid: str,
-        payload: AssetPayload,
+        payload: PatchAssetPayload,
         user_uuid: str = None,
         business_uuid: str = None,
     ):

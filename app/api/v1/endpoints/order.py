@@ -3,7 +3,7 @@ from typing import Optional
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
-
+import logging
 from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_app_service, get_current_user
@@ -28,6 +28,7 @@ async def create_order_handler(
 ):
     try:
         order = service.create_order(payload)
+        logging.info(f"Order created: {order}")
         return send_data(order)
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
@@ -44,10 +45,10 @@ async def get_all_orders_handler(
     search_query: str = Query(None, description="Search by device name"),
     status: Optional[OrderStatus] = Query(None, description="Filter by order status"),
     start_date: str = Query(
-        None, description="Filter orders from this date (YYYY-MM-DD)"
+        None, description="Start date should be in the format dd/mm/yyyy"
     ),
     end_date: str = Query(
-        None, description="Filter orders up to this date (YYYY-MM-DD)"
+        None, description="End date should be in the format dd/mm/yyyy"
     ),
     service: OrderService = Depends(Provide[Container.order_service]),
     current_user: User = Depends(get_current_user),
@@ -76,6 +77,7 @@ async def update_status_to_ready_for_pick_handler(
 ):
     try:
         order = service.update_order_status_to_ready(order_uuid)
+        logging.info(f"Role status updated: {order}")
         return order
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
@@ -91,7 +93,8 @@ async def rtd_update_status_handler(
     current_user: User = Depends(get_current_app_service),
 ):
     try:
-        order = service.update_order_status(order_uuid, order_status.order_status)
+        order = service.update_order_status(order_uuid, order_status)
+        logging.info(f"Role status updated: {order}")
         return send_data(order)
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix

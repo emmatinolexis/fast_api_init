@@ -1,6 +1,7 @@
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends
 from fastapi.responses import ORJSONResponse
+import logging
 
 from app.core import messages
 from app.core.container import Container
@@ -80,6 +81,7 @@ async def create_role_handler(
 ):
     try:
         role = service.create_role_permission(payload)
+        logging.info(f"Role created: {role}")
         return send_data_with_info(role, messages.SUCCESS_MESSAGE)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
@@ -98,6 +100,7 @@ async def update_role_handler(
         role = service.get_by_uuid(role_uuid)
         if role:
             update_role = service.update_role(payload, role_uuid)
+            logging.info(f"Role updated: {update_role}")
             return send_data_with_info(update_role, messages.SUCCESS_MESSAGE)
         msg = "role not found"
         return send_internal_server_error(user_msg=msg, error=msg)

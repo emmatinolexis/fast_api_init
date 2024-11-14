@@ -1,5 +1,7 @@
 from datetime import date, datetime, timedelta
 from typing import List, Optional
+import logging
+
 
 from dateutil.relativedelta import relativedelta
 from dependency_injector.wiring import Provide, inject
@@ -162,6 +164,7 @@ async def create_user_handler(
                 )
 
         user = service.create_user(payload)
+        logging.info(f"Created user: {payload.email_address}")
         return send_data(user)
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
@@ -456,14 +459,19 @@ async def user_account(
         if business is None:
             msg = f"{messages.BUSINESS_PROFILE_NOT_FOUND}{business_uuid}"
             return send_internal_server_error(user_msg=msg, error=msg)
-        return send_data(
-            service.get_account_users(
-                business_uuid, page, page_size, search, role_uuids, status
-            )
+
+        exclude_user_uuid = current_user.uuid
+
+        accounts = service.get_account_users(
+            business_uuid, page, page_size, search, role_uuids, status, exclude_user_uuid=exclude_user_uuid
         )
+
+        return send_data(accounts)
+        
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
+
 
 
 @router.put("/password/{user_uuid}", response_class=ORJSONResponse)
@@ -510,7 +518,7 @@ async def change_password_handler(
             user_agent=data.get("user_agent", "Unknown"),
             time_stamp=data.get("timestamp", now.strftime("%B %d, %Y %I:%M %p")),
         )
-
+        logging.info(f"Password changed for user {user_to_update.email_address}")
         return send_info("Password updated successfully")
 
     except Exception as e:
@@ -607,6 +615,7 @@ async def deactivate_account_handler(
                 user_msg=messages.USER_NOT_FOUND + uuid,
             )
         status_message = "User account deactivated"
+        logging.info(f"User account deactivated for: {user.email_address}")
         return send_info(status_message)
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
@@ -642,6 +651,7 @@ async def create_team_member_invitation(
                 )
 
             user = service.get_by_uuid(user_uuid)
+
             if not user:
                 raise NotFoundError(
                     detail=messages.USER_NOT_FOUND + f" uuid: {str(user_uuid)}"
@@ -666,6 +676,7 @@ async def create_team_member_invitation(
                 recipient_name="",
                 email=invitation.email,
                 invitee_name=f"{user.first_name} {user.last_name}",
+                user_type=user.account_type,
                 business_profile_uuid=str(user.business_profile_uuid),
                 role=str(invitation.role_uuid),
                 expiry_date=serialize_datetime(created_invite.expired_at),
@@ -723,7 +734,8 @@ async def phone_token_verification_handler(
 
     try:
         phone_otp_service.verify_token(payload.token)
-        msg = msg_prefix + " phone number updated successfully"
+        msg = msg_prefix + "phone number updated successfully"
+        logging.info(f"Phone number updated for user {user.email_address}")
         return send_info(info=msg)
     except NotFoundError:
         return send_client_side_error(user_msg=messages.PHONE_OTP_INVALID)
