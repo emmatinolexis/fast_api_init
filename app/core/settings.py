@@ -49,9 +49,7 @@ class Settings(BaseSettings):
     GOOGLE_MAP_URL: str = os.getenv(
         "GOOGLE_MAP_URL", "https://maps.googleapis.com/maps/api/place/textsearch/json"
     )
-    GOOGLE_MAP_API_KEY: str = os.getenv(
-        "GOOGLE_MAP_API_KEY", "google_map_api_key"
-    )
+    GOOGLE_MAP_API_KEY: str = os.getenv("GOOGLE_MAP_API_KEY", "google_map_api_key")
     PAYSTACK_PAYMENT_VERIFICATION_URL: str = os.getenv(
         "PAYSTACK_PAYMENT_VERIFICATION_URL",
         "https://api.paystack.co/transaction/verify",

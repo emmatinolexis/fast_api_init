@@ -1,9 +1,10 @@
-from datetime import datetime, timedelta
 from collections import defaultdict
-from app.util.utils import parse_date  
+from datetime import datetime, timedelta
 
-from app.service.base_service import BaseService
 from app.repository.device_events_repository import DeviceEventRepository
+from app.service.base_service import BaseService
+from app.util.utils import parse_date
+
 
 class DeviceEventService(BaseService):
     def __init__(
@@ -19,7 +20,7 @@ class DeviceEventService(BaseService):
             return devices
         except Exception as e:
             raise e
-        
+
     def __init__(
         self,
         device_event_repository: DeviceEventRepository,
@@ -50,8 +51,10 @@ class DeviceEventService(BaseService):
         gas_device_serial_number = cylinder.gas_device_serial_number
         device_name = cylinder.cylinder_name
 
-        peripheral_device = self.device_event_repository.get_peripheral_device_by_serial_number(
-            gas_device_serial_number
+        peripheral_device = (
+            self.device_event_repository.get_peripheral_device_by_serial_number(
+                gas_device_serial_number
+            )
         )
 
         if not peripheral_device:
@@ -67,15 +70,15 @@ class DeviceEventService(BaseService):
         try:
             start_date_parsed = parse_date(start_date)
             end_date_parsed = parse_date(end_date)
-            start_date_obj = datetime.strptime(start_date_parsed, '%Y-%m-%d')
-            end_date_obj = datetime.strptime(end_date_parsed, '%Y-%m-%d')
+            start_date_obj = datetime.strptime(start_date_parsed, "%Y-%m-%d")
+            end_date_obj = datetime.strptime(end_date_parsed, "%Y-%m-%d")
         except ValueError as e:
             return {
                 "name": device_name,
                 "daily_usage": [],
                 "current_gas_value": None,
                 "unit": None,
-                "error": f"Invalid date format. {str(e)}"
+                "error": f"Invalid date format. {str(e)}",
             }
 
         start_date_obj = datetime.combine(start_date_obj.date(), datetime.min.time())
@@ -106,7 +109,7 @@ class DeviceEventService(BaseService):
             measurements = event.measurements or []
             if measurements:
                 measurement = measurements[0]
-                value_str = measurement.get('value')
+                value_str = measurement.get("value")
                 try:
                     value = float(value_str)
                     daily_values[date_part].append(value)
@@ -118,12 +121,9 @@ class DeviceEventService(BaseService):
         daily_usage = []
         for date_str, values in daily_values.items():
             average_value = round(sum(values) / len(values), 2)
-            daily_usage.append({
-                'date': date_str,
-                'average_value': average_value
-            })
+            daily_usage.append({"date": date_str, "average_value": average_value})
 
-        daily_usage.sort(key=lambda x: x['date'])
+        daily_usage.sort(key=lambda x: x["date"])
 
         return {
             "name": device_name,

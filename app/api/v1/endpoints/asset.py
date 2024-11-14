@@ -1,6 +1,7 @@
+import logging
 from datetime import datetime
 from typing import Optional
-import logging
+
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse

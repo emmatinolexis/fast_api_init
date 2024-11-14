@@ -873,7 +873,7 @@ class Container(containers.DeclarativeContainer):
         device_events_service.DeviceEventService,
         device_event_repository=device_event_repository,
     )
- 
+
     incident_service = providers.Factory(
         incident_service.IncidentService,
         incident_repository=incident_repository,

@@ -40,7 +40,7 @@ async def get_notifications(
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=str(e))
-    
+
 
 @router.put("/clear")
 @inject
@@ -59,6 +59,7 @@ async def clear_notifications(
         msg = messages.UPDATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=str(e))
 
+
 @router.put("/{notification_uuid}")
 @inject
 async def read_notification(
@@ -76,7 +77,3 @@ async def read_notification(
     except Exception as e:
         msg = messages.UPDATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=str(e))
-    
-
-
-

@@ -190,9 +190,7 @@ async def configure_device_handler(
 
         if asset is None:
             msg = f"Asset not found with license no {payload.asset_license_no}"
-            return send_client_side_error(
-                msg
-            )
+            return send_client_side_error(msg)
 
         data_to_assign = AssignDeviceInputPayload(
             device_imei=payload.device_imei, sim_phone_number=payload.sim_phone_number
@@ -210,4 +208,3 @@ async def configure_device_handler(
         return send_internal_server_error(
             user_msg="Failed to configure device.", error=e
         )
-
