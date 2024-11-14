@@ -4,6 +4,7 @@ from typing import Callable, List, Optional
 from uuid import UUID
 import uuid
 
+from dateutil.relativedelta import relativedelta
 from pydantic import EmailStr
 from sqlalchemy import desc, func, or_
 from sqlalchemy.orm import Session, joinedload
@@ -15,6 +16,7 @@ from app.model.email_verification import EmailVerification
 from app.model.invitation import Invitation
 from app.model.role import Role
 from app.model.user import User
+from app.model.user_subscription import UserSubscription
 from app.repository.base_repository import BaseRepository
 from app.schema.auth_schema import EmailVerification as EmailVerficationSchema
 from app.schema.auth_schema import UserEmailVerification
@@ -31,7 +33,7 @@ from app.util.enums import (
     InvitationStatus,
     RoleType,
 )
-from app.util.utils import parse_date, toggle_status
+from app.util.utils import parse_date, toggle_status,calculate_percentage_change,datetime_parser
 
 
 class UserRepository(BaseRepository):
@@ -170,13 +172,16 @@ class UserRepository(BaseRepository):
         search: str = None,
         role_uuids: list[str] = None,
         status: InvitationStatus = None,
+        exclude_user_uuid: str = None 
     ):
         with self.session_factory() as session:
             query = session.query(self.model).filter(
                 self.model.business_profile_uuid == business_uuid
             )
 
-            # Apply filters
+            if exclude_user_uuid:
+                query = query.filter(self.model.uuid != exclude_user_uuid)
+
             if search:
                 search = f"%{search.strip().lower()}%"
                 search_filter = or_(
@@ -187,13 +192,11 @@ class UserRepository(BaseRepository):
                 query = query.filter(search_filter)
 
             if role_uuids:
-                # Validate and convert role_uuids to proper UUID objects
                 valid_role_uuids = []
                 for role_uuid in role_uuids:
                     try:
                         valid_role_uuids.append(UUID(role_uuid))
                     except ValueError:
-                        # Skip invalid UUIDs
                         continue
                 if valid_role_uuids:
                     query = query.filter(
@@ -203,11 +206,9 @@ class UserRepository(BaseRepository):
             if status:
                 query = query.filter(self.model.status == status)
 
-            # Get total count and pages
             total_users = query.count()
             total_pages = (total_users + page_size - 1) // page_size
 
-            # Apply pagination
             offset = (page - 1) * page_size
             query = (
                 query.order_by(desc(self.model.created_at))
@@ -215,7 +216,6 @@ class UserRepository(BaseRepository):
                 .limit(page_size)
             )
 
-            # Fetch users with roles
             account_users = query.options(joinedload(User.user_role)).all()
 
             users_data = [
@@ -323,16 +323,14 @@ class UserRepository(BaseRepository):
 
     def get_total_businesses(self, session, start_date_obj=None, end_date_obj=None):
         """Fetches the count of businesses within the date range, if provided."""
-        business_query = session.query(BusinessProfile).with_entities(
-            func.count(BusinessProfile.id)
-        )
+        business_query = session.query(BusinessProfile)
 
         if start_date_obj and end_date_obj:
             business_query = business_query.filter(
                 BusinessProfile.created_at.between(start_date_obj, end_date_obj)
             )
 
-        return business_query.scalar()
+        return business_query.count()
 
     def get_all_accounts(
         self,
@@ -351,44 +349,41 @@ class UserRepository(BaseRepository):
             # Initialize date variables
             start_date_obj = None
             end_date_obj = None
+            previous_start_date_obj = None
+            previous_end_date_obj = None
 
             # Parse start and end dates
             if start_date and end_date:
-                start_date_obj = parse_date(start_date)
-                end_date_obj = parse_date(end_date)
+                start_date_obj = datetime_parser(start_date)
+                end_date_obj = datetime_parser(end_date)
+                previous_end_date_obj = start_date_obj - timedelta(days=1)
+                previous_start_date_obj = previous_end_date_obj - (end_date_obj - start_date_obj)
 
-            # Build the base query
+            # Build the base query with filters
             query = session.query(self.model).filter(self.model.role != RoleType.ADMIN)
+            query = self.apply_filters(query, email, role_uuid, start_date_obj, end_date_obj, status)
 
-            # Apply filters (email, role, and date range)
-            query = self.apply_filters(
-                query, email, role_uuid, start_date_obj, end_date_obj, status
-            )
+            # Total records in date range
+            total_records = query.with_entities(func.count(self.model.id)).scalar()
+            total_active_users = query.filter(self.model.status == ActiveStatus.ACTIVE).count()
+            total_inactive_users = query.filter(self.model.status == ActiveStatus.INACTIVE).count()
+            total_organizations = session.query(BusinessProfile).count()
 
-            # Fetch the total number of businesses, active, and inactive users
-            total_businesses = self.get_total_businesses(
-                session, start_date_obj, end_date_obj
-            )
-            total_team_members = query.with_entities(func.count(self.model.id)).scalar()
-            total_active_users = (
-                query.filter(self.model.status == ActiveStatus.ACTIVE)
-                .with_entities(func.count(self.model.id))
-                .scalar()
-            )
-            total_inactive_users = (
-                query.filter(self.model.status == ActiveStatus.INACTIVE)
-                .with_entities(func.count(self.model.id))
-                .scalar()
-            )
+            # Previous period data
+            previous_query = session.query(self.model).filter(self.model.role != RoleType.ADMIN)
+            previous_query = self.apply_filters(previous_query, email, role_uuid, previous_start_date_obj, previous_end_date_obj, status)
+            previous_total_records = previous_query.with_entities(func.count(self.model.id)).scalar()
+            previous_active_users = previous_query.filter(self.model.status == ActiveStatus.ACTIVE).count()
+            previous_inactive_users = previous_query.filter(self.model.status == ActiveStatus.INACTIVE).count()
+            previous_organizations_query = session.query(BusinessProfile)
+            if start_date_obj is not None:
+                previous_organizations_query = previous_organizations_query.filter(BusinessProfile.created_at < start_date_obj)
+            previous_organizations = previous_organizations_query.count()
 
-            total_businesses = (
-                session.query(BusinessProfile)
-                .with_entities(func.count(self.model.id))
-                .scalar()
-            )
+
 
             # Calculate total pages
-            total_pages = (total_team_members + page_size - 1) // page_size
+            total_pages = (total_records + page_size - 1) // page_size
 
             # Fetch users with pagination and eager loading
             users = (
@@ -408,24 +403,44 @@ class UserRepository(BaseRepository):
                     "status": user.status,
                     "registered_on": user.created_at,
                     "name": f"{user.first_name} {user.last_name}",
-                    "business_name": user.business_profile.business_name
-                    if user.business_profile
-                    else None,
+                    "business_name": user.business_profile.business_name if user.business_profile else None,
                 }
                 for user in users
             ]
 
-            # Return the result
+            # Calculate percentage changes
+            percentage_change_total = calculate_percentage_change(total_records, previous_total_records)
+            percentage_change_active = calculate_percentage_change(total_active_users, previous_active_users)
+            percentage_change_inactive = calculate_percentage_change(total_inactive_users, previous_inactive_users)
+            percentage_change_total_organizations = calculate_percentage_change(total_organizations, previous_organizations)
+
+            # Return the result in the desired format
             return {
                 "users": users_data,
-                "total_users": total_team_members,
-                "total_pages": total_pages,
-                "total_active_users": total_active_users,
-                "total_inactive_users": total_inactive_users,
-                "total_businesses": total_businesses,
                 "current_page": page,
                 "page_size": page_size,
+                "total_records": total_records,
+                "total_pages": total_pages,
+                "summary": {
+                    "total_accounts": total_records,
+                    "active_accounts": total_active_users,
+                    "inactive_accounts": total_inactive_users,
+                    "total_organizations": total_organizations,
+                    "previous_summary": {
+                        "total_accounts": previous_total_records,
+                        "active_accounts": previous_active_users,
+                        "inactive_accounts": previous_inactive_users,
+                        "total_organizations": previous_organizations,
+                    },
+                    "percentage_change": {
+                        "total_accounts": percentage_change_total,
+                        "active_accounts": percentage_change_active,
+                        "inactive_accounts": percentage_change_inactive,
+                        "total_organizations": percentage_change_total_organizations,
+                    },
+                },
             }
+
 
     def get_admin_team_member(self, team_member_uuid: str):
         with self.session_factory() as session:
@@ -740,3 +755,140 @@ class UserRepository(BaseRepository):
                 return user
         except Exception as e:
             raise e
+
+    def get_user_stats(
+        self, start_date: datetime, end_date: datetime, group_by: str = "month"
+    ):
+        with self.session_factory() as session:
+            data = {}
+            periods = []
+
+            if group_by == "month":
+                current_period = datetime(start_date.year, start_date.month, 1)
+                end_period = datetime(end_date.year, end_date.month, 1)
+                while current_period <= end_period:
+                    key = current_period.strftime("%b %y")
+                    periods.append((current_period, key))
+                    data[key] = {"Month": key, "SignUps": 0, "Converted": 0}
+                    current_period += relativedelta(months=1)
+
+                trunc_field = "month"
+                key_format = "%b %y"
+
+            elif group_by == "day":
+                current_period = start_date
+                while current_period <= end_date:
+                    key = current_period.strftime("%Y-%m-%d")
+                    periods.append((current_period, key))
+                    data[key] = {"Date": key, "SignUps": 0, "Converted": 0}
+                    current_period += timedelta(days=1)
+
+                trunc_field = "day"
+                key_format = "%Y-%m-%d"
+
+            user_counts = (
+                session.query(
+                    func.date_trunc(trunc_field, User.created_at).label("period"),
+                    func.count(User.uuid).label("signups"),
+                )
+                .filter(User.created_at >= start_date, User.created_at <= end_date)
+                .group_by("period")
+                .order_by("period")
+                .all()
+            )
+
+            for period, signups in user_counts:
+                key = period.strftime(key_format)
+                if key in data:
+                    data[key]["SignUps"] = signups
+
+            conversion_counts = (
+                session.query(
+                    func.date_trunc(trunc_field, UserSubscription.created_at).label(
+                        "period"
+                    ),
+                    func.count(UserSubscription.uuid).label("conversions"),
+                )
+                .filter(
+                    UserSubscription.created_at >= start_date,
+                    UserSubscription.created_at <= end_date,
+                )
+                .group_by("period")
+                .order_by("period")
+                .all()
+            )
+
+            for period, conversions in conversion_counts:
+                key = period.strftime(key_format)
+                if key in data:
+                    data[key]["Converted"] = conversions
+
+            for item in data.values():
+                item["Unconverted"] = item["SignUps"] - item["Converted"]
+
+            sorted_data = [data[key] for _, key in sorted(periods)]
+
+            return sorted_data
+
+    def get_total_users(
+        self, start_date: datetime, end_date: datetime, group_by: str = "month"
+    ):
+        with self.session_factory() as session:
+            data = []
+            total_users = (
+                session.query(func.count(User.uuid))
+                .filter(User.created_at <= end_date)
+                .scalar()
+            )
+
+            if group_by == "month":
+                trunc_field = "month"
+                date_format = "%b %y"
+            elif group_by == "day":
+                trunc_field = "day"
+                date_format = "%Y-%m-%d"
+            else:
+                trunc_field = "month"
+                date_format = "%b %y"
+
+            user_counts = (
+                session.query(
+                    func.date_trunc(trunc_field, User.created_at).label("period"),
+                    func.count(User.uuid).label("count"),
+                )
+                .filter(User.created_at >= start_date, User.created_at <= end_date)
+                .group_by("period")
+                .order_by("period")
+                .all()
+            )
+
+            period_counts = {}
+            for period, count in user_counts:
+                period_key = period.strftime(date_format)
+                period_counts[period_key] = count
+
+            periods = []
+            if group_by == "month":
+                current_period = datetime(start_date.year, start_date.month, 1)
+                end_period = datetime(end_date.year, end_date.month, 1)
+                while current_period <= end_period:
+                    periods.append(current_period)
+                    current_period += relativedelta(months=1)
+            elif group_by == "day":
+                current_period = start_date
+                while current_period <= end_date:
+                    periods.append(current_period)
+                    current_period += timedelta(days=1)
+
+            cumulative_total = 0
+            for period in periods:
+                period_key = period.strftime(date_format)
+                count = period_counts.get(period_key, 0)
+                cumulative_total += count
+                data.append({"date": period_key, "User": cumulative_total})
+
+            return {
+                "data":data,
+                "total_users": total_users
+            }
+

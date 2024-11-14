@@ -19,15 +19,17 @@ class NotificationRepository(BaseRepository):
             query = session.query(self.model).filter(self.model.user_id == user_uuid)
 
             # Apply the `is_read` filter if it is provided
-            if is_read is not None:                                                                                                                                                                                                                                                                                                                             
+            if is_read is not None:
                 query = query.filter(self.model.is_read == is_read)
-            
+
             # Order by read status (unread first) and then by creation date descending
-            query = query.order_by(self.model.is_read.asc(), self.model.created_at.desc())
-            
+            query = query.order_by(
+                self.model.is_read.asc(), self.model.created_at.desc()
+            )
+
             # Execute the query and retrieve the results
             notifications = query.all()
-            
+
             return notifications
 
     def read_notification(self, notification_uuid: str) -> Notification:

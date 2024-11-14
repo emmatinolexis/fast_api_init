@@ -42,9 +42,13 @@ class DeviceRepository(BaseRepository):
                             )
                         )
                     )
-                if status:
+                if status == DeviceStatus.ASSIGNED:
                     base_query = base_query.filter(
-                        self.model.status == DeviceStatus(status)
+                        self.model.assign_to_asset_status.isnot(None)
+                    )
+                elif status == DeviceStatus.NOT_ASSIGNED:
+                    base_query = base_query.filter(
+                        self.model.assign_to_asset_status.is_(None)
                     )
 
                 total_devices = base_query.count()

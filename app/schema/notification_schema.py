@@ -1,12 +1,8 @@
 from typing import Optional
-from app.util.enums import NotificationType
 
 from pydantic import BaseModel
-from typing import Optional
+
 from app.util.enums import NotificationType
-
-
-
 
 
 class CreateNotificationSchema(BaseModel):
@@ -17,9 +13,7 @@ class CreateNotificationSchema(BaseModel):
 
 
 class CreateAdminNotification(BaseModel):
-    notification_type: NotificationType 
+    notification_type: NotificationType
     title: str
     message: str
     user_id: str
-
-   

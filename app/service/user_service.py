@@ -34,7 +34,7 @@ from app.schema.user_schema import (
 from app.service.base_service import BaseService
 from app.transfomers.driver_transformer import driver_transformer
 from app.util.enums import InvitationStatus, RoleType
-from app.util.utils import parse_date
+from app.util.utils import calculate_percentage_change, parse_date
 
 
 class UserService(BaseService):
@@ -68,10 +68,12 @@ class UserService(BaseService):
         search: str = None,
         role_uuids: list = None,
         status: InvitationStatus = None,
+        exclude_user_uuid: str = None  
     ):
         return self.user_repository.get_account_users(
-            business_uuid, page, page_size, search, role_uuids, status
+            business_uuid, page, page_size, search, role_uuids, status, exclude_user_uuid
         )
+    
 
     def update_user_by_uuid(self, uuid: str, payload: UpdateUserPayload):
         try:
@@ -388,3 +390,82 @@ class UserService(BaseService):
 
         except Exception as e:
             raise e
+
+    def get_user_stats(
+        self,
+        start_date: datetime,
+        end_date: datetime,
+        group_by: str,
+        user_provided_dates: bool,
+    ):
+        current_data = self.user_repository.get_user_stats(
+            start_date, end_date, group_by
+        )
+
+        total_signups = sum(item["SignUps"] for item in current_data)
+        total_converted = sum(item["Converted"] for item in current_data)
+        total_unconverted = sum(item["Unconverted"] for item in current_data)
+
+        signups_percentage_change = None
+        converted_percentage_change = None
+        unconverted_percentage_change = None
+
+        if user_provided_dates:
+            delta = end_date - start_date
+
+            previous_start_date = start_date - delta
+            previous_end_date = start_date - timedelta(days=1)
+
+            previous_data = self.user_repository.get_user_stats(
+                previous_start_date, previous_end_date, group_by
+            )
+
+            prev_total_signups = sum(item["SignUps"] for item in previous_data)
+            prev_total_converted = sum(item["Converted"] for item in previous_data)
+            prev_total_unconverted = sum(item["Unconverted"] for item in previous_data)
+
+            signups_percentage_change = calculate_percentage_change(
+                total_signups, prev_total_signups
+            )
+            converted_percentage_change = calculate_percentage_change(
+                total_converted, prev_total_converted
+            )
+            unconverted_percentage_change = calculate_percentage_change(
+                total_unconverted, prev_total_unconverted
+            )
+        else:
+            if len(current_data) >= 2:
+                last_period = current_data[-1]
+                prev_period = current_data[-2]
+
+                signups_percentage_change = calculate_percentage_change(
+                    last_period["SignUps"], prev_period["SignUps"]
+                )
+                converted_percentage_change = calculate_percentage_change(
+                    last_period["Converted"], prev_period["Converted"]
+                )
+                unconverted_percentage_change = calculate_percentage_change(
+                    last_period["Unconverted"], prev_period["Unconverted"]
+                )
+            else:
+                signups_percentage_change = 0
+                converted_percentage_change = 0
+                unconverted_percentage_change = 0
+
+        summary = {
+            "total_signUps": total_signups,
+            "total_converted": total_converted,
+            "total_unconverted": total_unconverted,
+            "total_signup_percentage_change": signups_percentage_change,
+            "total_converted_percentage_change": converted_percentage_change,
+            "total_unconverted_percentage_change": unconverted_percentage_change,
+        }
+
+        return {
+            "data": current_data,
+            "summary": summary
+        }
+
+  
+    def get_total_users(self, start_date: datetime, end_date: datetime, group_by: str):
+        return self.user_repository.get_total_users(start_date, end_date, group_by)

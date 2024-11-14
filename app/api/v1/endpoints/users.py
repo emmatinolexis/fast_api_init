@@ -1,8 +1,9 @@
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import List, Optional
 import logging
 
 
+from dateutil.relativedelta import relativedelta
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import ORJSONResponse
@@ -70,6 +71,73 @@ router = APIRouter(
     tags=["users"],
 )
 msg_prefix = "user"
+
+
+@router.get("/stats", response_class=ORJSONResponse)
+@inject
+async def get_user_stats(
+    start_date: Optional[date] = Query(None),
+    end_date: Optional[date] = Query(None),
+    service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        if end_date:
+            end_date_dt = datetime.combine(end_date, datetime.max.time())
+        else:
+            end_date_dt = datetime.utcnow()
+        if start_date:
+            start_date_dt = datetime.combine(start_date, datetime.min.time())
+        else:
+            start_date_dt = end_date_dt - relativedelta(months=12)
+
+        if start_date and end_date:
+            group_by = "day"
+        else:
+            group_by = "month"
+
+        user_provided_dates = start_date is not None and end_date is not None
+
+        data = service.get_user_stats(
+            start_date_dt,
+            end_date_dt,
+            group_by,
+            user_provided_dates=user_provided_dates,
+        )
+        return send_data(data)
+    except Exception as e:
+        msg = messages.GET_FAILED + " user stats"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/total_users", response_class=ORJSONResponse)
+@inject
+async def get_total_users(
+    start_date: Optional[date] = Query(None),
+    end_date: Optional[date] = Query(None),
+    service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        if end_date:
+            end_date_dt = datetime.combine(end_date, datetime.max.time())
+        else:
+            end_date_dt = datetime.utcnow()
+        if start_date:
+            start_date_dt = datetime.combine(start_date, datetime.min.time())
+        else:
+            start_date_dt = end_date_dt - relativedelta(months=12)
+
+        if start_date and end_date:
+            group_by = "day"
+        else:
+            group_by = "month"
+
+        data = service.get_total_users(start_date_dt, end_date_dt, group_by)
+        return send_data(data)
+    except Exception as e:
+        msg = messages.GET_FAILED + " total users"
+        return send_internal_server_error(user_msg=msg, error=e)
 
 
 @router.post("/", response_class=ORJSONResponse)
@@ -391,14 +459,19 @@ async def user_account(
         if business is None:
             msg = f"{messages.BUSINESS_PROFILE_NOT_FOUND}{business_uuid}"
             return send_internal_server_error(user_msg=msg, error=msg)
-        return send_data(
-            service.get_account_users(
-                business_uuid, page, page_size, search, role_uuids, status
-            )
+
+        exclude_user_uuid = current_user.uuid
+
+        accounts = service.get_account_users(
+            business_uuid, page, page_size, search, role_uuids, status, exclude_user_uuid=exclude_user_uuid
         )
+
+        return send_data(accounts)
+        
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
+
 
 
 @router.put("/password/{user_uuid}", response_class=ORJSONResponse)

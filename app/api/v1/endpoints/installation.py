@@ -34,7 +34,9 @@ msg_prefix = "installation"
 async def get_installers_handler(
     installation_uuid: str,
     service: InstallationService = Depends(Provide[Container.installation_service]),
-    current_user: User = Depends(get_current_user_with_permission("view_device_installers")),
+    current_user: User = Depends(
+        get_current_user_with_permission("view_device_installers")
+    ),
 ):
     try:
         installers = service.fetch_all_installers(installation_uuid)
@@ -50,7 +52,9 @@ async def get_installers_handler(
 async def create_installation_handler(
     payload: InstallationPayload,
     service: InstallationService = Depends(Provide[Container.installation_service]),
-    current_user: User = Depends(get_current_user_with_permission("create_device_installation")),
+    current_user: User = Depends(
+        get_current_user_with_permission("create_device_installation")
+    ),
 ):
     try:
         installation = service.get_installation_by_order_uuid(payload.order_uuid)
@@ -134,7 +138,9 @@ async def get_installer_installations_handler(
     page_size: int = Query(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
-    current_user: User = Depends(get_current_user_with_permission("view_device_installation")),
+    current_user: User = Depends(
+        get_current_user_with_permission("view_device_installation")
+    ),
 ):
     try:
         installations = service.fetch_installations(
@@ -152,7 +158,9 @@ async def get_installer_installations_handler(
 async def get_installation_handler(
     installation_uuid: str,
     service: InstallationService = Depends(Provide[Container.installation_service]),
-    current_user: User = Depends(get_current_user_with_permission("view_device_installation")),
+    current_user: User = Depends(
+        get_current_user_with_permission("view_device_installation")
+    ),
 ):
     try:
         installation = service.get_installation(installation_uuid)
@@ -171,7 +179,9 @@ async def configure_device_handler(
     payload: DeviceConfigurationPayload,
     asset_service: AssetService = Depends(Provide[Container.asset_service]),
     service: InstallationService = Depends(Provide[Container.installation_service]),
-    current_user: User = Depends(get_current_user_with_permission("configure_tracking_device")),
+    current_user: User = Depends(
+        get_current_user_with_permission("configure_tracking_device")
+    ),
 ):
     try:
         asset = asset_service.get_assets_by_license_no(payload.asset_license_no)
