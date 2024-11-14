@@ -16,6 +16,7 @@ from app.schema.report_schema import (
     SmartReportSharePayload,
 )
 from app.service.asset_service import AssetService
+from app.service.device_events_service import DeviceEventService
 from app.service.gas_cylinder_event_service import GasCylinderEventService
 from app.service.smart_report_service import SmartReportService
 from app.service.user_service import UserService
@@ -379,11 +380,9 @@ async def share_smart_report_handler(
 @inject
 async def get_cylinder_report(
     cylinder_uuid: str,
-    start_date: str,
-    end_date: str,
-    service: GasCylinderEventService = Depends(
-        Provide[Container.gas_cylinder_event_service]
-    ),
+    start_date: str = Query(..., description="Start date in formats: DD/MM/YYYY, etc."),
+    end_date: str = Query(..., description="End date in formats: DD/MM/YYYY, etc."),
+    service: DeviceEventService = Depends(Provide[Container.device_events_service]),
     user_service: UserService = Depends(Provide[Container.user_service]),
     current_user: User = Depends(get_current_user),
 ):
