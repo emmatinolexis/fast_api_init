@@ -13,10 +13,8 @@ from app.service.activity_log_service import ActivityLogService
 from app.util.utils import (
     pagination,
     send_client_side_error,
-    send_data,
     send_data_with_info,
     send_data_with_pagination,
-    send_info,
     send_internal_server_error,
     total_pages,
 )
