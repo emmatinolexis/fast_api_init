@@ -630,6 +630,7 @@ async def deactivate_account_handler(
 @inject
 async def create_team_member_invitation(
     user_uuid: str,
+    request: Request,
     payload: InvitationCreatePayload,
     service: UserService = Depends(Provide[Container.user_service]),
     invitation_service: InvitationService = Depends(
@@ -671,7 +672,7 @@ async def create_team_member_invitation(
                 )
 
             created_invite = service.create_team_member_invitation(
-                user_uuid, invitation_payload, user
+                user_uuid, invitation_payload, user, request
             )
 
             # send email invite
@@ -803,6 +804,7 @@ async def resend_invitation_handler(
 @inject
 async def create_admin_user_invitation(
     payload: InvitationCreatePayload,
+    request: Request,
     service: UserService = Depends(Provide[Container.user_service]),
     invitation_service: InvitationService = Depends(
         Provide[Container.invitation_service]
@@ -835,7 +837,9 @@ async def create_admin_user_invitation(
                 email=invitation.email, role_uuid=invitation.role_uuid
             )
 
-            created_invite = service.create_admin_user_invitation(invitation_payload)
+            created_invite = service.create_admin_user_invitation(
+                invitation_payload, current_user, request
+            )
 
             # send email invite
             await send_email_invitation(
@@ -894,14 +898,17 @@ async def get_all_user_invitations_handler(
 @inject
 async def delete_admin_invite_handler(
     invite_uuid: str,
+    request: Request,
     invitation_service: InvitationService = Depends(
         Provide[Container.invitation_service]
     ),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        invitation_service.remove_by_uuid(invite_uuid)
+        invitation_service.delete_invitation(invite_uuid, current_user, request)
         return send_info(messages.DELETE_SUCCESS)
+    except NotFoundError as e:
+        return send_client_side_error(e.detail)
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)

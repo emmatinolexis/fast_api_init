@@ -1,5 +1,9 @@
 from fastapi import APIRouter
 
+from app.api.v1.endpoints.activity_logs import (
+    admin_router as admin_activity_logs_router,
+)
+from app.api.v1.endpoints.activity_logs import router as activity_logs_router
 from app.api.v1.endpoints.admin_notification import router as admin_notification_router
 from app.api.v1.endpoints.alert_maintenance_type import (
     router as alert_maintenance_type_router,
@@ -103,6 +107,8 @@ router_list = [
     notification_router,
     contact_sales_router,
     admin_notification_router,
+    activity_logs_router,
+    admin_activity_logs_router,
 ]
 
 for router in router_list:

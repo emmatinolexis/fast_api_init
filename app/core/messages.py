@@ -132,3 +132,4 @@ DEVICE_INSTALLATION_ASSIGNED = "You Have been assigned an installation"
 
 
 NOTIFICATION_NOT_FOUND = "No notification was found "
+ACTIVITY_LOG_NOT_FOUND = "Activity log not found"

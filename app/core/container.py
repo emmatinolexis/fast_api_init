@@ -5,6 +5,7 @@ from app.client.mqtt_service import MQTTService
 from app.core.database import Database
 from app.core.settings import settings
 from app.repository import (
+    activity_log_repository,
     admin_notification_repository,
     alert_maintenance_type_repository,
     alert_notification_assignment_repository,
@@ -86,6 +87,7 @@ from app.repository import (
     vehicle_owner_repository,
 )
 from app.service import (
+    activity_log_service,
     admin_notification_service,
     alert_maintenance_type_service,
     alert_policy_service,
@@ -208,6 +210,7 @@ class Container(containers.DeclarativeContainer):
             "app.api.v1.endpoints.notification",
             "app.api.v1.endpoints.contact_sales",
             "app.api.v1.endpoints.admin_notification",
+            "app.api.v1.endpoints.activity_logs",
         ]
     )
 
@@ -552,6 +555,11 @@ class Container(containers.DeclarativeContainer):
         session_factory=db.provided.session,
     )
 
+    activity_log_repository = providers.Factory(
+        activity_log_repository.ActivityLogRepository,
+        session_factory=db.provided.session,
+    )
+
     # Services
     auth_service = providers.Factory(
         auth_service.AuthService,
@@ -559,6 +567,7 @@ class Container(containers.DeclarativeContainer):
         email_verification_repository=email_verfication_repository,
         user_subscription_repository=user_subscription_repository,
         subscription_repository=subscription_repository,
+        activity_log_repository=activity_log_repository,
     )
     user_service = providers.Factory(
         user_service.UserService,
@@ -569,6 +578,7 @@ class Container(containers.DeclarativeContainer):
         asset_repository=asset_repository,
         driver_license_repository=driver_license_repository,
         role_repository=role_repository,
+        activity_log_repository=activity_log_repository,
     )
     alert_policy_type_service = providers.Factory(
         alert_policy_type_service.AlertPolicyTypeService,
@@ -658,6 +668,7 @@ class Container(containers.DeclarativeContainer):
     invitation_service = providers.Factory(
         invitation_service.InvitationService,
         invitation_repository=team_member_invitation_repository,
+        activity_log_repository=activity_log_repository,
     )
     marker_icon_service = providers.Factory(
         marker_icon_service.MarkerIconService,
@@ -935,4 +946,11 @@ class Container(containers.DeclarativeContainer):
     admin_notification_service = providers.Factory(
         admin_notification_service.AdminNotificationService,
         admin_notification_repository=admin_notification_repository,
+    )
+
+    activity_log_service = providers.Factory(
+        activity_log_service.ActivityLogService,
+        activity_log_repository=activity_log_repository,
+        user_repository=user_repository,
+        role_repository=role_repository,
     )
