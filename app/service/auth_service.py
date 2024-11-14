@@ -95,6 +95,10 @@ class AuthService(BaseService):
 
             log.info("Access token generated successfully")
 
+            business_profile_uuid = user.get("business_profile_uuid")
+
+            print("business_profile_uuid", business_profile_uuid)
+
             if user.get("role") == RoleType.CUSTOMER:
                 user["package"] = user_package
                 schema = ActivityLogSchema(

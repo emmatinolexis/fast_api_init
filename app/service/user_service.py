@@ -16,6 +16,7 @@ from app.repository.subscription_repository import SubscriptionRepository
 from app.repository.team_member_invitation_repository import (
     TeamMemberInvitationRepository,
 )
+from app.repository.activity_log_repository import ActivityLogRepository
 from app.repository.user_repository import UserRepository
 from app.repository.user_subscription_repository import UserSubscriptionRepository
 from app.schema.invitation_schema import (
@@ -33,8 +34,12 @@ from app.schema.user_schema import (
 )
 from app.service.base_service import BaseService
 from app.transfomers.driver_transformer import driver_transformer
-from app.util.enums import InvitationStatus, RoleType
+from app.util.enums import InvitationStatus, RoleType,ActivityLogClass,ActivityLogType
 from app.util.utils import calculate_percentage_change, parse_date
+from app.schema.activity_log_schema import ActivityLogSchema
+from app.core import activity_log_constants
+from app.model.user import User
+from fastapi import Request
 
 
 class UserService(BaseService):
@@ -47,6 +52,7 @@ class UserService(BaseService):
         asset_repository: AssetRepository,
         driver_license_repository: DriverLicenseRepository,
         role_repository: RoleRepository,
+        activity_log_repository: ActivityLogRepository,
     ):
         self.user_repository = user_repository
         self.invitation_repository = invitation_repository
@@ -55,6 +61,7 @@ class UserService(BaseService):
         self.asset_reposoitory = asset_repository
         self.driver_license_repository = driver_license_repository
         self.role_repository = role_repository
+        self.activity_log_repository = activity_log_repository
         super().__init__(user_repository)
 
     def create_user(self, payload: UserPayload):
@@ -227,14 +234,14 @@ class UserService(BaseService):
             raise e
 
     def create_team_member_invitation(
-        self, uuid: str, payload: InvitationCreatePayloadSingle, user
+        self, uuid: str, payload: InvitationCreatePayloadSingle, user:User,request:Request
     ):
         try:
             if not user.business_profile_uuid:
                 raise NotFoundError(
                     detail=messages.BUSINESS_PROFILE_NOT_FOUND + str(uuid)
                 )
-            return self.invitation_repository.create_invitation(
+            invitations =  self.invitation_repository.create_invitation(
                 payload=InvitationPayload(
                     business_profile_uuid=str(user.business_profile_uuid),
                     email=payload.email,
@@ -243,10 +250,26 @@ class UserService(BaseService):
                     expired_at=datetime.now() + timedelta(days=3),
                 )
             )
+
+            self.activity_log_repository.create(
+                ActivityLogSchema(
+                    user_uuid=str(user.uuid),
+                    business_profile_uuid=str(user.business_profile_uuid),
+                    activity_title=activity_log_constants.CREATE_INVITATION,
+                    activity_class=ActivityLogClass.USER,
+                    activity_type=ActivityLogType.USER_INVITATION,
+                    activity_description=activity_log_constants.CREATE_INVITATION_DESC.format(
+                        full_name=user.first_name + " " + user.last_name,
+                        invited_user=payload.email,
+                    ),
+                    ip_address=request.client.host,
+                )
+            )
+            return invitations
         except Exception as e:
             raise e
 
-    def create_admin_user_invitation(self, payload: InvitationCreatePayloadSingle):
+    def create_admin_user_invitation(self, payload: InvitationCreatePayloadSingle, user:User,request:Request):
         try:
             payload = AdminInvitationPayload(
                 email=payload.email,
@@ -255,8 +278,24 @@ class UserService(BaseService):
                 expired_at=datetime.now() + timedelta(days=3),
                 invitation_type=RoleType.ADMIN,
             )
-            self.invitation_repository.create(payload)
-            return payload
+            invite = self.invitation_repository.create(payload)
+
+
+            self.activity_log_repository.create(
+                ActivityLogSchema(
+                    user_uuid=str(user.uuid),
+                    business_profile_uuid=str(user.business_profile_uuid),
+                    activity_title=activity_log_constants.ADMIN_INVITATION,
+                    activity_class=ActivityLogClass.ADMIN,
+                    activity_type=ActivityLogType.USER_INVITATION,
+                    activity_description=activity_log_constants.ADMIN_INVITATION_DESC.format(
+                        full_name=user.first_name + " " + user.last_name,
+                        invited_user=payload.email,
+                    ),
+                    ip_address=request.client.host,
+                )
+            )
+            return invite
         except Exception as e:
             raise e
 

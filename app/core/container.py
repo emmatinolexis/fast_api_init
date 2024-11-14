@@ -578,6 +578,7 @@ class Container(containers.DeclarativeContainer):
         asset_repository=asset_repository,
         driver_license_repository=driver_license_repository,
         role_repository=role_repository,
+        activity_log_repository = activity_log_repository
     )
     alert_policy_type_service = providers.Factory(
         alert_policy_type_service.AlertPolicyTypeService,
@@ -949,4 +950,6 @@ class Container(containers.DeclarativeContainer):
     activity_log_service = providers.Factory(
         activity_log_service.ActivityLogService,
         activity_log_repository=activity_log_repository,
+        user_repository=user_repository,
+        role_repository=role_repository,
     )

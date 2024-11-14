@@ -183,6 +183,7 @@ def extract_user_data(user: User) -> Dict[str, str]:
         "operator_type": user.operator_type if user.operator_type else None,
         "license": license_data,
         "installer_locations": user.installer_locations if user.user_role_uuid == UUID(CustomerRoles.INSTALLER) else None,
+        "business_profile_uuid": user.business_profile_uuid if user.business_profile_uuid else None,
     }
 
 

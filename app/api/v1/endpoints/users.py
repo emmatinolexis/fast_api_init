@@ -617,6 +617,7 @@ async def deactivate_account_handler(
 @inject
 async def create_team_member_invitation(
     user_uuid: str,
+    request: Request,
     payload: InvitationCreatePayload,
     service: UserService = Depends(Provide[Container.user_service]),
     invitation_service: InvitationService = Depends(
@@ -657,7 +658,7 @@ async def create_team_member_invitation(
                 )
 
             created_invite = service.create_team_member_invitation(
-                user_uuid, invitation_payload, user
+                user_uuid, invitation_payload, user,request
             )
 
             # send email invite
@@ -787,6 +788,7 @@ async def resend_invitation_handler(
 @inject
 async def create_admin_user_invitation(
     payload: InvitationCreatePayload,
+    request: Request,
     service: UserService = Depends(Provide[Container.user_service]),
     invitation_service: InvitationService = Depends(
         Provide[Container.invitation_service]
@@ -819,7 +821,7 @@ async def create_admin_user_invitation(
                 email=invitation.email, role_uuid=invitation.role_uuid
             )
 
-            created_invite = service.create_admin_user_invitation(invitation_payload)
+            created_invite = service.create_admin_user_invitation(invitation_payload,current_user,request)
 
             # send email invite
             await send_email_invitation(
