@@ -15,7 +15,7 @@ from app.repository.order_shipping_address_repository import (
 from app.schema.order_schema import OrderPayload
 from app.service.base_service import BaseService
 from app.util.enums import OrderPickUpLocation, OrderStatus
-
+from app.core.exceptions import NotFoundError
 
 class OrderService(BaseService):
     def __init__(
@@ -34,6 +34,15 @@ class OrderService(BaseService):
 
         super().__init__(order_repository)
 
+    def get_order_by_uuid(self, order_uuid: str):
+        try:
+            order = self.order_repository.get_order_by_uuid(order_uuid)
+            if not order:
+                raise NotFoundError(f"Order with UUID {order_uuid} not found.")
+            return order
+        except Exception as e:
+            raise e
+        
     def create_order(self, order_payload: OrderPayload):
         try:
             order = self.order_repository.create_order(order_payload)

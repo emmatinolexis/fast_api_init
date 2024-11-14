@@ -99,6 +99,7 @@ class InventoryRepository(BaseRepository):
         with self.session_factory() as session:
             return (
                 session.query(self.model)
+                .options(joinedload(Inventory.manufacturer), joinedload(Inventory.images))
                 .filter(self.model.uuid == inventory_uuid)
                 .first()
             )

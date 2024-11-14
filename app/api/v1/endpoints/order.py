@@ -13,6 +13,7 @@ from app.schema.order_schema import OrderPayload
 from app.service.order_service import OrderService
 from app.util.enums import OrderStatus
 from app.util.utils import send_data, send_internal_server_error
+from uuid import UUID
 
 router = APIRouter(
     prefix="/order",
@@ -66,6 +67,20 @@ async def get_all_orders_handler(
         return send_data(orders)
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
+        return send_internal_server_error(user_msg=msg, error=e)
+
+@router.get("/{uuid}", response_class=ORJSONResponse)
+@inject
+async def get_order_by_uuid(
+    uuid: UUID,
+    service: OrderService = Depends(Provide[Container.order_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        order = service.get_order_by_uuid(str(uuid))
+        return send_data(order)
+    except Exception as e:
+        msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
 
 

@@ -19,6 +19,26 @@ class OrderRepository(BaseRepository):
         self.session_factory = session_factory
         super().__init__(session_factory, OrderRepository)
 
+    
+    def get_order_by_uuid(self, order_uuid: str):
+        with self.session_factory() as session:
+            try:
+                order = (
+                    session.query(Order)
+                    .options(
+                        joinedload(Order.order_inventories)
+                        .joinedload(OrderDeviceAssignment.inventory)
+                        .joinedload(Inventory.images),
+                        joinedload(Order.order_shipping_address),
+                    )
+                    .filter(Order.uuid == order_uuid)
+                    .first()
+                )
+                return order
+            except Exception as e:
+                session.rollback()
+                raise e
+                
     def create_order(self, order_payload: OrderPayload):
         with self.session_factory() as session:
             try:

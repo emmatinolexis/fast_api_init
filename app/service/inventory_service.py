@@ -19,6 +19,16 @@ class InventoryService(BaseService):
         self.device_repository = device_repository
         self.device_image_repository = device_image_repository
         super().__init__(inventory_repository)
+    
+    def get_inventory_by_uuid(self, inventory_uuid: UUID):
+        try:
+            inventory = self.inventory_repository.get_inventory_by_uuid(inventory_uuid)
+            if not inventory:
+                raise NotFoundError(f"Inventory with UUID {inventory_uuid} not found.")
+            return inventory
+        except Exception as e:
+            raise e
+    
 
     def create_inventory(self, device_payload: InventoryPayload):
         try:
