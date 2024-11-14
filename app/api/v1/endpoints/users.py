@@ -874,20 +874,23 @@ async def get_all_user_invitations_handler(
 
 @router.delete(
     "/admin/invitations/{invite_uuid}",
-    dependencies=[allow_admins_only],
+    # dependencies=[allow_admins_only],
     response_class=ORJSONResponse,
 )
 @inject
 async def delete_admin_invite_handler(
     invite_uuid: str,
+    request: Request,
     invitation_service: InvitationService = Depends(
         Provide[Container.invitation_service]
     ),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        invitation_service.remove_by_uuid(invite_uuid)
+        invitation_service.delete_invitation(invite_uuid, current_user,request)
         return send_info(messages.DELETE_SUCCESS)
+    except NotFoundError as e:
+        return send_client_side_error(e.detail)
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)

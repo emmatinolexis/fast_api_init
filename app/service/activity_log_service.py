@@ -4,7 +4,8 @@ from app.repository.role_repository import RoleRepository
 from app.service.base_service import BaseService
 from typing import Optional,List
 from app.transfomers.activity_log_transformer import activity_log_transformer
-
+from app.core.exceptions import NotFoundError
+from app.core import messages
 
 class ActivityLogService(BaseService):
     def __init__(self, activity_log_repository: ActivityLogRepository, user_repository: UserRepository, role_repository: RoleRepository):
@@ -34,3 +35,13 @@ class ActivityLogService(BaseService):
 
     def count_admin_activity_logs(self,start_date: Optional[str] = None, end_date: Optional[str] = None,activity_types: List[str] = None,search_string:str=None) -> int:
         return self.activity_log_repository.count_admin_activity_logs(start_date,end_date,activity_types,search_string)
+    
+
+    def get_activity_log(self,log_uuid:str):
+        log = self.activity_log_repository.read_by_uuid(log_uuid)
+
+        if log is None:
+            raise NotFoundError(messages.ACTIVITY_LOG_NOT_FOUND)
+        
+
+        return activity_log_transformer(log,self.user_repository,self.role_repository)

@@ -668,6 +668,7 @@ class Container(containers.DeclarativeContainer):
     invitation_service = providers.Factory(
         invitation_service.InvitationService,
         invitation_repository=team_member_invitation_repository,
+        activity_log_repository=activity_log_repository
     )
     marker_icon_service = providers.Factory(
         marker_icon_service.MarkerIconService,

@@ -17,7 +17,7 @@ from app.core.dependencies import get_current_user
 from app.model.user import User
 from app.core import messages
 from typing import List
-from app.util.enums import ActivityLogClass, ActivityLogType
+from app.core.exceptions import NotFoundError
 
 
 
@@ -134,6 +134,27 @@ async def get_all_logs_handler(
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
+    
+
+
+
+@router.get("/{log_uuid}",response_class=ORJSONResponse)
+@inject
+async def get_activity_log_details(
+    log_uuid:str,
+    service: ActivityLogService = Depends(Provide[Container.activity_log_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        log = service.get_activity_log(log_uuid=log_uuid)
+        return send_data_with_info(
+            data=log,
+            info=messages.GET_SUCCESS + msg_prefix
+        )
+    except NotFoundError as e:
+        return send_client_side_error(e.detail)
+    except Exception as e:
+        return send_internal_server_error(user_msg=messages.GET_FAILED + msg_prefix, error=str(e))
     
 
 
