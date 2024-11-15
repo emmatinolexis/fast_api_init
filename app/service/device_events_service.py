@@ -73,13 +73,7 @@ class DeviceEventService(BaseService):
             start_date_obj = datetime.strptime(start_date_parsed, "%Y-%m-%d")
             end_date_obj = datetime.strptime(end_date_parsed, "%Y-%m-%d")
         except ValueError as e:
-            return {
-                "name": device_name,
-                "daily_usage": [],
-                "current_gas_value": None,
-                "unit": None,
-                "error": f"Invalid date format. {str(e)}",
-            }
+            raise ValueError(f"Invalid date format: {str(e)}")
 
         start_date_obj = datetime.combine(start_date_obj.date(), datetime.min.time())
         end_date_obj = datetime.combine(end_date_obj.date(), datetime.max.time())
