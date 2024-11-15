@@ -46,7 +46,7 @@ async def get_all_inventory_handler(
 async def get_inventory_by_uuid(
     uuid: UUID,
     service: InventoryService = Depends(Provide[Container.inventory_service]),
-    current_user: User = Depends(get_current_user),;,
+    current_user: User = Depends(get_current_user)
 ):
     try:
         inventory = service.get_inventory_by_uuid(uuid)

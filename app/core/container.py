@@ -85,6 +85,7 @@ from app.repository import (
     vehicle_make_repository,
     vehicle_model_repository,
     vehicle_owner_repository,
+    rnd_image_repository
 )
 from app.service import (
     activity_log_service,
@@ -559,6 +560,11 @@ class Container(containers.DeclarativeContainer):
 
     activity_log_repository = providers.Factory(
         activity_log_repository.ActivityLogRepository,
+        session_factory=db.provided.session,
+    )
+
+    rnd_image_repository = providers.Factory(
+        rnd_image_repository.RNDImageRepository,
         session_factory=db.provided.session,
     )
 
