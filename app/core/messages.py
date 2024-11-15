@@ -76,6 +76,7 @@ GAS_CYLINDER_CREATED = "Gas cylinder created successfully"
 
 DEVICE_ALREADY_ASSIGNED = "Device is already assigned"
 DEVICE_DOES_NOT_EXIST = "Device does not Exist"
+
 LINK_FAILED = "Failed to link "
 UNLINK_FAILED = "Failed to unlink "
 INTERNAL_SERVER_ERROR = "Internal server error"
