@@ -5,6 +5,7 @@ from app.repository.device_events_repository import DeviceEventRepository
 from app.service.base_service import BaseService
 from app.util.utils import parse_date
 from app.core.messages import DEVICE_DOES_NOT_EXIST,GAS_CYLINDER_NOT_FOUND
+from app.core.exceptions import NotFoundError
 
 class DeviceEventService(BaseService):
     def __init__(
@@ -41,11 +42,11 @@ class DeviceEventService(BaseService):
         cylinder = self.device_event_repository.read_gas_cylinder_by_uuid(cylinder_uuid)
 
         if not cylinder:
-            raise ValueError(f"{GAS_CYLINDER_NOT_FOUND}")
+            raise NotFoundError(detail=cylinder)
 
         gas_device_serial_number = cylinder.gas_device_serial_number
         if not gas_device_serial_number:
-            raise ValueError(f"Gas {DEVICE_DOES_NOT_EXIST}")
+            raise NotFoundError(detail=gas_device_serial_number)
         device_name = cylinder.cylinder_name
 
         peripheral_device = (

@@ -59,7 +59,7 @@ from app.api.v1.endpoints.tracking import router as tracking_router
 from app.api.v1.endpoints.upload import router as upload_router
 from app.api.v1.endpoints.users import router as users_router
 from app.api.v1.endpoints.vehicle_make import router as vehicle_make_router
-
+from app.api.v1.endpoints.rnd_images import router as rnd_image_router
 routers = APIRouter()
 router_list = [
     health_check_router,
@@ -109,6 +109,7 @@ router_list = [
     admin_notification_router,
     activity_logs_router,
     admin_activity_logs_router,
+    rnd_image_router
 ]
 
 for router in router_list:
