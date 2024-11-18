@@ -140,7 +140,23 @@ class UserRepository(BaseRepository):
                 )
                 .first()
             )
-            return business_data is not None
+            return business_data
+
+    # def check_business_exists(self, name, email, phone):
+    #     with self.session_factory() as session:
+    #         filters = []
+    #         if name is not None:
+    #             filters.append(BusinessProfile.business_name == name)
+    #         if email is not None:
+    #             filters.append(BusinessProfile.business_email == email)
+    #         if phone is not None:
+    #             filters.append(BusinessProfile.business_phone == phone)
+    #
+    #         business_data = session.query(BusinessProfile).filter(
+    #             *filters
+    #         ).first()
+    #
+    #         return business_data
 
     def change_password(
         self,

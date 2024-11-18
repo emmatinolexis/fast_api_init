@@ -155,7 +155,7 @@ async def create_user_handler(
             )
 
         # check if business already exist if account type is business
-        if payload.account_type == AccountType.BUSINESS:
+        if payload.account_type == AccountType.BUSINESS and payload.invite_status is False:
             found_business = service.check_business_exists(
                 payload.business_name, payload.business_email, payload.business_phone
             )
