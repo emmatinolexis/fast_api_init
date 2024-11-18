@@ -5,6 +5,7 @@ from typing import Optional
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
+from app.monitoring.metrics import ASSET_CREATION_FAILED_TOTAL
 
 from app.core import messages
 from app.core.constants import ENGINE_SHUTDOWN_PASSWORD, ENGINE_SHUTDOWN_USERNAME
@@ -147,9 +148,11 @@ async def create_asset_handler(
         logging.info(f"Created asset {asset}")
         return send_data(asset)
     except NotFoundError as e:
+        ASSET_CREATION_FAILED_TOTAL.labels(success="true").inc()
         return send_client_side_error(str(e.detail))
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
+        ASSET_CREATION_FAILED_TOTAL.labels(success="true").inc()
         return send_internal_server_error(user_msg=msg, error=e)
 
 
