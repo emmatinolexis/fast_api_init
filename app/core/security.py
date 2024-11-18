@@ -175,6 +175,7 @@ def extract_user_data(user: User) -> Dict[str, str]:
         "onboarding_status": user.onboarding_status,
         "business_profile": user.business_profile,
         "avatar_url": user.avatar_url,
+        "user_role_uuid": user.user_role_uuid,
         "role": user.role,
         "user_role": user.user_role if user.role == RoleType.CUSTOMER else None,
         "status": user.status,

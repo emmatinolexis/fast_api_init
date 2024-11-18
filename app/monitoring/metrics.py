@@ -5,3 +5,9 @@ MSG_RECEIVED_TOTAL = Counter(
     "Total count of received messages from MQTT.",
     ["device_type", "success"],
 )
+
+LOGIN_USERS_TOTAL = Counter(
+    "login_users_total",
+    "Total number of logged in users",
+    ["success"]
+)
