@@ -31,6 +31,35 @@ router = APIRouter(
 msg_prefix = "driver"
 
 
+@router.get("/license_expiry")
+@inject
+async def check_drivers_license_expiry(
+    user_service: UserService = Depends(Provide[Container.user_service]),
+    service: DriverLicenseService = Depends(Provide[Container.driver_license_service]),
+):
+    try:
+        licenses = service.get_all_licenses()
+
+        for license in licenses:
+            if license.expires_soon():
+                driver = user_service.get_by_uuid(license.user_id)
+                no_days = (license.expiration_date - date.today()).days
+                await send_license_expiry_email(
+                    recipient_name=f"{driver.first_name} {driver.last_name}",
+                    email=driver.email_address,
+                    expiry_date=license.expiration_date.strftime("%d %B, %Y"),
+                    no_days=no_days,
+                )
+                pass
+            else:
+                print("License not expiring soon")
+                pass
+    except Exception as e:
+        msg = messages.LICENSE_CHECK_FAILED
+        return send_internal_server_error(user_msg=msg, error=str(e))
+
+
+
 @router.get("/", response_class=ORJSONResponse)
 @inject
 async def get_all_drivers_handler(
@@ -214,28 +243,3 @@ async def change_rider_asset_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/license_expiry")
-@inject
-async def check_drivers_license_expiry(
-    user_service: UserService = Depends(Provide[Container.user_service]),
-    service: DriverLicenseService = Depends(Provide[Container.driver_license_service]),
-):
-    try:
-        licenses = service.get_all_licenses()
-
-        for license in licenses:
-            if license.expires_soon():
-                driver = user_service.get_by_uuid(license.user_id)
-                no_days = (license.expiration_date - date.today()).days
-                await send_license_expiry_email(
-                    recipient_name=f"{driver.first_name} {driver.last_name}",
-                    email=driver.email_address,
-                    expiry_date=license.expiration_date,
-                    no_days=no_days,
-                )
-                pass
-            else:
-                pass
-    except Exception as e:
-        msg = messages.LICENSE_CHECK_FAILED
-        return send_internal_server_error(user_msg=msg, error=str(e))
