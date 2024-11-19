@@ -22,14 +22,14 @@ class FuelLog(BaseModel):
     payment_method = Column(
         Enum(FuelLogPaymmentMethod), nullable=False, default=FuelLogPaymmentMethod.CASH
     )
-    user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
+    user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False,index=True)
     business_profile_uuid = Column(
-        UUID(as_uuid=True), ForeignKey("business_profiles.uuid"), nullable=True
+        UUID(as_uuid=True), ForeignKey("business_profiles.uuid"), nullable=True,index=True
     )
-    asset_uuid = Column(UUID(as_uuid=True), ForeignKey("assets.uuid"), nullable=True)
+    asset_uuid = Column(UUID(as_uuid=True), ForeignKey("assets.uuid"), nullable=True,index=True)
     asset_name = Column(String(length=100), nullable=True)
-    driver_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=True)
+    driver_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=True,index=True)
     fuel_type = Column(Enum(FuelType), nullable=True)
     receipt_image = Column(String(length=255), nullable=True)
-    purchase_date = Column(String(length=100), nullable=True)
+    purchase_date = Column(String(length=100), nullable=True,index=True)
     asset = relationship("Asset")

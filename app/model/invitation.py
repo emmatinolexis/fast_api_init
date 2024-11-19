@@ -18,13 +18,13 @@ class Invitation(BaseModel):
         nullable=False,
     )
     business_profile_uuid = Column(
-        UUID(as_uuid=True), ForeignKey("business_profiles.uuid"), nullable=False
+        UUID(as_uuid=True), ForeignKey("business_profiles.uuid"), nullable=False,index=True
     )
-    email = Column(String, unique=True, nullable=False)
-    role_uuid = Column(UUID(as_uuid=True), ForeignKey("roles.uuid"))
+    email = Column(String, unique=True, nullable=False,index=True)
+    role_uuid = Column(UUID(as_uuid=True), ForeignKey("roles.uuid"),index=True)
     accepted_at = Column(DateTime(timezone=True), nullable=True)
     expired_at = Column(DateTime(timezone=True), nullable=True)
-    status = Column(String(25), nullable=False)
-    invitation_type = Column(Enum(RoleType), nullable=False)
+    status = Column(String(25), nullable=False,index=True)
+    invitation_type = Column(Enum(RoleType), nullable=False,index=True)
     business_profile = relationship("BusinessProfile", back_populates="invitations")
     role = relationship("Role")
