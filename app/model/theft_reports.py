@@ -17,7 +17,7 @@ class TheftReport(BaseModel):
     )
     user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
     theft_incident_uuid = Column(
-        UUID(as_uuid=True), ForeignKey("theft_incidence.uuid"), nullable=False
+        UUID(as_uuid=True), ForeignKey("theft_incidence.uuid"), nullable=False,index=True
     )
     title = Column(String(100), nullable=False)
     report_details = Column(String(200), nullable=False)

@@ -23,7 +23,7 @@ class TrackingEvent(Base):
     )
     event_type = Column(String(50), nullable=False, index=True)
     event_description = Column(String(255))
-    event_datetime = Column(DateTime, nullable=False)
+    event_datetime = Column(DateTime, nullable=False,index=True)
     valid = Column(Boolean, nullable=False)
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
