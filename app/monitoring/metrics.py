@@ -18,13 +18,13 @@ DEACTIVATED_ACCOUNT_TOTAL = Counter(
     ["success"]
 )
 
-ASSET_CREATION_FAILED_TOTAL = Counter(
+ASSET_CREATION_TOTAL = Counter(
     "asset_creation_failed_total",
     "Total number of failed asset creations",
     ["success"]
 )
 
-USER_SIGNUP_FAILED_TOTAL = Counter(
+USER_SIGNUP_TOTAL = Counter(
     "user_signup_failed_total",
     "Total number of failed user sign ups",
     ["success"]
