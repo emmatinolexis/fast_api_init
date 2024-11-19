@@ -269,7 +269,7 @@ class UserService(BaseService):
                     activity_class=ActivityLogClass.USER,
                     activity_type=ActivityLogType.USER_INVITATION,
                     activity_description=activity_log_constants.CREATE_INVITATION_DESC.format(
-                        full_name=user.first_name + " " + user.last_name,
+                        email=user.email_address,
                         invited_user=payload.email,
                     ),
                     ip_address=request.client.host,
@@ -300,7 +300,7 @@ class UserService(BaseService):
                     activity_class=ActivityLogClass.ADMIN,
                     activity_type=ActivityLogType.USER_INVITATION,
                     activity_description=activity_log_constants.ADMIN_INVITATION_DESC.format(
-                        full_name=user.first_name + " " + user.last_name,
+                        email= user.email_address,
                         invited_user=payload.email,
                     ),
                     ip_address=request.client.host,
@@ -310,9 +310,24 @@ class UserService(BaseService):
         except Exception as e:
             raise e
 
-    def deactivate_user_account(self, uuid: str, payload: AccountDeactivationPayload):
+    def deactivate_user_account(self, uuid: str, payload: AccountDeactivationPayload,user: User, request: Request):
         try:
             user = self.user_repository.deactivate_account(uuid, payload)
+
+
+            self.activity_log_repository.create(
+                ActivityLogSchema(
+                    user_uuid=str(user.uuid),
+                    business_profile_uuid=str(user.business_profile_uuid),
+                    activity_title=activity_log_constants.DEACTIVATE_ACCOUNT,
+                    activity_class=ActivityLogClass.USER,
+                    activity_type=ActivityLogType.ACCOUNT_DEACTIVATION,
+                    activity_description=activity_log_constants.DEACTIVATE_ACCOUNT_DESC.format(
+                        email=user.email_address,
+                    ),
+                    ip_address=request.client.host,
+                )
+            )
             return user if user else None
         except Exception as e:
             raise e
@@ -424,7 +439,7 @@ class UserService(BaseService):
             raise e
 
     def update_team_member_handler(
-        self, team_member_uuid: str, payload: UpdateAdminTeamMemberPayload
+        self, team_member_uuid: str, payload: UpdateAdminTeamMemberPayload,current_user: User,request: Request
     ):
         try:
             self.patch_by_uuid(team_member_uuid, payload)
@@ -435,7 +450,6 @@ class UserService(BaseService):
 
             if payload.user_role_uuid:
                 subscriber.publish(RoleUpdated, RoleUpdated(role=new_role, user=user))
-
         except Exception as e:
             raise e
 
