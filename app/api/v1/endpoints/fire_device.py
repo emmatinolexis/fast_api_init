@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import ORJSONResponse
 
 from app.core.container import Container
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user_with_permission
 from app.core.exceptions import BadRequestError, NotFoundError
 from app.model.user import User
 from app.schema.fire_device_schema import CreateFireDevice
@@ -26,7 +26,7 @@ router = APIRouter(
 async def bulk_upload_fire_devices(
     file_url: str,
     service: GasDeviceService = Depends(Provide[Container.gas_device_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("create_pyrogaurd_device")),
 ):
     try:
         serial_numbers = load_fire_device_serial_number_from_file(file_url=file_url)
@@ -45,7 +45,7 @@ async def add_fire_device(
     building_uuid: str,
     payload: CreateFireDevice,
     service: GasDeviceService = Depends(Provide[Container.gas_device_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("create_pyrogaurd_device")),
 ):
     try:
         message = service.add_fire_device_to_building(

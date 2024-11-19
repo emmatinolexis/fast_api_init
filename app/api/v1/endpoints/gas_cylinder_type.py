@@ -6,7 +6,7 @@ from fastapi.responses import ORJSONResponse
 
 from app.core import messages
 from app.core.container import Container
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user_with_permission
 from app.core.exceptions import NotFoundError
 from app.model.user import User
 from app.schema.gas_cylinder_schema import (
@@ -41,7 +41,8 @@ async def get_all_gas_cylinder_types_handler(
     service: GasCylinderTypeService = Depends(
         Provide[Container.gas_cylinder_type_service]
     ),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_gas_cylinder_type")),
+
 ):
     try:
         data = service.filter_by_status_and_name(
@@ -60,7 +61,8 @@ async def create_gas_cylinder_type_handler(
     service: GasCylinderTypeService = Depends(
         Provide[Container.gas_cylinder_type_service]
     ),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("create_gas_cylinder_type")),
+
 ):
     try:
         return send_data_with_info(service.add(payload), messages.SUCCESS_MESSAGE)
@@ -77,7 +79,7 @@ async def update_gas_cylinder_type_handler(
     service: GasCylinderTypeService = Depends(
         Provide[Container.gas_cylinder_type_service]
     ),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("update_gas_cylinder_type")),
 ):
     try:
         cylinder_type = service.get_by_uuid(cylinder_type_uuid)
@@ -101,7 +103,7 @@ async def create_other_gas_cylinder_type_handler(
     service: OtherCylinderTypeService = Depends(
         Provide[Container.other_cylinder_type_service]
     ),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("create_gas_cylinder_type")),
 ):
     try:
         created_cylinder_type = service.create_other_gas_cylinder_type(

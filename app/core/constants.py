@@ -469,10 +469,17 @@ PERMISSIONS = {
         {"permission_name": "view_gas_cylinder_type", "permission_type": "all"},
         {"permission_name": "create_gas_cylinder_type", "permission_type": "admin"},
         {"permission_name": "update_gas_cylinder_type", "permission_type": "admin"},
-        {
-            "permission_name": "create_other_gas_cylinder_type",
-            "permission_type": "admin",
-        },
+    ],
+    "pyrogaurd_device": [
+        {"permission_name": "view_pyrogaurd_device", "permission_type": "admin"},
+        {"permission_name": "create_pyrogaurd_device", "permission_type": "admin"},
+        {"permission_name": "update_pyrogaurd_device", "permission_type": "all"},
+    ],
+    "gas_cylinder": [
+        {"permission_name": "view_gas_cylinder", "permission_type": "all"},
+        {"permission_name": "create_gas_cylinder", "permission_type": "customer"},
+        {"permission_name": "update_gas_cylinder", "permission_type": "customer"},
+        {"permission_name": "delete_gas_cylinder", "permission_type": "customer"},
     ],
     "marker_icons": [
         {"permission_name": "view_marker_icons", "permission_type": "all"},
@@ -483,31 +490,6 @@ PERMISSIONS = {
         {"permission_name": "create_marker_icon", "permission_type": "admin"},
         {"permission_name": "update_marker_icon", "permission_type": "admin"},
         {"permission_name": "delete_marker_icon", "permission_type": "admin"},
-    ],
-    "onboarding": [
-        {"permission_name": "view_onboardings", "permission_type": "admin"},
-        {
-            "permission_name": "create_individual_onboarding",
-            "permission_type": "customer",
-        },
-        {
-            "permission_name": "create_organisation_onboarding",
-            "permission_type": "customer",
-        },
-        {"permission_name": "update_onboarding", "permission_type": "customer"},
-        {"permission_name": "delete_onboarding", "permission_type": "admin"},
-    ],
-    "organisation_contacts": [
-        {"permission_name": "view_organisation_contacts", "permission_type": "admin"},
-        {
-            "permission_name": "create_organisation_contact",
-            "permission_type": "customer",
-        },
-        {
-            "permission_name": "update_organisation_contact",
-            "permission_type": "customer",
-        },
-        {"permission_name": "delete_organisation_contact", "permission_type": "all"},
     ],
     "payments": [
         {"permission_name": "view_payments", "permission_type": "admin"},
@@ -520,12 +502,18 @@ PERMISSIONS = {
         {"permission_name": "view_vehicle_make", "permission_type": "customer"},
         {"permission_name": "create_vehicle_make", "permission_type": "admin"},
     ],
+    "asset_type": [
+        {"permission_name": "create_asset_type", "permission_type": "admin"},
+        {"permission_name": "update_asset_type", "permission_type": "admin"},
+        {"permission_name": "view_asset_type", "permission_type": "admin"},
+    ],
     "activity_logs": [
         {"permission_name": "view_admin_activity_log", "permission_type": "admin"},
         {"permission_name": "view_business_activity_log", "permission_type": "customer"},
         {"permission_name": "view_activity_log", "permission_type": "all"},
         {"permission_name": "view_all_activity_log", "permission_type": "admin"},
     ],
+
 }
 
 cities = [

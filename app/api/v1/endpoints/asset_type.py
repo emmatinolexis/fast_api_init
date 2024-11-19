@@ -6,7 +6,7 @@ from fastapi.responses import ORJSONResponse
 
 from app.core import messages
 from app.core.container import Container
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user_with_permission
 from app.core.exceptions import NotFoundError
 from app.model.user import User
 from app.schema.asset_schema import AssetTypePayload
@@ -32,7 +32,7 @@ msg_prefix = "asset type"
 async def get_asset_type_handler(
     status: Optional[ActiveStatus] = Query(None, description="Filter by active status"),
     service: AssetTypeService = Depends(Provide[Container.asset_type_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_asset_type")),
 ):
     try:
         result = service.get_asset_list(status=status)
@@ -47,7 +47,7 @@ async def get_asset_type_handler(
 async def create_asset_type_handler(
     payload: AssetTypePayload,
     service: AssetTypeService = Depends(Provide[Container.asset_type_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("create_asset_type")),
 ):
     try:
         asset_type = send_data(service.add(payload))
@@ -63,7 +63,7 @@ async def update_asset_type_handler(
     uuid: str,
     payload: AssetTypePayload,
     service: AssetTypeService = Depends(Provide[Container.asset_type_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("update_asset_type")),
 ):
     try:
         asset_type = service.patch_by_uuid(uuid, payload)
@@ -75,22 +75,22 @@ async def update_asset_type_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.delete(
-    "/{uuid}", dependencies=[allow_admins_only], response_class=ORJSONResponse
-)
-@inject
-async def delete_asset_type_handler(
-    uuid: str,
-    service: AssetTypeService = Depends(Provide[Container.asset_type_service]),
-    current_user: User = Depends(get_current_user),
-):
-    try:
-        service.remove_by_uuid(uuid)
-        return send_info(messages.DELETE_SUCCESS + msg_prefix)
-    except NotFoundError as e:
-        return send_client_side_error(
-            user_msg=messages.ASSET_TYPE_NOT_FOUND + str(e.detail)
-        )
-    except Exception as e:
-        msg = messages.DELETE_FAILED + msg_prefix
-        return send_internal_server_error(user_msg=msg, error=e)
+# @router.delete(
+#     "/{uuid}", dependencies=[allow_admins_only], response_class=ORJSONResponse
+# )
+# @inject
+# async def delete_asset_type_handler(
+#     uuid: str,
+#     service: AssetTypeService = Depends(Provide[Container.asset_type_service]),
+#     current_user: User = Depends(get_current_user),
+# ):
+#     try:
+#         service.remove_by_uuid(uuid)
+#         return send_info(messages.DELETE_SUCCESS + msg_prefix)
+#     except NotFoundError as e:
+#         return send_client_side_error(
+#             user_msg=messages.ASSET_TYPE_NOT_FOUND + str(e.detail)
+#         )
+#     except Exception as e:
+#         msg = messages.DELETE_FAILED + msg_prefix
+#         return send_internal_server_error(user_msg=msg, error=e)
