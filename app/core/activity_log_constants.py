@@ -8,6 +8,7 @@ DEACTIVATE_ACCOUNT = "Deactivate Account"
 UPDATE_ROLE = "Update Role"
 UPDATE_STATUS = "Update Status"
 UPDATE_TEAM_MEMBER = "Update Team Member Role"
+CREATE_ASSET = "Create Asset"
 
 
 # Description of the activity
@@ -19,3 +20,4 @@ DEACTIVATE_ACCOUNT_DESC = "{email} deactivated their account"
 UPDATE_ROLE_DESC = "{email} updated {team_member}'s role to {role}"
 UPDATE_STATUS_DESC = "{email} updated {team_member}'s status to {status}"
 UPDATE_TEAM_MEMBER_DESC = "{email} updated {team_member}'s role to {role}"
+CREATE_ASSET_DESC = "{email} created an asset with name {asset_name}"

@@ -459,8 +459,8 @@ class UserService(BaseService):
                         activity_type=ActivityLogType.ROLE_UPDATE,
                         activity_description=activity_log_constants.UPDATE_TEAM_MEMBER_DESC.format(
                             email=current_user.email_address,
-                            tean_member=user.email_address,
-                            role=new_role.name,
+                            team_member=user.email_address,
+                            role=new_role.role_name,
                         ),
                         ip_address=request.client.host,
                     )
@@ -483,6 +483,7 @@ class UserService(BaseService):
                     )
                 )
         except Exception as e:
+            print(e)
             raise e
 
     def get_user_stats(
