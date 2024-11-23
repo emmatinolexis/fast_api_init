@@ -450,6 +450,38 @@ class UserService(BaseService):
 
             if payload.user_role_uuid:
                 subscriber.publish(RoleUpdated, RoleUpdated(role=new_role, user=user))
+                self.activity_log_repository.create(
+                    ActivityLogSchema(
+                        user_uuid=str(current_user.uuid),
+                        business_profile_uuid=str(current_user.business_profile_uuid),
+                        activity_title=activity_log_constants.UPDATE_TEAM_MEMBER,
+                        activity_class=ActivityLogClass.ADMIN,
+                        activity_type=ActivityLogType.ROLE_UPDATE,
+                        activity_description=activity_log_constants.UPDATE_TEAM_MEMBER_DESC.format(
+                            email=current_user.email_address,
+                            tean_member=user.email_address,
+                            role=new_role.name,
+                        ),
+                        ip_address=request.client.host,
+                    )
+                )
+
+            if payload.status:
+                self.activity_log_repository.create(
+                    ActivityLogSchema(
+                        user_uuid=str(current_user.uuid),
+                        business_profile_uuid=str(current_user.business_profile_uuid),
+                        activity_title=activity_log_constants.UPDATE_STATUS,
+                        activity_class=ActivityLogClass.ADMIN,
+                        activity_type=ActivityLogType.STATUS_UPDATE,
+                        activity_description=activity_log_constants.UPDATE_STATUS_DESC.format(
+                            email=current_user.email_address,
+                            team_member=user.email_address,
+                            status=payload.status,
+                        ),
+                        ip_address=request.client.host,
+                    )
+                )
         except Exception as e:
             raise e
 

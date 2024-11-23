@@ -7,6 +7,7 @@ DELETE_INVITATION = "Delete Invitation"
 DEACTIVATE_ACCOUNT = "Deactivate Account"
 UPDATE_ROLE = "Update Role"
 UPDATE_STATUS = "Update Status"
+UPDATE_TEAM_MEMBER = "Update Team Member Role"
 
 
 # Description of the activity
@@ -17,3 +18,4 @@ DELETE_INVITATION_DESC = "{email} deleted an invitation"
 DEACTIVATE_ACCOUNT_DESC = "{email} deactivated their account"
 UPDATE_ROLE_DESC = "{email} updated {team_member}'s role to {role}"
 UPDATE_STATUS_DESC = "{email} updated {team_member}'s status to {status}"
+UPDATE_TEAM_MEMBER_DESC = "{email} updated {team_member}'s role to {role}"
