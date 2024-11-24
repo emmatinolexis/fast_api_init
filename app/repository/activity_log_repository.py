@@ -26,7 +26,7 @@ class ActivityLogRepository(BaseRepository):
         search_string: Optional[str] = None,
     ):
         with self.session_factory() as session:
-            query = session.query(ActivityLog)
+            query = session.query(ActivityLog).order_by(ActivityLog.created_at.desc())
 
             if search_string:
                 user_aliased = aliased(User)
@@ -64,7 +64,7 @@ class ActivityLogRepository(BaseRepository):
         with self.session_factory() as session:
             query = session.query(ActivityLog).filter(
                 ActivityLog.business_profile_uuid == business_id
-            )
+            ).order_by(ActivityLog.created_at.desc())
 
             if search_string:
                 user_aliased = aliased(User)
@@ -102,7 +102,7 @@ class ActivityLogRepository(BaseRepository):
         with self.session_factory() as session:
             query = session.query(ActivityLog).filter(
                 ActivityLog.activity_class == ActivityLogClass.ADMIN
-            )
+            ).order_by(ActivityLog.created_at.desc())
 
             if search_string:
                 user_aliased = aliased(User)
