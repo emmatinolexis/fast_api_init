@@ -30,6 +30,63 @@ class UserSubscriptionRepository(BaseRepository):
             )
             return user_plan
 
+    # def create_user_subscription(self, payload):
+    #     with self.session_factory() as session:
+    #         event_type = payload.get("event")
+    #
+    #         logging.info(payload)
+    #
+    #         user_email = payload["data"]["customer"]["email"]
+    #         user = self.get_user_by_email(session, user_email)
+    #
+    #         if not user:
+    #             user_not_found = f"user with email {user_email} not found, cannot process subscription event: {event_type}"
+    #             logging.info(user_not_found)
+    #             return
+    #
+    #         existing_subscription = self.get_user_subscription_(
+    #             session, user_email, payload["data"]["plan"]["plan_code"]
+    #         )
+    #
+    #         if existing_subscription:
+    #             if event_type in ["subscription.not_renew", "invoice.payment_failed"]:
+    #                 self.handle_subscription_deactivation(
+    #                     session, user_email, existing_subscription
+    #                 )
+    #             elif event_type == "subscription.create":
+    #                 subscription_code = payload["data"]["subscription_code"]
+    #                 subscription_status = payload["data"]["status"]
+    #                 next_payment_date = payload["data"]["next_payment_date"]
+    #                 self.handle_subscription_creation(
+    #                     session,
+    #                     user_email,
+    #                     subscription_code,
+    #                     existing_subscription,
+    #                     subscription_status,
+    #                     next_payment_date,
+    #                 )
+    #             elif event_type == "charge.success":
+    #                 payment_data = Payment(
+    #                     reference_no=payload["data"]["reference"],
+    #                     amount=payload["data"]["amount"],
+    #                     status=payload["data"]["status"],
+    #                     user_email=payload["data"]["customer"]["email"],
+    #                     payment_type=payload["data"]["metadata"]["payment_type"],
+    #                     business_profile_uuid=payload["data"]["metadata"][
+    #                         "business_profile_uuid"
+    #                     ],
+    #                     channel=payload["data"]["channel"],
+    #                 )
+    #                 session.add(payment_data)
+    #                 session.commit()
+    #             else:
+    #                 logging.info(f"Unhandled event type: {event_type}")
+    #         else:
+    #             logging.error("Subscription not found")
+    #             return
+    #         success_msg = f"Subscription status: {subscription_status}"
+    #         logging.info(success_msg)
+    #         return success_msg
     def create_user_subscription(self, payload):
         with self.session_factory() as session:
             event_type = payload.get("event")
@@ -49,6 +106,8 @@ class UserSubscriptionRepository(BaseRepository):
             )
 
             if existing_subscription:
+                subscription_status = None  # Initialize the variable
+
                 if event_type in ["subscription.not_renew", "invoice.payment_failed"]:
                     self.handle_subscription_deactivation(
                         session, user_email, existing_subscription
@@ -81,12 +140,16 @@ class UserSubscriptionRepository(BaseRepository):
                     session.commit()
                 else:
                     logging.info(f"Unhandled event type: {event_type}")
+                    return
+
+                # Only reference `subscription_status` if it has been set
+                success_msg = f"Subscription status: {subscription_status if subscription_status else 'Unknown'}"
+                logging.info(success_msg)
+                return success_msg
             else:
                 logging.error("Subscription not found")
                 return
-            success_msg = f"Subscription status: {subscription_status}"
-            logging.info(success_msg)
-            return success_msg
+
 
     def get_user_by_email(self, session, user_email):
         return session.query(User).filter(User.email_address == user_email).first()
