@@ -4,13 +4,12 @@ from fastapi.responses import ORJSONResponse
 
 from app.core import messages
 from app.core.container import Container
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user_with_permission
 from app.core.exceptions import NotFoundError
 from app.model.user import User
 from app.schema.fuel_log_schema import FuelLogSchema, SingleFuelLog, UpdateFuelLog
 from app.service.fuel_log_service import FuelLogService
 from app.service.user_service import UserService
-from app.util.enums import AccountType
 from app.util.utils import (
     send_client_side_error,
     send_data,
@@ -33,7 +32,7 @@ async def create_fuel_log_handler_for_individual(
     payload: FuelLogSchema,
     service: FuelLogService = Depends(Provide[Container.fuel_log_service]),
     user_service: UserService = Depends(Provide[Container.user_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("create_fuel_purchase_log")),
 ):
     try:
         user = user_service.get_user_by_uuid(user_uuid)
@@ -66,7 +65,7 @@ async def create_bulk_fuel_logs_handler(
     csv_url: str,
     service: FuelLogService = Depends(Provide[Container.fuel_log_service]),
     user_service: UserService = Depends(Provide[Container.user_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("create_fuel_purchase_log")),
 ):
     try:
         user = user_service.get_user_by_uuid(user_uuid)
@@ -101,7 +100,7 @@ async def create_fuel_log_handler_for_fleet_manager(
     payload: SingleFuelLog,
     service: FuelLogService = Depends(Provide[Container.fuel_log_service]),
     user_service: UserService = Depends(Provide[Container.user_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("create_fuel_purchase_log")),
 ):
     try:
         user = user_service.get_user_by_uuid(user_uuid)
@@ -140,7 +139,7 @@ async def get_fuel_logs_handler(
     end_date: str = Query(None, description="End date"),
     service: FuelLogService = Depends(Provide[Container.fuel_log_service]),
     user_service: UserService = Depends(Provide[Container.user_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_fuel_purchase_log")),
 ):
     try:
         user = user_service.get_user_by_uuid(user_uuid)
@@ -159,20 +158,6 @@ async def get_fuel_logs_handler(
             end_date,
         )
 
-        # if user.get("account_type") == AccountType.INDIVIDUAL:
-        #     data = service.get_fuel_logs_by_user_uuid(
-        #         user_uuid, page, page_size, search, start_date, end_date
-        #     )
-        # else:
-        #     data = service.get_fuel_logs_by_business_uuid(
-        #         str(user.get("business_profile").uuid),
-        #         page,
-        #         page_size,
-        #         search,
-        #         start_date,
-        #         end_date,
-        #     )
-
         return send_data_with_info(data, messages.GET_SUCCESS + "fuel logs")
     except NotFoundError as e:
         return send_client_side_error(
@@ -189,7 +174,7 @@ def upload_fuel_log_receipt_handler(
     fuel_log_uuid: str,
     payload: UpdateFuelLog,
     service: FuelLogService = Depends(Provide[Container.fuel_log_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("create_fuel_purchase_log")),
 ):
     try:
         log_entry = service.get_by_uuid(fuel_log_uuid)
@@ -223,7 +208,7 @@ def upload_fuel_log_receipt_handler(
 def get_fuel_log_receipt_handler(
     fuel_log_uuid: str,
     service: FuelLogService = Depends(Provide[Container.fuel_log_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_fuel_purchase_log")),
 ):
     try:
         log_entry = service.get_by_uuid(fuel_log_uuid)

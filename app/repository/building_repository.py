@@ -212,6 +212,7 @@ class BuildingRepository(BaseRepository):
             "status": status,
             "image_url": asset.image_url,
             "cylinders": building_cylinders,
+            "created_at": asset.created_at
         }
 
     def read_all_assets_by_uuid_no_pagination(

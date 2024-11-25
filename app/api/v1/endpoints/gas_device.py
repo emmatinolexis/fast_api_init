@@ -4,13 +4,13 @@ from fastapi.responses import ORJSONResponse
 
 from app.core import messages
 from app.core.container import Container
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user_with_permission
 from app.core.exceptions import BadRequestError, NotFoundError
 from app.model.user import User
 from app.schema.gas_cylinder_schema import CreateGasDevice, UpdateGasDevice
 from app.service.gas_device_service import GasDeviceService
 from app.service.user_service import UserService
-from app.util.enums import AccountType, DeviceType
+from app.util.enums import DeviceType
 from app.util.utils import (
     load_gas_device_serial_number_from_csv,
     send_client_side_error,
@@ -31,7 +31,7 @@ router = APIRouter(
 async def load_csv_handler(
     csv_url: str,
     service: GasDeviceService = Depends(Provide[Container.gas_device_service]),
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user_with_permission("create_pyrogaurd_device")),
 ):
     try:
         serial_numbers = load_gas_device_serial_number_from_csv(csv_url=csv_url)
@@ -49,7 +49,7 @@ async def get_gas_devices_handler(
     page: int = Query(1, description="Page number"),
     limit: int = Query(10, description="Number of items per page"),
     service: GasDeviceService = Depends(Provide[Container.gas_device_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_pyrogaurd_device")),
 ):
     try:
         return send_data(
@@ -67,7 +67,8 @@ async def create_gas_device_handler(
     payload: CreateGasDevice,
     service: GasDeviceService = Depends(Provide[Container.gas_device_service]),
     user_service: UserService = Depends(Provide[Container.user_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("create_pyrogaurd_device")),
+
 ):
     try:
         user = user_service.get_user_by_uuid(user_id)
@@ -82,19 +83,6 @@ async def create_gas_device_handler(
             user_uuid=user_id,
         )
         return send_data(data)
-
-        # if user.get("account_type") == AccountType.INDIVIDUAL:
-        #     data = service.create_device(user_id=user_id, payload=payload)
-        # if user.get("account_type") == AccountType.BUSINESS:
-        #     data = service.create_device(
-        #         business_profile_uuid=user.get("business_profile").uuid,
-        #         payload=payload,
-        #         user_uuid=user_id,
-        #     )
-        #     return send_data(data)
-        # else:
-        #     msg = f"{messages.USER_NOT_FOUND} {user_id}"
-        #     return send_internal_server_error(user_msg=msg, error=msg)
     except (NotFoundError, BadRequestError) as e:
         return send_client_side_error(user_msg=e.detail)
     except Exception as e:
@@ -127,7 +115,7 @@ async def get_gas_devices_by_user_handler(
     user_id: str,
     service: GasDeviceService = Depends(Provide[Container.gas_device_service]),
     user_service: UserService = Depends(Provide[Container.user_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_pyrogaurd_device")),
 ):
     try:
         user = user_service.get_user_by_uuid(user_id)
@@ -137,12 +125,6 @@ async def get_gas_devices_by_user_handler(
             return send_client_side_error(user_msg=msg, status_code=404)
 
         data = service.get_business_devices(user.get("business_profile").uuid)
-
-        # if user.get("account_type") == AccountType.INDIVIDUAL:
-        #     data = service.get_user_devices(user_id)
-        #
-        # if user.get("account_type") == AccountType.BUSINESS:
-        #     data = service.get_business_devices(user.get("business_profile").uuid)
 
         return send_data_with_info(data, messages.GET_SUCCESS + " gas devices")
     except NotFoundError as e:
@@ -158,7 +140,7 @@ async def get_gas_devices_by_building_handler(
     building_uuid: str,
     device_type: DeviceType = Query(None, description="Type of device"),
     service: GasDeviceService = Depends(Provide[Container.gas_device_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_pyrogaurd_device")),
 ):
     try:
         data = service.get_building_devices(building_uuid, device_type)

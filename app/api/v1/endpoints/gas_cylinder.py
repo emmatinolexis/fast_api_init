@@ -4,7 +4,7 @@ from fastapi.responses import ORJSONResponse
 
 from app.core import messages
 from app.core.container import Container
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user_with_permission
 from app.core.exceptions import AuthError, BadRequestError, NotFoundError
 from app.model.user import User
 from app.schema.gas_cylinder_schema import (
@@ -40,7 +40,7 @@ async def get_all_gas_cylinder_handler(
     service: GasCylinderService = Depends(
         Provide[Container.gas_cylinder_event_service]
     ),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("view_gas_cylinder")),
 ):
     try:
         return send_data(service.get_list())
@@ -78,7 +78,8 @@ async def create_gas_cylinder_handler(
     gas_device_service: GasDeviceService = Depends(
         Provide[Container.gas_device_service]
     ),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("create_gas_cylinder")),
+
 ):
     try:
         user = user_service.get_user_by_uuid(user_uuid)
@@ -129,7 +130,7 @@ async def link_gas_cylinder_to_device_handler(
     gas_cylinder_id: str,
     service: GasCylinderService = Depends(Provide[Container.gas_cylinder_service]),
     device_service: GasDeviceService = Depends(Provide[Container.gas_device_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("update_gas_cylinder")),
 ):
     try:
         device = device_service.get_device_by_uuid(gas_device_id)
@@ -175,7 +176,7 @@ async def unlink_gas_cylinder_from_device_handler(
     gas_device_service: GasDeviceService = Depends(
         Provide[Container.gas_device_service]
     ),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("update_gas_cylinder")),
 ):
     try:
         gas_cylinder = service.get_by_uuid(gas_cylinder_id)
@@ -230,7 +231,7 @@ async def create_gas_cylinder_only_handler(
     gas_device_service: GasDeviceService = Depends(
         Provide[Container.gas_device_service]
     ),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("create_gas_cylinder")),
 ):
     try:
         user = user_service.get_user_by_uuid(user_uuid)
@@ -274,6 +275,7 @@ async def create_gas_cylinder_only_handler(
 async def get_cylinder_by_id_handler(
     cylinder_uuid: str,
     service: GasCylinderService = Depends(Provide[Container.gas_cylinder_service]),
+    current_user: User = Depends(get_current_user_with_permission("view_gas_cylinder")),
 ):
     try:
         cylinder = service.get_cylinder_by_uuid(cylinder_uuid)
@@ -288,7 +290,7 @@ async def get_cylinder_by_id_handler(
 async def delete_gas_cylinder_handler(
     cylinder_uuid: str,
     service: GasCylinderService = Depends(Provide[Container.gas_cylinder_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("delete_gas_cylinder")),
 ):
     try:
         service.delete_gas_cylinder(cylinder_uuid, current_user)
@@ -307,7 +309,7 @@ async def create_spare_gas_cylinder_handler(
     gas_cylinder_payload: CreateSpareGasCylinder,
     service: GasCylinderService = Depends(Provide[Container.gas_cylinder_service]),
     user_service: UserService = Depends(Provide[Container.user_service]),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_with_permission("create_gas_cylinder")),
 ):
     try:
         user = user_service.get_user_by_uuid(user_uuid)

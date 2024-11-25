@@ -16,7 +16,7 @@ from app.core.exceptions import (
     NotFoundError,
     UnAuthorizedError,
 )
-from app.monitoring.metrics import DEACTIVATED_ACCOUNT_TOTAL, USER_SIGNUP_FAILED_TOTAL
+from app.monitoring.metrics import DEACTIVATED_ACCOUNT_TOTAL, USER_SIGNUP_TOTAL
 from app.core.security import extract_user_data, verify_password
 from app.core.settings import settings
 from app.model.user import User
@@ -149,7 +149,7 @@ async def create_user_handler(
     try:
         found_user = service.get_user_by_email_address(payload.email_address)
         if found_user:
-            USER_SIGNUP_FAILED_TOTAL.labels(success="true").inc()
+            USER_SIGNUP_TOTAL.labels(success="false").inc()
             return send_client_side_error(
                 user_msg=f"User already exists : {payload.email_address}",
             )
@@ -160,17 +160,18 @@ async def create_user_handler(
                 payload.business_name, payload.business_email, payload.business_phone
             )
             if found_business:
-                USER_SIGNUP_FAILED_TOTAL.labels(success="true").inc()
+                USER_SIGNUP_TOTAL.labels(success="false").inc()
                 return send_client_side_error(
                     user_msg="Business already exists with the same name, email or phone"
                 )
 
         user = service.create_user(payload)
         logging.info(f"Created user: {payload.email_address}")
+        USER_SIGNUP_TOTAL.labels(success="true").inc()
         return send_data(user)
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
-        USER_SIGNUP_FAILED_TOTAL.labels(success="true").inc()
+        USER_SIGNUP_TOTAL.labels(success="false").inc()
         return send_internal_server_error(user_msg=msg, error=e)
 
 
