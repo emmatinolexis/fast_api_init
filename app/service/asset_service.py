@@ -134,7 +134,7 @@ class AssetService(BaseService):
                    activity_description=activity_log_constants.CREATE_ASSET_DESC.format(
                           email=user.get("email_address"), asset_name=asset.asset_name
                     ),
-                    user_uuid=user.get("uuid"),
+                    user_uuid=str(user.get("uuid")),
                     business_profile_uuid=str(user.get("business_profile").uuid),
                     ip_address=request.client.host
                 )
