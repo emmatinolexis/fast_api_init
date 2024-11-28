@@ -51,6 +51,28 @@ async def get_all_devices_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
+@router.get("/assign", response_class=ORJSONResponse)
+@inject
+async def get_all_devices_handler(
+    page: int = Query(1, ge=1, description="Page number, default is 1"),
+    page_size: int = Query(
+        10, ge=1, le=100, description="Items per page, default is 10"
+    ),
+    search_query: Optional[str] = Query(
+        None, description="Search by manufacturer name"
+    ),
+    service: DeviceService = Depends(Provide[Container.device_service]),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        devices = service.get_all_devices_to_assign(
+            page=page, page_size=page_size, search_query=search_query
+        )
+        return send_data(devices)
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
+
 @router.get("/user_devices/{user_uuid}", response_class=ORJSONResponse)
 @inject
 async def get_all_user_devices(
