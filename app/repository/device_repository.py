@@ -15,60 +15,6 @@ class DeviceRepository(BaseRepository):
         self.session_factory = session_factory
         super().__init__(session_factory, Device)
 
-    # def get_all_devices(
-    #     self,
-    #     page: int = 1,
-    #     page_size: int = 10,
-    #     search_query: Optional[str] = None,
-    #     status=None,
-    # ):
-    #     with self.session_factory() as session:
-    #         try:
-    #             offset = (page - 1) * page_size
-    #
-    #             base_query = session.query(self.model).options(
-    #                 joinedload(Device.inventory).joinedload(Inventory.manufacturer),
-    #                 joinedload(Device.asset),
-    #                 joinedload(Device.user),
-    #             )
-    #
-    #             if search_query:
-    #                 base_query = (
-    #                     base_query.join(Device.inventory)
-    #                     .join(Inventory.manufacturer)
-    #                     .filter(
-    #                         DeviceManufacturer.manufacturer_name.ilike(
-    #                             f"%{search_query}%"
-    #                         )
-    #                     )
-    #                 )
-    #             if status == DeviceStatus.ASSIGNED:
-    #                 base_query = base_query.filter(
-    #                     self.model.assign_to_asset_status.isnot(None)
-    #                 )
-    #             elif status == DeviceStatus.NOT_ASSIGNED:
-    #                 base_query = base_query.filter(
-    #                     self.model.assign_to_asset_status.is_(None)
-    #                 )
-    #
-    #             total_devices = base_query.count()
-    #
-    #             paginated_query = base_query.offset(offset).limit(page_size)
-    #             devices = paginated_query.all()
-    #
-    #             total_pages = (total_devices + page_size - 1) // page_size
-    #
-    #             return {
-    #                 "devices": devices,
-    #                 "total_devices": total_devices,
-    #                 "total_pages": total_pages,
-    #                 "current_page": page,
-    #                 "page_size": page_size,
-    #             }
-    #         except Exception as e:
-    #             session.rollback()
-    #             raise e
-
     def get_all_devices(
             self,
             page: int = 1,
@@ -105,6 +51,64 @@ class DeviceRepository(BaseRepository):
                     base_query = base_query.filter(self.model.assign_to_asset_status.isnot(None))
                 elif status == DeviceStatus.NOT_ASSIGNED:
                     base_query = base_query.filter(self.model.assign_to_asset_status.is_(None))
+
+                # Get total count of devices
+                total_devices = base_query.count()
+
+                # Apply pagination
+                paginated_query = base_query.offset(offset).limit(page_size)
+                devices = paginated_query.all()
+
+                # Calculate total pages
+                total_pages = (total_devices + page_size - 1) // page_size
+
+                return {
+                    "devices": devices,
+                    "total_devices": total_devices,
+                    "total_pages": total_pages,
+                    "current_page": page,
+                    "page_size": page_size,
+                }
+            except Exception as e:
+                session.rollback()
+                raise e
+
+    def get_all_devices_to_assign(
+            self,
+            page: int = 1,
+            page_size: int = 10,
+            search_query: Optional[str] = None,
+    ):
+        with self.session_factory() as session:
+            try:
+                offset = (page - 1) * page_size
+
+                # Base query with filters for device_imei and assign_to_asset_status
+                base_query = (
+                    session.query(self.model)
+                    .options(
+                        joinedload(Device.inventory).joinedload(Inventory.manufacturer),
+                        joinedload(Device.asset),
+                        joinedload(Device.user),
+                    )
+                    .filter(
+                        Device.device_imei.isnot(None),  # Filter where device_imei is not null
+                        self.model.assign_to_asset_status.is_(None),  # Filter where asset_assign_status is null
+                    )
+                )
+
+                # Apply search query filter
+                if search_query:
+                    base_query = (
+                        base_query.join(Device.inventory)
+                        .join(Inventory.manufacturer)
+                        .filter(
+                            or_(
+                                DeviceManufacturer.manufacturer_name.ilike(f"%{search_query}%"),
+                                Device.device_imei.ilike(f"%{search_query}%"),  # IMEI included in search
+                            )
+                        )
+                    )
 
                 # Get total count of devices
                 total_devices = base_query.count()

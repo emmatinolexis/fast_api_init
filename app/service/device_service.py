@@ -59,6 +59,20 @@ class DeviceService(BaseService):
         except Exception as e:
             raise e
 
+    def get_all_devices_to_assign(
+        self,
+        page: int = 1,
+        page_size: int = 10,
+        search_query: Optional[str] = None,
+    ):
+        try:
+            devices = self.device_repository.get_all_devices_to_assign(
+                page=page, page_size=page_size, search_query=search_query
+            )
+            return devices
+        except Exception as e:
+            raise e
+
     def assign_imei(self, device_uuid: str, imei: str):
         try:
             device = self.device_repository.assign_imei(device_uuid, imei)
