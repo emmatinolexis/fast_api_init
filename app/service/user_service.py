@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta
 from typing import List
 from uuid import UUID
@@ -175,37 +176,73 @@ class UserService(BaseService):
         except Exception as e:
             raise e
 
+    # def get_user_by_uuid(self, user_uuid: str):
+    #     try:
+    #         user = self.user_repository.get_user_by_uuid(user_uuid)
+    #
+    #         user_plan = self.user_subscription_repository.get_user_subscription(
+    #             user.get("email_address")
+    #         )
+    #
+    #         if user_plan.subscription_code:
+    #             paystack_subscription = (
+    #                 self.subscription_repository.get_paystack_subscription(
+    #                     user_plan.subscription_code
+    #                 )
+    #             )
+    #
+    #             user_package = {
+    #                 "package_name": paystack_subscription["plan"]["name"],
+    #                 "package_items": paystack_subscription["package_items"],
+    #             }
+    #         else:
+    #             user_package = {
+    #                 "package_name": FREE_PACKAGE,
+    #                 "package_items": FREE_PACKAGE_ITEMS,
+    #             }
+    #
+    #         user["package"] = user_package
+    #
+    #         return user if user else None
+    #
+    #     except Exception as e:
+    #         raise e
     def get_user_by_uuid(self, user_uuid: str):
         try:
             user = self.user_repository.get_user_by_uuid(user_uuid)
 
+            if not user:
+                return None
+
+            # Get the user's subscription plan
             user_plan = self.user_subscription_repository.get_user_subscription(
                 user.get("email_address")
             )
 
-            if user_plan.subscription_code:
+            # Default user package
+            user_package = {
+                "package_name": FREE_PACKAGE,
+                "package_items": FREE_PACKAGE_ITEMS,
+            }
+
+            # Check if the user has a valid subscription plan
+            if user_plan and user_plan.subscription_code:
                 paystack_subscription = (
                     self.subscription_repository.get_paystack_subscription(
                         user_plan.subscription_code
                     )
                 )
-
                 user_package = {
                     "package_name": paystack_subscription["plan"]["name"],
                     "package_items": paystack_subscription["package_items"],
                 }
-                # return user_package
-            else:
-                user_package = {
-                    "package_name": FREE_PACKAGE,
-                    "package_items": FREE_PACKAGE_ITEMS,
-                }
 
             user["package"] = user_package
-
-            return user if user else None
+            return user
 
         except Exception as e:
+            # Log the exception or add custom error handling
+            logging.error(f"An error occurred: {e}")
             raise e
 
     def check_business_exists(self, name: str, email: str, phone: str):
