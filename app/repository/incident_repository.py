@@ -141,7 +141,7 @@ class IncidentRepository(BaseRepository):
             query = text(
                 f"""
             with cluster_incidents_by_type AS (
-            SELECT i.id, i.incident_type, i.longitude, i.latitude, i.user_uuid, i.created_at,
+            SELECT i.id, i.incident_type, i.longitude, i.latitude, i.user_uuid, i.created_at, i.status,
                 ROW_NUMBER() OVER (PARTITION BY i.incident_type ORDER BY i.id) AS rn
             FROM incidents i
             )
@@ -161,7 +161,7 @@ class IncidentRepository(BaseRepository):
                     50
                 )
                ) AS count,
-                cl.created_at as created_at
+                cl.created_at AS created_at
             FROM cluster_incidents_by_type cl
             JOIN users u ON cl.user_uuid = u.uuid
             WHERE cl.rn = 1 

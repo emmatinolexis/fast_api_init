@@ -34,9 +34,9 @@ msg_prefix = "incident"
 async def create_incident(
     payload: IncidentPayload,
     service: IncidentService = Depends(Provide[Container.incident_service]),
-    current_user: User = Depends(
-        get_current_user_with_permission("create_road_incident")
-    ),
+    # current_user: User = Depends(
+    #     get_current_user_with_permission("create_road_incident")
+    # ),
 ):
     try:
         incident = service.create_incident(payload)
@@ -147,9 +147,9 @@ async def get_incidents_report(
     ),
     status: str = None,
     service: IncidentService = Depends(Provide[Container.incident_service]),
-    current_user: User = Depends(
-        get_current_user_with_permission("view_road_incident")
-    ),
+    # current_user: User = Depends(
+    #     get_current_user_with_permission("view_road_incident")
+    # ),
 ):
     try:
         incidents = service.get_incident_reports(
