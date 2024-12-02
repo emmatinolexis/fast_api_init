@@ -248,7 +248,7 @@ class AlertPolicyService(BaseService):
             created_policy = self.add(alert_policy_data)
 
             # create alert recipients
-            self.assign_alert_recipients(alert_policy, created_policy)
+            self.assign_alert_recipients(alert_policy, created_policy.uuid)
 
             # create alert types
             self.assign_alert_types(alert_policy.alert_types, created_policy.uuid)
