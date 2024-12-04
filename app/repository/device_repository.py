@@ -40,8 +40,9 @@ class DeviceRepository(BaseRepository):
                         .join(Inventory.manufacturer)
                         .filter(
                             or_(
+                                Inventory.device_name.ilike(f"%{search_query}%"),
                                 DeviceManufacturer.manufacturer_name.ilike(f"%{search_query}%"),
-                                Device.device_imei.ilike(f"%{search_query}%"),  # IMEI included in search
+                                Device.device_imei.ilike(f"%{search_query}%"),
                             )
                         )
                     )
