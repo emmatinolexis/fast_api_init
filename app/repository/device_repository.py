@@ -2,7 +2,7 @@ from contextlib import AbstractContextManager
 from typing import Callable, Optional
 
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import or_
+from sqlalchemy import or_, desc
 from app.model.device import Device, DeviceManufacturer
 from app.model.inventory import Inventory
 from app.model.user import User
@@ -52,6 +52,9 @@ class DeviceRepository(BaseRepository):
                     base_query = base_query.filter(self.model.assign_to_asset_status.isnot(None))
                 elif status == DeviceStatus.NOT_ASSIGNED:
                     base_query = base_query.filter(self.model.assign_to_asset_status.is_(None))
+
+                # Order by created_at in descending order
+                base_query = base_query.order_by(desc(self.model.created_at))
 
                 # Get total count of devices
                 total_devices = base_query.count()
