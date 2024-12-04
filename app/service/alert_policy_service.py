@@ -231,7 +231,6 @@ class AlertPolicyService(BaseService):
 ):
         try:
             self.validate_alert_policy(alert_policy)
-
             alert_policy_data = AlertPolicyInput(
                 policy_name=alert_policy.policy_name,
                 alert_policy_type_uuid=alert_policy.alert_policy_type_uuid,
@@ -243,13 +242,9 @@ class AlertPolicyService(BaseService):
                 business_profile_uuid=business_uuid,
                 status=ActiveStatus.ACTIVE,
             )
-
             created_policy = self.add(alert_policy_data)
-
             self.assign_alert_recipients(alert_policy.alert_recipients, created_policy.uuid)
-
             self.assign_alert_types(alert_policy.alert_types, created_policy.uuid)
-
             self.assign_alert_assets(alert_policy.alert_assets, created_policy.uuid)
 
             return created_policy
