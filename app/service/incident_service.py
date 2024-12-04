@@ -13,7 +13,7 @@ class IncidentService(BaseService):
 
     def create_incident(self, incident_payload: IncidentPayload) -> Incident:
         try:
-            return self.incident_repository.create(incident_payload)
+            return self.incident_repository.create_incident(incident_payload)
         except Exception as e:
             raise e
 

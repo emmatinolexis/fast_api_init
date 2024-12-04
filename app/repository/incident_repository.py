@@ -1,3 +1,4 @@
+import logging
 from contextlib import AbstractContextManager
 from typing import Callable, List
 
@@ -6,7 +7,8 @@ from sqlalchemy import text
 from app.core.constants import LATITUDE, LONGITUDE, RADIUS
 from app.model.incident import Incident
 from app.repository.base_repository import BaseRepository
-from app.util.enums import IncidenceType, IncidentStatus
+from app.schema.incident_schema import IncidentPayload
+from app.util.enums import IncidenceType, IncidentStatus, IncidentType
 
 
 class IncidentRepository(BaseRepository):
@@ -14,16 +16,32 @@ class IncidentRepository(BaseRepository):
         self.session_factory = session_factory
         super().__init__(session_factory, Incident)
 
-    def create_incident(self, incident: Incident):
-        with self._session() as session:
+    def create_incident(self, incident: IncidentPayload):
+        with self.session_factory() as session:
             try:
+                incidents = self.get_incidents_by_location_incident_type(
+                    incident_type=incident.incident_type,
+                    longitude=incident.longitude,
+                    latitude=incident.latitude,
+                    radius=100,
+                )
+
                 incident_data = Incident(
                     incident_type=incident.incident_type,
-                    longitude = incident.longitude,
-                    latitude = incident.latitude,
-                    user_uuid = incident.user_uuid,
-                    status = incident.incident_status,
+                    longitude=incident.longitude,
+                    latitude=incident.latitude,
+                    user_uuid=incident.user_uuid,
                 )
+                if len(incidents) > 1:
+                    # this will mostly be one incident``
+                    for incident in incidents:
+                        if incident.status.lower() == IncidentStatus.UNVERIFIED.lower():
+                            updated_incident = self.update_attr_by_uuid(
+                                incident.uuid, "status", IncidentStatus.VERIFIED.name
+                            )
+                            logging.info(f"updated_incident: {updated_incident.uuid}")
+                    incident_data.status = IncidentStatus.VERIFIED.name
+
                 session.add(incident_data)
                 session.commit()
                 session.refresh(incident_data)
@@ -31,7 +49,6 @@ class IncidentRepository(BaseRepository):
             except Exception as e:
                 session.rollback()
                 raise e
-
 
     def get_all_incidents(
         self,
@@ -194,3 +211,12 @@ class IncidentRepository(BaseRepository):
 
         result = session.execute(query, params).fetchall()
         return result
+
+    def update_incident_by_incident_type(
+        self,
+        incident_type: IncidentType,
+    ):
+        with self.session_factory() as session:
+            session.query(Incident).filter_by(
+                incident_type=incident_type
+            ).filter_by().update()
