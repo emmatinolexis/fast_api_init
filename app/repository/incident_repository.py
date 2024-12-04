@@ -14,6 +14,25 @@ class IncidentRepository(BaseRepository):
         self.session_factory = session_factory
         super().__init__(session_factory, Incident)
 
+    def create_incident(self, incident: Incident):
+        with self._session() as session:
+            try:
+                incident_data = Incident(
+                    incident_type=incident.incident_type,
+                    longitude = incident.longitude,
+                    latitude = incident.latitude,
+                    user_uuid = incident.user_uuid,
+                    status = incident.incident_status,
+                )
+                session.add(incident_data)
+                session.commit()
+                session.refresh(incident_data)
+                return incident_data
+            except Exception as e:
+                session.rollback()
+                raise e
+
+
     def get_all_incidents(
         self,
         incident_type: IncidenceType = None,
@@ -161,13 +180,14 @@ class IncidentRepository(BaseRepository):
                     50
                 )
                ) AS count,
-                cl.created_at AS created_at
+                cl.created_at AS created_at,
+                cl.status AS status
             FROM cluster_incidents_by_type cl
             JOIN users u ON cl.user_uuid = u.uuid
             WHERE cl.rn = 1 
             {search_filter}
             {date_filter}
-            {status_filter} 
+            {status_filter}
             LIMIT :limit OFFSET :offset;
         """
             )
