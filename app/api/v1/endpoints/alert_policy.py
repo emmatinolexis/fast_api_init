@@ -252,17 +252,17 @@ async def create_alert_policy_handler(
     service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
     current_user: User = Depends(get_current_user_with_permission("create_policy")),
 ):
-    try:
+    # try:
         alert_policy = service.create_alert_policy(
             payload, current_user.uuid, current_user.business_profile_uuid
         )
         logging.info(f"Created alert policy: {alert_policy}")
         return send_data(alert_policy)
-    except NotFoundError as e:
-        return send_client_side_error(user_msg=e.detail)
-    except Exception as e:
-        msg = messages.CREATE_FAILED + msg_prefix
-        return send_internal_server_error(user_msg=msg, error=e)
+    # except NotFoundError as e:
+    #     return send_client_side_error(user_msg=e.detail)
+    # except Exception as e:
+    #     msg = messages.CREATE_FAILED + msg_prefix
+    #     return send_internal_server_error(user_msg=msg, error=e)
 
 
 @router.post("/geofence", response_class=ORJSONResponse)
