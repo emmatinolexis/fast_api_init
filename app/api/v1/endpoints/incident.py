@@ -34,9 +34,9 @@ msg_prefix = "incident"
 async def create_incident(
     payload: IncidentPayload,
     service: IncidentService = Depends(Provide[Container.incident_service]),
-    # current_user: User = Depends(
-    #     get_current_user_with_permission("create_road_incident")
-    # ),
+    current_user: User = Depends(
+        get_current_user_with_permission("create_road_incident")
+    ),
 ):
     try:
         incident = service.create_incident(payload)
@@ -114,9 +114,9 @@ async def get_incidents_by_incident_type(
     latitude: float,
     radius: int = Query(50, description="radius is in meters(default is 50)"),
     service: IncidentService = Depends(Provide[Container.incident_service]),
-    # current_user: User = Depends(
-    #     get_current_user_with_permission("view_road_incident")
-    # ),
+    current_user: User = Depends(
+        get_current_user_with_permission("view_road_incident")
+    ),
 ):
     try:
         incidents = service.get_incidents_by_location_incident_type(
@@ -147,9 +147,9 @@ async def get_incidents_report(
     ),
     status: str = None,
     service: IncidentService = Depends(Provide[Container.incident_service]),
-    # current_user: User = Depends(
-    #     get_current_user_with_permission("view_road_incident")
-    # ),
+    current_user: User = Depends(
+        get_current_user_with_permission("view_road_incident")
+    ),
 ):
     try:
         incidents = service.get_incident_reports(
@@ -157,7 +157,7 @@ async def get_incidents_report(
             end_date=end_date,
             page=page,
             page_size=page_size,
-            status= status.upper() if status else None,
+            status=status.upper() if status else None,
             search_parameter=search_parameter,
         )
         incident_count = incidents["total"]
