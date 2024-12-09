@@ -20,7 +20,9 @@ class Incident(BaseModel):
     longitude = Column(Double, nullable=False, index=True)
     latitude = Column(Double, nullable=False, index=True)
     user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
-    status = Column(Enum(IncidentStatus), nullable=True)
+    status = Column(
+        Enum(IncidentStatus), nullable=True, default=IncidentStatus.UNVERIFIED.name
+    )
 
     def dto(self):
         return {

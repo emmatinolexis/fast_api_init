@@ -157,7 +157,7 @@ async def get_incidents_report(
             end_date=end_date,
             page=page,
             page_size=page_size,
-            status=status,
+            status=status.upper() if status else None,
             search_parameter=search_parameter,
         )
         incident_count = incidents["total"]

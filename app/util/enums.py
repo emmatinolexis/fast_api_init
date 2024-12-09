@@ -217,6 +217,8 @@ class IncidentType(str, Enum):
 class IncidentStatus(str, Enum):
     RESOLVED = "resolved"
     UNRESOLVED = "unresolved"
+    VERIFIED = "verified"
+    UNVERIFIED = "unverified"
 
 
 class OrderStatusRtd(str, Enum):
