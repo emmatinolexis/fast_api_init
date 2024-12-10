@@ -26,7 +26,7 @@ class TrackingEventService(BaseService):
             events = self.tracking_event_repository.read_all_events_by_device_imei(
                 device_imei, date
             )
-
+            return events
             if not events:
                 return []
 

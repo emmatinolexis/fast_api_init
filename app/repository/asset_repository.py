@@ -161,7 +161,7 @@ class AssetRepository(BaseRepository):
                 moving_asset_count,
                 idle_asset_count,
                 stopped_asset_count,
-            ) = self.get_asset_status_counts(assets)
+            ) = self.get_asset_status_counts(processed_assets)
 
             return {
                 "assets": processed_assets,
@@ -267,8 +267,9 @@ class AssetRepository(BaseRepository):
                         tracking_event["event_type"] == "Time_Interval_Tracking_Idling"
                     ):
                         idle_asset_count += 1
-                    elif tracking_event["event_type"] == "Stop_Moving":
-                        stopped_asset_count += 1
+                    stopped_asset_count = len(assets) - (moving_asset_count + idle_asset_count)
+                    # elif tracking_event["event_type"] == "Stop_Moving":
+                    #     stopped_asset_count += 1
 
         return moving_asset_count, idle_asset_count, stopped_asset_count
 
