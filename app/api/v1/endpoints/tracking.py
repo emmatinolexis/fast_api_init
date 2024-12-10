@@ -43,9 +43,9 @@ msg_prefix = "device events"
 @router.get("/", response_class=ORJSONResponse)
 @inject
 async def get_last_tracking_details_handler(
+    device_imei: str,
     service: TrackingEventService = Depends(Provide[Container.tracking_event_service]),
     current_user: User = Depends(get_current_user),
-    device_imei: str = None,
     date: str = None,
 ):
     try:

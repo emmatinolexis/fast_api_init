@@ -83,6 +83,8 @@ async def get_asset_by_user_uuid_handler(
     current_user: User = Depends(get_current_user_with_permission("view_asset")),
 ):
     try:
+        if str(user_uuid) != str(current_user.uuid):
+            return send_client_side_error(messages.ASSET_FETCH_NOT_AUTHORIZED, messages.ASSET_FETCH_NOT_AUTHORIZED)
         assets = service.get_assets_by_user_uuid(
             user_uuid=user_uuid,
             asset_type_uuid=asset_type_uuid,
@@ -111,6 +113,9 @@ async def get_asset_by_business_uuid_handler(
     current_user: User = Depends(get_current_user_with_permission("view_asset")),
 ):
     try:
+        if str(business_uuid) != str(current_user.business_profile.uuid):
+            return send_client_side_error(messages.ASSET_FETCH_NOT_AUTHORIZED, messages.ASSET_FETCH_NOT_AUTHORIZED)
+
         if current_user.user_role.role_name == "Operator":
             print(current_user.user_role.role_name)
             assets = service.read_assigned_assets(
