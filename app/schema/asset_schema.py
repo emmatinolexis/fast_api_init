@@ -56,7 +56,7 @@ class Asset(BaseModel):
 
 class AssetPayload(BaseModel):
     user_uuid: UUID
-    business_profile_uuid: Optional[UUID] = None
+    business_profile_uuid: UUID
     asset_type_uuid: UUID
     asset_name: str
     image_url: Optional[str] = None
