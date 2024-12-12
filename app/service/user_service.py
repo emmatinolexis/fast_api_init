@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime, timedelta
-from typing import List
+from typing import List,Optional
 from uuid import UUID
 
 from fastapi import Request
@@ -419,6 +419,7 @@ class UserService(BaseService):
         page_size,
         operator_type: List[str] = None,
         status: str = None,
+        search: Optional[str] = None, 
     ):
         return self.user_repository.get_drivers_by_business_uuid(
             business_uuid,
@@ -427,6 +428,7 @@ class UserService(BaseService):
             page_size,
             operator_type=operator_type,
             status=status,
+            search = search
         )
 
     def get_driver_by_uuid(self, driver_uuid: str):

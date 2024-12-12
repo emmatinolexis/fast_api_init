@@ -685,6 +685,9 @@ async def get_building_asset_handler(
     page_size: int = Query(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
+    search: Optional[str] = Query(
+        None, description="Search term to filter buildings by name or other attributes"
+    ),
     building_service: BuildingService = Depends(Provide[Container.building_service]),
     user_service: UserService = Depends(Provide[Container.user_service]),
     current_user: User = Depends(get_current_user_with_permission("view_asset")),
@@ -699,6 +702,7 @@ async def get_building_asset_handler(
             business_uuid=user.get("business_profile").uuid,
             page=page,
             page_size=page_size,
+            search = search
         )
         return send_data(buildings)
 

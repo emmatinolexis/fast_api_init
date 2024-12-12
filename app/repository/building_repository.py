@@ -10,8 +10,8 @@ from app.model.peripheral_devices import PeripheralDevice
 from app.repository.base_repository import BaseRepository
 from app.util.enums import ActiveStatus, BuildingStatus
 from app.util.utils import calculate_gas_level_percentage
-
-
+from typing import Optional
+from sqlalchemy import or_
 class BuildingRepository(BaseRepository):
     def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
         self.session_factory = session_factory
@@ -76,10 +76,17 @@ class BuildingRepository(BaseRepository):
         business_uuid: str = None,
         page: int = 1,
         page_size: int = 10,
+        search: Optional[str] = None, 
     ) -> Dict[str, Any]:
         with self.session_factory() as session:
             offset = (page - 1) * page_size
             base_query = self._build_base_query(session, user_uuid, business_uuid)
+
+            if search:
+                search_pattern = f"%{search}%"
+                base_query = base_query.filter(
+                        self.model.building_name.ilike(search_pattern)                
+                )
 
             total_assets = base_query.count()
             total_pages = (total_assets + page_size - 1) // page_size

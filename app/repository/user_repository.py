@@ -710,6 +710,7 @@ class UserRepository(BaseRepository):
         page_size=10,
         operator_type: List[str] = None,
         status: str = None,
+        search: Optional[str] = None,
     ):
         try:
             with self.session_factory() as session:
@@ -718,6 +719,15 @@ class UserRepository(BaseRepository):
                     User.business_profile_uuid == business_uuid,
                     User.user_role_uuid == role_uuid,
                 )  # Order by created_at in descending order
+
+                if search:
+                    search_pattern = f"%{search.strip().lower()}%"
+                    query = query.filter(
+                        or_(
+                            func.lower(User.first_name).ilike(search_pattern),
+                            func.lower(User.last_name).ilike(search_pattern),
+                        )
+                    )
 
                 # Apply additional filters if provided
                 if operator_type:

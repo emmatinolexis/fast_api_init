@@ -243,15 +243,15 @@ async def get_all_customers(
     ),
     current_user: User = Depends(get_current_user),
 ):
-    try:
+    # try:
         businesses = business_service.get_businesses(
             search_parameter, start_date, end_date, page, page_size, status
         )
 
         return send_data(businesses)
-    except Exception as e:
-        msg = messages.GET_FAILED + f"{msg_prefix}s"
-        return send_internal_server_error(user_msg=msg, error=e)
+    # except Exception as e:
+    #     msg = messages.GET_FAILED + f"{msg_prefix}s"
+    #     return send_internal_server_error(user_msg=msg, error=e)
 
 
 @router.put("/phone", response_class=ORJSONResponse)
