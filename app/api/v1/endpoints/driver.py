@@ -183,7 +183,7 @@ async def get_drivers_by_business_uuid_handler(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
     search: Optional[str] = Query(
-        None, description="Search term to filter buildings by name or other attributes"
+        None, description="Search term to filter drivers by name"
     ),
     current_user: User = Depends(get_current_user),
 ):

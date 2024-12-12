@@ -686,7 +686,7 @@ async def get_building_asset_handler(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
     search: Optional[str] = Query(
-        None, description="Search term to filter buildings by name or other attributes"
+        None, description="Search term to filter buildings by name"
     ),
     building_service: BuildingService = Depends(Provide[Container.building_service]),
     user_service: UserService = Depends(Provide[Container.user_service]),
