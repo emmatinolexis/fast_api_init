@@ -112,6 +112,7 @@ class BuildingService(BaseService):
         business_uuid: str = None,
         page_size: int = 10,
         page: int = 1,
+        search: Optional[str] = None, 
     ):
         try:
             report = self.building_repository.read_all_building(
@@ -119,6 +120,7 @@ class BuildingService(BaseService):
                 business_uuid=business_uuid,
                 page=page,
                 page_size=page_size,
+                search = search
             )
             return report
         except Exception as e:

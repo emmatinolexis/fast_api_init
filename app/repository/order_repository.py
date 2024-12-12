@@ -62,7 +62,7 @@ class OrderRepository(BaseRepository):
             .joinedload(OrderDeviceAssignment.inventory)
             .joinedload(Inventory.images),
             joinedload(Order.order_shipping_address),
-        )
+        ).order_by(Order.created_at.desc())
 
     def get_all_orders(
         self,

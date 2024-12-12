@@ -2,8 +2,11 @@ from app.core.constants import FREE_PACKAGE, FREE_PACKAGE_ITEMS
 from app.repository.business_profile_repository import BusinessProfileRepository
 from app.service.base_service import BaseService
 from app.service.package_item_assignments_service import PackageItemAssignmentService
-from app.util.enums import SubscriptionStatus
-
+from app.util.enums import SubscriptionStatus, ActiveStatus
+from app.util.utils import (
+    calculate_percentage_change,
+)
+from typing import Optional, Dict
 
 class BusinessProfileService(BaseService):
     def __init__(
@@ -72,20 +75,46 @@ class BusinessProfileService(BaseService):
 
     def get_businesses(
         self,
-        search_parameter: str = None,
-        start_date: str = None,
-        end_date: str = None,
-        page: int = None,
-        page_size: int = None,
-        status=None,
-    ):
+        search_parameter: Optional[str] = None,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+        page: int = 1,
+        page_size: int = 10,
+        status: Optional[ActiveStatus] = None,
+    ) -> Dict:
         try:
-            businesses_data = []
-            businesses = self.business_profile_repository.get_businesses(
+            businesses_result = self.business_profile_repository.get_businesses(
                 search_parameter, start_date, end_date, page, page_size, status
             )
 
-            for business in businesses.get("businesses"):
+            total_subscriptions = businesses_result.get("total_subscriptions", 0)
+            total_active_subscriptions = businesses_result.get("total_active_subscriptions", 0)
+            total_inactive_subscriptions = businesses_result.get("total_inactive_subscriptions", 0)
+
+            previous_total_subscriptions = businesses_result.get("previous_total_subscriptions", 0)
+            previous_total_active_subscriptions = businesses_result.get("previous_total_active_subscriptions", 0)
+            previous_total_inactive_subscriptions = businesses_result.get("previous_total_inactive_subscriptions", 0)
+
+            percentage_change_total_subscriptions = calculate_percentage_change(
+                total_subscriptions, previous_total_subscriptions
+            )
+
+            percentage_change_active_subscriptions = calculate_percentage_change(
+                total_active_subscriptions, previous_total_active_subscriptions
+            )
+
+            percentage_change_inactive_subscriptions = calculate_percentage_change(
+                total_inactive_subscriptions, previous_total_inactive_subscriptions
+            )
+
+            businesses_result['percentage_change'] = {
+                "total_subscriptions": percentage_change_total_subscriptions,
+                "total_active_subscriptions": percentage_change_active_subscriptions,
+                "total_inactive_subscriptions": percentage_change_inactive_subscriptions,
+            }
+
+            businesses_data = []
+            for business in businesses_result.get("businesses", []):
                 active_subscription = self.get_active_subscription(business)
                 package_features = self.get_package_features(active_subscription)
 
@@ -112,20 +141,11 @@ class BusinessProfileService(BaseService):
 
                 businesses_data.append(data)
 
-            return {
-                "data": businesses_data,
-                "current_page": businesses.get("current_page"),
-                "page_size": businesses.get("page_size"),
-                "total_records": businesses.get("total_records"),
-                "total_pages": businesses.get("total_pages"),
-                "total_subscriptions": businesses.get("total_subscriptions"),
-                "total_active_subscriptions": businesses.get(
-                    "total_active_subscriptions"
-                ),
-                "total_inactive_subscriptions": businesses.get(
-                    "total_inactive_subscriptions"
-                ),
-            }
+            businesses_result['data'] = businesses_data
+
+            del businesses_result['businesses']
+
+            return businesses_result
 
         except Exception as e:
             raise e

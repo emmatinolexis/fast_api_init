@@ -1,10 +1,9 @@
 from datetime import date
-from typing import List
+from typing import List,Optional
 
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
-
 from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
@@ -183,11 +182,14 @@ async def get_drivers_by_business_uuid_handler(
     page_size: int = Query(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
+    search: Optional[str] = Query(
+        None, description="Search term to filter drivers by name"
+    ),
     current_user: User = Depends(get_current_user),
 ):
     try:
         drivers = user_service.get_drivers_by_business_uuid(
-            business_uuid, role_uuid, page, page_size, operator_type, status
+            business_uuid, role_uuid, page, page_size, operator_type, status,search
         )
         if drivers is None:
             return send_client_side_error(
