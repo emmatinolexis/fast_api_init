@@ -149,7 +149,6 @@ class UserSubscriptionRepository(BaseRepository):
     def handle_subscription_creation(
         self,
         session,
-        user_email,
         subscription_code,
         existing_subscription,
         subscription_status,

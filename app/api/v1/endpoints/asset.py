@@ -11,7 +11,7 @@ from app.core import messages
 from app.core.constants import ENGINE_SHUTDOWN_PASSWORD, ENGINE_SHUTDOWN_USERNAME
 from app.core.container import Container
 from app.core.dependencies import get_current_user_with_permission
-from app.core.exceptions import NotFoundError, UnAuthorizedError
+from app.core.exceptions import NotFoundError, UnAuthorizedError, BadRequestError
 from app.model.user import User
 from app.schema.asset_schema import (
     AssetDeviceRequest,
@@ -153,9 +153,9 @@ async def create_asset_handler(
         logging.info(f"Created asset {asset}")
         ASSET_CREATION_TOTAL.labels(success="true").inc()
         return send_data(asset)
-    except NotFoundError as e:
+    except (BadRequestError, NotFoundError) as e:
         ASSET_CREATION_TOTAL.labels(success="false").inc()
-        return send_client_side_error(str(e.detail))
+        return send_client_side_error(str(e.detail), e.status_code)
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
         ASSET_CREATION_TOTAL.labels(success="false").inc()
