@@ -19,7 +19,9 @@ from app.repository.tracking_event_repository import TrackingEventRepository
 from app.repository.user_repository import UserRepository
 from app.repository.user_subscription_repository import UserSubscriptionRepository
 from app.repository.vehicle_owner_repository import VehicleOwnerRepository
+from app.service.asset_operator_assignment_service import AssetOperatorAssignmentService
 from app.repository.activity_log_repository import ActivityLogRepository
+
 from app.schema.asset_schema import (
     AssetInput,
     AssetPayload,
@@ -75,7 +77,9 @@ class AssetService(BaseService):
         gas_cylinder_repository: GasCylinderRepository,
         gas_cylinder_event_repository: GasCylinderEventRepository,
         user_subscription_repository: UserSubscriptionRepository,
+        asset_operator_assignment_service: AssetOperatorAssignmentService,
         activity_log_repository: ActivityLogRepository,
+
     ):
         self.asset_repository = asset_repository
         self.asset_type_repository = asset_type_repository
@@ -93,7 +97,9 @@ class AssetService(BaseService):
         self.tracking_event_repository = tracking_event_repository
         self.gas_cylinder_repository = gas_cylinder_repository
         self.gas_cylinder_event_repository = gas_cylinder_event_repository
+        self.asset_operator_assignment_service = asset_operator_assignment_service
         self.activity_log_repository = activity_log_repository
+
         super().__init__(asset_repository)
 
     def create_asset(self, asset: AssetPayload,request: Request):
@@ -118,8 +124,6 @@ class AssetService(BaseService):
                 )
 
             self.check_existing_asset(asset)
-
-            # self.check_asset_dependencies(asset)
 
             if asset.add_driver:
                 created_asset = self.create_asset_with_driver(asset)
@@ -264,10 +268,16 @@ class AssetService(BaseService):
             raise NotFoundError(
                 detail=messages.DRIVER_NOT_FOUND + str(asset.driver_uuid)
             )
+
         created_asset = self.asset_repository.create(AssetInput(**asset.dict()))
-        # updated_driver = self.driver_repository.update_driver_asset(
-        #     created_asset.uuid, asset.driver_uuid
-        # )
+
+        self.asset_operator_assignment_service.assign_operator_to_asset(
+            str(created_asset.uuid),
+            str(asset.driver_uuid),
+            str(created_asset.user_uuid),
+            str(created_asset.business_profile_uuid)
+        )
+
         created_asset_data = {
             "user_uuid": created_asset.user_uuid,
             "business_profile_uuid": created_asset.business_profile_uuid,
