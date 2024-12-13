@@ -610,6 +610,14 @@ class Container(containers.DeclarativeContainer):
     asset_type_service = providers.Factory(
         asset_type_service.AssetTypeService, asset_type_repository=asset_type_repository
     )
+
+    asset_operator_assignment_service = providers.Factory(
+        asset_operator_assignment_service.AssetOperatorAssignmentService,
+        asset_operator_assignment=asset_operator_assignment_repository,
+        asset_repository=asset_repository,
+        user_repository=user_repository,
+    )
+
     asset_service = providers.Factory(
         asset_service.AssetService,
         asset_repository=asset_repository,
@@ -628,6 +636,7 @@ class Container(containers.DeclarativeContainer):
         tracking_event_repository=tracking_event_repository,
         gas_cylinder_repository=gas_cylinder_repository,
         gas_cylinder_event_repository=gas_cylinder_event_repository,
+        asset_operator_assignment_service=asset_operator_assignment_service,
     )
     asset_device_request_service = providers.Factory(
         asset_device_request_service.AssetDeviceRequestService,
@@ -918,13 +927,6 @@ class Container(containers.DeclarativeContainer):
     device_alert_notification_service = providers.Factory(
         device_alert_notification_service.DeviceAlertNotificationService,
         device_alert_notification_repository=device_alert_notification_repository,
-    )
-
-    asset_operator_assignment_service = providers.Factory(
-        asset_operator_assignment_service.AssetOperatorAssignmentService,
-        asset_operator_assignment=asset_operator_assignment_repository,
-        asset_repository=asset_repository,
-        user_repository=user_repository,
     )
 
     driver_license_service = providers.Factory(

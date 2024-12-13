@@ -32,13 +32,16 @@ class AssetOperatorAssignmentService(BaseService):
     ):
         try:
             asset = self.asset_repository.read_by_uuid(asset_uuid)
+
             if asset is None:
                 raise NotFoundError(messages.NO_ASSET_FOUND)
 
-            if asset.business_profile_uuid != business_profile_uuid:
+            if str(asset.business_profile_uuid) != business_profile_uuid:
                 # If not, check if the asset's user_uuid matches the provided user_uuid
-                if asset.user_uuid != user_uuid:
-                    raise UnAuthorizedError(messages.ACTION_NOT_ALLOWED)
+                raise UnAuthorizedError(messages.ACTION_NOT_ALLOWED)
+
+                # if asset.user_uuid != user_uuid:
+                #     raise UnAuthorizedError(messages.ACTION_NOT_ALLOWED)
 
             operator = self.user_repository.read_by_uuid(operator_uuid)
             if operator is None:
