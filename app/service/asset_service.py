@@ -260,14 +260,14 @@ class AssetService(BaseService):
             )
 
     def create_asset_with_driver(self, asset):
-        if self.driver_repository.read_by_uuid(asset.driver_uuid) is None:
+        if self.user_repository.read_by_uuid(asset.driver_uuid) is None:
             raise NotFoundError(
                 detail=messages.DRIVER_NOT_FOUND + str(asset.driver_uuid)
             )
         created_asset = self.asset_repository.create(AssetInput(**asset.dict()))
-        updated_driver = self.driver_repository.update_driver_asset(
-            created_asset.uuid, asset.driver_uuid
-        )
+        # updated_driver = self.driver_repository.update_driver_asset(
+        #     created_asset.uuid, asset.driver_uuid
+        # )
         created_asset_data = {
             "user_uuid": created_asset.user_uuid,
             "business_profile_uuid": created_asset.business_profile_uuid,
@@ -284,7 +284,6 @@ class AssetService(BaseService):
             "serial_number": created_asset.serial_number,
             "make": created_asset.make,
             "model": created_asset.model,
-            "driver": updated_driver,
         }
         return created_asset_data
 
