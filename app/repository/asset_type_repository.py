@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.model.asset_type import AssetType
 from app.repository.base_repository import BaseRepository
 from app.util.enums import ActiveStatus
+from sqlalchemy import asc
 
 
 class AssetTypeRepository(BaseRepository):
@@ -19,6 +20,9 @@ class AssetTypeRepository(BaseRepository):
 
             if status:
                 query = query.filter(self.model.status == ActiveStatus(status))
+
+            # Order by created_at in descending order
+            query = query.order_by(asc(self.model.created_at))
 
             asset_types = query.all()
             return asset_types

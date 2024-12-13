@@ -200,6 +200,7 @@ async def get_device_configurations_handler(
         peripheral_device = peripheral_device_service.get_devices_by_serial_number(
             payload.serial_number
         )
+        # return peripheral_device
         if not peripheral_device:
             return send_client_side_error("Device not found")
 

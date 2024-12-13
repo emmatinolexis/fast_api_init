@@ -2,7 +2,7 @@ import uuid
 
 from app.core import messages
 from app.core.constants import FREE_PACKAGE, FREE_PACKAGE_ITEMS
-from app.core.exceptions import NotFoundError, UnAuthorizedError
+from app.core.exceptions import NotFoundError, UnAuthorizedError, BadRequestError
 from app.repository.asset_repository import AssetRepository
 from app.repository.asset_type_repository import AssetTypeRepository
 from app.repository.device_repository import DeviceRepository
@@ -233,9 +233,7 @@ class AssetService(BaseService):
             user_assets = len(self.get_assets_by_user_uuid_no_pagination(user_uuid))
 
         if user_assets >= number_of_assets:
-            raise Exception(
-                "You have reached the maximum number of assets you can create. Please subscribe for a higher package."
-            )
+            raise BadRequestError("You have reached the maximum number of assets you can create. Please subscribe for a higher package.")
 
     def check_existing_asset(self, asset):
         existing_asset = self.asset_repository.read_by_vin_serial_number_license_no(

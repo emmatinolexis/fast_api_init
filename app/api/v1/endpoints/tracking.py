@@ -270,28 +270,3 @@ async def get_ssl_certificate(
         msg = f"{messages.GET_FAILED} {msg_prefix}s"
         logging.info(msg)
         return send_internal_server_error(user_msg=msg, error=e)
-
-
-@router.post("/create_device_configuration")
-@inject
-async def create_device_configuration():
-    try:
-        return "okay"
-    except Exception as e:
-        msg = f"{messages.GET_FAILED} {msg_prefix}s"
-        logging.info(msg)
-        return send_internal_server_error(user_msg=msg, error=e)
-
-
-@router.post("/get_device_configuration")
-@inject
-async def get_device_configuration(
-    device_type: DeviceConfigurationPayload,
-    current_user: User = Depends(get_current_app_service),
-):
-    try:
-        return "okay"
-    except Exception as e:
-        msg = f"{messages.GET_FAILED} {msg_prefix}s"
-        logging.info(msg)
-        return send_internal_server_error(user_msg=msg, error=e)
