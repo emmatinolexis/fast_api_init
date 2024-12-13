@@ -85,6 +85,7 @@ from app.repository import (
     vehicle_make_repository,
     vehicle_model_repository,
     vehicle_owner_repository,
+    rnd_image_repository
 )
 from app.service import (
     activity_log_service,
@@ -160,6 +161,7 @@ from app.service import (
     vehicle_make_service,
     vehicle_model_service,
     vehicle_owner_service,
+    rnd_image_service
 )
 
 
@@ -211,6 +213,7 @@ class Container(containers.DeclarativeContainer):
             "app.api.v1.endpoints.contact_sales",
             "app.api.v1.endpoints.admin_notification",
             "app.api.v1.endpoints.activity_logs",
+            "app.api.v1.endpoints.rnd_images"
         ]
     )
 
@@ -560,6 +563,11 @@ class Container(containers.DeclarativeContainer):
         session_factory=db.provided.session,
     )
 
+    rnd_image_repository = providers.Factory(
+        rnd_image_repository.RNDImageRepository,
+        session_factory=db.provided.session,
+    )
+
     # Services
     auth_service = providers.Factory(
         auth_service.AuthService,
@@ -637,6 +645,7 @@ class Container(containers.DeclarativeContainer):
         gas_cylinder_repository=gas_cylinder_repository,
         gas_cylinder_event_repository=gas_cylinder_event_repository,
         asset_operator_assignment_service=asset_operator_assignment_service,
+        activity_log_repository=activity_log_repository,
     )
     asset_device_request_service = providers.Factory(
         asset_device_request_service.AssetDeviceRequestService,
@@ -955,4 +964,7 @@ class Container(containers.DeclarativeContainer):
         activity_log_repository=activity_log_repository,
         user_repository=user_repository,
         role_repository=role_repository,
+    )
+    rnd_image_service = providers.Factory(
+        rnd_image_service.RNDImageService,
     )

@@ -26,7 +26,7 @@ class ActivityLogRepository(BaseRepository):
         search_string: Optional[str] = None,
     ):
         with self.session_factory() as session:
-            query = session.query(ActivityLog)
+            query = session.query(ActivityLog).order_by(ActivityLog.created_at.desc())
 
             if search_string:
                 user_aliased = aliased(User)
@@ -42,10 +42,10 @@ class ActivityLogRepository(BaseRepository):
 
             if start_date:
                 start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
-                query = query.filter(ActivityLog.date >= start_date_obj)
+                query = query.filter(ActivityLog.created_at >= start_date_obj)
             if end_date:
                 end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
-                query = query.filter(ActivityLog.date <= end_date_obj)
+                query = query.filter(ActivityLog.created_at <= end_date_obj)
 
             offset = (page - 1) * page_size
             query = query.offset(offset).limit(page_size)
@@ -64,7 +64,7 @@ class ActivityLogRepository(BaseRepository):
         with self.session_factory() as session:
             query = session.query(ActivityLog).filter(
                 ActivityLog.business_profile_uuid == business_id
-            )
+            ).order_by(ActivityLog.created_at.desc())
 
             if search_string:
                 user_aliased = aliased(User)
@@ -80,10 +80,10 @@ class ActivityLogRepository(BaseRepository):
 
             if start_date:
                 start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
-                query = query.filter(ActivityLog.date >= start_date_obj)
+                query = query.filter(ActivityLog.created_at >= start_date_obj)
             if end_date:
                 end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
-                query = query.filter(ActivityLog.date <= end_date_obj)
+                query = query.filter(ActivityLog.created_at <= end_date_obj)
 
             offset = (page - 1) * page_size
             query = query.offset(offset).limit(page_size)
@@ -102,7 +102,7 @@ class ActivityLogRepository(BaseRepository):
         with self.session_factory() as session:
             query = session.query(ActivityLog).filter(
                 ActivityLog.activity_class == ActivityLogClass.ADMIN
-            )
+            ).order_by(ActivityLog.created_at.desc())
 
             if search_string:
                 user_aliased = aliased(User)
@@ -118,10 +118,10 @@ class ActivityLogRepository(BaseRepository):
 
             if start_date:
                 start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
-                query = query.filter(ActivityLog.date >= start_date_obj)
+                query = query.filter(ActivityLog.created_at >= start_date_obj)
             if end_date:
                 end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
-                query = query.filter(ActivityLog.date <= end_date_obj)
+                query = query.filter(ActivityLog.created_at <= end_date_obj)
 
             offset = (page - 1) * page_size
             query = query.offset(offset).limit(page_size)
@@ -152,10 +152,10 @@ class ActivityLogRepository(BaseRepository):
 
             if start_date:
                 start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
-                query = query.filter(ActivityLog.date >= start_date_obj)
+                query = query.filter(ActivityLog.created_at >= start_date_obj)
             if end_date:
                 end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
-                query = query.filter(ActivityLog.date <= end_date_obj)
+                query = query.filter(ActivityLog.created_at <= end_date_obj)
 
             return query.count()
 
@@ -185,10 +185,10 @@ class ActivityLogRepository(BaseRepository):
                 query = query.filter(ActivityLog.activity_type.in_(activity_types))
             if start_date:
                 start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
-                query = query.filter(ActivityLog.date >= start_date_obj)
+                query = query.filter(ActivityLog.created_at >= start_date_obj)
             if end_date:
                 end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
-                query = query.filter(ActivityLog.date <= end_date_obj)
+                query = query.filter(ActivityLog.created_at <= end_date_obj)
             return query.count()
 
     def count_admin_activity_logs(
@@ -217,10 +217,10 @@ class ActivityLogRepository(BaseRepository):
 
             if start_date:
                 start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
-                query = query.filter(ActivityLog.date >= start_date_obj)
+                query = query.filter(ActivityLog.created_at >= start_date_obj)
 
             if end_date:
                 end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
-                query = query.filter(ActivityLog.date <= end_date_obj)
+                query = query.filter(ActivityLog.created_at <= end_date_obj)
 
             return query.count()

@@ -51,17 +51,17 @@ class Asset(BaseModel):
     )
     asset_name = Column(String(length=100), nullable=True, index=True)
     asset_status = Column(Enum(AssetStatus), nullable=False, index=True)
-    asset_stolen_status = Column(Boolean, nullable=True)
+    asset_stolen_status = Column(Boolean, nullable=True,index=True)
     created_by = Column(Enum(AssetCreators), nullable=False, index=True)
-    user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=True)
+    user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=True,index=True)
     business_profile_uuid = Column(
-        UUID(as_uuid=True), ForeignKey("business_profiles.uuid"), nullable=True
+        UUID(as_uuid=True), ForeignKey("business_profiles.uuid"), nullable=True,index=True
     )
     vehicle_license_no = Column(
         String(length=50), nullable=False, unique=True, index=True
     )
     asset_type_uuid = Column(
-        UUID(as_uuid=True), ForeignKey(AssetType.uuid), nullable=False
+        UUID(as_uuid=True), ForeignKey(AssetType.uuid), nullable=False,index=True
     )
     equipment_type_uuid = Column(
         UUID(as_uuid=True), ForeignKey("equipment_types.uuid"), nullable=True

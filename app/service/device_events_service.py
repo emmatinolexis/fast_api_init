@@ -4,7 +4,8 @@ from datetime import datetime, timedelta
 from app.repository.device_events_repository import DeviceEventRepository
 from app.service.base_service import BaseService
 from app.util.utils import parse_date
-
+from app.core.messages import DEVICE_DOES_NOT_EXIST,GAS_CYLINDER_NOT_FOUND
+from app.core.exceptions import NotFoundError
 
 class DeviceEventService(BaseService):
     def __init__(
@@ -41,14 +42,11 @@ class DeviceEventService(BaseService):
         cylinder = self.device_event_repository.read_gas_cylinder_by_uuid(cylinder_uuid)
 
         if not cylinder:
-            return {
-                "name": None,
-                "daily_usage": [],
-                "current_gas_value": None,
-                "unit": None,
-            }
+            raise NotFoundError(detail=cylinder)
 
         gas_device_serial_number = cylinder.gas_device_serial_number
+        if not gas_device_serial_number:
+            raise NotFoundError(detail=gas_device_serial_number)
         device_name = cylinder.cylinder_name
 
         peripheral_device = (
@@ -56,7 +54,7 @@ class DeviceEventService(BaseService):
                 gas_device_serial_number
             )
         )
-
+        
         if not peripheral_device:
             return {
                 "name": device_name,
@@ -73,13 +71,7 @@ class DeviceEventService(BaseService):
             start_date_obj = datetime.strptime(start_date_parsed, "%Y-%m-%d")
             end_date_obj = datetime.strptime(end_date_parsed, "%Y-%m-%d")
         except ValueError as e:
-            return {
-                "name": device_name,
-                "daily_usage": [],
-                "current_gas_value": None,
-                "unit": None,
-                "error": f"Invalid date format. {str(e)}",
-            }
+            raise ValueError(f"Invalid date format: {str(e)}")
 
         start_date_obj = datetime.combine(start_date_obj.date(), datetime.min.time())
         end_date_obj = datetime.combine(end_date_obj.date(), datetime.max.time())

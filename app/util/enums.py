@@ -217,6 +217,8 @@ class IncidentType(str, Enum):
 class IncidentStatus(str, Enum):
     RESOLVED = "resolved"
     UNRESOLVED = "unresolved"
+    VERIFIED = "verified"
+    UNVERIFIED = "unverified"
 
 
 class OrderStatusRtd(str, Enum):
@@ -398,3 +400,5 @@ class ActivityLogType(str, Enum):
     DEVICE_INSTALLATION = "DEVICE_INSTALLATION"
     ROLE_UPDATE = "ROLE_UPDATE"
     DELETE_INVITATION = "DELETE_INVITATION"
+    STATUS_UPDATE = "STATUS_UPDATE"
+    CREATE_ASSET = "CREATE_ASSET"

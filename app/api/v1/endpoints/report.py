@@ -22,6 +22,7 @@ from app.service.smart_report_service import SmartReportService
 from app.service.user_service import UserService
 from app.util.email import send_smart_report_email
 from app.util.enums import AccountType, EmailPurpose, FileFormat, SmartReportStatus
+from app.core.exceptions import NotFoundError
 from app.util.utils import (
     get_content_type,
     send_client_side_error,
@@ -391,6 +392,14 @@ async def get_cylinder_report(
             cylinder_uuid=cylinder_uuid, start_date=start_date, end_date=end_date
         )
         return send_data_with_info(data, messages.GET_SUCCESS + "Cylinder Report")
+    except ValueError as e:
+        return send_client_side_error(
+            user_msg=str(e), dev_msg=str(e)
+        )
+    except NotFoundError as e:
+        return send_client_side_error(
+            user_msg=messages.GET_FAILED+ "cylinder report"
+        )
     except Exception as e:
         return send_internal_server_error(
             user_msg="Failed to get cylinder report", error=e

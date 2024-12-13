@@ -20,6 +20,8 @@ from app.repository.user_repository import UserRepository
 from app.repository.user_subscription_repository import UserSubscriptionRepository
 from app.repository.vehicle_owner_repository import VehicleOwnerRepository
 from app.service.asset_operator_assignment_service import AssetOperatorAssignmentService
+from app.repository.activity_log_repository import ActivityLogRepository
+
 from app.schema.asset_schema import (
     AssetInput,
     AssetPayload,
@@ -40,6 +42,8 @@ from app.util.enums import (
     AssetStatus,
     GeofenceTypeUuid,
     PackageItemTrackerType,
+    ActivityLogClass,
+    ActivityLogType,
 )
 from app.util.utils import (
     calculate_average_speed,
@@ -50,7 +54,9 @@ from app.util.utils import (
     get_distance_travelled_by_coordinates,
     get_status,
 )
-
+from app.schema.activity_log_schema import ActivityLogSchema
+from app.core import activity_log_constants
+from fastapi import Request
 
 class AssetService(BaseService):
     def __init__(
@@ -72,6 +78,8 @@ class AssetService(BaseService):
         gas_cylinder_event_repository: GasCylinderEventRepository,
         user_subscription_repository: UserSubscriptionRepository,
         asset_operator_assignment_service: AssetOperatorAssignmentService,
+        activity_log_repository: ActivityLogRepository,
+
     ):
         self.asset_repository = asset_repository
         self.asset_type_repository = asset_type_repository
@@ -90,9 +98,11 @@ class AssetService(BaseService):
         self.gas_cylinder_repository = gas_cylinder_repository
         self.gas_cylinder_event_repository = gas_cylinder_event_repository
         self.asset_operator_assignment_service = asset_operator_assignment_service
+        self.activity_log_repository = activity_log_repository
+
         super().__init__(asset_repository)
 
-    def create_asset(self, asset: AssetPayload):
+    def create_asset(self, asset: AssetPayload,request: Request):
         try:
             user = self.get_user(asset.user_uuid)
 
@@ -115,12 +125,24 @@ class AssetService(BaseService):
 
             self.check_existing_asset(asset)
 
-            self.check_asset_dependencies(asset)
-
             if asset.add_driver:
                 created_asset = self.create_asset_with_driver(asset)
             else:
                 created_asset = self.create_asset_without_driver(asset)
+
+            self.activity_log_repository.create(
+                ActivityLogSchema(
+                   activity_title=activity_log_constants.CREATE_ASSET,
+                   activity_class=ActivityLogClass.USER,
+                   activity_type=ActivityLogType.CREATE_ASSET,
+                   activity_description=activity_log_constants.CREATE_ASSET_DESC.format(
+                          email=user.get("email_address"), asset_name=asset.asset_name
+                    ),
+                    user_uuid=str(user.get("uuid")),
+                    business_profile_uuid=str(user.get("business_profile").uuid),
+                    ip_address=request.client.host
+                )
+            )
 
             return created_asset
 

@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime, timedelta
-from typing import List
+from typing import List,Optional
 from uuid import UUID
 
 from fastapi import Request
@@ -306,7 +306,7 @@ class UserService(BaseService):
                     activity_class=ActivityLogClass.USER,
                     activity_type=ActivityLogType.USER_INVITATION,
                     activity_description=activity_log_constants.CREATE_INVITATION_DESC.format(
-                        full_name=user.first_name + " " + user.last_name,
+                        email=user.email_address,
                         invited_user=payload.email,
                     ),
                     ip_address=request.client.host,
@@ -337,7 +337,7 @@ class UserService(BaseService):
                     activity_class=ActivityLogClass.ADMIN,
                     activity_type=ActivityLogType.USER_INVITATION,
                     activity_description=activity_log_constants.ADMIN_INVITATION_DESC.format(
-                        full_name=user.first_name + " " + user.last_name,
+                        email= user.email_address,
                         invited_user=payload.email,
                     ),
                     ip_address=request.client.host,
@@ -347,9 +347,24 @@ class UserService(BaseService):
         except Exception as e:
             raise e
 
-    def deactivate_user_account(self, uuid: str, payload: AccountDeactivationPayload):
+    def deactivate_user_account(self, uuid: str, payload: AccountDeactivationPayload,user: User, request: Request):
         try:
             user = self.user_repository.deactivate_account(uuid, payload)
+
+
+            self.activity_log_repository.create(
+                ActivityLogSchema(
+                    user_uuid=str(user.uuid),
+                    business_profile_uuid=str(user.business_profile_uuid),
+                    activity_title=activity_log_constants.DEACTIVATE_ACCOUNT,
+                    activity_class=ActivityLogClass.USER,
+                    activity_type=ActivityLogType.ACCOUNT_DEACTIVATION,
+                    activity_description=activity_log_constants.DEACTIVATE_ACCOUNT_DESC.format(
+                        email=user.email_address,
+                    ),
+                    ip_address=request.client.host,
+                )
+            )
             return user if user else None
         except Exception as e:
             raise e
@@ -404,6 +419,7 @@ class UserService(BaseService):
         page_size,
         operator_type: List[str] = None,
         status: str = None,
+        search: Optional[str] = None, 
     ):
         return self.user_repository.get_drivers_by_business_uuid(
             business_uuid,
@@ -412,6 +428,7 @@ class UserService(BaseService):
             page_size,
             operator_type=operator_type,
             status=status,
+            search = search
         )
 
     def get_driver_by_uuid(self, driver_uuid: str):
@@ -461,7 +478,7 @@ class UserService(BaseService):
             raise e
 
     def update_team_member_handler(
-        self, team_member_uuid: str, payload: UpdateAdminTeamMemberPayload
+        self, team_member_uuid: str, payload: UpdateAdminTeamMemberPayload,current_user: User,request: Request
     ):
         try:
             self.patch_by_uuid(team_member_uuid, payload)
@@ -472,8 +489,40 @@ class UserService(BaseService):
 
             if payload.user_role_uuid:
                 subscriber.publish(RoleUpdated, RoleUpdated(role=new_role, user=user))
+                self.activity_log_repository.create(
+                    ActivityLogSchema(
+                        user_uuid=str(current_user.uuid),
+                        business_profile_uuid=str(current_user.business_profile_uuid),
+                        activity_title=activity_log_constants.UPDATE_TEAM_MEMBER,
+                        activity_class=ActivityLogClass.ADMIN,
+                        activity_type=ActivityLogType.ROLE_UPDATE,
+                        activity_description=activity_log_constants.UPDATE_TEAM_MEMBER_DESC.format(
+                            email=current_user.email_address,
+                            team_member=user.email_address,
+                            role=new_role.role_name,
+                        ),
+                        ip_address=request.client.host,
+                    )
+                )
 
+            if payload.status:
+                self.activity_log_repository.create(
+                    ActivityLogSchema(
+                        user_uuid=str(current_user.uuid),
+                        business_profile_uuid=str(current_user.business_profile_uuid),
+                        activity_title=activity_log_constants.UPDATE_STATUS,
+                        activity_class=ActivityLogClass.ADMIN,
+                        activity_type=ActivityLogType.STATUS_UPDATE,
+                        activity_description=activity_log_constants.UPDATE_STATUS_DESC.format(
+                            email=current_user.email_address,
+                            team_member=user.email_address,
+                            status=payload.status,
+                        ),
+                        ip_address=request.client.host,
+                    )
+                )
         except Exception as e:
+            print(e)
             raise e
 
     def get_user_stats(

@@ -612,12 +612,13 @@ async def update_user_avatar_handler(
 @inject
 async def deactivate_account_handler(
     uuid: str,
+    request:Request,
     payload: AccountDeactivationPayload,
     service: UserService = Depends(Provide[Container.user_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        user = service.deactivate_user_account(uuid, payload)
+        user = service.deactivate_user_account(uuid, payload,current_user,request)
 
         if user is None:
             return send_client_side_error(
@@ -1018,15 +1019,18 @@ async def get_team_member_handler(
 @inject
 async def update_team_member_handler(
     team_member_uuid: str,
+    request: Request,
     payload: UpdateAdminTeamMemberPayload,
     user_service: UserService = Depends(Provide[Container.user_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
         user_service.update_team_member_handler(
-            team_member_uuid=team_member_uuid, payload=payload
+            team_member_uuid=team_member_uuid, payload=payload,current_user=current_user,request=request
         )
         return send_info(messages.UPDATE_SUCCESS)
+    except NotFoundError as e:
+        return send_client_side_error(e.detail)
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)

@@ -1,10 +1,9 @@
 from datetime import date
-from typing import List
+from typing import List,Optional
 
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
-
 from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
@@ -29,6 +28,35 @@ router = APIRouter(
     tags=["drivers"],
 )
 msg_prefix = "driver"
+
+
+@router.get("/license_expiry")
+@inject
+async def check_drivers_license_expiry(
+    user_service: UserService = Depends(Provide[Container.user_service]),
+    service: DriverLicenseService = Depends(Provide[Container.driver_license_service]),
+):
+    try:
+        licenses = service.get_all_licenses()
+
+        for license in licenses:
+            if license.expires_soon():
+                driver = user_service.get_by_uuid(license.user_id)
+                no_days = (license.expiration_date - date.today()).days
+                await send_license_expiry_email(
+                    recipient_name=f"{driver.first_name} {driver.last_name}",
+                    email=driver.email_address,
+                    expiry_date=license.expiration_date.strftime("%d %B, %Y"),
+                    no_days=no_days,
+                )
+                pass
+            else:
+                print("License not expiring soon")
+                pass
+    except Exception as e:
+        msg = messages.LICENSE_CHECK_FAILED
+        return send_internal_server_error(user_msg=msg, error=str(e))
+
 
 
 @router.get("/", response_class=ORJSONResponse)
@@ -154,11 +182,14 @@ async def get_drivers_by_business_uuid_handler(
     page_size: int = Query(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
+    search: Optional[str] = Query(
+        None, description="Search term to filter drivers by name"
+    ),
     current_user: User = Depends(get_current_user),
 ):
     try:
         drivers = user_service.get_drivers_by_business_uuid(
-            business_uuid, role_uuid, page, page_size, operator_type, status
+            business_uuid, role_uuid, page, page_size, operator_type, status,search
         )
         if drivers is None:
             return send_client_side_error(
@@ -214,28 +245,3 @@ async def change_rider_asset_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/license_expiry")
-@inject
-async def check_drivers_license_expiry(
-    user_service: UserService = Depends(Provide[Container.user_service]),
-    service: DriverLicenseService = Depends(Provide[Container.driver_license_service]),
-):
-    try:
-        licenses = service.get_all_licenses()
-
-        for license in licenses:
-            if license.expires_soon():
-                driver = user_service.get_by_uuid(license.user_id)
-                no_days = (license.expiration_date - date.today()).days
-                await send_license_expiry_email(
-                    recipient_name=f"{driver.first_name} {driver.last_name}",
-                    email=driver.email_address,
-                    expiry_date=license.expiration_date,
-                    no_days=no_days,
-                )
-                pass
-            else:
-                pass
-    except Exception as e:
-        msg = messages.LICENSE_CHECK_FAILED
-        return send_internal_server_error(user_msg=msg, error=str(e))

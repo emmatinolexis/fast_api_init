@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Optional
 
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query,Request
 from fastapi.responses import ORJSONResponse
 from app.monitoring.metrics import ASSET_CREATION_TOTAL
 
@@ -145,11 +145,12 @@ async def get_asset_by_business_uuid_handler(
 @inject
 async def create_asset_handler(
     payload: AssetPayload,
+    request: Request,
     service: AssetService = Depends(Provide[Container.asset_service]),
     current_user: User = Depends(get_current_user_with_permission("create_asset")),
 ):
     try:
-        asset = service.create_asset(payload)
+        asset = service.create_asset(payload,request)
         logging.info(f"Created asset {asset}")
         ASSET_CREATION_TOTAL.labels(success="true").inc()
         return send_data(asset)
@@ -684,6 +685,9 @@ async def get_building_asset_handler(
     page_size: int = Query(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
+    search: Optional[str] = Query(
+        None, description="Search term to filter buildings by name"
+    ),
     building_service: BuildingService = Depends(Provide[Container.building_service]),
     user_service: UserService = Depends(Provide[Container.user_service]),
     current_user: User = Depends(get_current_user_with_permission("view_asset")),
@@ -698,6 +702,7 @@ async def get_building_asset_handler(
             business_uuid=user.get("business_profile").uuid,
             page=page,
             page_size=page_size,
+            search = search
         )
         return send_data(buildings)
 
