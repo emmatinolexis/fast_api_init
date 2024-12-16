@@ -226,7 +226,6 @@ class TheftReportPayload(BaseModel):
 
 
 class VehicleModelPayload(BaseModel):
-    value: str
     title: str
 
 
@@ -240,7 +239,6 @@ class VehicleModelInput(BaseModel):
 
 
 class VehicleMake(BaseModel):
-    value: str
     title: str
     models: List[VehicleModelPayload]
 

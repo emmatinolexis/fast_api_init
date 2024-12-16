@@ -8,7 +8,7 @@ from app.core.dependencies import get_current_user
 from app.model.user import User
 from app.schema.asset_schema import VehicleMakePayload
 from app.service.vehicle_make_service import VehicleMakeService
-from app.util.utils import send_data, send_info, send_internal_server_error
+from app.util.utils import send_data, send_info, send_internal_server_error, allow_admins_only
 
 router = APIRouter(
     prefix="/vehicle_make",
@@ -29,7 +29,7 @@ async def get_vehicle_makes_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.post("/", response_class=ORJSONResponse)
+@router.post("/", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def create_feature_handler(
     payload: VehicleMakePayload,
