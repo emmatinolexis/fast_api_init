@@ -2,6 +2,10 @@ import logging
 import socket
 import ssl
 from datetime import datetime
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
+
 
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends
@@ -252,21 +256,67 @@ async def get_ssl_certificate(
 ):
     hostname = request.hostname
     port = request.port
+
     try:
         # Establish a connection to the server
         context = ssl.create_default_context()
         with socket.create_connection((hostname, port)) as sock:
             with context.wrap_socket(sock, server_hostname=hostname) as ssock:
                 # Get the certificate
-                cert = ssock.getpeercert()
-                extracted_info = extract_certificate_info(cert)
-                key = ssl.get_server_certificate((hostname, 443))
-                extracted_info["key"] = key
+                cert = ssock.getpeercert(binary_form=True)
+                server_cert = x509.load_der_x509_certificate(cert, default_backend())
+
+                # Extract key and server certificate details
+                extracted_info = extract_certificate_info(server_cert)
+                server_cert_pem = ssl.get_server_certificate((hostname, 443))
+                extracted_info["key"] = server_cert_pem
+
+                # Retrieve the root certificate
+                root_cert = None
+                for issuer_cert in ssock.getpeercertchain(binary_form=True):
+                    loaded_cert = x509.load_der_x509_certificate(
+                        issuer_cert, default_backend()
+                    )
+                    if loaded_cert.issuer == loaded_cert.subject:
+                        root_cert = loaded_cert
+                        break
+
+                if root_cert:
+                    root_cert_pem = root_cert.public_bytes(
+                        encoding=serialization.Encoding.PEM
+                    ).decode("utf-8")
+                    extracted_info["root_certificate"] = root_cert_pem
+                else:
+                    extracted_info["root_certificate"] = "Root certificate not found"
 
         # Return the certificate information
         return extracted_info
 
     except Exception as e:
-        msg = f"{messages.GET_FAILED} {msg_prefix}s"
-        logging.info(msg)
+        msg = f"Failed to fetch SSL certificate: {str(e)}"
+        logging.error(msg)
         return send_internal_server_error(user_msg=msg, error=e)
+# async def get_ssl_certificate(
+#     request: SSLCertificateRequest,
+#     # current_user: User = Depends(get_current_app_service),
+# ):
+#     hostname = request.hostname
+#     port = request.port
+#     try:
+#         # Establish a connection to the server
+#         context = ssl.create_default_context()
+#         with socket.create_connection((hostname, port)) as sock:
+#             with context.wrap_socket(sock, server_hostname=hostname) as ssock:
+#                 # Get the certificate
+#                 cert = ssock.getpeercert()
+#                 extracted_info = extract_certificate_info(cert)
+#                 key = ssl.get_server_certificate((hostname, 443))
+#                 extracted_info["key"] = key
+#
+#         # Return the certificate information
+#         return extracted_info
+#
+#     except Exception as e:
+#         msg = f"{messages.GET_FAILED} {msg_prefix}s"
+#         logging.info(msg)
+#         return send_internal_server_error(user_msg=msg, error=e)
