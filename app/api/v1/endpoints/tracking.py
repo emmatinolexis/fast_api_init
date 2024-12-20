@@ -248,7 +248,7 @@ async def create_device_events(
 @inject
 async def get_ssl_certificate(
     request: SSLCertificateRequest,
-    current_user: User = Depends(get_current_app_service),
+    # current_user: User = Depends(get_current_app_service),
 ):
     hostname = request.hostname
     port = request.port
