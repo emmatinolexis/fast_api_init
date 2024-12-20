@@ -261,135 +261,27 @@ def extract_certificate_info(cert):
     return info
 
 
-@router.post("/certificate/get_ssl_certificate")
-@inject
-async def get_ssl_certificate(request: SSLCertificateRequest):
+async def get_ssl_certificate(
+    request: SSLCertificateRequest,
+    # current_user: User = Depends(get_current_app_service),
+):
     hostname = request.hostname
     port = request.port
-
     try:
         # Establish a connection to the server
         context = ssl.create_default_context()
-
         with socket.create_connection((hostname, port)) as sock:
             with context.wrap_socket(sock, server_hostname=hostname) as ssock:
-                # Get the server's certificate chain
-                cert_chain = ssock.getpeercert(binary_form=True)
+                # Get the certificate
+                cert = ssock.getpeercert()
+                extracted_info = extract_certificate_info(cert)
+                key = ssl.get_server_certificate((hostname, 443))
+                extracted_info["key"] = key
 
-                # Load the server's certificate using cryptography
-                certificate = x509.load_der_x509_certificate(cert_chain, default_backend())
-
-                # Extract certificate details
-                extracted_info = extract_certificate_info(certificate)
-
-                # Get the root certificate using ssl.get_server_certificate
-                pem_root_cert = ssl.get_server_certificate((hostname, 443))
-
-                # Load the root certificate with cryptography
-                root_cert = x509.load_pem_x509_certificate(pem_root_cert.encode(), default_backend())
-
-                # Optionally, extract information from the root certificate
-                extracted_info["root_cert"] = {
-                    "subject": root_cert.subject,
-                    "issuer": root_cert.issuer,
-                    "serial_number": root_cert.serial_number,
-                    "not_valid_before": root_cert.not_valid_before,
-                    "not_valid_after": root_cert.not_valid_after
-                }
-
-                # If you need to capture the certificate chain (including intermediates), you could extract it as well
-                cert_chain_list = []
-                # for cert in ssock.getpeercert(chain=True):
-                #     cert_der = ssl.DER_cert_to_PEM_cert(cert)
-                #     cert_obj = x509.load_pem_x509_certificate(cert_der.encode(), default_backend())
-                #     cert_chain_list.append({
-                #         "subject": cert_obj.subject,
-                #         "issuer": cert_obj.issuer,
-                #         "serial_number": cert_obj.serial_number,
-                #         "not_valid_before": cert_obj.not_valid_before,
-                #         "not_valid_after": cert_obj.not_valid_after
-                #     })
-
-                # extracted_info["cert_chain"] = cert_chain_list
-
-        # Return the certificate information with the root certificate and chain
+        # Return the certificate information
         return extracted_info
 
     except Exception as e:
-        msg = f"Failed to retrieve SSL certificate for {hostname}:{port}"
+        msg = f"{messages.GET_FAILED} {msg_prefix}s"
         logging.info(msg)
         return send_internal_server_error(user_msg=msg, error=e)
-
-# @router.post("/certificate/get_ssl_certificate")
-# @inject
-# async def get_ssl_certificate(
-#     request: SSLCertificateRequest,
-#     # current_user: User = Depends(get_current_app_service),
-# ):
-#     hostname = request.hostname
-#     port = request.port
-#
-#     try:
-#         # Establish a connection to the server
-#         context = ssl.create_default_context()
-#         with socket.create_connection((hostname, port)) as sock:
-#             with context.wrap_socket(sock, server_hostname=hostname) as ssock:
-#                 # Get the certificate
-#                 cert = ssock.getpeercert(binary_form=True)
-#                 server_cert = x509.load_der_x509_certificate(cert, default_backend())
-#
-#                 # Extract key and server certificate details
-#                 extracted_info = extract_certificate_info(server_cert)
-#                 server_cert_pem = ssl.get_server_certificate((hostname, 443))
-#                 extracted_info["key"] = server_cert_pem
-#
-#                 # Retrieve the root certificate
-#                 root_cert = None
-#                 for issuer_cert in ssock.getpeercertchain(binary_form=True):
-#                     loaded_cert = x509.load_der_x509_certificate(
-#                         issuer_cert, default_backend()
-#                     )
-#                     if loaded_cert.issuer == loaded_cert.subject:
-#                         root_cert = loaded_cert
-#                         break
-#
-#                 if root_cert:
-#                     root_cert_pem = root_cert.public_bytes(
-#                         encoding=serialization.Encoding.PEM
-#                     ).decode("utf-8")
-#                     extracted_info["root_certificate"] = root_cert_pem
-#                 else:
-#                     extracted_info["root_certificate"] = "Root certificate not found"
-#
-#         # Return the certificate information
-#         return extracted_info
-#
-#     except Exception as e:
-#         msg = f"Failed to fetch SSL certificate: {str(e)}"
-#         logging.error(msg)
-#         return send_internal_server_error(user_msg=msg, error=e)
-
-# async def get_ssl_certificate(
-#     request: SSLCertificateRequest,
-#     # current_user: User = Depends(get_current_app_service),
-# ):
-#     hostname = request.hostname
-#     port = request.port
-#     try:
-#         # Establish a connection to the server
-#         context = ssl.create_default_context()
-#         with socket.create_connection((hostname, port)) as sock:
-#             with context.wrap_socket(sock, server_hostname=hostname) as ssock:
-#                 # Get the certificate
-#                 cert = ssock.getpeercert()
-#                 extracted_info = extract_certificate_info(cert)
-#                 key = ssl.get_server_certificate((hostname, 443))
-#                 extracted_info["key"] = key
-#
-#         # Return the certificate information
-#         return extracted_info
-#
-#     except Exception as e:
-#         msg = f"{messages.GET_FAILED} {msg_prefix}s"
-#         logging.info(msg)
-#         return send_internal_server_error(user_msg=msg, error=e)
