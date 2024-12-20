@@ -30,7 +30,7 @@ from app.service.user_service import UserService
 from app.util.email import EmailPurpose, send_device_alert_email
 from app.util.sms import send_sms
 from app.util.utils import (
-    extract_certificate_info,
+    # extract_certificate_info,
     send_client_side_error,
     send_data,
     send_info,
@@ -248,6 +248,19 @@ async def create_device_events(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
+def extract_certificate_info(cert):
+    # Extract relevant certificate info here
+    info = {
+        "subject": cert.subject,
+        "issuer": cert.issuer,
+        "serial_number": cert.serial_number,
+        "not_valid_before": cert.not_valid_before,
+        "not_valid_after": cert.not_valid_after,
+        "signature_algorithm": cert.signature_algorithm_oid,
+    }
+    return info
+
+
 @router.post("/certificate/get_ssl_certificate")
 @inject
 async def get_ssl_certificate(
@@ -296,6 +309,7 @@ async def get_ssl_certificate(
         msg = f"Failed to fetch SSL certificate: {str(e)}"
         logging.error(msg)
         return send_internal_server_error(user_msg=msg, error=e)
+
 # async def get_ssl_certificate(
 #     request: SSLCertificateRequest,
 #     # current_user: User = Depends(get_current_app_service),
