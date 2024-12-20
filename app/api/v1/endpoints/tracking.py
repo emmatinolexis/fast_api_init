@@ -261,6 +261,8 @@ def extract_certificate_info(cert):
     return info
 
 
+@router.post("/certificate/get_ssl_certificate")
+@inject
 async def get_ssl_certificate(request: SSLCertificateRequest):
     hostname = request.hostname
     port = request.port
