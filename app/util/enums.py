@@ -65,7 +65,7 @@ class ActiveStatus(str, Enum):
 class SmartReportStatus(str, Enum):
     PENDING = "pending"
     PROCESSING = "processing"
-    PROCESSED = ("processed",)
+    PROCESSED = "processed"
     FAILED = "failed"
 
 
