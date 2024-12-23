@@ -2,10 +2,6 @@ import logging
 import socket
 import ssl
 from datetime import datetime
-from cryptography import x509
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import serialization
-
 
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends
@@ -16,7 +12,6 @@ from app.core.container import Container
 from app.core.dependencies import get_current_app_service, get_current_user
 from app.model.user import User
 from app.schema.tracking_device_schema import (
-    DeviceConfigurationPayload,
     DeviceReportPayload,
     DeviceReportPayloadInput,
     SSLCertificateRequest,
@@ -30,7 +25,7 @@ from app.service.user_service import UserService
 from app.util.email import EmailPurpose, send_device_alert_email
 from app.util.sms import send_sms
 from app.util.utils import (
-    # extract_certificate_info,
+    extract_certificate_info,
     send_client_side_error,
     send_data,
     send_info,
