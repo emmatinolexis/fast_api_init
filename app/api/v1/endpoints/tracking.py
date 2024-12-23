@@ -243,19 +243,8 @@ async def create_device_events(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-def extract_certificate_info(cert):
-    # Extract relevant certificate info here
-    info = {
-        "subject": cert.subject,
-        "issuer": cert.issuer,
-        "serial_number": cert.serial_number,
-        "not_valid_before": cert.not_valid_before,
-        "not_valid_after": cert.not_valid_after,
-        "signature_algorithm": cert.signature_algorithm_oid,
-    }
-    return info
-
-
+@router.post("/ssl_certificate", response_class=ORJSONResponse)
+@inject
 async def get_ssl_certificate(
     request: SSLCertificateRequest,
     # current_user: User = Depends(get_current_app_service),
