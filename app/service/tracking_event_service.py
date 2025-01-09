@@ -280,7 +280,6 @@ class TrackingEventService(BaseService):
     def get_tracking_device_events(self,device_imei:str):
         try:
             event = self.tracking_event_repository.get_event_by_device_imei(device_imei=device_imei)
-            print(event)
 
             if event:
                 return {
