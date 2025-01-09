@@ -274,6 +274,23 @@ class TrackingEventService(BaseService):
             )
         except Exception as e:
             raise e
+        
+
+
+    def get_tracking_device_events(self,device_imei:str):
+        try:
+            event = self.tracking_event_repository.get_event_by_device_imei(device_imei=device_imei)
+
+            if event:
+                return {
+                    "message": f"device with imei {device_imei} exists"
+                }
+            
+            return {
+                "message": f"device with imei {device_imei} does not exist" 
+            }
+        except Exception as e:
+            raise e
 
 
 def generateTimeRange(start=None, end=None):

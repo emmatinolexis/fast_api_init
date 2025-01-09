@@ -39,6 +39,22 @@ router = APIRouter(
 msg_prefix = "device events"
 
 
+
+
+@router.get("/check_imei",response_class=ORJSONResponse)
+@inject
+async def check_imei_exists(
+    device_imei:str,
+    service: TrackingEventService = Depends(Provide[Container.tracking_event_service]),
+
+):
+    try:
+        response = service.get_tracking_device_events(device_imei=device_imei)
+        return send_data(response)
+    except Exception as e:
+        return send_internal_server_error(user_msg=messages.INTERNAL_SERVER_ERROR, error=e)
+
+
 @router.get("/", response_class=ORJSONResponse)
 @inject
 async def get_last_tracking_details_handler(
@@ -269,3 +285,10 @@ async def get_ssl_certificate(
         msg = f"{messages.GET_FAILED} {msg_prefix}s"
         logging.info(msg)
         return send_internal_server_error(user_msg=msg, error=e)
+    
+
+
+
+
+        
+

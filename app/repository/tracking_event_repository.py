@@ -32,6 +32,13 @@ class TrackingEventRepository(BaseRepository):
                 .all()
             )
             return query
+        
+
+
+    def get_event_by_device_imei(self, device_imei: str):
+        with self.session_factory() as session:
+            query = session.query(self.model).filter(self.model.device_imei.ilike(f"%{device_imei}%")).first()
+            return query
 
     def read_all_events_by_date_range(
         self, device_imei: str, date_from: str, date_to: str
