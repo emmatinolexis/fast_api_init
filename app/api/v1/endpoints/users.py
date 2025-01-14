@@ -789,6 +789,7 @@ async def resend_invitation_handler(
         await send_email_invitation(
             recipient_name="",
             email=invitation.email,
+            user_type=current_user.account_type,
             invitee_name=f"{current_user.first_name} {current_user.last_name}",
             business_profile_uuid=str(invitation.business_profile_uuid),
             role=str(invitation.role_uuid),
