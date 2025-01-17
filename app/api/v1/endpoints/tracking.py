@@ -14,7 +14,6 @@ from app.model.user import User
 from app.schema.tracking_device_schema import (
     DeviceReportPayload,
     DeviceReportPayloadInput,
-    SSLCertificateRequest,
 )
 from app.service.asset_service import AssetService
 from app.service.device_alert_notification_service import DeviceAlertNotificationService
@@ -260,9 +259,7 @@ async def create_device_events(
 
 @router.get("/ssl_certificate", response_class=ORJSONResponse)
 @inject
-async def get_ssl_certificate(
-    request: SSLCertificateRequest, hostname: str = None, port: int = None
-):
+async def get_ssl_certificate(hostname: str = None, port: int = None):
     try:
         # Establish a connection to the server
         context = ssl.create_default_context()
