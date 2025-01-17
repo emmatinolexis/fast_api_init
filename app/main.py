@@ -29,6 +29,7 @@ class AppCreator:
             title=settings.PROJECT_NAME,
             openapi_url=f"{settings.API}/openapi.json",
             version=settings.API_VERSION,
+            swagger_ui_parameters={"filter": True},
         )
 
         # Initialize prometheus middleware
