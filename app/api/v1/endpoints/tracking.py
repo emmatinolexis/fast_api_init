@@ -39,20 +39,19 @@ router = APIRouter(
 msg_prefix = "device events"
 
 
-
-
-@router.get("/check_imei",response_class=ORJSONResponse)
+@router.get("/check_imei", response_class=ORJSONResponse)
 @inject
 async def check_imei_exists(
-    device_imei:str,
+    device_imei: str,
     service: TrackingEventService = Depends(Provide[Container.tracking_event_service]),
-
 ):
     try:
         response = service.get_tracking_device_events(device_imei=device_imei)
         return send_data(response)
     except Exception as e:
-        return send_internal_server_error(user_msg=messages.INTERNAL_SERVER_ERROR, error=e)
+        return send_internal_server_error(
+            user_msg=messages.INTERNAL_SERVER_ERROR, error=e
+        )
 
 
 @router.get("/", response_class=ORJSONResponse)
@@ -259,12 +258,9 @@ async def create_device_events(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.post("/ssl_certificate", response_class=ORJSONResponse)
+@router.get("/ssl_certificate", response_class=ORJSONResponse)
 @inject
-async def get_ssl_certificate(
-    request: SSLCertificateRequest,
-    # current_user: User = Depends(get_current_app_service),
-):
+async def get_ssl_certificate(request: SSLCertificateRequest):
     hostname = request.hostname
     port = request.port
     try:
@@ -282,13 +278,6 @@ async def get_ssl_certificate(
         return extracted_info
 
     except Exception as e:
-        msg = f"{messages.GET_FAILED} {msg_prefix}s"
+        msg = f"{messages.GET_FAILED} SSL certificate"
         logging.info(msg)
         return send_internal_server_error(user_msg=msg, error=e)
-    
-
-
-
-
-        
-
