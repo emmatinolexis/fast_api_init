@@ -6,6 +6,7 @@ from app.core.logger import get_logger
 from app.repository.tracking_event_repository import TrackingEventRepository
 from app.service.base_service import BaseService
 from app.util.utils import get_distance_travelled_by_coordinates, get_status
+from math import ceil
 
 log = get_logger()
 
@@ -26,7 +27,7 @@ class TrackingEventService(BaseService):
             events = self.tracking_event_repository.read_all_events_by_device_imei(
                 device_imei, date
             )
-            return events
+            # return events
             if not events:
                 return []
 
@@ -74,20 +75,6 @@ class TrackingEventService(BaseService):
         except Exception as e:
             raise e
 
-    # def get_events_by_user(
-    #     self, date: str, user_uuid: str = None, business_uuid: str = None
-    # ) -> List[Dict[str, Any]]:
-    #     try:
-    #         date = self._initialize_date(date)
-    #         device_events = self._fetch_device_events(date, user_uuid, business_uuid)
-    #
-    #         if device_events is None:
-    #             return []
-    #
-    #         return self._build_response(date, device_events)
-    #     except Exception as e:
-    #         raise e
-
     def get_events_by_user(
             self,
             date: str,
@@ -101,12 +88,19 @@ class TrackingEventService(BaseService):
             device_events = self._fetch_device_events(date, user_uuid, business_uuid)
 
             if device_events is None:
-                return {"total": 0, "page": page, "page_size": page_size, "events": []}
+                return {
+                    "total": 0,
+                    "page": page,
+                    "page_size": page_size,
+                    "total_pages": 0,
+                    "events": [],
+                }
 
             all_responses = self._build_response(date, device_events)
 
             # Pagination logic
             total_events = len(all_responses)
+            total_pages = ceil(total_events / page_size)
             start_index = (page - 1) * page_size
             end_index = start_index + page_size
 
@@ -116,6 +110,7 @@ class TrackingEventService(BaseService):
                 "total": total_events,
                 "page": page,
                 "page_size": page_size,
+                "total_pages": total_pages,
                 "events": paginated_events,
             }
         except Exception as e:
