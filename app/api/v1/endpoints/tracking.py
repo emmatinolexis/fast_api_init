@@ -4,7 +4,7 @@ import ssl
 from datetime import datetime
 
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
 
 from app.core import messages
@@ -95,10 +95,17 @@ async def get_tracking_details_by_business_handler(
     business_uuid: str,
     service: TrackingEventService = Depends(Provide[Container.tracking_event_service]),
     current_user: User = Depends(get_current_user),
-    date: str = None,
+    page: int = Query(1, ge=1, description="Page number, default is set to 1"),
+    page_size: int = Query(
+        10, ge=1, le=1000, description="Items per page, default is 10"
+    ),
+    date: str = Query(
+            None,
+            description="Filter by date in dd/mm/yyyy format, default is the current date",
+        ),
 ):
     try:
-        events = service.get_events_by_user(date=date, business_uuid=business_uuid)
+        events = service.get_events_by_user(date=date, business_uuid=business_uuid, page=page, page_size=page_size)
         if events is None:
             return send_client_side_error(user_msg=messages.NO_DATA)
         return send_data(events)

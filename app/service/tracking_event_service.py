@@ -74,17 +74,50 @@ class TrackingEventService(BaseService):
         except Exception as e:
             raise e
 
+    # def get_events_by_user(
+    #     self, date: str, user_uuid: str = None, business_uuid: str = None
+    # ) -> List[Dict[str, Any]]:
+    #     try:
+    #         date = self._initialize_date(date)
+    #         device_events = self._fetch_device_events(date, user_uuid, business_uuid)
+    #
+    #         if device_events is None:
+    #             return []
+    #
+    #         return self._build_response(date, device_events)
+    #     except Exception as e:
+    #         raise e
+
     def get_events_by_user(
-        self, date: str, user_uuid: str = None, business_uuid: str = None
-    ) -> List[Dict[str, Any]]:
+            self,
+            date: str,
+            user_uuid: str = None,
+            business_uuid: str = None,
+            page: int = 1,
+            page_size: int = 10,
+    ) -> Dict[str, Any]:
         try:
             date = self._initialize_date(date)
             device_events = self._fetch_device_events(date, user_uuid, business_uuid)
 
             if device_events is None:
-                return []
+                return {"total": 0, "page": page, "page_size": page_size, "events": []}
 
-            return self._build_response(date, device_events)
+            all_responses = self._build_response(date, device_events)
+
+            # Pagination logic
+            total_events = len(all_responses)
+            start_index = (page - 1) * page_size
+            end_index = start_index + page_size
+
+            paginated_events = all_responses[start_index:end_index]
+
+            return {
+                "total": total_events,
+                "page": page,
+                "page_size": page_size,
+                "events": paginated_events,
+            }
         except Exception as e:
             raise e
 
