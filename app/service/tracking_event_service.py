@@ -75,20 +75,6 @@ class TrackingEventService(BaseService):
         except Exception as e:
             raise e
 
-    # def get_events_by_user(
-    #     self, date: str, user_uuid: str = None, business_uuid: str = None
-    # ) -> List[Dict[str, Any]]:
-    #     try:
-    #         date = self._initialize_date(date)
-    #         device_events = self._fetch_device_events(date, user_uuid, business_uuid)
-    #
-    #         if device_events is None:
-    #             return []
-    #
-    #         return self._build_response(date, device_events)
-    #     except Exception as e:
-    #         raise e
-
     def get_events_by_user(
             self,
             date: str,
