@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Optional
 
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends, Query,Request
+from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import ORJSONResponse
 from app.monitoring.metrics import ASSET_CREATION_TOTAL
 
