@@ -1231,7 +1231,8 @@ class SmartReportService(BaseService):
             asset = self.asset_repository.get_asset_with_relationships(
                 asset_uuid, start_date, end_date
             )
-            assets.append(asset)
+            if asset and asset.device_imei:
+                assets.append(asset)
         return assets
 
     def calculate_fuel_efficiency(
