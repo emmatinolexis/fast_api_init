@@ -71,6 +71,32 @@ async def get_last_tracking_details_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
+@router.get("/ssl_certificate", response_class=ORJSONResponse)
+@inject
+async def get_ssl_certificate(
+        hostname: str = None,
+        port: int = None
+):
+    try:
+        # Establish a connection to the server
+        context = ssl.create_default_context()
+        with socket.create_connection((hostname, port)) as sock:
+            with context.wrap_socket(sock, server_hostname=hostname) as ssock:
+                # Get the certificate
+                cert = ssock.getpeercert()
+                extracted_info = extract_certificate_info(cert)
+                key = ssl.get_server_certificate((hostname, 443))
+                extracted_info["key"] = key
+
+        # Return the certificate information
+        return extracted_info
+
+    except Exception as e:
+        msg = f"{messages.GET_FAILED} SSL certificate"
+        logging.info(msg)
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
 @router.get("/{user_uuid}", response_class=ORJSONResponse)
 @inject
 async def get_tracking_details_by_user_handler(
@@ -264,24 +290,4 @@ async def create_device_events(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/ssl_certificate", response_class=ORJSONResponse)
-@inject
-async def get_ssl_certificate(hostname: str = None, port: int = None):
-    try:
-        # Establish a connection to the server
-        context = ssl.create_default_context()
-        with socket.create_connection((hostname, port)) as sock:
-            with context.wrap_socket(sock, server_hostname=hostname) as ssock:
-                # Get the certificate
-                cert = ssock.getpeercert()
-                extracted_info = extract_certificate_info(cert)
-                key = ssl.get_server_certificate((hostname, 443))
-                extracted_info["key"] = key
 
-        # Return the certificate information
-        return extracted_info
-
-    except Exception as e:
-        msg = f"{messages.GET_FAILED} SSL certificate"
-        logging.info(msg)
-        return send_internal_server_error(user_msg=msg, error=e)
