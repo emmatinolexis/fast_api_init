@@ -43,13 +43,15 @@ msg_prefix = "device events"
 @router.get("/check_inactive_devices", response_class=ORJSONResponse)
 @inject
 async def check_inactive_devices(
+    page: int = Query(1, ge=1, description="Page number, default is 1"),
+    page_size: int = Query(10, ge=1, le=1000, description="Number of items per page, default is 10"),
     tracking_service: TrackingEventService = Depends(
         Provide[Container.tracking_event_service]
     ),
 ):
     try:
-        inactive_assets = tracking_service.get_inactive_assets()
-        return send_data({"inactive_devices": inactive_assets})
+        paginated_inactive_assets = tracking_service.get_inactive_assets(page=page, page_size=page_size)
+        return send_data(paginated_inactive_assets)
     except Exception as e:
         return send_internal_server_error(
             user_msg=messages.INTERNAL_SERVER_ERROR, error=e

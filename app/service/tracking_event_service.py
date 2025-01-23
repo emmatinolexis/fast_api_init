@@ -331,14 +331,21 @@ class TrackingEventService(BaseService):
         except Exception as e:
             raise e
 
-    def get_inactive_assets(self):
+    def get_inactive_assets(self, page: int = 1, page_size: int = 10):
         try:
             inactive_imeis = self.get_devices_without_events_today()
-            assets = self.asset_service.get_assets_by_imeis(inactive_imeis)
-            return [
-                {"asset_name": asset.asset_name, "device_imei": asset.device_imei}
-                for asset in assets
-            ]
+            paginated_assets, total_records = self.tracking_event_repository.get_inactive_assets_paginated(
+                inactive_imeis, page, page_size
+            )
+            total_pages = ceil(total_records / page_size) if page_size else 1
+
+            return {
+                "data": paginated_assets,
+                "total_records": total_records,
+                "page": page,
+                "page_size": page_size,
+                "total_pages": total_pages,
+            }
         except Exception as e:
             raise e
 
