@@ -90,6 +90,7 @@ class AssetRepository(BaseRepository):
         page=1,
         page_size=10,
         search_query: str = None,
+        status: str = None
     ) -> Dict[str, Any]:
         with self.session_factory() as session:
             # Calculate the offset based on the page and per_page values
@@ -130,6 +131,8 @@ class AssetRepository(BaseRepository):
                         self.model.asset_name.ilike(f"%{search_query}%"),
                         self.model.vehicle_license_no.ilike(f"%{search_query}%"),
                         self.model.vin.ilike(f"%{search_query}%"),
+                        User.first_name.ilike(f"%{search_query}%"),  # Search by operator's first name
+                        User.last_name.ilike(f"%{search_query}%"),
                     )
                 )
 
@@ -155,16 +158,25 @@ class AssetRepository(BaseRepository):
 
             # Process assets (including operator info and tracking event)
             processed_assets = self.process_assets(session, assets)
+            asset_data = []
+
+            if status:
+                for asset in processed_assets:
+                    if asset.device_imei:
+                        if asset.last_tracking_event.get('status') == status:
+                            asset_data.append(asset)
+            else:
+                asset_data = processed_assets
 
             # Get asset status counts (moving, idle, stopped)
             (
                 moving_asset_count,
                 idle_asset_count,
                 stopped_asset_count,
-            ) = self.get_asset_status_counts(processed_assets)
+            ) = self.get_asset_status_counts(asset_data)
 
             return {
-                "assets": processed_assets,
+                "assets": asset_data,
                 "total_assets": total_assets,
                 "total_pages": total_pages,
                 "current_page": page,
@@ -211,6 +223,8 @@ class AssetRepository(BaseRepository):
                         self.model.asset_name.ilike(f"%{search_query}%"),
                         self.model.vehicle_license_no.ilike(f"%{search_query}%"),
                         self.model.vin.ilike(f"%{search_query}%"),
+                        User.first_name.ilike(f"%{search_query}%"),  # Search by operator's first name
+                        User.last_name.ilike(f"%{search_query}%"),
                     )
                 )
 
@@ -328,6 +342,7 @@ class AssetRepository(BaseRepository):
                         "email": operator.email_address,
                         "image_url": operator.avatar_url,
                         "operator_type": operator.operator_type,
+                        "phone_number": operator.phone_number
                     }
                     # Add operator_data to asset dictionary
                     asset.operator = operator_data
