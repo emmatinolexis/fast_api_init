@@ -2,6 +2,7 @@ import logging
 import socket
 import ssl
 from datetime import datetime
+from logging import log
 
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
@@ -37,6 +38,22 @@ router = APIRouter(
     tags=["device_events"],
 )
 msg_prefix = "device events"
+
+
+@router.get("/check_inactive_devices", response_class=ORJSONResponse)
+@inject
+async def check_inactive_devices(
+    tracking_service: TrackingEventService = Depends(
+        Provide[Container.tracking_event_service]
+    ),
+):
+    try:
+        inactive_assets = tracking_service.get_inactive_assets()
+        return send_data({"inactive_devices": inactive_assets})
+    except Exception as e:
+        return send_internal_server_error(
+            user_msg=messages.INTERNAL_SERVER_ERROR, error=e
+        )
 
 
 @router.get("/check_imei", response_class=ORJSONResponse)

@@ -31,7 +31,7 @@ class Order(BaseModel):
     total_amount = Column(Integer, nullable=False)
     order_inventories = relationship("OrderDeviceAssignment", back_populates="order")
     order_shipping_address = relationship("OrderShippingAddress", uselist=False)
-    order_status = Column(Enum(OrderStatus),index=True)
+    order_status = Column(Enum(OrderStatus), index=True)
     installation_request = Column(Boolean, default=False, nullable=True)
     date_of_installation = Column(Date, nullable=True)
     time_of_installation = Column(Time, nullable=True)
@@ -47,9 +47,11 @@ class OrderDeviceAssignment(BaseModel):
         unique=True,
         nullable=False,
     )
-    order_uuid = Column(UUID(as_uuid=True), ForeignKey("orders.uuid"), nullable=False,index=True)
+    order_uuid = Column(
+        UUID(as_uuid=True), ForeignKey("orders.uuid"), nullable=False, index=True
+    )
     inventory_uuid = Column(
-        UUID(as_uuid=True), ForeignKey("inventories.uuid"), nullable=False,index=True
+        UUID(as_uuid=True), ForeignKey("inventories.uuid"), nullable=False, index=True
     )
     quantity = Column(Integer, nullable=False)
     order = relationship("Order", back_populates="order_inventories")
@@ -65,7 +67,9 @@ class OrderShippingAddress(BaseModel):
         unique=True,
         nullable=False,
     )
-    order_uuid = Column(UUID(as_uuid=True), ForeignKey("orders.uuid"), nullable=False,index=True)
+    order_uuid = Column(
+        UUID(as_uuid=True), ForeignKey("orders.uuid"), nullable=False, index=True
+    )
     country = Column(String(length=100))
     first_name = Column(String(length=100))
     city = Column(String(length=100))

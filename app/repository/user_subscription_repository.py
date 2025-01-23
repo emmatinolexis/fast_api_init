@@ -115,7 +115,6 @@ class UserSubscriptionRepository(BaseRepository):
                 logging.error("Subscription not found")
                 return
 
-
     def get_user_by_email(self, session, user_email):
         return session.query(User).filter(User.email_address == user_email).first()
 

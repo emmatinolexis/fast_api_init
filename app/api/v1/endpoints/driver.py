@@ -1,9 +1,10 @@
 from datetime import date
-from typing import List,Optional
+from typing import List, Optional
 
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
+
 from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
@@ -56,7 +57,6 @@ async def check_drivers_license_expiry(
     except Exception as e:
         msg = messages.LICENSE_CHECK_FAILED
         return send_internal_server_error(user_msg=msg, error=str(e))
-
 
 
 @router.get("/", response_class=ORJSONResponse)
@@ -189,7 +189,7 @@ async def get_drivers_by_business_uuid_handler(
 ):
     try:
         drivers = user_service.get_drivers_by_business_uuid(
-            business_uuid, role_uuid, page, page_size, operator_type, status,search
+            business_uuid, role_uuid, page, page_size, operator_type, status, search
         )
         if drivers is None:
             return send_client_side_error(
@@ -243,5 +243,3 @@ async def change_rider_asset_handler(
     except Exception as e:
         msg = messages.UPDATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
-
-

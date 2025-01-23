@@ -1,12 +1,13 @@
 from datetime import datetime
+from math import ceil
 from typing import Any, Dict, List, Union
 
 from app.core.constants import DISTANCE_UNIT, SPEED_UNIT
 from app.core.logger import get_logger
 from app.repository.tracking_event_repository import TrackingEventRepository
+from app.service.asset_service import AssetService
 from app.service.base_service import BaseService
 from app.util.utils import get_distance_travelled_by_coordinates, get_status
-from math import ceil
 
 log = get_logger()
 
@@ -15,8 +16,10 @@ class TrackingEventService(BaseService):
     def __init__(
         self,
         tracking_event_repository: TrackingEventRepository,
+        asset_service: AssetService,
     ):
         self.tracking_event_repository = tracking_event_repository
+        self.asset_service = asset_service
         super().__init__(tracking_event_repository)
 
     def get_events_by_device_imei(self, device_imei: str, date: str):
@@ -76,12 +79,12 @@ class TrackingEventService(BaseService):
             raise e
 
     def get_events_by_user(
-            self,
-            date: str,
-            user_uuid: str = None,
-            business_uuid: str = None,
-            page: int = 1,
-            page_size: int = 10,
+        self,
+        date: str,
+        user_uuid: str = None,
+        business_uuid: str = None,
+        page: int = 1,
+        page_size: int = 10,
     ) -> Dict[str, Any]:
         try:
             date = self._initialize_date(date)
@@ -302,21 +305,40 @@ class TrackingEventService(BaseService):
             )
         except Exception as e:
             raise e
-        
 
-
-    def get_tracking_device_events(self,device_imei:str):
+    def get_tracking_device_events(self, device_imei: str):
         try:
-            event = self.tracking_event_repository.get_event_by_device_imei(device_imei=device_imei)
+            event = self.tracking_event_repository.get_event_by_device_imei(
+                device_imei=device_imei
+            )
 
             if event:
-                return {
-                    "message": f"device with imei {device_imei} exists"
-                }
-            
-            return {
-                "message": f"device with imei {device_imei} does not exist" 
-            }
+                return {"message": f"device with imei {device_imei} exists"}
+
+            return {"message": f"device with imei {device_imei} does not exist"}
+        except Exception as e:
+            raise e
+
+    def get_devices_without_events_today(self):
+        try:
+            current_date = datetime.now().strftime("%d/%m/%Y")
+            all_imeis = self.asset_service.get_all_device_imeis()
+
+            events_by_imei = self.tracking_event_repository.get_events_for_all_imeis_on_date(current_date)
+            devices_without_events = [imei for imei in all_imeis if imei not in events_by_imei]
+
+            return devices_without_events
+        except Exception as e:
+            raise e
+
+    def get_inactive_assets(self):
+        try:
+            inactive_imeis = self.get_devices_without_events_today()
+            assets = self.asset_service.get_assets_by_imeis(inactive_imeis)
+            return [
+                {"asset_name": asset.asset_name, "device_imei": asset.device_imei}
+                for asset in assets
+            ]
         except Exception as e:
             raise e
 

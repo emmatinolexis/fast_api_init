@@ -1,7 +1,9 @@
 from typing import Optional
+from uuid import UUID
 
 import requests
 
+from app.core.exceptions import NotFoundError
 from app.core.settings import settings
 from app.repository.device_repository import DeviceRepository
 from app.repository.inventory_repository import InventoryRepository
@@ -15,8 +17,8 @@ from app.repository.order_shipping_address_repository import (
 from app.schema.order_schema import OrderPayload
 from app.service.base_service import BaseService
 from app.util.enums import OrderPickUpLocation, OrderStatus
-from app.core.exceptions import NotFoundError
-from uuid import UUID
+
+
 class OrderService(BaseService):
     def __init__(
         self,
@@ -42,7 +44,7 @@ class OrderService(BaseService):
             return order
         except Exception as e:
             raise e
-        
+
     def create_order(self, order_payload: OrderPayload):
         try:
             order = self.order_repository.create_order(order_payload)

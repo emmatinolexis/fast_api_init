@@ -23,11 +23,16 @@ class SmartReport(BaseModel):
     asset_group_uuids = Column(JSON, nullable=False)
     report_types = Column(JSON, nullable=False)
     asset_type_uuid = Column(
-        UUID(as_uuid=True), ForeignKey("asset_types.uuid"), nullable=False,index=True
+        UUID(as_uuid=True), ForeignKey("asset_types.uuid"), nullable=False, index=True
     )
-    user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False,index=True)
+    user_uuid = Column(
+        UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False, index=True
+    )
     business_profile_uuid = Column(
-        UUID(as_uuid=True), ForeignKey("business_profiles.uuid"), nullable=True,index=True
+        UUID(as_uuid=True),
+        ForeignKey("business_profiles.uuid"),
+        nullable=True,
+        index=True,
     )
     status = Column(Enum(SmartReportStatus), nullable=False, index=True)
     result_url = Column(String(length=200), nullable=True, index=True)

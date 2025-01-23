@@ -22,10 +22,13 @@ class Payment(BaseModel):
     status = Column(Enum(PaymentStatus), nullable=False, index=True)
     payment_type = Column(Enum(PaymentTypes), nullable=False, index=True)
     user_email = Column(
-        String(length=50), ForeignKey("users.email_address"), nullable=False,index=True
+        String(length=50), ForeignKey("users.email_address"), nullable=False, index=True
     )
     business_profile_uuid = Column(
-        UUID(as_uuid=True), ForeignKey("business_profiles.uuid"), nullable=False,index=True
+        UUID(as_uuid=True),
+        ForeignKey("business_profiles.uuid"),
+        nullable=False,
+        index=True,
     )
     channel = Column(String(length=50), nullable=False, index=True)
     business_profile = relationship("BusinessProfile", back_populates="payments")

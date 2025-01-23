@@ -21,7 +21,10 @@ class Inventory(BaseModel):
     device_type = Column(Enum(DeviceType), nullable=False, index=True)
     quantity = Column(Integer, nullable=False, index=True)
     device_manufacturer_uuid = Column(
-        UUID(as_uuid=True), ForeignKey("device_manufacturers.uuid"), nullable=False,index=True
+        UUID(as_uuid=True),
+        ForeignKey("device_manufacturers.uuid"),
+        nullable=False,
+        index=True,
     )
     cost_price = Column(Integer, nullable=False, index=True)
     selling_price = Column(Integer, nullable=True, index=True)

@@ -17,7 +17,9 @@ class FineReport(BaseModel):
         unique=True,
         nullable=False,
     )
-    asset_uuid = Column(UUID(as_uuid=True), ForeignKey("assets.uuid"), nullable=False,index=True)
+    asset_uuid = Column(
+        UUID(as_uuid=True), ForeignKey("assets.uuid"), nullable=False, index=True
+    )
     incident_type = Column(Enum(FineType), nullable=False, index=True)
     reported_by = Column(String(length=50), nullable=False)
     fine_status = Column(Enum(FineStatus), nullable=False)

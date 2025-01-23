@@ -8,7 +8,12 @@ from app.core.dependencies import get_current_user
 from app.model.user import User
 from app.schema.asset_schema import VehicleMakePayload
 from app.service.vehicle_make_service import VehicleMakeService
-from app.util.utils import send_data, send_info, send_internal_server_error, allow_admins_only
+from app.util.utils import (
+    allow_admins_only,
+    send_data,
+    send_info,
+    send_internal_server_error,
+)
 
 router = APIRouter(
     prefix="/vehicle_make",

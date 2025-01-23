@@ -15,10 +15,12 @@ class Notification(BaseModel):
         unique=True,
         nullable=False,
     )
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False,index=True)
+    user_id = Column(
+        UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False, index=True
+    )
     title = Column(String, nullable=False)
     message = Column(Text, nullable=False)
-    is_read = Column(Boolean, default=False,index=True)
+    is_read = Column(Boolean, default=False, index=True)
     business_profile_uuid = Column(
         UUID(as_uuid=True), ForeignKey("business_profiles.uuid"), nullable=True
     )

@@ -1,8 +1,12 @@
 import uuid
 
-from app.core import messages
+from fastapi import Request
+
+from app.core import activity_log_constants, messages
 from app.core.constants import FREE_PACKAGE, FREE_PACKAGE_ITEMS
-from app.core.exceptions import NotFoundError, UnAuthorizedError, BadRequestError
+from app.core.exceptions import BadRequestError, NotFoundError, UnAuthorizedError
+from app.model.asset import Asset
+from app.repository.activity_log_repository import ActivityLogRepository
 from app.repository.asset_repository import AssetRepository
 from app.repository.asset_type_repository import AssetTypeRepository
 from app.repository.device_repository import DeviceRepository
@@ -19,9 +23,7 @@ from app.repository.tracking_event_repository import TrackingEventRepository
 from app.repository.user_repository import UserRepository
 from app.repository.user_subscription_repository import UserSubscriptionRepository
 from app.repository.vehicle_owner_repository import VehicleOwnerRepository
-from app.service.asset_operator_assignment_service import AssetOperatorAssignmentService
-from app.repository.activity_log_repository import ActivityLogRepository
-
+from app.schema.activity_log_schema import ActivityLogSchema
 from app.schema.asset_schema import (
     AssetInput,
     AssetPayload,
@@ -33,17 +35,18 @@ from app.schema.asset_schema import (
     ThirdPartyAssetPayload,
     VehicleOwnerInput,
 )
+from app.service.asset_operator_assignment_service import AssetOperatorAssignmentService
 from app.service.base_service import BaseService
 from app.transfomers.asset_transformer import asset_transformer
 from app.util.enums import (
     AccountType,
+    ActivityLogClass,
+    ActivityLogType,
     AlertPolicy,
     AssetCreators,
     AssetStatus,
     GeofenceTypeUuid,
     PackageItemTrackerType,
-    ActivityLogClass,
-    ActivityLogType,
 )
 from app.util.utils import (
     calculate_average_speed,
@@ -54,9 +57,7 @@ from app.util.utils import (
     get_distance_travelled_by_coordinates,
     get_status,
 )
-from app.schema.activity_log_schema import ActivityLogSchema
-from app.core import activity_log_constants
-from fastapi import Request
+
 
 class AssetService(BaseService):
     def __init__(
@@ -79,7 +80,6 @@ class AssetService(BaseService):
         user_subscription_repository: UserSubscriptionRepository,
         asset_operator_assignment_service: AssetOperatorAssignmentService,
         activity_log_repository: ActivityLogRepository,
-
     ):
         self.asset_repository = asset_repository
         self.asset_type_repository = asset_type_repository
@@ -102,7 +102,7 @@ class AssetService(BaseService):
 
         super().__init__(asset_repository)
 
-    def create_asset(self, asset: AssetPayload,request: Request):
+    def create_asset(self, asset: AssetPayload, request: Request):
         try:
             user = self.get_user(asset.user_uuid)
 
@@ -132,15 +132,15 @@ class AssetService(BaseService):
 
             self.activity_log_repository.create(
                 ActivityLogSchema(
-                   activity_title=activity_log_constants.CREATE_ASSET,
-                   activity_class=ActivityLogClass.USER,
-                   activity_type=ActivityLogType.CREATE_ASSET,
-                   activity_description=activity_log_constants.CREATE_ASSET_DESC.format(
-                          email=user.get("email_address"), asset_name=asset.asset_name
+                    activity_title=activity_log_constants.CREATE_ASSET,
+                    activity_class=ActivityLogClass.USER,
+                    activity_type=ActivityLogType.CREATE_ASSET,
+                    activity_description=activity_log_constants.CREATE_ASSET_DESC.format(
+                        email=user.get("email_address"), asset_name=asset.asset_name
                     ),
                     user_uuid=str(user.get("uuid")),
                     business_profile_uuid=str(user.get("business_profile").uuid),
-                    ip_address=request.client.host
+                    ip_address=request.client.host,
                 )
             )
 
@@ -237,7 +237,9 @@ class AssetService(BaseService):
             user_assets = len(self.get_assets_by_user_uuid_no_pagination(user_uuid))
 
         if user_assets >= number_of_assets:
-            raise BadRequestError("You have reached the maximum number of assets you can create. Please subscribe for a higher package.")
+            raise BadRequestError(
+                "You have reached the maximum number of assets you can create. Please subscribe for a higher package."
+            )
 
     def check_existing_asset(self, asset):
         existing_asset = self.asset_repository.read_by_vin_serial_number_license_no(
@@ -275,7 +277,7 @@ class AssetService(BaseService):
             str(created_asset.uuid),
             str(asset.driver_uuid),
             str(created_asset.user_uuid),
-            str(created_asset.business_profile_uuid)
+            str(created_asset.business_profile_uuid),
         )
 
         created_asset_data = {
@@ -1050,5 +1052,17 @@ class AssetService(BaseService):
 
             return asset_transformer(update_asset)
 
+        except Exception as e:
+            raise e
+
+    def get_assets_by_imeis(self, imeis):
+        try:
+            return self.asset_repository.get_assets_by_imeis(imeis)
+        except Exception as e:
+            raise e
+
+    def get_all_device_imeis(self):
+        try:
+            return self.asset_repository.get_all_device_imeis()
         except Exception as e:
             raise e

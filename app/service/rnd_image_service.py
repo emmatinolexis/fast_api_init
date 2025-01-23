@@ -1,8 +1,10 @@
 import base64
 import uuid
+
 import boto3
-from app.util.utils import upload_to_s3
+
 from app.core.settings import settings
+from app.util.utils import upload_to_s3
 
 
 class RNDImageService:
@@ -22,9 +24,9 @@ class RNDImageService:
             raise ValueError("Invalid base64 image data")
 
         image_uuid = str(uuid.uuid4())
-        file_name = f"{image_uuid}.png" 
+        file_name = f"{image_uuid}.png"
 
-        content_type = "image/png" 
+        content_type = "image/png"
 
         url = await upload_to_s3(
             file_name=file_name,
@@ -70,7 +72,7 @@ class RNDImageService:
     #         return url
 
     #     return None
-        
+
     def list_images(self):
         try:
             prefix = "rnd_images/"

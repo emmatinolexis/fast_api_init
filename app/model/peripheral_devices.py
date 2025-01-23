@@ -29,7 +29,11 @@ class PeripheralDevice(BaseModel):
     )
     serial_number = Column(String(length=150), nullable=False, unique=True, index=True)
     node_id = Column(
-        UUID(as_uuid=True), default=systemuuid.uuid4, unique=True, nullable=False,index=True
+        UUID(as_uuid=True),
+        default=systemuuid.uuid4,
+        unique=True,
+        nullable=False,
+        index=True,
     )
     status = Column(
         Enum(DeviceStatus),
@@ -37,7 +41,9 @@ class PeripheralDevice(BaseModel):
         default=DeviceStatus.NOT_ASSIGNED,
         index=True,
     )
-    user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=True,index=True)
+    user_uuid = Column(
+        UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=True, index=True
+    )
     business_profile_uuid = Column(
         UUID(as_uuid=True),
         ForeignKey("business_profiles.uuid"),
@@ -54,7 +60,7 @@ class PeripheralDevice(BaseModel):
     installed_at = Column(DateTime, nullable=True)
 
     gas_cylinder_uuid = Column(
-        UUID(as_uuid=True), ForeignKey("gas_cylinders.uuid"), nullable=True,index=True
+        UUID(as_uuid=True), ForeignKey("gas_cylinders.uuid"), nullable=True, index=True
     )
 
     # One-to-one relationship with DeviceNodeConfig

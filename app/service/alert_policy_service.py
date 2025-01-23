@@ -224,11 +224,11 @@ class AlertPolicyService(BaseService):
             raise e
 
     def create_alert_policy(
-    self,
-    alert_policy: AlertPolicyPayload,
-    user_uuid: str,
-    business_uuid: str = None,
-):
+        self,
+        alert_policy: AlertPolicyPayload,
+        user_uuid: str,
+        business_uuid: str = None,
+    ):
         try:
             self.validate_alert_policy(alert_policy)
             alert_policy_data = AlertPolicyInput(
@@ -243,14 +243,15 @@ class AlertPolicyService(BaseService):
                 status=ActiveStatus.ACTIVE,
             )
             created_policy = self.add(alert_policy_data)
-            self.assign_alert_recipients(alert_policy.alert_recipients, created_policy.uuid)
+            self.assign_alert_recipients(
+                alert_policy.alert_recipients, created_policy.uuid
+            )
             self.assign_alert_types(alert_policy.alert_types, created_policy.uuid)
             self.assign_alert_assets(alert_policy.alert_assets, created_policy.uuid)
 
             return created_policy
         except Exception as e:
             raise e
-
 
     def create_geofence_alert_policy(
         self,

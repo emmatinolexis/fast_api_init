@@ -32,7 +32,9 @@ async def create_fuel_log_handler_for_individual(
     payload: FuelLogSchema,
     service: FuelLogService = Depends(Provide[Container.fuel_log_service]),
     user_service: UserService = Depends(Provide[Container.user_service]),
-    current_user: User = Depends(get_current_user_with_permission("create_fuel_purchase_log")),
+    current_user: User = Depends(
+        get_current_user_with_permission("create_fuel_purchase_log")
+    ),
 ):
     try:
         user = user_service.get_user_by_uuid(user_uuid)
@@ -65,7 +67,9 @@ async def create_bulk_fuel_logs_handler(
     csv_url: str,
     service: FuelLogService = Depends(Provide[Container.fuel_log_service]),
     user_service: UserService = Depends(Provide[Container.user_service]),
-    current_user: User = Depends(get_current_user_with_permission("create_fuel_purchase_log")),
+    current_user: User = Depends(
+        get_current_user_with_permission("create_fuel_purchase_log")
+    ),
 ):
     try:
         user = user_service.get_user_by_uuid(user_uuid)
@@ -100,7 +104,9 @@ async def create_fuel_log_handler_for_fleet_manager(
     payload: SingleFuelLog,
     service: FuelLogService = Depends(Provide[Container.fuel_log_service]),
     user_service: UserService = Depends(Provide[Container.user_service]),
-    current_user: User = Depends(get_current_user_with_permission("create_fuel_purchase_log")),
+    current_user: User = Depends(
+        get_current_user_with_permission("create_fuel_purchase_log")
+    ),
 ):
     try:
         user = user_service.get_user_by_uuid(user_uuid)
@@ -139,7 +145,9 @@ async def get_fuel_logs_handler(
     end_date: str = Query(None, description="End date"),
     service: FuelLogService = Depends(Provide[Container.fuel_log_service]),
     user_service: UserService = Depends(Provide[Container.user_service]),
-    current_user: User = Depends(get_current_user_with_permission("view_fuel_purchase_log")),
+    current_user: User = Depends(
+        get_current_user_with_permission("view_fuel_purchase_log")
+    ),
 ):
     try:
         user = user_service.get_user_by_uuid(user_uuid)
@@ -174,7 +182,9 @@ def upload_fuel_log_receipt_handler(
     fuel_log_uuid: str,
     payload: UpdateFuelLog,
     service: FuelLogService = Depends(Provide[Container.fuel_log_service]),
-    current_user: User = Depends(get_current_user_with_permission("create_fuel_purchase_log")),
+    current_user: User = Depends(
+        get_current_user_with_permission("create_fuel_purchase_log")
+    ),
 ):
     try:
         log_entry = service.get_by_uuid(fuel_log_uuid)
@@ -208,7 +218,9 @@ def upload_fuel_log_receipt_handler(
 def get_fuel_log_receipt_handler(
     fuel_log_uuid: str,
     service: FuelLogService = Depends(Provide[Container.fuel_log_service]),
-    current_user: User = Depends(get_current_user_with_permission("view_fuel_purchase_log")),
+    current_user: User = Depends(
+        get_current_user_with_permission("view_fuel_purchase_log")
+    ),
 ):
     try:
         log_entry = service.get_by_uuid(fuel_log_uuid)

@@ -78,7 +78,7 @@ class InvitationService(BaseService):
                 activity_type=ActivityLogType.DELETE_INVITATION,
                 activity_class=ActivityLogClass.ADMIN,
                 activity_description=activity_log_constants.DELETE_INVITATION_DESC.format(
-                    email = current_user.email_address
+                    email=current_user.email_address
                 ),
                 ip_address=request.client.host,
             )

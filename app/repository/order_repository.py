@@ -1,6 +1,7 @@
 from contextlib import AbstractContextManager
 from datetime import datetime, timedelta
 from typing import Callable, Optional
+from uuid import UUID
 
 from dateutil.relativedelta import relativedelta
 from sqlalchemy import Date, cast
@@ -12,14 +13,13 @@ from app.repository.base_repository import BaseRepository
 from app.schema.order_schema import OrderPayload
 from app.util.enums import OrderStatus
 from app.util.utils import calculate_percentage_change, parse_date
-from uuid import UUID
+
 
 class OrderRepository(BaseRepository):
     def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
         self.session_factory = session_factory
         super().__init__(session_factory, OrderRepository)
 
-    
     def get_order_by_uuid(self, order_uuid: UUID):
         with self.session_factory() as session:
             try:
@@ -57,12 +57,16 @@ class OrderRepository(BaseRepository):
                 raise e
 
     def _get_base_query(self, session: Session):
-        return session.query(Order).options(
-            joinedload(Order.order_inventories)
-            .joinedload(OrderDeviceAssignment.inventory)
-            .joinedload(Inventory.images),
-            joinedload(Order.order_shipping_address),
-        ).order_by(Order.created_at.desc())
+        return (
+            session.query(Order)
+            .options(
+                joinedload(Order.order_inventories)
+                .joinedload(OrderDeviceAssignment.inventory)
+                .joinedload(Inventory.images),
+                joinedload(Order.order_shipping_address),
+            )
+            .order_by(Order.created_at.desc())
+        )
 
     def get_all_orders(
         self,

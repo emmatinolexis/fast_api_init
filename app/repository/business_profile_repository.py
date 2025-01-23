@@ -1,16 +1,17 @@
 from contextlib import AbstractContextManager
-from typing import Callable, Optional, Dict
 from datetime import datetime, timedelta
+from typing import Callable, Dict, Optional
 
-from sqlalchemy import and_, func, case
+from sqlalchemy import and_, case, func
 from sqlalchemy.orm import Session, joinedload
 
 from app.model.business_profile import BusinessProfile
+from app.model.user import User
 from app.model.user_subscription import UserSubscription
 from app.repository.base_repository import BaseRepository
 from app.util.enums import ActiveStatus, SubscriptionStatus
-from app.model.user import User
 from app.util.utils import parse_date
+
 
 class BusinessProfileRepository(BaseRepository):
     def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
@@ -55,7 +56,9 @@ class BusinessProfileRepository(BaseRepository):
             total_records = current_query.count()
             total_pages = (total_records + page_size - 1) // page_size
 
-            businesses = current_query.limit(page_size).offset((page - 1) * page_size).all()
+            businesses = (
+                current_query.limit(page_size).offset((page - 1) * page_size).all()
+            )
 
             if not businesses:
                 print("No businesses found for the given criteria.")
@@ -75,7 +78,9 @@ class BusinessProfileRepository(BaseRepository):
 
             current_filters = []
             if search_parameter:
-                current_filters.append(self.model.business_name.ilike(f"%{search_parameter}%"))
+                current_filters.append(
+                    self.model.business_name.ilike(f"%{search_parameter}%")
+                )
             if start_date_obj:
                 current_filters.append(self.model.created_at >= start_date_obj)
             if end_date_obj:
@@ -83,23 +88,30 @@ class BusinessProfileRepository(BaseRepository):
             if status:
                 current_filters.append(User.status == status)
 
-            current_counts = session.query(
-                func.count(UserSubscription.id).label('total'),
-                func.sum(
-                    case(
-                        (UserSubscription.status == SubscriptionStatus.ACTIVE, 1),
-                        else_=0
-                    )
-                ).label('active'),
-                func.sum(
-                    case(
-                        (UserSubscription.status != SubscriptionStatus.ACTIVE, 1),
-                        else_=0
-                    )
-                ).label('inactive'),
-            ).join(BusinessProfile, UserSubscription.business_profile_uuid == BusinessProfile.uuid
-            ).join(User, UserSubscription.user_email == User.email_address
-            ).filter(and_(*current_filters)).one()
+            current_counts = (
+                session.query(
+                    func.count(UserSubscription.id).label("total"),
+                    func.sum(
+                        case(
+                            (UserSubscription.status == SubscriptionStatus.ACTIVE, 1),
+                            else_=0,
+                        )
+                    ).label("active"),
+                    func.sum(
+                        case(
+                            (UserSubscription.status != SubscriptionStatus.ACTIVE, 1),
+                            else_=0,
+                        )
+                    ).label("inactive"),
+                )
+                .join(
+                    BusinessProfile,
+                    UserSubscription.business_profile_uuid == BusinessProfile.uuid,
+                )
+                .join(User, UserSubscription.user_email == User.email_address)
+                .filter(and_(*current_filters))
+                .one()
+            )
 
             total_subscriptions = current_counts.total
             total_active_subscriptions = current_counts.active or 0
@@ -108,31 +120,52 @@ class BusinessProfileRepository(BaseRepository):
             if previous_start_date_obj and previous_end_date_obj:
                 previous_filters = []
                 if search_parameter:
-                    previous_filters.append(self.model.business_name.ilike(f"%{search_parameter}%"))
+                    previous_filters.append(
+                        self.model.business_name.ilike(f"%{search_parameter}%")
+                    )
                 if previous_start_date_obj:
-                    previous_filters.append(self.model.created_at >= previous_start_date_obj)
+                    previous_filters.append(
+                        self.model.created_at >= previous_start_date_obj
+                    )
                 if previous_end_date_obj:
-                    previous_filters.append(self.model.created_at <= previous_end_date_obj)
+                    previous_filters.append(
+                        self.model.created_at <= previous_end_date_obj
+                    )
                 if status:
                     previous_filters.append(User.status == status)
 
-                previous_counts = session.query(
-                    func.count(UserSubscription.id).label('total'),
-                    func.sum(
-                        case(
-                            (UserSubscription.status == SubscriptionStatus.ACTIVE, 1),
-                            else_=0
-                        )
-                    ).label('active'),
-                    func.sum(
-                        case(
-                            (UserSubscription.status != SubscriptionStatus.ACTIVE, 1),
-                            else_=0
-                        )
-                    ).label('inactive'),
-                ).join(BusinessProfile, UserSubscription.business_profile_uuid == BusinessProfile.uuid
-                ).join(User, UserSubscription.user_email == User.email_address
-                ).filter(and_(*previous_filters)).one()
+                previous_counts = (
+                    session.query(
+                        func.count(UserSubscription.id).label("total"),
+                        func.sum(
+                            case(
+                                (
+                                    UserSubscription.status
+                                    == SubscriptionStatus.ACTIVE,
+                                    1,
+                                ),
+                                else_=0,
+                            )
+                        ).label("active"),
+                        func.sum(
+                            case(
+                                (
+                                    UserSubscription.status
+                                    != SubscriptionStatus.ACTIVE,
+                                    1,
+                                ),
+                                else_=0,
+                            )
+                        ).label("inactive"),
+                    )
+                    .join(
+                        BusinessProfile,
+                        UserSubscription.business_profile_uuid == BusinessProfile.uuid,
+                    )
+                    .join(User, UserSubscription.user_email == User.email_address)
+                    .filter(and_(*previous_filters))
+                    .one()
+                )
 
                 previous_total_subscriptions = previous_counts.total
                 previous_total_active_subscriptions = previous_counts.active or 0
@@ -176,9 +209,6 @@ class BusinessProfileRepository(BaseRepository):
             query = query.filter(self.model.created_at <= end_date_obj)
 
         if status:
-            query = query.join(self.model.users).filter(
-                User.status == status
-            )
+            query = query.join(self.model.users).filter(User.status == status)
 
         return query
-

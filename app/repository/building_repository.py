@@ -1,7 +1,7 @@
 from contextlib import AbstractContextManager
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, Optional
 
-from sqlalchemy import desc
+from sqlalchemy import desc, or_
 from sqlalchemy.orm import Session, joinedload
 
 from app.model.buildings import Building
@@ -10,8 +10,8 @@ from app.model.peripheral_devices import PeripheralDevice
 from app.repository.base_repository import BaseRepository
 from app.util.enums import ActiveStatus, BuildingStatus
 from app.util.utils import calculate_gas_level_percentage
-from typing import Optional
-from sqlalchemy import or_
+
+
 class BuildingRepository(BaseRepository):
     def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
         self.session_factory = session_factory
@@ -76,7 +76,7 @@ class BuildingRepository(BaseRepository):
         business_uuid: str = None,
         page: int = 1,
         page_size: int = 10,
-        search: Optional[str] = None, 
+        search: Optional[str] = None,
     ) -> Dict[str, Any]:
         with self.session_factory() as session:
             offset = (page - 1) * page_size
@@ -85,7 +85,7 @@ class BuildingRepository(BaseRepository):
             if search:
                 search_pattern = f"%{search}%"
                 base_query = base_query.filter(
-                        self.model.building_name.ilike(search_pattern)                
+                    self.model.building_name.ilike(search_pattern)
                 )
 
             total_assets = base_query.count()
@@ -219,7 +219,7 @@ class BuildingRepository(BaseRepository):
             "status": status,
             "image_url": asset.image_url,
             "cylinders": building_cylinders,
-            "created_at": asset.created_at
+            "created_at": asset.created_at,
         }
 
     def read_all_assets_by_uuid_no_pagination(

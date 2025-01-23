@@ -1,5 +1,6 @@
 import logging
 from typing import Optional
+from uuid import UUID
 
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
@@ -8,13 +9,12 @@ from fastapi.responses import ORJSONResponse
 from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_app_service, get_current_user
+from app.core.exceptions import NotFoundError
 from app.model.user import User
 from app.schema.order_schema import OrderPayload
 from app.service.order_service import OrderService
 from app.util.enums import OrderStatus
-from app.util.utils import send_data, send_internal_server_error,send_client_side_error
-from app.core.exceptions import NotFoundError
-from uuid import UUID
+from app.util.utils import send_client_side_error, send_data, send_internal_server_error
 
 router = APIRouter(
     prefix="/order",
@@ -70,6 +70,7 @@ async def get_all_orders_handler(
         msg = messages.CREATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
 
+
 @router.get("/{uuid}", response_class=ORJSONResponse)
 @inject
 async def get_order_by_uuid(
@@ -81,9 +82,7 @@ async def get_order_by_uuid(
         order = service.get_order_by_uuid(uuid)
         return send_data(order)
     except NotFoundError as e:
-        return send_client_side_error(
-            user_msg=messages.GET_FAILED+ "order"
-        )
+        return send_client_side_error(user_msg=messages.GET_FAILED + "order")
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)

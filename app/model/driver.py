@@ -20,7 +20,9 @@ class Driver(BaseModel):
     asset_uuid = Column(
         UUID(as_uuid=True), ForeignKey("assets.uuid"), nullable=True, index=True
     )
-    user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False,index=True)
+    user_uuid = Column(
+        UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False, index=True
+    )
     business_uuid = Column(
         UUID(as_uuid=True),
         ForeignKey("business_profiles.uuid"),

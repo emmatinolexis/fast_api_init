@@ -32,12 +32,14 @@ class TrackingEventRepository(BaseRepository):
                 .all()
             )
             return query
-        
-
 
     def get_event_by_device_imei(self, device_imei: str):
         with self.session_factory() as session:
-            query = session.query(self.model).filter(self.model.device_imei.ilike(f"%{device_imei}%")).first()
+            query = (
+                session.query(self.model)
+                .filter(self.model.device_imei.ilike(f"%{device_imei}%"))
+                .first()
+            )
             return query
 
     def read_all_events_by_date_range(
@@ -233,3 +235,29 @@ class TrackingEventRepository(BaseRepository):
 
             average_speed = calculate_average_speed(speeds)
             return event_data, average_speed
+
+    def get_all_unique_imeis(self):
+        with self.session_factory() as session:
+            query = session.query(self.model.device_imei).distinct().all()
+            return [imei[0] for imei in query]
+    
+    def get_events_for_all_imeis_on_date(self, date: str) -> Dict[str, List[TrackingEvent]]:
+        with self.session_factory() as session:
+            query = (
+                session.query(self.model)
+                .filter(
+                    cast(self.model.event_datetime, Date) == datetime.strptime(date, "%d/%m/%Y"),
+                    self.model.event_type.in_(ALLOWED_EVENT_TYPES),
+                )
+                .order_by(self.model.event_datetime)
+                .all()
+            )
+
+            events_by_imei = {}
+            for event in query:
+                if event.device_imei not in events_by_imei:
+                    events_by_imei[event.device_imei] = []
+                events_by_imei[event.device_imei].append(event)
+
+            return events_by_imei
+

@@ -49,7 +49,9 @@ async def get_gas_devices_handler(
     page: int = Query(1, description="Page number"),
     limit: int = Query(10, description="Number of items per page"),
     service: GasDeviceService = Depends(Provide[Container.gas_device_service]),
-    current_user: User = Depends(get_current_user_with_permission("view_pyrogaurd_device")),
+    current_user: User = Depends(
+        get_current_user_with_permission("view_pyrogaurd_device")
+    ),
 ):
     try:
         return send_data(
@@ -67,8 +69,9 @@ async def create_gas_device_handler(
     payload: CreateGasDevice,
     service: GasDeviceService = Depends(Provide[Container.gas_device_service]),
     user_service: UserService = Depends(Provide[Container.user_service]),
-    current_user: User = Depends(get_current_user_with_permission("create_pyrogaurd_device")),
-
+    current_user: User = Depends(
+        get_current_user_with_permission("create_pyrogaurd_device")
+    ),
 ):
     try:
         user = user_service.get_user_by_uuid(user_id)
@@ -115,7 +118,9 @@ async def get_gas_devices_by_user_handler(
     user_id: str,
     service: GasDeviceService = Depends(Provide[Container.gas_device_service]),
     user_service: UserService = Depends(Provide[Container.user_service]),
-    current_user: User = Depends(get_current_user_with_permission("view_pyrogaurd_device")),
+    current_user: User = Depends(
+        get_current_user_with_permission("view_pyrogaurd_device")
+    ),
 ):
     try:
         user = user_service.get_user_by_uuid(user_id)
@@ -140,7 +145,9 @@ async def get_gas_devices_by_building_handler(
     building_uuid: str,
     device_type: DeviceType = Query(None, description="Type of device"),
     service: GasDeviceService = Depends(Provide[Container.gas_device_service]),
-    current_user: User = Depends(get_current_user_with_permission("view_pyrogaurd_device")),
+    current_user: User = Depends(
+        get_current_user_with_permission("view_pyrogaurd_device")
+    ),
 ):
     try:
         data = service.get_building_devices(building_uuid, device_type)

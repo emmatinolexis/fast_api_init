@@ -16,10 +16,10 @@ from app.core.exceptions import (
     NotFoundError,
     UnAuthorizedError,
 )
-from app.monitoring.metrics import DEACTIVATED_ACCOUNT_TOTAL, USER_SIGNUP_TOTAL
 from app.core.security import extract_user_data, verify_password
 from app.core.settings import settings
 from app.model.user import User
+from app.monitoring.metrics import DEACTIVATED_ACCOUNT_TOTAL, USER_SIGNUP_TOTAL
 from app.schema.invitation_schema import (
     InvitationCreatePayload,
     InvitationCreatePayloadSingle,
@@ -155,7 +155,10 @@ async def create_user_handler(
             )
 
         # check if business already exist if account type is business
-        if payload.account_type == AccountType.BUSINESS and payload.invite_status is False:
+        if (
+            payload.account_type == AccountType.BUSINESS
+            and payload.invite_status is False
+        ):
             found_business = service.check_business_exists(
                 payload.business_name, payload.business_email, payload.business_phone
             )
@@ -612,13 +615,13 @@ async def update_user_avatar_handler(
 @inject
 async def deactivate_account_handler(
     uuid: str,
-    request:Request,
+    request: Request,
     payload: AccountDeactivationPayload,
     service: UserService = Depends(Provide[Container.user_service]),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        user = service.deactivate_user_account(uuid, payload,current_user,request)
+        user = service.deactivate_user_account(uuid, payload, current_user, request)
 
         if user is None:
             return send_client_side_error(
@@ -1027,7 +1030,10 @@ async def update_team_member_handler(
 ):
     try:
         user_service.update_team_member_handler(
-            team_member_uuid=team_member_uuid, payload=payload,current_user=current_user,request=request
+            team_member_uuid=team_member_uuid,
+            payload=payload,
+            current_user=current_user,
+            request=request,
         )
         return send_info(messages.UPDATE_SUCCESS)
     except NotFoundError as e:
