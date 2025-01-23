@@ -40,7 +40,7 @@ router = APIRouter(
 msg_prefix = "device events"
 
 
-@router.get("/check_inactive_devices", response_class=ORJSONResponse)
+@router.get("/inactive_devices", response_class=ORJSONResponse)
 @inject
 async def check_inactive_devices(
     page: int = Query(1, ge=1, description="Page number, default is 1"),
