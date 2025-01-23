@@ -10,6 +10,7 @@ from fastapi.responses import ORJSONResponse
 from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_app_service, get_current_user
+from app.core.settings import get_settings
 from app.model.user import User
 from app.schema.tracking_device_schema import (
     DeviceReportPayload,
@@ -73,14 +74,16 @@ async def get_last_tracking_details_handler(
 
 @router.get("/ssl_certificate", response_class=ORJSONResponse)
 @inject
-async def get_ssl_certificate(
-        hostname: str = None,
-        port: int = None
-):
+async def get_ssl_certificate():
     try:
+        # Set the hostname
+        hostname = "mvitracking-uat.sageinfrastructure.net"
+        if get_settings().ENV == "production":
+            hostname = "mvitracking.live.sageinfrastructure.net"
+
         # Establish a connection to the server
         context = ssl.create_default_context()
-        with socket.create_connection((hostname, port)) as sock:
+        with socket.create_connection((hostname, 443)) as sock:
             with context.wrap_socket(sock, server_hostname=hostname) as ssock:
                 # Get the certificate
                 cert = ssock.getpeercert()
@@ -126,12 +129,14 @@ async def get_tracking_details_by_business_handler(
         10, ge=1, le=1000, description="Items per page, default is 10"
     ),
     date: str = Query(
-            None,
-            description="Filter by date in dd/mm/yyyy format, default is the current date",
-        ),
+        None,
+        description="Filter by date in dd/mm/yyyy format, default is the current date",
+    ),
 ):
     try:
-        events = service.get_events_by_user(date=date, business_uuid=business_uuid, page=page, page_size=page_size)
+        events = service.get_events_by_user(
+            date=date, business_uuid=business_uuid, page=page, page_size=page_size
+        )
         if events is None:
             return send_client_side_error(user_msg=messages.NO_DATA)
         return send_data(events)
@@ -288,6 +293,3 @@ async def create_device_events(
         msg = "Failed to process device event"
         logging.error(e)
         return send_internal_server_error(user_msg=msg, error=e)
-
-
-
