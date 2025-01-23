@@ -323,14 +323,9 @@ class TrackingEventService(BaseService):
         try:
             current_date = datetime.now().strftime("%d/%m/%Y")
             all_imeis = self.asset_service.get_all_device_imeis()
-            devices_without_events = []
 
-            for imei in all_imeis:
-                events = self.tracking_event_repository.read_all_events_by_device_imei(
-                    imei, current_date
-                )
-                if not events:
-                    devices_without_events.append(imei)
+            events_by_imei = self.tracking_event_repository.get_events_for_all_imeis_on_date(current_date)
+            devices_without_events = [imei for imei in all_imeis if imei not in events_by_imei]
 
             return devices_without_events
         except Exception as e:

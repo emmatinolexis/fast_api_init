@@ -240,3 +240,24 @@ class TrackingEventRepository(BaseRepository):
         with self.session_factory() as session:
             query = session.query(self.model.device_imei).distinct().all()
             return [imei[0] for imei in query]
+    
+    def get_events_for_all_imeis_on_date(self, date: str) -> Dict[str, List[TrackingEvent]]:
+        with self.session_factory() as session:
+            query = (
+                session.query(self.model)
+                .filter(
+                    cast(self.model.event_datetime, Date) == datetime.strptime(date, "%d/%m/%Y"),
+                    self.model.event_type.in_(ALLOWED_EVENT_TYPES),
+                )
+                .order_by(self.model.event_datetime)
+                .all()
+            )
+
+            events_by_imei = {}
+            for event in query:
+                if event.device_imei not in events_by_imei:
+                    events_by_imei[event.device_imei] = []
+                events_by_imei[event.device_imei].append(event)
+
+            return events_by_imei
+
