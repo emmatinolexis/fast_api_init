@@ -105,5 +105,5 @@ class Asset(BaseModel):
     )
     vehicle_owner = relationship("VehicleOwner", uselist=False)
     operators = relationship(
-        "User", secondary="asset_operator_assignments", back_populates="operated_assets"
+        "User", secondary="asset_operator_assignments", back_populates="operated_assets", uselist=False
     )

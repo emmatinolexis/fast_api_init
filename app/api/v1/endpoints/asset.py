@@ -110,6 +110,7 @@ async def get_asset_by_business_uuid_handler(
     business_uuid: str,
     asset_type_uuid: str = None,
     search: str = Query(None, description="Search by asset name"),
+    status: str = Query(None, description="Search by asset status"),
     page: int = Query(1, ge=1, description="Page number, default is set to 1"),
     page_size: int = Query(
         10, ge=1, le=1000, description="Items per page, default is 10"
@@ -141,6 +142,7 @@ async def get_asset_by_business_uuid_handler(
                 page=page,
                 page_size=page_size,
                 search=search,
+                status=status
             )
         return send_data(assets)
 
