@@ -17,10 +17,14 @@ class TheftIncidence(BaseModel):
         unique=True,
         nullable=False,
     )
-    user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False,index=True)
-    asset_uuid = Column(UUID(as_uuid=True), ForeignKey("assets.uuid"), nullable=False,index=True)
+    user_uuid = Column(
+        UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False, index=True
+    )
+    asset_uuid = Column(
+        UUID(as_uuid=True), ForeignKey("assets.uuid"), nullable=False, index=True
+    )
     incident_type = Column(Enum(IncidentType), nullable=False)
-    status = Column(Enum(IncidentStatus), nullable=False,index=True)
+    status = Column(Enum(IncidentStatus), nullable=False, index=True)
 
     user = relationship("User", back_populates="theft_incidents")
     asset = relationship("Asset", uselist=False)

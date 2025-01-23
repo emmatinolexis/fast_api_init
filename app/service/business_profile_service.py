@@ -1,12 +1,12 @@
+from typing import Dict, Optional
+
 from app.core.constants import FREE_PACKAGE, FREE_PACKAGE_ITEMS
 from app.repository.business_profile_repository import BusinessProfileRepository
 from app.service.base_service import BaseService
 from app.service.package_item_assignments_service import PackageItemAssignmentService
-from app.util.enums import SubscriptionStatus, ActiveStatus
-from app.util.utils import (
-    calculate_percentage_change,
-)
-from typing import Optional, Dict
+from app.util.enums import ActiveStatus, SubscriptionStatus
+from app.util.utils import calculate_percentage_change
+
 
 class BusinessProfileService(BaseService):
     def __init__(
@@ -88,12 +88,22 @@ class BusinessProfileService(BaseService):
             )
 
             total_subscriptions = businesses_result.get("total_subscriptions", 0)
-            total_active_subscriptions = businesses_result.get("total_active_subscriptions", 0)
-            total_inactive_subscriptions = businesses_result.get("total_inactive_subscriptions", 0)
+            total_active_subscriptions = businesses_result.get(
+                "total_active_subscriptions", 0
+            )
+            total_inactive_subscriptions = businesses_result.get(
+                "total_inactive_subscriptions", 0
+            )
 
-            previous_total_subscriptions = businesses_result.get("previous_total_subscriptions", 0)
-            previous_total_active_subscriptions = businesses_result.get("previous_total_active_subscriptions", 0)
-            previous_total_inactive_subscriptions = businesses_result.get("previous_total_inactive_subscriptions", 0)
+            previous_total_subscriptions = businesses_result.get(
+                "previous_total_subscriptions", 0
+            )
+            previous_total_active_subscriptions = businesses_result.get(
+                "previous_total_active_subscriptions", 0
+            )
+            previous_total_inactive_subscriptions = businesses_result.get(
+                "previous_total_inactive_subscriptions", 0
+            )
 
             percentage_change_total_subscriptions = calculate_percentage_change(
                 total_subscriptions, previous_total_subscriptions
@@ -107,7 +117,7 @@ class BusinessProfileService(BaseService):
                 total_inactive_subscriptions, previous_total_inactive_subscriptions
             )
 
-            businesses_result['percentage_change'] = {
+            businesses_result["percentage_change"] = {
                 "total_subscriptions": percentage_change_total_subscriptions,
                 "total_active_subscriptions": percentage_change_active_subscriptions,
                 "total_inactive_subscriptions": percentage_change_inactive_subscriptions,
@@ -141,9 +151,9 @@ class BusinessProfileService(BaseService):
 
                 businesses_data.append(data)
 
-            businesses_result['data'] = businesses_data
+            businesses_result["data"] = businesses_data
 
-            del businesses_result['businesses']
+            del businesses_result["businesses"]
 
             return businesses_result
 

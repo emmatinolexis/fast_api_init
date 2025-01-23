@@ -68,6 +68,7 @@ from app.repository import (
     phone_otp_repository,
     plan_upgrade_repository,
     reset_password_repository,
+    rnd_image_repository,
     role_permission_assignment_repository,
     role_repository,
     smart_report_repository,
@@ -85,7 +86,6 @@ from app.repository import (
     vehicle_make_repository,
     vehicle_model_repository,
     vehicle_owner_repository,
-    rnd_image_repository
 )
 from app.service import (
     activity_log_service,
@@ -146,6 +146,7 @@ from app.service import (
     phone_otp_service,
     plan_updgrade_service,
     reset_password_service,
+    rnd_image_service,
     role_permission_assignment_service,
     role_service,
     smart_report_service,
@@ -161,7 +162,6 @@ from app.service import (
     vehicle_make_service,
     vehicle_model_service,
     vehicle_owner_service,
-    rnd_image_service
 )
 
 
@@ -213,7 +213,7 @@ class Container(containers.DeclarativeContainer):
             "app.api.v1.endpoints.contact_sales",
             "app.api.v1.endpoints.admin_notification",
             "app.api.v1.endpoints.activity_logs",
-            "app.api.v1.endpoints.rnd_images"
+            "app.api.v1.endpoints.rnd_images",
         ]
     )
 
@@ -723,7 +723,7 @@ class Container(containers.DeclarativeContainer):
     tracking_event_service = providers.Factory(
         tracking_event_service.TrackingEventService,
         tracking_event_repository=tracking_event_repository,
-        asset_service=asset_service
+        asset_service=asset_service,
     )
     subscription_service = providers.Factory(
         subscription_service.SubscriptionService,

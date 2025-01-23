@@ -29,7 +29,9 @@ class VehicleMakeService(BaseService):
         try:
             for make in payload.vehicle_makes:
                 # Check if the make exists
-                existing_make = self.vehicle_make_repository.get_vehicle_make_name(make.title)
+                existing_make = self.vehicle_make_repository.get_vehicle_make_name(
+                    make.title
+                )
 
                 if existing_make is None:
                     # Create the make if it doesn't exist
@@ -41,7 +43,11 @@ class VehicleMakeService(BaseService):
 
                 # Create models for the make
                 for model in make.models:
-                    existing_model = self.vehicle_model_repository.get_vehicle_model_name(model.title)
+                    existing_model = (
+                        self.vehicle_model_repository.get_vehicle_model_name(
+                            model.title
+                        )
+                    )
 
                     if existing_model is None:
                         # Create the model if it doesn't exist

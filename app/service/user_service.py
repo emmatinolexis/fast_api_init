@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime, timedelta
-from typing import List,Optional
+from typing import List, Optional
 from uuid import UUID
 
 from fastapi import Request
@@ -337,7 +337,7 @@ class UserService(BaseService):
                     activity_class=ActivityLogClass.ADMIN,
                     activity_type=ActivityLogType.USER_INVITATION,
                     activity_description=activity_log_constants.ADMIN_INVITATION_DESC.format(
-                        email= user.email_address,
+                        email=user.email_address,
                         invited_user=payload.email,
                     ),
                     ip_address=request.client.host,
@@ -347,10 +347,15 @@ class UserService(BaseService):
         except Exception as e:
             raise e
 
-    def deactivate_user_account(self, uuid: str, payload: AccountDeactivationPayload,user: User, request: Request):
+    def deactivate_user_account(
+        self,
+        uuid: str,
+        payload: AccountDeactivationPayload,
+        user: User,
+        request: Request,
+    ):
         try:
             user = self.user_repository.deactivate_account(uuid, payload)
-
 
             self.activity_log_repository.create(
                 ActivityLogSchema(
@@ -419,7 +424,7 @@ class UserService(BaseService):
         page_size,
         operator_type: List[str] = None,
         status: str = None,
-        search: Optional[str] = None, 
+        search: Optional[str] = None,
     ):
         return self.user_repository.get_drivers_by_business_uuid(
             business_uuid,
@@ -428,7 +433,7 @@ class UserService(BaseService):
             page_size,
             operator_type=operator_type,
             status=status,
-            search = search
+            search=search,
         )
 
     def get_driver_by_uuid(self, driver_uuid: str):
@@ -478,7 +483,11 @@ class UserService(BaseService):
             raise e
 
     def update_team_member_handler(
-        self, team_member_uuid: str, payload: UpdateAdminTeamMemberPayload,current_user: User,request: Request
+        self,
+        team_member_uuid: str,
+        payload: UpdateAdminTeamMemberPayload,
+        current_user: User,
+        request: Request,
     ):
         try:
             self.patch_by_uuid(team_member_uuid, payload)

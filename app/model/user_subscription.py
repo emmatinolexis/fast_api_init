@@ -20,7 +20,7 @@ class UserSubscription(BaseModel):
         String(length=100),
         ForeignKey("users.email_address"),
         nullable=False,
-        index=True
+        index=True,
     )
     business_profile_uuid = Column(
         UUID(as_uuid=True), ForeignKey("business_profiles.uuid"), nullable=False

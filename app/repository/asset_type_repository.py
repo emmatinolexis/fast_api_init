@@ -1,12 +1,12 @@
 from contextlib import AbstractContextManager
 from typing import Callable
 
+from sqlalchemy import asc
 from sqlalchemy.orm import Session
 
 from app.model.asset_type import AssetType
 from app.repository.base_repository import BaseRepository
 from app.util.enums import ActiveStatus
-from sqlalchemy import asc
 
 
 class AssetTypeRepository(BaseRepository):

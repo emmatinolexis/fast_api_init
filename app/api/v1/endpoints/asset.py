@@ -5,14 +5,14 @@ from typing import Optional
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import ORJSONResponse
-from app.monitoring.metrics import ASSET_CREATION_TOTAL
 
 from app.core import messages
 from app.core.constants import ENGINE_SHUTDOWN_PASSWORD, ENGINE_SHUTDOWN_USERNAME
 from app.core.container import Container
 from app.core.dependencies import get_current_user_with_permission
-from app.core.exceptions import NotFoundError, UnAuthorizedError, BadRequestError
+from app.core.exceptions import BadRequestError, NotFoundError, UnAuthorizedError
 from app.model.user import User
+from app.monitoring.metrics import ASSET_CREATION_TOTAL
 from app.schema.asset_schema import (
     AssetDeviceRequest,
     AssetPayload,
@@ -84,7 +84,11 @@ async def get_asset_by_user_uuid_handler(
 ):
     try:
         if str(user_uuid) != str(current_user.uuid):
-            return send_client_side_error(messages.ASSET_FETCH_NOT_AUTHORIZED, messages.ASSET_FETCH_NOT_AUTHORIZED, 403)
+            return send_client_side_error(
+                messages.ASSET_FETCH_NOT_AUTHORIZED,
+                messages.ASSET_FETCH_NOT_AUTHORIZED,
+                403,
+            )
 
         assets = service.get_assets_by_user_uuid(
             user_uuid=user_uuid,
@@ -115,7 +119,11 @@ async def get_asset_by_business_uuid_handler(
 ):
     try:
         if str(business_uuid) != str(current_user.business_profile.uuid):
-            return send_client_side_error(messages.ASSET_FETCH_NOT_AUTHORIZED, messages.ASSET_FETCH_NOT_AUTHORIZED, 403)
+            return send_client_side_error(
+                messages.ASSET_FETCH_NOT_AUTHORIZED,
+                messages.ASSET_FETCH_NOT_AUTHORIZED,
+                403,
+            )
 
         if current_user.user_role.role_name == "Operator":
             assets = service.read_assigned_assets(
@@ -150,7 +158,7 @@ async def create_asset_handler(
     current_user: User = Depends(get_current_user_with_permission("create_asset")),
 ):
     try:
-        asset = service.create_asset(payload,request)
+        asset = service.create_asset(payload, request)
         logging.info(f"Created asset {asset}")
         ASSET_CREATION_TOTAL.labels(success="true").inc()
         return send_data(asset)
@@ -702,7 +710,7 @@ async def get_building_asset_handler(
             business_uuid=user.get("business_profile").uuid,
             page=page,
             page_size=page_size,
-            search = search
+            search=search,
         )
         return send_data(buildings)
 

@@ -41,7 +41,8 @@ async def get_all_inventory_handler(
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
 
-@router.get("/{uuid}",response_class=ORJSONResponse)
+
+@router.get("/{uuid}", response_class=ORJSONResponse)
 @inject
 async def get_inventory_by_uuid(
     uuid: UUID,
@@ -51,9 +52,7 @@ async def get_inventory_by_uuid(
         inventory = service.get_inventory_by_uuid(uuid)
         return send_data(inventory)
     except NotFoundError as e:
-        return send_client_side_error(
-            user_msg=messages.GET_FAILED+ "inventory"
-        )
+        return send_client_side_error(user_msg=messages.GET_FAILED + "inventory")
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)

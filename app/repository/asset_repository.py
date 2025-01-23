@@ -263,11 +263,11 @@ class AssetRepository(BaseRepository):
                 if "event_type" in tracking_event:
                     if get_status(str(tracking_event["event_type"])) == "moving":
                         moving_asset_count += 1
-                    elif (
-                        get_status(str(tracking_event["event_type"])) == "idle"
-                    ):
+                    elif get_status(str(tracking_event["event_type"])) == "idle":
                         idle_asset_count += 1
-                    stopped_asset_count = len(assets) - (moving_asset_count + idle_asset_count)
+                    stopped_asset_count = len(assets) - (
+                        moving_asset_count + idle_asset_count
+                    )
 
         return moving_asset_count, idle_asset_count, stopped_asset_count
 
@@ -805,9 +805,13 @@ class AssetRepository(BaseRepository):
         with self.session_factory() as session:
             assets = session.query(Asset).filter(Asset.device_imei.in_(imeis)).all()
             return assets
-        
+
     def get_all_device_imeis(self):
         with self.session_factory() as session:
-            query = session.query(Asset.device_imei).filter(Asset.device_imei.isnot(None)).distinct().all()
+            query = (
+                session.query(Asset.device_imei)
+                .filter(Asset.device_imei.isnot(None))
+                .distinct()
+                .all()
+            )
             return [imei[0] for imei in query]
-            

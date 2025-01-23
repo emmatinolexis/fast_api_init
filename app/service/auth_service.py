@@ -115,7 +115,7 @@ class AuthService(BaseService):
                     activity_type=ActivityLogType.SIGN_IN,
                     activity_title=activity_log_constants.SIGN_IN,
                     activity_description=activity_log_constants.SIGN_IN_DESC.format(
-                        email = user.get("email_address")
+                        email=user.get("email_address")
                     ),
                     ip_address=request.client.host,
                 )
@@ -130,7 +130,7 @@ class AuthService(BaseService):
                     activity_type=ActivityLogType.SIGN_IN,
                     activity_title=activity_log_constants.SIGN_IN,
                     activity_description=activity_log_constants.SIGN_IN_DESC.format(
-                        email = user.get("email_address")
+                        email=user.get("email_address")
                     ),
                     ip_address=request.client.host,
                 )

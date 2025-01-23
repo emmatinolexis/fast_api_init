@@ -32,12 +32,14 @@ class TrackingEventRepository(BaseRepository):
                 .all()
             )
             return query
-        
-
 
     def get_event_by_device_imei(self, device_imei: str):
         with self.session_factory() as session:
-            query = session.query(self.model).filter(self.model.device_imei.ilike(f"%{device_imei}%")).first()
+            query = (
+                session.query(self.model)
+                .filter(self.model.device_imei.ilike(f"%{device_imei}%"))
+                .first()
+            )
             return query
 
     def read_all_events_by_date_range(
@@ -233,9 +235,8 @@ class TrackingEventRepository(BaseRepository):
 
             average_speed = calculate_average_speed(speeds)
             return event_data, average_speed
-    
+
     def get_all_unique_imeis(self):
         with self.session_factory() as session:
             query = session.query(self.model.device_imei).distinct().all()
             return [imei[0] for imei in query]
-        

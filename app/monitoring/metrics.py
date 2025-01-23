@@ -7,25 +7,17 @@ MSG_RECEIVED_TOTAL = Counter(
 )
 
 LOGIN_USERS_TOTAL = Counter(
-    "login_users_total",
-    "Total number of logged in users",
-    ["success"]
+    "login_users_total", "Total number of logged in users", ["success"]
 )
 
 DEACTIVATED_ACCOUNT_TOTAL = Counter(
-    "deactivated_account_total",
-    "Total number of deactivated accounts",
-    ["success"]
+    "deactivated_account_total", "Total number of deactivated accounts", ["success"]
 )
 
 ASSET_CREATION_TOTAL = Counter(
-    "asset_creation_failed_total",
-    "Total number of failed asset creations",
-    ["success"]
+    "asset_creation_failed_total", "Total number of failed asset creations", ["success"]
 )
 
 USER_SIGNUP_TOTAL = Counter(
-    "user_signup_failed_total",
-    "Total number of failed user sign ups",
-    ["success"]
+    "user_signup_failed_total", "Total number of failed user sign ups", ["success"]
 )

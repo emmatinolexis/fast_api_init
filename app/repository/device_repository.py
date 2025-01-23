@@ -1,8 +1,9 @@
 from contextlib import AbstractContextManager
 from typing import Callable, Optional
 
+from sqlalchemy import desc, or_
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import or_, desc
+
 from app.model.device import Device, DeviceManufacturer
 from app.model.inventory import Inventory
 from app.model.user import User
@@ -16,11 +17,11 @@ class DeviceRepository(BaseRepository):
         super().__init__(session_factory, Device)
 
     def get_all_devices(
-            self,
-            page: int = 1,
-            page_size: int = 10,
-            search_query: Optional[str] = None,
-            status=None,
+        self,
+        page: int = 1,
+        page_size: int = 10,
+        search_query: Optional[str] = None,
+        status=None,
     ):
         with self.session_factory() as session:
             try:
@@ -41,7 +42,9 @@ class DeviceRepository(BaseRepository):
                         .filter(
                             or_(
                                 Inventory.device_name.ilike(f"%{search_query}%"),
-                                DeviceManufacturer.manufacturer_name.ilike(f"%{search_query}%"),
+                                DeviceManufacturer.manufacturer_name.ilike(
+                                    f"%{search_query}%"
+                                ),
                                 Device.device_imei.ilike(f"%{search_query}%"),
                             )
                         )
@@ -49,9 +52,13 @@ class DeviceRepository(BaseRepository):
 
                 # Apply status filter
                 if status == DeviceStatus.ASSIGNED:
-                    base_query = base_query.filter(self.model.assign_to_asset_status.isnot(None))
+                    base_query = base_query.filter(
+                        self.model.assign_to_asset_status.isnot(None)
+                    )
                 elif status == DeviceStatus.NOT_ASSIGNED:
-                    base_query = base_query.filter(self.model.assign_to_asset_status.is_(None))
+                    base_query = base_query.filter(
+                        self.model.assign_to_asset_status.is_(None)
+                    )
 
                 # Order by created_at in descending order
                 base_query = base_query.order_by(desc(self.model.created_at))
@@ -78,10 +85,10 @@ class DeviceRepository(BaseRepository):
                 raise e
 
     def get_all_devices_to_assign(
-            self,
-            page: int = 1,
-            page_size: int = 10,
-            search_query: Optional[str] = None,
+        self,
+        page: int = 1,
+        page_size: int = 10,
+        search_query: Optional[str] = None,
     ):
         with self.session_factory() as session:
             try:
@@ -96,8 +103,12 @@ class DeviceRepository(BaseRepository):
                         joinedload(Device.user),
                     )
                     .filter(
-                        Device.device_imei.isnot(None),  # Filter where device_imei is not null
-                        self.model.assign_to_asset_status.is_(None),  # Filter where asset_assign_status is null
+                        Device.device_imei.isnot(
+                            None
+                        ),  # Filter where device_imei is not null
+                        self.model.assign_to_asset_status.is_(
+                            None
+                        ),  # Filter where asset_assign_status is null
                     )
                 )
 
@@ -108,8 +119,12 @@ class DeviceRepository(BaseRepository):
                         .join(Inventory.manufacturer)
                         .filter(
                             or_(
-                                DeviceManufacturer.manufacturer_name.ilike(f"%{search_query}%"),
-                                Device.device_imei.ilike(f"%{search_query}%"),  # IMEI included in search
+                                DeviceManufacturer.manufacturer_name.ilike(
+                                    f"%{search_query}%"
+                                ),
+                                Device.device_imei.ilike(
+                                    f"%{search_query}%"
+                                ),  # IMEI included in search
                             )
                         )
                     )

@@ -2,7 +2,15 @@ from typing import List, Optional
 from uuid import UUID
 
 import phonenumbers
-from pydantic import BaseModel, EmailStr, Field, ValidationInfo, constr, field_validator, validator
+from pydantic import (
+    BaseModel,
+    EmailStr,
+    Field,
+    ValidationInfo,
+    constr,
+    field_validator,
+    validator,
+)
 
 from app.util.enums import AccountType, ActiveStatus, DriverType, UserRole
 
@@ -22,7 +30,7 @@ class UserPayload(BaseModel):
     invite_status: Optional[bool] = None
     status: ActiveStatus = ActiveStatus.ACTIVE
 
-    @validator('email_address', pre=True, always=True)
+    @validator("email_address", pre=True, always=True)
     def lowercase_email(cls, value: str) -> str:
         """Ensure the email address is always in lowercase."""
         return value.lower()
@@ -86,7 +94,7 @@ class UserLogin(BaseModel):
     email_address: EmailStr
     password: str
 
-    @validator('email_address', pre=True, always=True)
+    @validator("email_address", pre=True, always=True)
     def lowercase_email(cls, value: str) -> str:
         """Ensure the email address is always in lowercase."""
         return value.lower()

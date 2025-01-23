@@ -45,7 +45,9 @@ async def get_business_activity_logs(
     activity_types: List[str] = Query(None, description="List of activity types"),
     search_string: str = None,
     service: ActivityLogService = Depends(Provide[Container.activity_log_service]),
-    current_user: User = Depends(get_current_user_with_permission("view_business_activity_log")),
+    current_user: User = Depends(
+        get_current_user_with_permission("view_business_activity_log")
+    ),
 ):
     try:
         logs = service.business_activity_logs(
@@ -91,7 +93,9 @@ async def get_admin_activity_logs(
     activity_types: List[str] = Query(None, description="List of activity types"),
     service: ActivityLogService = Depends(Provide[Container.activity_log_service]),
     search_string: str = None,
-    current_user: User = Depends(get_current_user_with_permission("view_admin_activity_log")),
+    current_user: User = Depends(
+        get_current_user_with_permission("view_admin_activity_log")
+    ),
 ):
     try:
         logs = service.admin_activity_logs(
@@ -127,7 +131,9 @@ async def get_all_logs_handler(
     activity_types: List[str] = Query(None, description="List of activity types"),
     service: ActivityLogService = Depends(Provide[Container.activity_log_service]),
     search_string: str = None,
-    current_user: User = Depends(get_current_user_with_permission("view_all_activity_log")),
+    current_user: User = Depends(
+        get_current_user_with_permission("view_all_activity_log")
+    ),
 ):
     try:
         logs = service.all_activity_logs(

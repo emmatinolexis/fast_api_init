@@ -14,18 +14,18 @@ class RNDImageRepository(BaseRepository):
 
     def save_chunk(self, image_id: str, chunk_index: int, chunk_data: bytes):
         image_chunk = RNDImage(
-            image_id=image_id,
-            chunk_index=chunk_index,
-            chunk_data=chunk_data
+            image_id=image_id, chunk_index=chunk_index, chunk_data=chunk_data
         )
         self.db_session.add(image_chunk)
         self.db_session.commit()
 
     def get_chunks(self, image_id: str):
-        return (self.db_session.query(RNDImage)
-                .filter_by(image_id=image_id)
-                .order_by(RNDImage.chunk_index.asc())
-                .all())
+        return (
+            self.db_session.query(RNDImage)
+            .filter_by(image_id=image_id)
+            .order_by(RNDImage.chunk_index.asc())
+            .all()
+        )
 
     def delete_chunks(self, image_id: str):
         self.db_session.query(RNDImage).filter_by(image_id=image_id).delete()

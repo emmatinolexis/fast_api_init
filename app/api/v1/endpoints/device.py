@@ -73,6 +73,7 @@ async def get_all_devices_handler(
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
 
+
 @router.get("/user_devices/{user_uuid}", response_class=ORJSONResponse)
 @inject
 async def get_all_user_devices(

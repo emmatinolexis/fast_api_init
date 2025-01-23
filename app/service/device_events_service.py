@@ -1,11 +1,12 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
 
+from app.core.exceptions import NotFoundError
+from app.core.messages import DEVICE_DOES_NOT_EXIST, GAS_CYLINDER_NOT_FOUND
 from app.repository.device_events_repository import DeviceEventRepository
 from app.service.base_service import BaseService
 from app.util.utils import parse_date
-from app.core.messages import DEVICE_DOES_NOT_EXIST,GAS_CYLINDER_NOT_FOUND
-from app.core.exceptions import NotFoundError
+
 
 class DeviceEventService(BaseService):
     def __init__(
@@ -54,7 +55,7 @@ class DeviceEventService(BaseService):
                 gas_device_serial_number
             )
         )
-        
+
         if not peripheral_device:
             return {
                 "name": device_name,

@@ -8,6 +8,7 @@ from fastapi.responses import ORJSONResponse
 from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user, get_current_user_with_permission
+from app.core.exceptions import NotFoundError
 from app.core.settings import settings
 from app.model.user import User
 from app.schema.report_schema import (
@@ -22,7 +23,6 @@ from app.service.smart_report_service import SmartReportService
 from app.service.user_service import UserService
 from app.util.email import send_smart_report_email
 from app.util.enums import AccountType, EmailPurpose, FileFormat, SmartReportStatus
-from app.core.exceptions import NotFoundError
 from app.util.utils import (
     get_content_type,
     send_client_side_error,
@@ -393,13 +393,9 @@ async def get_cylinder_report(
         )
         return send_data_with_info(data, messages.GET_SUCCESS + "Cylinder Report")
     except ValueError as e:
-        return send_client_side_error(
-            user_msg=str(e), dev_msg=str(e)
-        )
+        return send_client_side_error(user_msg=str(e), dev_msg=str(e))
     except NotFoundError as e:
-        return send_client_side_error(
-            user_msg=messages.GET_FAILED+ "cylinder report"
-        )
+        return send_client_side_error(user_msg=messages.GET_FAILED + "cylinder report")
     except Exception as e:
         return send_internal_server_error(
             user_msg="Failed to get cylinder report", error=e

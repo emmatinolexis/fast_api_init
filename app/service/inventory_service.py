@@ -8,6 +8,7 @@ from app.schema.device_schema import InventoryPayload, InventoryUpdatePayload
 from app.service.base_service import BaseService
 from app.util.utils import send_client_side_error
 
+
 class InventoryService(BaseService):
     def __init__(
         self,
@@ -19,7 +20,7 @@ class InventoryService(BaseService):
         self.device_repository = device_repository
         self.device_image_repository = device_image_repository
         super().__init__(inventory_repository)
-    
+
     def get_inventory_by_uuid(self, inventory_uuid: UUID):
         try:
             inventory = self.inventory_repository.get_inventory_by_uuid(inventory_uuid)
@@ -28,7 +29,6 @@ class InventoryService(BaseService):
             return inventory
         except Exception as e:
             raise e
-    
 
     def create_inventory(self, device_payload: InventoryPayload):
         try:
