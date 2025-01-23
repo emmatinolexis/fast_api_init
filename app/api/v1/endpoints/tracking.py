@@ -31,7 +31,7 @@ from app.util.utils import (
     send_info,
     send_internal_server_error,
 )
-
+from logging import log
 router = APIRouter(
     prefix="/tracking",
     tags=["device_events"],
@@ -39,6 +39,17 @@ router = APIRouter(
 msg_prefix = "device events"
 
 
+@router.get("/check_inactive_devices", response_class=ORJSONResponse)
+@inject
+async def check_inactive_devices(
+    tracking_service: TrackingEventService = Depends(Provide[Container.tracking_event_service]),
+):
+    try:
+        inactive_assets = tracking_service.get_inactive_assets()
+        return send_data({"inactive_devices": inactive_assets})
+    except Exception as e:
+        return send_internal_server_error(user_msg=messages.INTERNAL_SERVER_ERROR, error=e)
+    
 @router.get("/check_imei", response_class=ORJSONResponse)
 @inject
 async def check_imei_exists(
@@ -293,3 +304,4 @@ async def create_device_events(
         msg = "Failed to process device event"
         logging.error(e)
         return send_internal_server_error(user_msg=msg, error=e)
+       

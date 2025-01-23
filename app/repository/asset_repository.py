@@ -800,3 +800,14 @@ class AssetRepository(BaseRepository):
                 .filter(Driver.email == driver_email)
                 .first()
             )
+
+    def get_assets_by_imeis(self, imeis: List[str]):
+        with self.session_factory() as session:
+            assets = session.query(Asset).filter(Asset.device_imei.in_(imeis)).all()
+            return assets
+        
+    def get_all_device_imeis(self):
+        with self.session_factory() as session:
+            query = session.query(Asset.device_imei).filter(Asset.device_imei.isnot(None)).distinct().all()
+            return [imei[0] for imei in query]
+            

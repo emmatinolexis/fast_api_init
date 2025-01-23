@@ -723,6 +723,7 @@ class Container(containers.DeclarativeContainer):
     tracking_event_service = providers.Factory(
         tracking_event_service.TrackingEventService,
         tracking_event_repository=tracking_event_repository,
+        asset_service=asset_service
     )
     subscription_service = providers.Factory(
         subscription_service.SubscriptionService,

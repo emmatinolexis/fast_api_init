@@ -233,3 +233,9 @@ class TrackingEventRepository(BaseRepository):
 
             average_speed = calculate_average_speed(speeds)
             return event_data, average_speed
+    
+    def get_all_unique_imeis(self):
+        with self.session_factory() as session:
+            query = session.query(self.model.device_imei).distinct().all()
+            return [imei[0] for imei in query]
+        

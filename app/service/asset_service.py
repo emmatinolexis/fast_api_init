@@ -21,7 +21,7 @@ from app.repository.user_subscription_repository import UserSubscriptionReposito
 from app.repository.vehicle_owner_repository import VehicleOwnerRepository
 from app.service.asset_operator_assignment_service import AssetOperatorAssignmentService
 from app.repository.activity_log_repository import ActivityLogRepository
-
+from app.model.asset import Asset
 from app.schema.asset_schema import (
     AssetInput,
     AssetPayload,
@@ -1052,3 +1052,16 @@ class AssetService(BaseService):
 
         except Exception as e:
             raise e
+    
+    def get_assets_by_imeis(self, imeis):
+        try:
+            return self.asset_repository.get_assets_by_imeis(imeis)
+        except Exception as e:
+            raise e
+        
+    def get_all_device_imeis(self):
+        try:
+            return self.asset_repository.get_all_device_imeis()
+        except Exception as e:
+            raise e
+        
