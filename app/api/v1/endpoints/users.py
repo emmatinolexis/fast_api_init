@@ -958,6 +958,7 @@ async def resend_admin_invitation_handler(
             role=str(updated_invite.role_uuid),
             role_type=RoleType.ADMIN,
             expiry_date=serialize_datetime(updated_invite.expired_at),
+            user_type=current_user.account_type
         )
 
         msg = "Invitation resent successfully"
