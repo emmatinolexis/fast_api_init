@@ -3,13 +3,14 @@ from typing import Callable, List
 from uuid import UUID
 
 from pydantic import EmailStr
-from sqlalchemy import desc, func
+from sqlalchemy import desc, func,and_
 from sqlalchemy.orm import Session, joinedload
 
 from app.model.invitation import Invitation
 from app.repository.base_repository import BaseRepository
 from app.schema.invitation_schema import InvitationPayload
 from app.util.enums import InvitationStatus, RoleType
+from datetime import datetime
 
 
 class TeamMemberInvitationRepository(BaseRepository):
@@ -153,3 +154,25 @@ class TeamMemberInvitationRepository(BaseRepository):
                 "current_page": page,
                 "page_size": page_size,
             }
+        
+    def update_expired_invitations(self):
+        with self.session_factory() as session:
+            # Get the current timestamp
+            current_time = datetime.utcnow()
+
+            # Query to find all invitations that are past their expiration date and are still PENDING
+            expired_invitations = session.query(self.model).filter(
+                and_(
+                    self.model.expired_at < current_time,
+                    self.model.status == InvitationStatus.PENDING
+                )
+            ).all()
+
+            # Update the status of each expired invitation to EXPIRED
+            for invitation in expired_invitations:
+                invitation.status = InvitationStatus.EXPIRED
+
+            # Commit the changes to the database
+            session.commit()
+
+            return len(expired_invitations)

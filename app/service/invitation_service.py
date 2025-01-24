@@ -88,3 +88,7 @@ class InvitationService(BaseService):
             raise e
         except Exception as e:
             raise e
+        
+
+    def update_expired_invitations(self):
+        return self.invitation_repository.update_expired_invitations()

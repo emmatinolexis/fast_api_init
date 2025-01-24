@@ -16,6 +16,7 @@ from app.core.container import Container
 from app.core.logger import get_logger
 from app.core.settings import settings
 from app.util.class_object import singleton
+from app.api.v1.endpoints.users import check_admin_invitation_handler
 
 # Create an instance of the scheduler
 scheduler = AsyncIOScheduler()
@@ -125,6 +126,16 @@ async def startup_event():
             "interval",
             minutes=30,
             id="check_license_expiry",
+        )
+
+
+
+        scheduler.add_job(
+            check_admin_invitation_handler,
+            "interval",
+            minutes=2,
+            id="update invitation statuses"
+
         )
 
 
