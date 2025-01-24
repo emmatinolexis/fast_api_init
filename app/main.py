@@ -133,7 +133,7 @@ async def startup_event():
         scheduler.add_job(
             check_admin_invitation_handler,
             "interval",
-            minutes=2,
+            hours=6,
             id="update invitation statuses"
 
         )

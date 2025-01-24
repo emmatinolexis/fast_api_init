@@ -74,20 +74,7 @@ router = APIRouter(
 msg_prefix = "user"
 
 
-@router.put(
-    "/admin/invitations/check",
-)
-@inject
-async def check_admin_invitation_handler(
-    service: InvitationService = Depends(Provide[Container.invitation_service]),
-):
-    try:
-        number = service.update_expired_invitations()
-        get_logger().info(f"{number} invitations have been updated")
-    except Exception as e:
-        get_logger().error("Failed to update invitation statuses")
-        msg = messages.GET_FAILED + "invitation"
-        return send_internal_server_error(user_msg=msg, error=str(e))
+
 
 
 
@@ -723,6 +710,22 @@ async def create_team_member_invitation(
         msg = messages.CREATE_FAILED + "invitation"
         return send_internal_server_error(user_msg=msg, error=str(e))
 
+
+
+@router.put(
+    "/invitations/check",
+)
+@inject
+async def check_admin_invitation_handler(
+    service: InvitationService = Depends(Provide[Container.invitation_service]),
+):
+    try:
+        number = service.update_expired_invitations()
+        get_logger().info(f"{number} invitations have been updated")
+    except Exception as e:
+        get_logger().error("Failed to update invitation statuses")
+        msg = messages.GET_FAILED + "invitation"
+        return send_internal_server_error(user_msg=msg, error=str(e))
 
 @router.get("/businesses/invitations/{business_uuid}", response_class=ORJSONResponse)
 @inject
