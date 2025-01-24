@@ -851,12 +851,13 @@ async def create_admin_user_invitation(
 
             # send email invite
             await send_email_invitation(
-                recipient_name="",
+                recipient_name="New MVI user",
                 email=invitation.email,
                 invitee_name=f"{current_user.first_name} {current_user.last_name}",
                 role=str(invitation.role_uuid),
                 role_type=RoleType.ADMIN,
                 expiry_date=serialize_datetime(created_invite.expired_at),
+                user_type=current_user.account_type
             )
         msg = "Invitations sent successfully"
         return send_info(msg)
