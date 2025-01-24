@@ -65,12 +65,18 @@ from app.util.utils import (
     send_internal_server_error,
     serialize_datetime,
 )
+from app.core.logger import get_logger
 
 router = APIRouter(
     prefix="/users",
     tags=["users"],
 )
 msg_prefix = "user"
+
+
+
+
+
 
 
 @router.get("/stats", response_class=ORJSONResponse)
@@ -705,6 +711,22 @@ async def create_team_member_invitation(
         return send_internal_server_error(user_msg=msg, error=str(e))
 
 
+
+@router.put(
+    "/invitations/check",
+)
+@inject
+async def check_admin_invitation_handler(
+    service: InvitationService = Depends(Provide[Container.invitation_service]),
+):
+    try:
+        number = service.update_expired_invitations()
+        get_logger().info(f"{number} invitations have been updated")
+    except Exception as e:
+        get_logger().error("Failed to update invitation statuses")
+        msg = messages.GET_FAILED + "invitation"
+        return send_internal_server_error(user_msg=msg, error=str(e))
+
 @router.get("/businesses/invitations/{business_uuid}", response_class=ORJSONResponse)
 @inject
 async def get_all_user_invitations_by_business_handler(
@@ -924,6 +946,9 @@ async def delete_admin_invite_handler(
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
+
+
+
 
 
 @router.get(
