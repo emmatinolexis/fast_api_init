@@ -332,7 +332,7 @@ class UserService(BaseService):
             self.activity_log_repository.create(
                 ActivityLogSchema(
                     user_uuid=str(user.uuid),
-                    business_profile_uuid=str(user.business_profile_uuid),
+                    business_profile_uuid=str(user.business_profile_uuid) if user.business_profile_uuid else None,
                     activity_title=activity_log_constants.ADMIN_INVITATION,
                     activity_class=ActivityLogClass.ADMIN,
                     activity_type=ActivityLogType.USER_INVITATION,
