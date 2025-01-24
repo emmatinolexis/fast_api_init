@@ -260,4 +260,31 @@ class TrackingEventRepository(BaseRepository):
                 events_by_imei[event.device_imei].append(event)
 
             return events_by_imei
+    
+    def get_inactive_assets_paginated(
+        self, inactive_imeis: List[str], page: int, page_size: int
+    ):
+        with self.session_factory() as session:
+            query = (
+                session.query(Asset)
+                .options(joinedload(Asset.device)) 
+                .filter(Asset.device_imei.in_(inactive_imeis))
+            )
+            
+            total_records = query.count()
+
+            offset = (page - 1) * page_size
+            assets = query.offset(offset).limit(page_size).all()
+
+            paginated_assets = [
+                {
+                    "asset_name": asset.asset_name,
+                    "vehicle_license_no": asset.vehicle_license_no,
+                    "device_imei": asset.device_imei,
+                    "sim_number": asset.device.sim_phone_number if asset.device else None,
+                }
+                for asset in assets
+            ]
+
+            return paginated_assets, total_records
 
