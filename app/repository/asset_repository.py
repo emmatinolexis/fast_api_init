@@ -15,6 +15,7 @@ from app.model.driver import Driver
 from app.model.maintenance_alert import MaintenanceAlert
 from app.model.tracking_event import TrackingEvent
 from app.model.user import User
+from app.model.inventory import Inventory
 from app.repository.base_repository import BaseRepository
 from app.schema.asset_schema import AssignDeviceInputPayload
 from app.util.enums import AssetCreators, AssetStatus
@@ -151,7 +152,7 @@ class AssetRepository(BaseRepository):
 
             assets = (
                 paginated_query.options(joinedload(self.model.asset_type))
-                .options(joinedload(self.model.device).joinedload(Device.inventory))
+                .options(joinedload(self.model.device).joinedload(Device.inventory).joinedload(Inventory.images))
                 .options(joinedload(self.model.equipment))
                 .all()
             )

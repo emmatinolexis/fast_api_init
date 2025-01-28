@@ -155,7 +155,7 @@ async def get_installer_installations_handler(
         )
 
 
-@router.get("/installation/{installation_uuid}", response_class=ORJSONResponse)
+@router.get("/{installation_uuid}", response_class=ORJSONResponse)
 @inject
 async def get_installation_handler(
     installation_uuid: str,
