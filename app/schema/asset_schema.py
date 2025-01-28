@@ -238,8 +238,6 @@ class VehicleModelInput(BaseModel):
     name: str
     vehicle_make_uuid: UUID
 
-
-
 class VehicleMake(BaseModel):
     title: str
     asset_type: AssetType
@@ -248,29 +246,12 @@ class VehicleMake(BaseModel):
 class VehicleMakePayload(BaseModel):
     vehicle_makes: List[VehicleMake]
 
-# class VehicleMakeResponse(BaseModel):
-#     uuid: UUID
-#     name: str
-#     asset_type: AssetType
-
-#     class Config:
-#         orm_mode = True
-
 class VehicleMakeResponse(BaseModel):
     uuid: UUID
     name: str
     asset_type: AssetType
 
     model_config = ConfigDict(from_attributes=True)
-
-
-# class VehicleModelResponse(BaseModel):
-#     uuid: UUID
-#     name: str
-
-#     class Config:
-#         orm_mode = True
-
 
 class VehicleModelResponse(BaseModel):
     uuid: UUID
