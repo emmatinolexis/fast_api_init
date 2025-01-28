@@ -1,9 +1,15 @@
+from typing import List, Optional
+import uuid
+
 from app.repository.vehicle_make_repository import VehicleMakeRepository
 from app.repository.vehicle_model_repository import VehicleModelRepository
 from app.schema.asset_schema import (
     VehicleMakeInput,
     VehicleMakePayload,
     VehicleModelInput,
+    VehicleMakeResponse,
+    VehicleModelResponse,
+    AssetType,
 )
 from app.service.base_service import BaseService
 
@@ -17,31 +23,37 @@ class VehicleMakeService(BaseService):
         self.vehicle_make_repository = vehicle_make_repository
         self.vehicle_model_repository = vehicle_model_repository
         super().__init__(vehicle_make_repository)
-
-    def get_vehicle_makes(self):
+    
+    def get_vehicle_makes(self, asset_type: Optional[AssetType] = None) -> List[VehicleMakeResponse]:
         try:
-            devices = self.vehicle_make_repository.get_vehicle_makes()
-            return devices
+            makes = self.vehicle_make_repository.get_vehicle_makes(asset_type=asset_type)
+            return [VehicleMakeResponse.from_orm(make) for make in makes]
         except Exception as e:
             raise e
+        
+    def get_vehicle_models_by_make_uuid(self, make_uuid: uuid.UUID) -> List[VehicleModelResponse]:
+        try:
+            make = self.vehicle_make_repository.get_vehicle_make_by_uuid(make_uuid)
+            if not make:
+                raise ValueError("Vehicle make not found")
+            return [VehicleModelResponse.from_orm(model) for model in make.models]
+        except Exception as e:
+            raise e
+        
 
-    def create_makes(self, payload: VehicleMakePayload):
+    def create_make(self, payload: VehicleMakePayload):
         try:
             for make in payload.vehicle_makes:
-                # Check if the make exists
                 existing_make = self.vehicle_make_repository.get_vehicle_make_name(
                     make.title
                 )
 
                 if existing_make is None:
-                    # Create the make if it doesn't exist
-                    make_data = VehicleMakeInput(name=make.title)
+                    make_data = VehicleMakeInput(name=make.title, asset_type=make.asset_type)
                     created_make = self.vehicle_make_repository.create(make_data)
                 else:
-                    # Use the existing make
                     created_make = existing_make
 
-                # Create models for the make
                 for model in make.models:
                     existing_model = (
                         self.vehicle_model_repository.get_vehicle_model_name(
@@ -50,7 +62,6 @@ class VehicleMakeService(BaseService):
                     )
 
                     if existing_model is None:
-                        # Create the model if it doesn't exist
                         model_data = VehicleModelInput(
                             name=model.title,
                             vehicle_make_uuid=created_make.uuid,
@@ -58,28 +69,5 @@ class VehicleMakeService(BaseService):
                         self.vehicle_model_repository.create(model_data)
 
             return True
-        # try:
-        #     for make in payload.vehicle_makes:
-        #         make_to_create = self.vehicle_make_repository.get_vehicle_make_name(
-        #             make.title
-        #         )
-        #         if make_to_create is None:
-        #             make_data = VehicleMakeInput(name=make.title)
-        #             created_make = self.vehicle_make_repository.create(make_data)
-        #             if created_make:
-        #                 for model in make.models:
-        #                     model_to_create = (
-        #                         self.vehicle_model_repository.get_vehicle_model_name(
-        #                             model.title
-        #                         )
-        #                     )
-        #                     if model_to_create is None:
-        #                         model_data = VehicleModelInput(
-        #                             name=model.title,
-        #                             vehicle_make_uuid=created_make.uuid,
-        #                         )
-        #                         self.vehicle_model_repository.create(model_data)
-        #     return True
-
         except Exception as e:
             raise e

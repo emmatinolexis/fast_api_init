@@ -1,11 +1,11 @@
 import uuid
 
-from sqlalchemy import Column, ForeignKey, String
+from sqlalchemy import Column, ForeignKey, String,Enum as SQLAEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from app.model.base_model import BaseModel
-
+from app.util.enums import AssetType
 
 class VehicleMake(BaseModel):
     __tablename__ = "vehicle_makes"
@@ -17,6 +17,7 @@ class VehicleMake(BaseModel):
         nullable=False,
     )
     name = Column(String(length=50), nullable=False, unique=True, index=True)
+    asset_type = Column(SQLAEnum(AssetType), nullable=False)
     models = relationship(
         "VehicleModel", back_populates="make", cascade="all, delete-orphan"
     )

@@ -402,3 +402,8 @@ class ActivityLogType(str, Enum):
     DELETE_INVITATION = "DELETE_INVITATION"
     STATUS_UPDATE = "STATUS_UPDATE"
     CREATE_ASSET = "CREATE_ASSET"
+
+class AssetType(str, Enum):
+    CAR = "car"
+    MOTORBIKE = "motorbike"
+    
