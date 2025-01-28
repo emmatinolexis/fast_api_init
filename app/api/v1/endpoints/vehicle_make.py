@@ -67,7 +67,7 @@ async def create_vehicle_makes_handler(
     current_user: User = Depends(get_current_user)
 ):
     try:
-        service.create_makes(payload)
+        service.create_make(payload)
         return send_info("Upload successful")
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix

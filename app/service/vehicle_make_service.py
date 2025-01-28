@@ -41,7 +41,7 @@ class VehicleMakeService(BaseService):
             raise e
         
 
-    def create_makes(self, payload: VehicleMakePayload):
+    def create_make(self, payload: VehicleMakePayload):
         try:
             for make in payload.vehicle_makes:
                 existing_make = self.vehicle_make_repository.get_vehicle_make_name(
