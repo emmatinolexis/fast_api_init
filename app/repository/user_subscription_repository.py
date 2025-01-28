@@ -66,30 +66,41 @@ class UserSubscriptionRepository(BaseRepository):
                 logging.info(user_not_found)
                 return
 
-            # get all existing subscription and update statuses to non-renewing
-            existing_subscription = self.get_user_subscription_(
+            # get active subscription
+            existing_active_subscription = self.get_user_subscription_(
                 session, user_email, payload["data"]["plan"]["plan_code"]
             )
 
-            if existing_subscription:
+            if existing_active_subscription:
                 subscription_status = None  # Initialize the variable
 
-                if event_type in ["subscription.not_renew", "invoice.payment_failed"]:
+                # deactivate expired subscription if paystack event type is subscription.not_renew
+                if event_type in ["subscription.not_renew"]:
                     self.handle_subscription_deactivation(
-                        session, user_email, existing_subscription
+                        session, existing_active_subscription
                     )
+
+                # create subscription if paystack event type subscription.create
                 elif event_type == "subscription.create":
+
+                    self.update_all_business_subscriptions_(
+                        session, payload["data"]["customer"]["business_profile_uuid"]
+                    )
+
                     subscription_code = payload["data"]["subscription_code"]
-                    subscription_status = payload["data"]["status"]
+                    # subscription_status = payload["data"]["status"]
+                    subscription_status = SubscriptionStatus.ACTIVE
                     next_payment_date = payload["data"]["next_payment_date"]
+
                     self.handle_subscription_creation(
                         session,
-                        # user_email,
                         subscription_code,
-                        existing_subscription,
+                        existing_active_subscription,
                         subscription_status,
                         next_payment_date,
                     )
+
+                # create payment if paystack event type is charge.success
                 elif event_type == "charge.success":
                     payment_data = Payment(
                         reference_no=payload["data"]["reference"],
@@ -125,8 +136,15 @@ class UserSubscriptionRepository(BaseRepository):
             session.query(UserSubscription)
             .filter(UserSubscription.user_email == user_email)
             .filter(UserSubscription.plan_code == plan_code)
+            .filter(UserSubscription.status == SubscriptionStatus.ACTIVE)
             .first()
         )
+
+    def update_all_business_subscriptions_(self, session, business_uuid):
+        session.query(UserSubscription).filter(
+            UserSubscription.business_profile_uuid == business_uuid
+        ).update({UserSubscription.status: SubscriptionStatus.NON_RENEWING}, synchronize_session="fetch")
+        session.commit()
 
     def get_active_subscription_by_business_uuid(
         self, business_profile_uuid: str, plan: str
@@ -141,7 +159,7 @@ class UserSubscriptionRepository(BaseRepository):
             )
 
     def handle_subscription_deactivation(
-        self, session, user_email, existing_subscription
+        self, session, existing_subscription
     ):
         existing_subscription.status = SubscriptionStatus.NON_RENEWING
         session.commit()
