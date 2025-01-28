@@ -66,6 +66,7 @@ class UserSubscriptionRepository(BaseRepository):
                 logging.info(user_not_found)
                 return
 
+            # get all existing subscription and update statuses to non-renewing
             existing_subscription = self.get_user_subscription_(
                 session, user_email, payload["data"]["plan"]["plan_code"]
             )
@@ -83,7 +84,7 @@ class UserSubscriptionRepository(BaseRepository):
                     next_payment_date = payload["data"]["next_payment_date"]
                     self.handle_subscription_creation(
                         session,
-                        user_email,
+                        # user_email,
                         subscription_code,
                         existing_subscription,
                         subscription_status,

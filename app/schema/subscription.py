@@ -21,7 +21,7 @@ class SubscriptionPayload(BaseModel):
 class PaystackSubscriptionPayload(BaseModel):
     plan: str
     email: EmailStr
-    amount: int
+    amount: float
     callback_url: Optional[str]
 
     class Config:
