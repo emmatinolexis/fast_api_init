@@ -43,6 +43,7 @@ class UserSubscriptionRepository(BaseRepository):
             user_plan = (
                 session.query(self.model)
                 .filter(self.model.business_profile_uuid == user.business_profile_uuid)
+                .filter(self.model.status == SubscriptionStatus.ACTIVE)
                 .first()
             )
 
