@@ -161,7 +161,7 @@ async def get_installation_handler(
     installation_uuid: str,
     service: InstallationService = Depends(Provide[Container.installation_service]),
     current_user: User = Depends(
-        get_current_user_with_permission("view_device_installation")
+        get_current_user_with_permission("view_detail_device_installation")
     ),
 ):
     try:
