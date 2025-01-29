@@ -2,7 +2,6 @@ import logging
 import socket
 import ssl
 from datetime import datetime
-from logging import log
 
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
@@ -102,21 +101,55 @@ async def get_ssl_certificate():
 
         # Establish a connection to the server
         context = ssl.create_default_context()
+        context.verify_mode = ssl.CERT_REQUIRED
+        context.load_default_certs()
+
         with socket.create_connection((hostname, 443)) as sock:
             with context.wrap_socket(sock, server_hostname=hostname) as ssock:
-                # Get the certificate
-                cert = ssock.getpeercert()
-                extracted_info = extract_certificate_info(cert)
-                key = ssl.get_server_certificate((hostname, 443))
-                extracted_info["key"] = key
+                # Get the full certificate chain
+                cert_chain = ssock.getpeercert(True)  # Get raw DER cert
+                certs = ssl.DER_cert_to_PEM_cert(cert_chain).split("-----END CERTIFICATE-----\n")
 
-        # Return the certificate information
+                # Extract root certificate (last in the chain)
+                root_cert = certs[-2] + "-----END CERTIFICATE-----\n" if len(certs) > 1 else certs[0]
+
+                # Convert to a structured format (Optional)
+                extracted_info = extract_certificate_info(ssl.PEM_cert_to_DER_cert(root_cert))
+                extracted_info["root_cert"] = root_cert
+
         return extracted_info
 
     except Exception as e:
         msg = f"{messages.GET_FAILED} SSL certificate"
         logging.info(msg)
         return send_internal_server_error(user_msg=msg, error=e)
+
+# @router.get("/ssl_certificate", response_class=ORJSONResponse)
+# @inject
+# async def get_ssl_certificate():
+#     try:
+#         # Set the hostname
+#         hostname = "mvitracking-uat.sageinfrastructure.net"
+#         if get_settings().ENV == "production":
+#             hostname = "mvitracking.live.sageinfrastructure.net"
+#
+#         # Establish a connection to the server
+#         context = ssl.create_default_context()
+#         with socket.create_connection((hostname, 443)) as sock:
+#             with context.wrap_socket(sock, server_hostname=hostname) as ssock:
+#                 # Get the certificate
+#                 cert = ssock.getpeercert()
+#                 extracted_info = extract_certificate_info(cert)
+#                 key = ssl.get_server_certificate((hostname, 443))
+#                 extracted_info["key"] = key
+#
+#         # Return the certificate information
+#         return extracted_info
+#
+#     except Exception as e:
+#         msg = f"{messages.GET_FAILED} SSL certificate"
+#         logging.info(msg)
+#         return send_internal_server_error(user_msg=msg, error=e)
 
 
 @router.get("/{user_uuid}", response_class=ORJSONResponse)
