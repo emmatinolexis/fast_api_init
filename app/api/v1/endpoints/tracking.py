@@ -95,36 +95,35 @@ async def get_last_tracking_details_handler(
 @router.get("/ssl_certificate", response_class=ORJSONResponse)
 async def get_ssl_certificate():
     try:
-        # Define hostname based on environment
+        # Set the hostname
         hostname = "mvitracking-uat.sageinfrastructure.net"
-        if get_settings().ENV == "production":
-            hostname = "mvitracking.live.sageinfrastructure.net"
 
-        # Establish a TLS connection
+        # Create SSL context
         context = ssl.create_default_context()
         context.verify_mode = ssl.CERT_REQUIRED
         context.load_default_certs()
 
+        # Connect to the server
         with socket.create_connection((hostname, 443)) as sock:
             with context.wrap_socket(sock, server_hostname=hostname) as ssock:
-                # Get certificate chain
-                der_cert_chain = ssock.getpeercert(True)
+                # Get the full certificate chain in DER format
+                der_cert_chain = ssock.getpeercert(True)  # Get raw DER certificate
+
+                # Convert DER to PEM
                 pem_cert = ssl.DER_cert_to_PEM_cert(der_cert_chain)
 
-                # Load certificate
-                cert = x509.load_pem_x509_certificate(pem_cert.encode(), default_backend())
+                # Parse the certificate
+                cert = x509.load_pem_x509_certificate(pem_cert.encode())
 
-                # Get the Issuer Common Name (CN)
-                issuer_cn = cert.issuer.get_attributes_for_oid(x509.NameOID.COMMON_NAME)[0].value
+                # Extract Issuer and Subject
+                issuer = cert.issuer.rfc4514_string()
+                subject = cert.subject.rfc4514_string()
 
-                # If ISRG Root X1 is not the direct issuer, find it in the chain
-                if issuer_cn != "ISRG Root X1":
-                    for pem_cert in pem_cert.split("-----END CERTIFICATE-----\n"):
-                        if "ISRG Root X1" in pem_cert:
-                            return pem_cert + "-----END CERTIFICATE-----\n"
+                # Check if it is the ISRG Root X1 certificate
+                if "ISRG Root X1" in issuer or "ISRG Root X1" in subject:
+                    return {"certificate": pem_cert}
 
-                # If ISRG Root X1 is already the root cert
-                return pem_cert
+                return {"error": "ISRG Root X1 certificate not found"}
 
     except Exception as e:
         return ORJSONResponse(content={"error": str(e)}, status_code=500)
