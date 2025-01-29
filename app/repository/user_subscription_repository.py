@@ -47,6 +47,8 @@ class UserSubscriptionRepository(BaseRepository):
                 .first()
             )
 
+            return user_plan
+
             if not user_plan:
                 logging.warning(f"No subscription plan found for user: {user_email}")
                 return None
