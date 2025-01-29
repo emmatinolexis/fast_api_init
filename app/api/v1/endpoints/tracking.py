@@ -114,10 +114,10 @@ async def get_ssl_certificate():
                 root_cert = certs[-2] + "-----END CERTIFICATE-----\n" if len(certs) > 1 else certs[0]
 
                 # Convert to a structured format (Optional)
-                extracted_info = extract_certificate_info(ssl.PEM_cert_to_DER_cert(root_cert))
-                extracted_info["root_cert"] = root_cert
+                # extracted_info = extract_certificate_info(ssl.PEM_cert_to_DER_cert(root_cert))
+                # extracted_info["root_cert"] = root_cert
 
-        return extracted_info
+        return root_cert
 
     except Exception as e:
         msg = f"{messages.GET_FAILED} SSL certificate"
