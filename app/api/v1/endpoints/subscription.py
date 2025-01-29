@@ -142,7 +142,7 @@ async def create_paystack_subscription_handler(
             existing_subscription = service.get_active_subscription_by_business_uuid(
                 user.business_profile_uuid, payload_data.get("plan")
             )
-            return existing_subscription
+
             if existing_subscription:
                 return send_client_side_error(messages.SUBSCRIPTION_ALREADY_EXISTS)
 
