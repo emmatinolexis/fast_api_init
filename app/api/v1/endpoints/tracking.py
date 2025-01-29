@@ -6,6 +6,8 @@ from datetime import datetime
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
 
 from app.core import messages
 from app.core.container import Container
@@ -91,38 +93,71 @@ async def get_last_tracking_details_handler(
 
 
 @router.get("/ssl_certificate", response_class=ORJSONResponse)
-@inject
 async def get_ssl_certificate():
     try:
-        # Set the hostname
+        # Define hostname based on environment
         hostname = "mvitracking-uat.sageinfrastructure.net"
         if get_settings().ENV == "production":
             hostname = "mvitracking.live.sageinfrastructure.net"
 
-        # Establish a connection to the server
+        # Establish a TLS connection
         context = ssl.create_default_context()
         context.verify_mode = ssl.CERT_REQUIRED
         context.load_default_certs()
 
         with socket.create_connection((hostname, 443)) as sock:
             with context.wrap_socket(sock, server_hostname=hostname) as ssock:
-                # Get the full certificate chain
-                cert_chain = ssock.getpeercert(True)  # Get raw DER cert
-                certs = ssl.DER_cert_to_PEM_cert(cert_chain).split("-----END CERTIFICATE-----\n")
+                # Get certificate chain
+                der_cert_chain = ssock.getpeercert(True)
+                pem_cert = ssl.DER_cert_to_PEM_cert(der_cert_chain)
 
-                # Extract root certificate (last in the chain)
-                root_cert = certs[-2] + "-----END CERTIFICATE-----\n" if len(certs) > 1 else certs[0]
+                # Load certificate
+                cert = x509.load_pem_x509_certificate(pem_cert.encode(), default_backend())
 
-                # Convert to a structured format (Optional)
-                # extracted_info = extract_certificate_info(ssl.PEM_cert_to_DER_cert(root_cert))
-                # extracted_info["root_cert"] = root_cert
+                # Get the Issuer Common Name (CN)
+                issuer_cn = cert.issuer.get_attributes_for_oid(x509.NameOID.COMMON_NAME)[0].value
 
-        return root_cert
+                # If ISRG Root X1 is not the direct issuer, find it in the chain
+                if issuer_cn != "ISRG Root X1":
+                    for pem_cert in pem_cert.split("-----END CERTIFICATE-----\n"):
+                        if "ISRG Root X1" in pem_cert:
+                            return pem_cert + "-----END CERTIFICATE-----\n"
+
+                # If ISRG Root X1 is already the root cert
+                return pem_cert
 
     except Exception as e:
-        msg = f"{messages.GET_FAILED} SSL certificate"
-        logging.info(msg)
-        return send_internal_server_error(user_msg=msg, error=e)
+        return ORJSONResponse(content={"error": str(e)}, status_code=500)
+
+# @router.get("/ssl_certificate", response_class=ORJSONResponse)
+# @inject
+# async def get_ssl_certificate():
+#     try:
+#         # Set the hostname
+#         hostname = "mvitracking-uat.sageinfrastructure.net"
+#         if get_settings().ENV == "production":
+#             hostname = "mvitracking.live.sageinfrastructure.net"
+#
+#         # Establish a connection to the server
+#         context = ssl.create_default_context()
+#         context.verify_mode = ssl.CERT_REQUIRED
+#         context.load_default_certs()
+#
+#         with socket.create_connection((hostname, 443)) as sock:
+#             with context.wrap_socket(sock, server_hostname=hostname) as ssock:
+#                 # Get the full certificate chain
+#                 cert_chain = ssock.getpeercert(True)  # Get raw DER cert
+#                 certs = ssl.DER_cert_to_PEM_cert(cert_chain).split("-----END CERTIFICATE-----\n")
+#
+#                 # Extract root certificate (last in the chain)
+#                 root_cert = certs[-2] + "-----END CERTIFICATE-----\n" if len(certs) > 1 else certs[0]
+#
+#         return root_cert
+#
+#     except Exception as e:
+#         msg = f"{messages.GET_FAILED} SSL certificate"
+#         logging.info(msg)
+#         return send_internal_server_error(user_msg=msg, error=e)
 
 # @router.get("/ssl_certificate", response_class=ORJSONResponse)
 # @inject
