@@ -27,7 +27,7 @@ class UserSubscription(BaseModel):
     )
     subscription_code = Column(String(length=50), nullable=True, index=True)
     # payment_reference = Column(String(length=50), nullable=True, index=True)
-    plan_code = Column(String(length=50), nullable=False, index=True)git
+    plan_code = Column(String(length=50), nullable=False, index=True)
     status = Column(String(length=50), nullable=False, index=True)
     next_payment_date = Column(String(length=50), nullable=True, index=True)
     plan = Column(JSON, nullable=True)
