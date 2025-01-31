@@ -54,13 +54,51 @@ class SubscriptionService(BaseService):
         except Exception as e:
             raise e
 
+    # def get_all_paystack_subscriptions(self, page, page_size):
+    #     try:
+    #
+    #         return self.subscription_repository.read_all_paystack_subscriptions(
+    #             page, page_size
+    #         )
+    #     except Exception as e:
+    #         raise e
+
     def get_all_paystack_subscriptions(self, page, page_size):
         try:
-            return self.subscription_repository.read_all_paystack_subscriptions(
-                page, page_size
-            )
+            # Fetch subscription data
+            result = self.subscription_repository.read_all_paystack_subscriptions(page, page_size)
+
+            # Extract relevant fields from each subscription
+            subscriptions_data = [
+                {
+                    "uuid": sub.uuid,
+                    "customer": {
+                        "first_name": sub.user.first_name,
+                        "last_name": sub.user.first_name,
+                    },
+                    "plan": {
+                            "name": sub.plan.get("name", "N/A")
+                    },
+                    "status": sub.status,
+                    "amount": sub.plan.get("amount", 0),
+                    "createdAt": sub.created_at,
+                }
+                for sub in result["subscriptions"]
+            ]
+
+            # Construct final response
+            return {
+                "subscriptions": subscriptions_data,
+                "page": result["page"],
+                "page_size": result["page_size"],
+                "total": result["total"],
+                "total_pages": result["total_pages"],
+                "total_amount": result["total_amount"],
+            }
+
         except Exception as e:
             raise e
+
 
     def get_paystack_subscription(self, subscription_code):
         try:

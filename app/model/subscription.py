@@ -5,7 +5,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from app.model.base_model import BaseModel
-from app.util.enums import ActiveStatus, SubscriptionPeriod, SubscriptionTypes
+from app.util.enums import SubscriptionStatus, SubscriptionPeriod, SubscriptionTypes
 
 
 class Subscription(BaseModel):
@@ -26,6 +26,6 @@ class Subscription(BaseModel):
     package_uuid = Column(
         UUID(as_uuid=True), ForeignKey("packages.uuid"), nullable=False
     )
-    status = Column(Enum(ActiveStatus), nullable=False)
+    status = Column(Enum(SubscriptionStatus), nullable=False)
     user = relationship("User")
     package = relationship("Package")
