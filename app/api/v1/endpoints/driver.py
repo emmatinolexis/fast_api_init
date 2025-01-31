@@ -50,10 +50,6 @@ async def check_drivers_license_expiry(
                     expiry_date=license.expiration_date.strftime("%d %B, %Y"),
                     no_days=no_days,
                 )
-                pass
-            else:
-                print("License not expiring soon")
-                pass
     except Exception as e:
         msg = messages.LICENSE_CHECK_FAILED
         return send_internal_server_error(user_msg=msg, error=str(e))

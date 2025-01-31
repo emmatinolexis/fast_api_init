@@ -3,12 +3,29 @@ version: '3'
 services:
 
   api:
-    build: ./
+    build:
+      context: .
+      dockerfile: Dockerfile-api
     command: uvicorn app.main:app --reload --workers 1 --host 0.0.0.0 --port 8000
     volumes:
       - ./:/mvtracking
     ports:
       - 8000:8000
+    restart: on-failure
+    env_file:
+      - .env
+    depends_on:
+      - database
+
+  job:
+    build:
+      context: .
+      dockerfile: Dockerfile-job
+    command: uvicorn app.job:app --reload --workers 1 --host 0.0.0.0 --port 8001
+    volumes:
+      - ./:/mvtracking
+    ports:
+      - 8001:8001
     restart: on-failure
     env_file:
       - .env
@@ -24,11 +41,7 @@ services:
     expose:
       - "5432"
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "pg_isready -U mvi_tracking_user -d mvi_tracking_db"
-        ]
+      test: [ "CMD-SHELL", "pg_isready -U mvi_tracking_user -d mvi_tracking_db" ]
       interval: 10s
       timeout: 5s
       retries: 5

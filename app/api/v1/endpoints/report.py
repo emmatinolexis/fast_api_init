@@ -22,11 +22,10 @@ from app.service.gas_cylinder_event_service import GasCylinderEventService
 from app.service.smart_report_service import SmartReportService
 from app.service.user_service import UserService
 from app.util.email import send_smart_report_email
-from app.util.enums import AccountType, EmailPurpose, FileFormat, SmartReportStatus
+from app.util.enums import EmailPurpose, FileFormat, SmartReportStatus
 from app.util.utils import (
     get_content_type,
     send_client_side_error,
-    send_data,
     send_data_with_info,
     send_info,
     send_internal_server_error,
@@ -238,8 +237,7 @@ async def generate_smart_report_handler(
 
         if not smart_report:
             msg = "There are no smart report to process"
-            logging.info(msg)
-            return send_client_side_error(user_msg=msg)
+            return send_info(msg)
         if smart_report:
             smart_report_service.update_smart_report_status(
                 smart_report.get("uuid"), SmartReportStatus.PROCESSING

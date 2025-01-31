@@ -6,30 +6,24 @@ on:
   push:
     branches:
       - 'main'
-
 env:
   DOCKER_HUB_APP_REPOSITORY: mvi-hub
   EKS_CLUSTER_NAME: sage-uat
   AWS_REGION: eu-central-1
   EKS_NAMESPACE: apps
-
 jobs:
   build-and-upload-docker-image:
     runs-on: ubuntu-latest
     steps:
-      -
-        name: Checkout
-        uses: actions/checkout@v3
-      -
-        name: QEMU Setup
-        uses: docker/setup-qemu-action@v2
-      -
-        name: Buildx Docker Setup
-        uses: docker/setup-buildx-action@v2
-      - 
-        name: Bump Version and Push tag
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: QEMU Setup
+        uses: docker/setup-qemu-action@v3
+      - name: Buildx Docker Setup
+        uses: docker/setup-buildx-action@v3
+      - name: Bump Version and Push tag
         id: version_bump
-        uses: anothrNick/github-tag-action@1.61.0
+        uses: anothrNick/github-tag-action@1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEFAULT_BRANCH: main
@@ -42,15 +36,22 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
       - if: steps.version_bump.outputs.new_tag != steps.version_bump.outputs.old_tag
-        name: Build And Push Image
-        uses: docker/build-push-action@v4
+        name: Build And Push API Image
+        uses: docker/build-push-action@v5
         with:
           push: true
-          tags: sagemicrosystems/mvi-hub:${{ steps.version_bump.outputs.new_tag }}
+          tags: sagemicrosystems/mvi-hub-api:${{ steps.version_bump.outputs.new_tag }}
+          file: Dockerfile-api
+      - if: steps.version_bump.outputs.new_tag != steps.version_bump.outputs.old_tag
+        name: Build And Push Job Image
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: sagemicrosystems/mvi-hub-job:${{ steps.version_bump.outputs.new_tag }}
+          file: Dockerfile-job
     outputs:
       NEW_TAG: ${{ steps.version_bump.outputs.new_tag }}
       OLD_TAG: ${{ steps.version_bump.outputs.old_tag }}
-  
   deploy-k8s-staging:
     runs-on: ubuntu-latest
     environment: staging
@@ -61,7 +62,7 @@ jobs:
         run: |
           echo "NEW_TAG=${{ needs.build-and-upload-docker-image.outputs.NEW_TAG }}" >> $GITHUB_ENV
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -87,14 +88,11 @@ jobs:
           DB_NAME: ${{ secrets.DB_NAME }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           DB_USER: ${{ secrets.DB_USER }}
-          MAIL_SERVER: ${{ secrets.MAIL_SERVER }}
-          MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
           MQTT_HOST: ${{ secrets.MQTT_HOST }}
           MQTT_PORT: ${{ secrets.MQTT_PORT }}
           MQTT_TOPIC: ${{ secrets.MQTT_TOPIC }}
           MQTT_USER: ${{ secrets.MQTT_USER }}
           MQTT_PASSWORD: ${{ secrets.MQTT_PASSWORD }}
-          MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           ECHO_PARROT_HOST: ${{ secrets.ECHO_PARROT_HOST }}
           RTD_SEND_ORDER_SIGNATURE: ${{ secrets.RTD_SEND_ORDER_SIGNATURE }}
@@ -106,18 +104,20 @@ jobs:
           ENV: ${{ secrets.ENV }}
       - name: Set docker image in k8s manifests
         env:
-          DOCKER_REGISTRY: sagemicrosystems       
+          DOCKER_REGISTRY: sagemicrosystems
           IMAGE_TAG: ${{ env.NEW_TAG }}
         run: |
           sed -i.bak "s|DOCKER_IMAGE|$DOCKER_REGISTRY/$DOCKER_HUB_APP_REPOSITORY:$IMAGE_TAG|g" kubernetes/app-deployment.yaml
       - name: Deploy to EKS
-        uses: Azure/k8s-deploy@v1
+        uses: Azure/k8s-deploy@v4
         with:
           namespace: ${{env.EKS_NAMESPACE}}
           manifests: |
             kubernetes/secrets.yaml
             kubernetes/app-deployment.yaml
             kubernetes/app-service.yaml
+            kubernetes/job-deployment.yaml
+            kubernetes/job-service.yaml
       - name: Update deployment status
         run: |
           echo "Deployment to EKS successful"

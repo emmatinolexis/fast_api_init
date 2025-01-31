@@ -1,17 +1,15 @@
-apiVersion: apps/v1 
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mvi-tracking-app
   namespace: apps
-  labels: 
-     app: mvi-tracking-app
-
+  labels:
+    app: mvi-tracking-app
 spec:
-  replicas: 1 
+  replicas: 1
   selector:
     matchLabels:
       app: mvi-tracking-app
-
   template:
     metadata:
       labels:
@@ -19,144 +17,129 @@ spec:
     spec:
       serviceAccountName: apps-sa
       containers:
-      - name: mvi-tracking-app
-        env:
-        - name: ENV
-          value: staging
-        - name: API_VERSION
-          valueFrom:
-            secretKeyRef:
-              name: mvi-tracking
-              key: api_version
-        - name: PAYSTACK_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: mvi-tracking
-              key: paystack_api_key
-        - name: PAYSTACK_PLAN_URL
-          valueFrom:
-            secretKeyRef:
-              name: mvi-tracking
-              key: paystack_plan_url
-        - name: PAYSTACK_SUBSCRIPTION_URL
-          valueFrom:
-            secretKeyRef:
-              name: mvi-tracking
-              key: paystack_subscription_url
-        - name: PAYSTACK_PAYMENT_URL
-          valueFrom:
-            secretKeyRef:
-              name: mvi-tracking
-              key: paystack_payment_url
-        - name: PAYSTACK_INITIALIZE_SUBSCRIPTION_URL
-          valueFrom:
-            secretKeyRef:
-              name: mvi-tracking
-              key: paystack_initilize_subscription_url
-        - name: DB_HOST
-          valueFrom:
-            secretKeyRef:
-              name: mvi-tracking
-              key: db_host
-        - name: DB_NAME
-          valueFrom:
-            secretKeyRef:
-              name: mvi-tracking
-              key: db_name
-        - name: DB_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: mvi-tracking
-              key: db_password
-        - name: DB_USER
-          valueFrom:
-            secretKeyRef:
-              name: mvi-tracking
-              key: db_user
-        - name: MAIL_SERVER
-          valueFrom:
-            secretKeyRef:
-              name: mvi-tracking
-              key: mail_server
-        - name: MAIL_USERNAME
-          valueFrom:
-            secretKeyRef:
-              name: mvi-tracking
-              key: mail_username
-        - name: MQTT_HOST
-          valueFrom:
-            secretKeyRef:
-              name: mvi-tracking
-              key: mqtt_host
-        - name: MQTT_PORT
-          valueFrom:
-            secretKeyRef:
-              name: mvi-tracking
-              key: mqtt_port
-        - name: MQTT_TOPIC
-          valueFrom:
-            secretKeyRef:
-              name: mvi-tracking
-              key: mqtt_topic
-        - name: MQTT_USER
-          valueFrom:
-            secretKeyRef:
-              name: mvi-tracking
-              key: mqtt_user
-        - name: MQTT_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: mvi-tracking
-              key: mqtt_password
-        - name: MAIL_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: mvi-tracking
-              key: mail_password
-        - name: SECRET_KEY
-          valueFrom:
-            secretKeyRef:
-              name: mvi-tracking
-              key: secret_key
-        - name: ECHO_PARROT_HOST
-          valueFrom:
-            secretKeyRef:
-              name: mvi-tracking
-              key: echo_parrot_host
-        - name: RTD_SEND_ORDER_SIGNATURE
-          valueFrom:
-            secretKeyRef:
-              name: mvi-tracking
-              key: rtd_send_order_signature
-        - name: RTD_BASE_URL
-          valueFrom:
-            secretKeyRef:
-              name: mvi-tracking
-              key: rtd_base_url
-        - name: AWS_ACCESS_KEY_ID
-          valueFrom:
-            secretKeyRef:
-              name: mvi-tracking
-              key: aws_access_key_id
-        - name: AWS_SECRET_ACCESS_KEY
-          valueFrom:
-            secretKeyRef:
-              name: mvi-tracking
-              key: aws_secret_access_key
-        - name: AWS_REGION
-          valueFrom:
-            secretKeyRef:
-              name: mvi-tracking
-              key: aws_region
-        - name: S3_BUCKET
-          valueFrom:
-            secretKeyRef:
-              name: mvi-tracking
-              key: s3_bucket
-        image: DOCKER_IMAGE
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 80
+        - name: mvi-tracking-app
+          env:
+            - name: ENV
+              value: staging
+            - name: API_VERSION
+              valueFrom:
+                secretKeyRef:
+                  name: mvi-tracking
+                  key: api_version
+            - name: PAYSTACK_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: mvi-tracking
+                  key: paystack_api_key
+            - name: PAYSTACK_PLAN_URL
+              valueFrom:
+                secretKeyRef:
+                  name: mvi-tracking
+                  key: paystack_plan_url
+            - name: PAYSTACK_SUBSCRIPTION_URL
+              valueFrom:
+                secretKeyRef:
+                  name: mvi-tracking
+                  key: paystack_subscription_url
+            - name: PAYSTACK_PAYMENT_URL
+              valueFrom:
+                secretKeyRef:
+                  name: mvi-tracking
+                  key: paystack_payment_url
+            - name: PAYSTACK_INITIALIZE_SUBSCRIPTION_URL
+              valueFrom:
+                secretKeyRef:
+                  name: mvi-tracking
+                  key: paystack_initilize_subscription_url
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: mvi-tracking
+                  key: db_host
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: mvi-tracking
+                  key: db_name
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mvi-tracking
+                  key: db_password
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mvi-tracking
+                  key: db_user
+            - name: MQTT_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: mvi-tracking
+                  key: mqtt_host
+            - name: MQTT_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: mvi-tracking
+                  key: mqtt_port
+            - name: MQTT_TOPIC
+              valueFrom:
+                secretKeyRef:
+                  name: mvi-tracking
+                  key: mqtt_topic
+            - name: MQTT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mvi-tracking
+                  key: mqtt_user
+            - name: MQTT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mvi-tracking
+                  key: mqtt_password
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: mvi-tracking
+                  key: secret_key
+            - name: ECHO_PARROT_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: mvi-tracking
+                  key: echo_parrot_host
+            - name: RTD_SEND_ORDER_SIGNATURE
+              valueFrom:
+                secretKeyRef:
+                  name: mvi-tracking
+                  key: rtd_send_order_signature
+            - name: RTD_BASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: mvi-tracking
+                  key: rtd_base_url
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: mvi-tracking
+                  key: aws_access_key_id
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: mvi-tracking
+                  key: aws_secret_access_key
+            - name: AWS_REGION
+              valueFrom:
+                secretKeyRef:
+                  name: mvi-tracking
+                  key: aws_region
+            - name: S3_BUCKET
+              valueFrom:
+                secretKeyRef:
+                  name: mvi-tracking
+                  key: s3_bucket
+          image: DOCKER_IMAGE
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
       imagePullSecrets:
         - name: docker-secret
   strategy:
