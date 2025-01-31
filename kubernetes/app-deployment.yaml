@@ -136,7 +136,7 @@ spec:
                 secretKeyRef:
                   name: mvi-tracking
                   key: s3_bucket
-          image: DOCKER_IMAGE
+          image: API_DOCKER_IMAGE
           imagePullPolicy: Always
           ports:
             - containerPort: 80

@@ -56,7 +56,7 @@ spec:
                 secretKeyRef:
                   name: mvi-tracking
                   key: echo_parrot_host
-          image: DOCKER_IMAGE
+          image: JOB_DOCKER_IMAGE
           imagePullPolicy: Always
           ports:
             - containerPort: 80
