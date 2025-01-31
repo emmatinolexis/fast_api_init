@@ -6,28 +6,22 @@ on:
   push:
     branches:
       - 'main'
-
 env:
   DOCKER_HUB_APP_REPOSITORY: mvi-hub
   EKS_CLUSTER_NAME: sage-uat
   AWS_REGION: eu-central-1
   EKS_NAMESPACE: apps
-
 jobs:
   build-and-upload-docker-image:
     runs-on: ubuntu-latest
     steps:
-      -
-        name: Checkout
+      - name: Checkout
         uses: actions/checkout@v3
-      -
-        name: QEMU Setup
+      - name: QEMU Setup
         uses: docker/setup-qemu-action@v2
-      -
-        name: Buildx Docker Setup
+      - name: Buildx Docker Setup
         uses: docker/setup-buildx-action@v2
-      - 
-        name: Bump Version and Push tag
+      - name: Bump Version and Push tag
         id: version_bump
         uses: anothrNick/github-tag-action@1.61.0
         env:
@@ -42,15 +36,22 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
       - if: steps.version_bump.outputs.new_tag != steps.version_bump.outputs.old_tag
-        name: Build And Push Image
+        name: Build And Push API Image
         uses: docker/build-push-action@v4
         with:
           push: true
-          tags: sagemicrosystems/mvi-hub:${{ steps.version_bump.outputs.new_tag }}
+          tags: sagemicrosystems/mvi-hub-api:${{ steps.version_bump.outputs.new_tag }}
+          file: Dockerfile-api
+      - if: steps.version_bump.outputs.new_tag != steps.version_bump.outputs.old_tag
+        name: Build And Push Job Image
+        uses: docker/build-push-action@v4
+        with:
+          push: true
+          tags: sagemicrosystems/mvi-hub-job:${{ steps.version_bump.outputs.new_tag }}
+          file: Dockerfile-job
     outputs:
       NEW_TAG: ${{ steps.version_bump.outputs.new_tag }}
       OLD_TAG: ${{ steps.version_bump.outputs.old_tag }}
-  
   deploy-k8s-staging:
     runs-on: ubuntu-latest
     environment: staging
@@ -106,7 +107,7 @@ jobs:
           ENV: ${{ secrets.ENV }}
       - name: Set docker image in k8s manifests
         env:
-          DOCKER_REGISTRY: sagemicrosystems       
+          DOCKER_REGISTRY: sagemicrosystems
           IMAGE_TAG: ${{ env.NEW_TAG }}
         run: |
           sed -i.bak "s|DOCKER_IMAGE|$DOCKER_REGISTRY/$DOCKER_HUB_APP_REPOSITORY:$IMAGE_TAG|g" kubernetes/app-deployment.yaml
@@ -118,6 +119,8 @@ jobs:
             kubernetes/secrets.yaml
             kubernetes/app-deployment.yaml
             kubernetes/app-service.yaml
+            kubernetes/job-deployment.yaml
+            kubernetes/job-service.yaml
       - name: Update deployment status
         run: |
           echo "Deployment to EKS successful"
