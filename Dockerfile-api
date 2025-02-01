@@ -1,5 +1,5 @@
 # Stage 1: Build the image
-FROM python:3.10-slim as build
+FROM python:3.9-slim as build
 
 # Set working directory
 WORKDIR /mvtracking
@@ -12,7 +12,7 @@ RUN pip install --no-cache-dir --upgrade -r /mvtracking/requirements.txt
 COPY ./app /mvtracking/app
 
 # Stage 2: Final image
-FROM python:3.10-slim
+FROM python:3.9-slim
 
 # Set working directory
 WORKDIR /mvtracking
@@ -21,4 +21,4 @@ WORKDIR /mvtracking
 COPY --from=build /mvtracking /mvtracking
 
 # Run and expose the port
-ENTRYPOINT ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
