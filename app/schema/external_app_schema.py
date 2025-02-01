@@ -11,8 +11,8 @@ class ExternalAppPayload(BaseModel):
     status: ActiveStatus
     no_of_days_to_expire: int
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class ExternalAppGenerateTokenPayload(BaseModel):
@@ -21,8 +21,8 @@ class ExternalAppGenerateTokenPayload(BaseModel):
     serial_number: Optional[str] = None
     requires_conf: Optional[bool] = None
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class AppServiceTokenData(BaseModel):

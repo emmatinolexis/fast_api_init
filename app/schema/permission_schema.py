@@ -9,8 +9,8 @@ from app.util.enums import RoleType
 class PermissionPayload(BaseModel):
     permission_name: str
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class RolePayload(BaseModel):
@@ -18,13 +18,13 @@ class RolePayload(BaseModel):
     role_type: RoleType
     permissions: List[UUID]
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class RolePermissionAssignmentPayload(BaseModel):
     role_uuid: UUID
     permission_uuid: UUID
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True

@@ -24,8 +24,8 @@ class PaystackSubscriptionPayload(BaseModel):
     amount: float
     callback_url: Optional[str]
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class UpdateUserSubscriptionPayload(BaseModel):
@@ -38,5 +38,5 @@ class UpdateUserSubscriptionPayload(BaseModel):
     start_date: date
     end_date: date
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True

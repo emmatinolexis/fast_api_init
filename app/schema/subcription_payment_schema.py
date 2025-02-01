@@ -8,5 +8,5 @@ class SubscriptionPaymentPayload(BaseModel):
     payment_uuid: UUID
     user_uuid: UUID
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True

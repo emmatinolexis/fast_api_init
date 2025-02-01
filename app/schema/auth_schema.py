@@ -9,22 +9,22 @@ class EmailVerification(BaseModel):
     verification_token: str
     expiry_date: str
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class UserEmailVerification(BaseModel):
     uuid: str
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class VerifyToken(BaseModel):
     Token: str
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class TokenData(BaseModel):
@@ -36,5 +36,5 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True

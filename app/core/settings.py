@@ -169,7 +169,7 @@ class Settings(BaseSettings):
     )
     FIREBASE_CLIENT_X509_CERT_URL: str = os.getenv("FIREBASE_CLIENT_X509_CERT_URL", "")
 
-    class Config:
+    class ConfigDict:
         case_sensitive = True
 
 

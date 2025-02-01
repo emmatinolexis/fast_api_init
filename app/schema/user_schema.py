@@ -35,8 +35,8 @@ class UserPayload(BaseModel):
         """Ensure the email address is always in lowercase."""
         return value.lower()
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class DriverLicenseUpdates(BaseModel):
@@ -80,8 +80,8 @@ class UpdateUserPayload(BaseModel):
         except phonenumbers.NumberParseException as e:
             raise ValueError(f"Invalid phone number: {e}")
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class UserProfileUdatePayload(BaseModel):
@@ -99,15 +99,15 @@ class UserLogin(BaseModel):
         """Ensure the email address is always in lowercase."""
         return value.lower()
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class UserEmail(BaseModel):
     email_address: EmailStr
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class UserUpdatePassword(BaseModel):
@@ -115,8 +115,8 @@ class UserUpdatePassword(BaseModel):
     new_password: str
     password_confirmation: str
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class ResetPasswordPayload(BaseModel):
@@ -124,8 +124,8 @@ class ResetPasswordPayload(BaseModel):
     new_password: str
     password_confirmation: str
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class IndividualUser(BaseModel):
@@ -177,8 +177,8 @@ class UpdateAdminTeamMemberPayload(BaseModel):
     status: Optional[ActiveStatus] = None
     user_role_uuid: Optional[UUID] = None
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class InstallerResponse(BaseModel):
@@ -188,6 +188,6 @@ class InstallerResponse(BaseModel):
     avatar_url: Optional[str] = None
     installer_locations: Optional[List[str]] = None
 
-    class Config:
-        orm_mode = True
+    class ConfigDict:
+        from_attributes = True
         from_attributes = True

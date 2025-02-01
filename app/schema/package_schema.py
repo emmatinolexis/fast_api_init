@@ -14,8 +14,8 @@ class PackageItemPayload(BaseModel):
     item_name: str
     status: ActiveStatus
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class PackagePayload(BaseModel):
@@ -23,24 +23,24 @@ class PackagePayload(BaseModel):
     package_price: str
     package_description: str
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class PackageItemAssignmentPayload(BaseModel):
     package_item_uuids: List[UUID]
     package_plan_code: str
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class PackageItemAssignmentInput(BaseModel):
     package_uuid: UUID
     package_plan_code: str
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class PaystackPackagePlanPayload(BaseModel):
@@ -48,8 +48,8 @@ class PaystackPackagePlanPayload(BaseModel):
     amount: int
     description: str
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class PackageOutput(BaseModel):
@@ -59,5 +59,5 @@ class PackageOutput(BaseModel):
     uuid: UUID
     # package_item:PackageItemAssignment
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True

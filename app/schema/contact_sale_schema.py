@@ -12,5 +12,5 @@ class ContactSale(BaseModel):
     user_uuid: UUID
     status: ContactSaleStatus
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True

@@ -21,5 +21,5 @@ class FineReportPayload(BaseModel):
     speed_location: LocationPayload
     fine_amount: str
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True

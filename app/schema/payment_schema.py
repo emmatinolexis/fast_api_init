@@ -12,5 +12,5 @@ class PaymentPayload(BaseModel):
     payment_type: PaymentTypes
     user_uuid: UUID
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True

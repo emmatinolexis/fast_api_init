@@ -12,8 +12,8 @@ class EquipmentPayload(BaseModel):
     status: ActiveStatus
     marker_icon_url: str
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class EquipmentTypePayload(BaseModel):
@@ -21,5 +21,5 @@ class EquipmentTypePayload(BaseModel):
     status: ActiveStatus
     equipment_uuid: Optional[UUID] = None
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True

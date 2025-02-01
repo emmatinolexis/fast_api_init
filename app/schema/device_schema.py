@@ -12,8 +12,8 @@ class SmsCommandPayload(BaseModel):
     queued_shutdown_command: str = None
     queued_on_command: str = None
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class DevicePayload(BaseModel):
@@ -25,8 +25,8 @@ class DevicePayload(BaseModel):
     image_url: Optional[str] = None
     assign_to_asset_status: str = None
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class DeviceManufacturerPayload(BaseModel):
@@ -34,15 +34,15 @@ class DeviceManufacturerPayload(BaseModel):
     shutdown_on_command: SmsCommandPayload
     status: ActiveStatus
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class ImeiAssignPayload(BaseModel):
     device_imei: str
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class InventoryPayload(BaseModel):
@@ -56,8 +56,8 @@ class InventoryPayload(BaseModel):
     publish_on_site_status: bool
     images: List[str]
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class InventoryUpdatePayload(BaseModel):
@@ -70,5 +70,5 @@ class InventoryUpdatePayload(BaseModel):
     device_manufacturer_uuid: Optional[UUID] = None
     image: Optional[str] = None
 
-    class Config:
-        orm_mode = True
+    class ConfigDict:
+        from_attributes = True

@@ -9,5 +9,5 @@ class FeaturePayload(BaseModel):
     icon_url: str
     status: ActiveStatus
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True

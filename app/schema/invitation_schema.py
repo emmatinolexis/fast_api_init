@@ -41,8 +41,8 @@ class InvitationPayload(InvitationCreatePayloadSingle):
     status: InvitationStatus = InvitationStatus.PENDING
     expired_at: datetime
 
-    class Config:
-        orm_mode = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class AdminInvitationPayload(InvitationCreatePayloadSingle):
@@ -52,5 +52,5 @@ class AdminInvitationPayload(InvitationCreatePayloadSingle):
     role_uuid: UUID
     invitation_type: RoleType
 
-    class Config:
-        orm_mode = True
+    class ConfigDict:
+        from_attributes = True

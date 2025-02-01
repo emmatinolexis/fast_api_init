@@ -12,16 +12,16 @@ class OnboardingPayload(BaseModel):
     user_uuid: UUID
     features_uuid: list[UUID]
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class OnboardingUpdatePayload(BaseModel):
     number_of_assets: str
     number_of_months: int
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class OnboardingIndividualInput(BaseModel):
@@ -45,24 +45,24 @@ class BusinessOnboardingPayload(BaseModel):
     user_uuid: UUID
     features_uuid: list[UUID]
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class OnboardingFeatureAssignment(BaseModel):
     onboarding_uuid: UUID
     feature_uuid: UUID
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class OnboardingAssetTypeAssignment(BaseModel):
     onboarding_uuid: UUID
     asset_type_uuid: UUID
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class OrganisationContactPayload(BaseModel):
@@ -73,8 +73,8 @@ class OrganisationContactPayload(BaseModel):
     message: str
     user_uuid: UUID
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class BusinessProfile(BaseModel):
@@ -90,5 +90,5 @@ class UserOrganisationAssignment(BaseModel):
     user_uuid: UUID
     business_profile_uuid: UUID
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True

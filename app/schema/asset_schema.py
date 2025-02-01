@@ -1,7 +1,7 @@
 from typing import List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr,ConfigDict
+from pydantic import BaseModel, ConfigDict, EmailStr
 from pydantic_extra_types.coordinate import Latitude, Longitude
 
 from app.schema.equipment_schema import EquipmentPayload, EquipmentTypePayload
@@ -21,14 +21,15 @@ from app.util.enums import (
     IncidentType,
 )
 
+
 class AssetTypePayload(BaseModel):
     asset_type_name: str
     description: str
     icon_url: str
     status: ActiveStatus
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class Asset(BaseModel):
@@ -50,8 +51,8 @@ class Asset(BaseModel):
     asset_type: Optional[AssetTypePayload] = None
     marker_icon: MarkerIconPayload = None
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class AssetPayload(BaseModel):
@@ -73,8 +74,8 @@ class AssetPayload(BaseModel):
     add_driver: bool = False
     driver_uuid: Optional[UUID] = None
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class PatchAssetPayload(BaseModel):
@@ -201,8 +202,8 @@ class AssignDeviceInputPayload(BaseModel):
     device_imei: str
     sim_phone_number: str
 
-    class Config:
-        orm_model = True
+    class ConfigDict:
+        from_attributes = True
 
 
 class AssetLocationPayload(BaseModel):
