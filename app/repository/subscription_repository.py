@@ -5,8 +5,9 @@ from typing import Callable, List, Tuple
 
 import requests
 from requests.exceptions import HTTPError
-from sqlalchemy import desc
+from sqlalchemy import desc, or_, func, cast, Numeric, String
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.dialects.postgresql import JSONB
 
 from app.core.constants import FREE_PACKAGE, FREE_PACKAGE_ITEMS
 from app.core.settings import settings
@@ -19,7 +20,7 @@ from app.model.user import User
 from app.model.user_subscription import UserSubscription
 from app.repository.base_repository import BaseRepository
 from app.schema.subscription import PaystackSubscriptionPayload
-from app.util.enums import ActiveStatus
+from app.util.enums import ActiveStatus, SubscriptionStatus
 
 
 class SubscriptionRepository(BaseRepository):
@@ -131,73 +132,129 @@ class SubscriptionRepository(BaseRepository):
             # For any other exceptions, return a generic error message
             return f"Error creating subscription: {str(err)}"
 
-    def read_all_paystack_subscriptions(self, page=1, page_size=10):
-        # Ensure page and page_size are integers
+    def read_all_paystack_subscriptions(self, page=1, per_page=10):
         page = int(page)
-        page_size = int(page_size)
+        per_page = int(per_page)
+        offset_value = (page - 1) * per_page  # Calculate offset
 
         with self.session_factory() as session:
-            # Prepare pagination parameters for Paystack API
-            params = {"page": page, "perPage": page_size}
-
-            paystack_subscription = requests.get(
-                settings.PAYSTACK_SUBSCRIPTION_URL,
-                headers=settings.PAYSTACK_HEADERS,
-                params=params,  # Adding pagination parameters to the request
+            # Query to fetch paginated subscriptions, total count, and total amount
+            query = (
+                session.query(
+                    UserSubscription,
+                    func.count().over().label("total_subscriptions"),  # Get total count
+                    func.coalesce(
+                        func.sum(
+                            cast(cast(UserSubscription.plan["amount"], JSONB).cast(String), Numeric)
+                        ).over(),
+                        0
+                    ).label("total_amount")  # Extract JSON as TEXT then cast to NUMERIC
+                )
+                .options(joinedload(UserSubscription.user))
+                .filter(
+                    or_(
+                        UserSubscription.status == SubscriptionStatus.ACTIVE.value,
+                        UserSubscription.status == SubscriptionStatus.NON_RENEWING.value
+                    )
+                )
+                .limit(per_page)
+                .offset(offset_value)
             )
 
-            if paystack_subscription.status_code == 200:
-                subscriptions = []
-                response_data = paystack_subscription.json()
+            # Execute query and process results
+            results = query.all()
 
-                # Extract metadata (total count, etc.) and ensure they are integers
-                total_subscriptions = int(response_data.get("meta", {}).get("total", 0))
-                current_page = int(response_data.get("meta", {}).get("page", page))
-                per_page = int(response_data.get("meta", {}).get("perPage", page_size))
+            if results:
+                total_subscriptions = results[0].total_subscriptions  # Extract total count
+                total_amount = results[0].total_amount  # Extract total amount
+            else:
+                total_subscriptions = 0
+                total_amount = 0
 
-                # Calculate total pages
-                total_pages = math.ceil(total_subscriptions / per_page)
+            subscriptions = [row[0] for row in results]  # Extract subscription objects
 
-                for subscription in response_data["data"]:
-                    user_email = subscription["customer"]["email"]
+            # Calculate total pages
+            total_pages = (total_subscriptions + per_page - 1) // per_page  # Ceiling division
 
-                    user = (
-                        session.query(User).filter_by(email_address=user_email).first()
-                    )
+            # Prepare result in required format
+            result = {
+                "subscriptions": subscriptions,
+                "page": page,
+                "page_size": per_page,
+                "total": total_subscriptions,
+                "total_pages": total_pages,
+                "total_amount": total_amount,  # Correctly extracted total amount
+            }
 
-                    if not user:
-                        return f"{user_email} not found"
+            return result
 
-                    # Update subscription with user details
-                    subscription["customer"]["first_name"] = user.first_name
-                    subscription["customer"]["last_name"] = user.last_name
-                    subscription["customer"]["phone"] = user.phone_number
-                    subscription["customer"]["user_uuid"] = user.uuid
-
-                    plan_code = subscription["plan"]["plan_code"]
-
-                    # Fetch package items based on plan code
-                    package_items = (
-                        session.query(PackageItemAssignment)
-                        .filter(PackageItemAssignment.paystack_plan_code == plan_code)
-                        .options(joinedload(PackageItemAssignment.package_item))
-                        .all()
-                    )
-
-                    subscription["package_items"] = package_items
-                    subscriptions.append(subscription)
-
-                # Return result with pagination metadata
-                result = {
-                    "subscriptions": subscriptions,
-                    "page": current_page,
-                    "page_size": per_page,
-                    "total": total_subscriptions,
-                    "total_pages": total_pages,
-                }
-                return result
-
-            return paystack_subscription.json()
+    # def read_all_paystack_subscriptions(self, page=1, page_size=10):
+    #     # Ensure page and page_size are integers
+    #     page = int(page)
+    #     page_size = int(page_size)
+    #
+    #     with self.session_factory() as session:
+    #         # Prepare pagination parameters for Paystack API
+    #         params = {"page": page, "perPage": page_size}
+    #
+    #         paystack_subscription = requests.get(
+    #             settings.PAYSTACK_SUBSCRIPTION_URL,
+    #             headers=settings.PAYSTACK_HEADERS,
+    #             params=params,  # Adding pagination parameters to the request
+    #         )
+    #
+    #         if paystack_subscription.status_code == 200:
+    #             subscriptions = []
+    #             response_data = paystack_subscription.json()
+    #
+    #             # Extract metadata (total count, etc.) and ensure they are integers
+    #             total_subscriptions = int(response_data.get("meta", {}).get("total", 0))
+    #             current_page = int(response_data.get("meta", {}).get("page", page))
+    #             per_page = int(response_data.get("meta", {}).get("perPage", page_size))
+    #
+    #             # Calculate total pages
+    #             total_pages = math.ceil(total_subscriptions / per_page)
+    #
+    #             for subscription in response_data["data"]:
+    #                 user_email = subscription["customer"]["email"]
+    #
+    #                 user = (
+    #                     session.query(User).filter_by(email_address=user_email).first()
+    #                 )
+    #
+    #                 if not user:
+    #                     return f"{user_email} not found"
+    #
+    #                 # Update subscription with user details
+    #                 subscription["customer"]["first_name"] = user.first_name
+    #                 subscription["customer"]["last_name"] = user.last_name
+    #                 subscription["customer"]["phone"] = user.phone_number
+    #                 subscription["customer"]["user_uuid"] = user.uuid
+    #
+    #                 plan_code = subscription["plan"]["plan_code"]
+    #
+    #                 # Fetch package items based on plan code
+    #                 package_items = (
+    #                     session.query(PackageItemAssignment)
+    #                     .filter(PackageItemAssignment.paystack_plan_code == plan_code)
+    #                     .options(joinedload(PackageItemAssignment.package_item))
+    #                     .all()
+    #                 )
+    #
+    #                 subscription["package_items"] = package_items
+    #                 subscriptions.append(subscription)
+    #
+    #             # Return result with pagination metadata
+    #             result = {
+    #                 "subscriptions": subscriptions,
+    #                 "page": current_page,
+    #                 "page_size": per_page,
+    #                 "total": total_subscriptions,
+    #                 "total_pages": total_pages,
+    #             }
+    #             return result
+    #
+    #         return paystack_subscription.json()
 
     def read_all_subscriptions(
         self, page=1, page_size=10
