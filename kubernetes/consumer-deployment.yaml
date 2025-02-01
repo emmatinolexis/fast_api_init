@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mvi-tracking-consumer
+  namespace: apps
+  labels:
+    app: mvi-tracking-consumer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mvi-tracking-consumer
+  template:
+    metadata:
+      labels:
+        app: mvi-tracking-consumer
+    spec:
+      serviceAccountName: apps-sa
+      containers:
+        - name: mvi-tracking-consumer
+          env:
+            - name: ENV
+              value: staging
+            - name: API_VERSION
+              valueFrom:
+                secretKeyRef:
+                  name: mvi-tracking
+                  key: api_version
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: mvi-tracking
+                  key: db_host
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: mvi-tracking
+                  key: db_name
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mvi-tracking
+                  key: db_password
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mvi-tracking
+                  key: db_user
+            - name: MQTT_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: mvi-tracking
+                  key: mqtt_host
+            - name: MQTT_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: mvi-tracking
+                  key: mqtt_port
+            - name: MQTT_TOPIC
+              valueFrom:
+                secretKeyRef:
+                  name: mvi-tracking
+                  key: mqtt_topic
+            - name: MQTT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mvi-tracking
+                  key: mqtt_user
+            - name: MQTT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mvi-tracking
+                  key: mqtt_password
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: mvi-tracking
+                  key: secret_key
+            - name: ECHO_PARROT_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: mvi-tracking
+                  key: echo_parrot_host
+          image: CONSUMER_DOCKER_IMAGE
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+      imagePullSecrets:
+        - name: docker-secret
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
