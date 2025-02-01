@@ -7,8 +7,9 @@ on:
     branches:
       - 'main'
 env:
-  DOCKER_HUB_APP_REPOSITORY: mvi-hub-api
+  DOCKER_HUB_API_REPOSITORY: mvi-hub-api
   DOCKER_HUB_JOB_REPOSITORY: mvi-hub-job
+  DOCKER_HUB_CONSUMER_REPOSITORY: mvi-hub-consumer
   EKS_CLUSTER_NAME: sage-uat
   AWS_REGION: eu-central-1
   EKS_NAMESPACE: apps
@@ -41,15 +42,22 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           push: true
-          tags: sagemicrosystems/mvi-hub-api:${{ steps.version_bump.outputs.new_tag }}
+          tags: sagemicrosystems/${{ env.DOCKER_HUB_API_REPOSITORY }}:${{ steps.version_bump.outputs.new_tag }}
           file: Dockerfile-api
       - if: steps.version_bump.outputs.new_tag != steps.version_bump.outputs.old_tag
         name: Build And Push Job Image
         uses: docker/build-push-action@v5
         with:
           push: true
-          tags: sagemicrosystems/mvi-hub-job:${{ steps.version_bump.outputs.new_tag }}
+          tags: sagemicrosystems/${{ env.DOCKER_HUB_JOB_REPOSITORY }}:${{ steps.version_bump.outputs.new_tag }}
           file: Dockerfile-job
+      - if: steps.version_bump.outputs.new_tag != steps.version_bump.outputs.old_tag
+        name: Build And Push Consumer Image
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: sagemicrosystems/${{ env.DOCKER_HUB_CONSUMER_REPOSITORY }}:${{ steps.version_bump.outputs.new_tag }}
+          file: Dockerfile-consumer
     outputs:
       NEW_TAG: ${{ steps.version_bump.outputs.new_tag }}
       OLD_TAG: ${{ steps.version_bump.outputs.old_tag }}
@@ -108,8 +116,9 @@ jobs:
           DOCKER_REGISTRY: sagemicrosystems
           IMAGE_TAG: ${{ env.NEW_TAG }}
         run: |
-          sed -i.bak "s|API_DOCKER_IMAGE|$DOCKER_REGISTRY/$DOCKER_HUB_APP_REPOSITORY:$IMAGE_TAG|g" kubernetes/app-deployment.yaml
+          sed -i.bak "s|API_DOCKER_IMAGE|$DOCKER_REGISTRY/$DOCKER_HUB_API_REPOSITORY:$IMAGE_TAG|g" kubernetes/app-deployment.yaml
           sed -i.bak "s|JOB_DOCKER_IMAGE|$DOCKER_REGISTRY/$DOCKER_HUB_JOB_REPOSITORY:$IMAGE_TAG|g" kubernetes/job-deployment.yaml
+          sed -i.bak "s|CONSUMER_DOCKER_IMAGE|$DOCKER_REGISTRY/$DOCKER_HUB_CONSUMER_REPOSITORY:$IMAGE_TAG|g" kubernetes/consumer-deployment.yaml
       - name: Deploy to EKS
         uses: Azure/k8s-deploy@v4
         with:
@@ -120,6 +129,8 @@ jobs:
             kubernetes/app-service.yaml
             kubernetes/job-deployment.yaml
             kubernetes/job-service.yaml
+            kubernetes/consumer-deployment.yaml
+            kubernetes/consumer-service.yaml
       - name: Update deployment status
         run: |
           echo "Deployment to EKS successful"
@@ -129,4 +140,4 @@ jobs:
         with:
           webhookUrl: ${{ secrets.GOOGLE_CHAT_WEBHOOK_URL }}
           jobStatus: '${{ job.status }}'
-          title: "MVI API Hub Deployment to EKS"
+          title: "Successful MVI API, Job and Consumer Deployments to EKS"
