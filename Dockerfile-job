@@ -7,6 +7,7 @@ WORKDIR /mvtracking
 # Copy requirements.txt and install dependencies
 COPY ./requirements.txt /mvtracking/requirements.txt
 RUN pip install --no-cache-dir --upgrade -r /mvtracking/requirements.txt
+RUN pip install fastapi uvicorn
 
 # Copy the rest of the application code
 COPY ./app /mvtracking/app
