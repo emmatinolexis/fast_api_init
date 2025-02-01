@@ -7,7 +7,6 @@ WORKDIR /mvtracking
 # Copy requirements.txt and install dependencies
 COPY ./requirements.txt /mvtracking/requirements.txt
 RUN pip install --no-cache-dir --upgrade -r /mvtracking/requirements.txt
-RUN pip install fastapi uvicorn
 
 # Copy the rest of the application code
 COPY ./app /mvtracking/app
@@ -22,4 +21,4 @@ WORKDIR /mvtracking
 COPY --from=build /mvtracking /mvtracking
 
 # Run and expose the port
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+ENTRYPOINT ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
