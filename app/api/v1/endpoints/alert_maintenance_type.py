@@ -33,7 +33,7 @@ async def get_alert_maintenance_types_handler(
     ),
 ):
     try:
-        return send_data(service.get_list())
+        return send_data(await service.get_list())
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -51,7 +51,7 @@ async def create_alert_maintenance_type_handler(
     ),
 ):
     try:
-        alert_maintenance_type = service.add(payload)
+        alert_maintenance_type = await service.add(payload)
         return send_data(alert_maintenance_type)
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
@@ -71,7 +71,7 @@ async def update_alert_maintenance_type_handler(
     ),
 ):
     try:
-        alert_maintenance_type = service.patch_by_uuid(uuid, payload)
+        alert_maintenance_type = await service.patch_by_uuid(uuid, payload)
         if alert_maintenance_type is None:
             return send_client_side_error(
                 user_msg=messages.ALERT_MAINTENANCE_TYPE_NOT_FOUND + uuid

@@ -10,7 +10,7 @@ class AdminNotificationService(BaseService):
         self.admin_notification_repository = admin_notification_repository
         super().__init__(admin_notification_repository)
 
-    def get_admin_notifications(self, user_uuid: str, user_role: str):
+    async def get_admin_notifications(self, user_uuid: str, user_role: str):
         try:
             # Check if user role is valid
             if user_role not in ADMIN_NOTIFICATION_MAPPING.keys():
@@ -22,8 +22,10 @@ class AdminNotificationService(BaseService):
             notification_types = ADMIN_NOTIFICATION_MAPPING[user_role]
 
             # Retrieve notifications from repository
-            notifications = self.admin_notification_repository.get_admin_notifications(
-                user_uuid, notification_types, is_super_admin
+            notifications = (
+                await self.admin_notification_repository.get_admin_notifications(
+                    user_uuid, notification_types, is_super_admin
+                )
             )
 
             return {
@@ -33,10 +35,10 @@ class AdminNotificationService(BaseService):
         except Exception as e:
             raise e
 
-    def read_notification(self, notification_uuid: str, user_uuid: str):
+    async def read_notification(self, notification_uuid: str, user_uuid: str):
         try:
             # Retrieve notification from repository
-            notification = self.admin_notification_repository.read_by_uuid(
+            notification = await self.admin_notification_repository.read_by_uuid(
                 notification_uuid
             )
 
@@ -53,10 +55,10 @@ class AdminNotificationService(BaseService):
         except Exception as e:
             raise e
 
-    def clear_notifications(self, user_uuid: str):
+    async def clear_notifications(self, user_uuid: str):
         try:
             # Clear all notifications
-            self.admin_notification_repository.clear_notifications(user_uuid)
+            await self.admin_notification_repository.clear_notifications(user_uuid)
 
             return messages.NOTIFICATIONS_CLEARED
         except Exception as e:

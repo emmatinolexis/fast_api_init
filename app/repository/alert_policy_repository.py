@@ -1,11 +1,11 @@
 import logging
-from contextlib import AbstractContextManager
 from datetime import datetime, timedelta
 from typing import Callable, List, Optional
 from uuid import UUID
 
-from sqlalchemy import Date, and_, case, cast, desc, func, or_
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import case, desc, func, or_
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from app.core import messages
 from app.core.exceptions import NotFoundError
@@ -38,14 +38,14 @@ from app.util.utils import (
 
 
 class AlertPolicyRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, AlertPolicy)
 
-    def read_all_alert_policies(self, page, page_size):
-        with self.session_factory() as session:
+    async def read_all_alert_policies(self, page, page_size):
+        async with self.session_factory() as session:
             offset = (page - 1) * page_size
-            alerts = (
+            alerts = await session.execute(
                 session.query(self.model)
                 .order_by(desc(self.model.created_at))
                 .offset(offset)
@@ -53,43 +53,44 @@ class AlertPolicyRepository(BaseRepository):
                 .options(joinedload(AlertPolicy.alert_policy_type))
                 .options(joinedload(AlertPolicy.assets))
                 .options(joinedload(AlertPolicy.maintenance_alert_type))
-                .all()
             )
-            return alerts
+            return alerts.scalars().all()
 
-    def toggle_alert_status(self, alert_uuid):
-        with self.session_factory() as session:
-            alert = (
-                session.query(self.model).filter(self.model.uuid == alert_uuid).first()
+    async def toggle_alert_status(self, alert_uuid):
+        async with self.session_factory() as session:
+            alert = await session.execute(
+                session.query(self.model).filter(self.model.uuid == alert_uuid)
             )
+            alert = alert.scalar()
             if not alert:
                 raise Exception("Alert not found")
 
             alert.status = toggle_status(alert.status)
-            session.commit()
-            session.refresh(alert)
+            await session.commit()
+            await session.refresh(alert)
 
             return alert
 
-    def toggle_alert_violation_status(self, alert_violation_uuid):
-        with self.session_factory() as session:
-            violation = (
-                session.query(AlertPolicyViolation)
-                .filter(AlertPolicyViolation.uuid == alert_violation_uuid)
-                .first()
+    async def toggle_alert_violation_status(self, alert_violation_uuid):
+        async with self.session_factory() as session:
+            violation = await session.execute(
+                session.query(AlertPolicyViolation).filter(
+                    AlertPolicyViolation.uuid == alert_violation_uuid
+                )
             )
-
+            violation = violation.scalar()
             violation.status = toggle_status(violation.status)
-            session.commit()
-            session.refresh(violation)
+            await session.commit()
+            await session.refresh(violation)
 
             return violation
 
-    def toggle_maintenance_alert_status(self, alert_uuid, date):
-        with self.session_factory() as session:
-            maintenance_alert = (
-                session.query(self.model).filter(self.model.uuid == alert_uuid).first()
+    async def toggle_maintenance_alert_status(self, alert_uuid, date):
+        async with self.session_factory() as session:
+            maintenance_alert = await session.execute(
+                session.query(self.model).filter(self.model.uuid == alert_uuid)
             )
+            maintenance_alert = maintenance_alert.scalar()
 
             if not maintenance_alert:
                 raise NotFoundError(messages.MAINTENANCE_ALERT_NOT_FOUND + alert_uuid)
@@ -100,11 +101,11 @@ class AlertPolicyRepository(BaseRepository):
             if date:
                 maintenance_alert.maintenance_updated_at = date
 
-            session.commit()
-            session.refresh(maintenance_alert)
+            await session.commit()
+            await session.refresh(maintenance_alert)
             return maintenance_alert.service_status
 
-    def read_all_alert_policies_by_user(
+    async def read_all_alert_policies_by_user(
         self,
         user_uuid: str,
         page=1,
@@ -115,7 +116,7 @@ class AlertPolicyRepository(BaseRepository):
         end_date: Optional[str] = None,
         search: Optional[str] = None,
     ):
-        with self.session_factory() as session:
+        async with self.session_factory() as session:
             offset = (page - 1) * page_size
 
             # Start building the query
@@ -157,13 +158,14 @@ class AlertPolicyRepository(BaseRepository):
                 )
 
             # Query to get the total count of alert policies
-            total_alert_policies = query.count()
+            total_alert_policies = await session.execute(query.count())
+            total_alert_policies = total_alert_policies.scalar()
 
             # Calculate total pages
             total_pages = (total_alert_policies + page_size - 1) // page_size
 
             # Fetch paginated results with ordering and relationships loaded
-            alerts = (
+            alerts = await session.execute(
                 query.order_by(desc(self.model.created_at))
                 .offset(offset)
                 .limit(page_size)
@@ -171,8 +173,8 @@ class AlertPolicyRepository(BaseRepository):
                 .options(joinedload(self.model.assets))
                 .options(joinedload(self.model.alert_notification_types))
                 .options(joinedload(self.model.maintenance_alert_type))
-                .all()
             )
+            alerts = alerts.scalars().all()
 
             return {
                 "alerts": alerts,
@@ -182,7 +184,7 @@ class AlertPolicyRepository(BaseRepository):
                 "page_size": page_size,
             }
 
-    def read_all_alert_policies_by_business(
+    async def read_all_alert_policies_by_business(
         self,
         business_uuid: str,
         page=1,
@@ -193,7 +195,7 @@ class AlertPolicyRepository(BaseRepository):
         end_date: Optional[str] = None,
         search: Optional[str] = None,
     ):
-        with self.session_factory() as session:
+        async with self.session_factory() as session:
             offset = (page - 1) * page_size
 
             # Start building the query
@@ -237,13 +239,14 @@ class AlertPolicyRepository(BaseRepository):
                 )
 
             # Query to get the total count of alert policies
-            total_alert_policies = query.count()
+            total_alert_policies = await session.execute(query.count())
+            total_alert_policies = total_alert_policies.scalar()
 
             # Calculate total pages
             total_pages = (total_alert_policies + page_size - 1) // page_size
 
             # Fetch paginated results with ordering and relationships loaded
-            alerts = (
+            alerts = await session.execute(
                 query.order_by(desc(self.model.created_at))
                 .offset(offset)
                 .limit(page_size)
@@ -252,8 +255,8 @@ class AlertPolicyRepository(BaseRepository):
                 .options(joinedload(self.model.alert_notification_types))
                 .options(joinedload(self.model.maintenance_alert_type))
                 .options(joinedload(self.model.alert_recipients))
-                .all()
             )
+            alerts = alerts.scalars().all()
 
             formatted_alerts = []
             for alert in alerts:
@@ -293,7 +296,7 @@ class AlertPolicyRepository(BaseRepository):
                 "page_size": page_size,
             }
 
-    def read_all_alert_violations_by_user(
+    async def read_all_alert_violations_by_user(
         self,
         user_uuid: str,
         page=1,
@@ -304,7 +307,7 @@ class AlertPolicyRepository(BaseRepository):
         end_date: Optional[str] = None,
         search: Optional[str] = None,
     ):
-        with self.session_factory() as session:
+        async with self.session_factory() as session:
             offset = (page - 1) * page_size
 
             # Start building the query
@@ -367,13 +370,14 @@ class AlertPolicyRepository(BaseRepository):
                 )
 
             # Query to get the total count of alert violations
-            total_alerts = query.count()
+            total_alerts = await session.execute(query.count())
+            total_alerts = total_alerts.scalar()
 
             # Calculate total pages
             total_pages = (total_alerts + page_size - 1) // page_size
 
             # Apply custom ordering: "active" first, then order by created_at
-            alerts = (
+            alerts = await session.execute(
                 query.order_by(
                     case(
                         (AlertPolicyViolation.status == ActiveStatus.ACTIVE, 1), else_=2
@@ -389,8 +393,8 @@ class AlertPolicyRepository(BaseRepository):
                     joinedload(AlertPolicyViolation.asset).joinedload(Asset.driver)
                 )
                 .options(joinedload(AlertPolicyViolation.user).defer(User.password))
-                .all()
             )
+            alerts = alerts.scalars().all()
 
             return {
                 "alerts": alerts,
@@ -400,7 +404,7 @@ class AlertPolicyRepository(BaseRepository):
                 "page_size": page_size,
             }
 
-    def read_all_alert_violations_by_business(
+    async def read_all_alert_violations_by_business(
         self,
         business_uuid: str,
         page=1,
@@ -411,7 +415,7 @@ class AlertPolicyRepository(BaseRepository):
         end_date: Optional[str] = None,
         search: Optional[str] = None,
     ):
-        with self.session_factory() as session:
+        async with self.session_factory() as session:
             offset = (page - 1) * page_size
 
             # Start building the query
@@ -481,13 +485,14 @@ class AlertPolicyRepository(BaseRepository):
                 )
 
             # Query to get the total count of alert violations
-            total_alerts = query.count()
+            total_alerts = await session.execute(query.count())
+            total_alerts = total_alerts.scalar()
 
             # Calculate total pages
             total_pages = (total_alerts + page_size - 1) // page_size
 
             # Apply custom ordering: "active" first, then order by created_at
-            alerts = (
+            alerts = await session.execute(
                 query.order_by(
                     case(
                         (AlertPolicyViolation.status == ActiveStatus.ACTIVE, 1), else_=2
@@ -503,8 +508,8 @@ class AlertPolicyRepository(BaseRepository):
                     joinedload(AlertPolicyViolation.asset).joinedload(Asset.driver)
                 )
                 .options(joinedload(AlertPolicyViolation.user).defer(User.password))
-                .all()
             )
+            alerts = alerts.scalars().all()
 
             return {
                 "alerts": alerts,
@@ -514,8 +519,8 @@ class AlertPolicyRepository(BaseRepository):
                 "page_size": page_size,
             }
 
-    def get_active_geofence_alert_policies(self, session):
-        return (
+    async def get_active_geofence_alert_policies(self, session):
+        result = await session.execute(
             session.query(AlertPolicy)
             .filter(
                 AlertPolicy.alert_policy_type_uuid
@@ -525,11 +530,11 @@ class AlertPolicyRepository(BaseRepository):
             .options(
                 joinedload(AlertPolicy.assets), joinedload(AlertPolicy.alert_recipients)
             )
-            .all()
         )
+        return result.scalars().all()
 
-    def get_active_over_speeding_alert_policies(self, session):
-        return (
+    async def get_active_over_speeding_alert_policies(self, session):
+        result = await session.execute(
             session.query(AlertPolicy)
             .filter(
                 AlertPolicy.alert_policy_type_uuid
@@ -539,11 +544,11 @@ class AlertPolicyRepository(BaseRepository):
             .options(
                 joinedload(AlertPolicy.assets), joinedload(AlertPolicy.alert_recipients)
             )
-            .all()
         )
+        return result.scalars().all()
 
-    def get_active_idling_alert_policies(self, session):
-        return (
+    async def get_active_idling_alert_policies(self, session):
+        result = await session.execute(
             session.query(AlertPolicy)
             .filter(
                 AlertPolicy.alert_policy_type_uuid
@@ -553,11 +558,11 @@ class AlertPolicyRepository(BaseRepository):
             .options(
                 joinedload(AlertPolicy.assets), joinedload(AlertPolicy.alert_recipients)
             )
-            .all()
         )
+        return result.scalars().all()
 
-    def get_active_maintenance_policies(self, session):
-        return (
+    async def get_active_maintenance_policies(self, session):
+        result = await session.execute(
             session.query(AlertPolicy)
             .filter(
                 AlertPolicy.alert_policy_type_uuid
@@ -567,8 +572,8 @@ class AlertPolicyRepository(BaseRepository):
             .options(
                 joinedload(AlertPolicy.assets), joinedload(AlertPolicy.alert_recipients)
             )
-            .all()
         )
+        return result.scalars().all()
 
     def generate_geofence_points(self, alert_policy):
         geofence_violation_data = alert_policy.geofence_coordinate_data
@@ -581,48 +586,52 @@ class AlertPolicyRepository(BaseRepository):
         else:
             return generate_polygon_geofence_coordinates(geofence_violation_data, 100)
 
-    def get_last_checked_time(self, session, device_imei, today_date):
-        last_checked_time = (
-            session.query(func.max(TrackingEvent.last_checked_geofence_violation))
-            .filter(TrackingEvent.device_imei == device_imei)
-            .scalar()
+    async def get_last_checked_time(self, session, device_imei, today_date):
+        result = await session.execute(
+            session.query(
+                func.max(TrackingEvent.last_checked_geofence_violation)
+            ).filter(TrackingEvent.device_imei == device_imei)
         )
+        last_checked_time = result.scalar()
 
         if last_checked_time is None:
             return datetime.combine(today_date, datetime.min.time())
         return last_checked_time.replace(microsecond=0)
 
-    def get_last_checked_over_speeding_time(self, session, device_imei, today_date):
-        last_checked_time = (
-            session.query(func.max(TrackingEvent.last_checked_over_speeding_violation))
-            .filter(TrackingEvent.device_imei == device_imei)
-            .scalar()
+    async def get_last_checked_over_speeding_time(
+        self, session, device_imei, today_date
+    ):
+        result = await session.execute(
+            session.query(
+                func.max(TrackingEvent.last_checked_over_speeding_violation)
+            ).filter(TrackingEvent.device_imei == device_imei)
         )
+        last_checked_time = result.scalar()
 
         if last_checked_time is None:
             return datetime.combine(today_date, datetime.min.time())
         return last_checked_time.replace(microsecond=0)
 
-    def get_last_checked_idling_time(self, session, device_imei, today_date):
-        last_checked_time = (
-            session.query(func.max(TrackingEvent.last_checked_idling_violation))
-            .filter(TrackingEvent.device_imei == device_imei)
-            .scalar()
+    async def get_last_checked_idling_time(self, session, device_imei, today_date):
+        result = await session.execute(
+            session.query(func.max(TrackingEvent.last_checked_idling_violation)).filter(
+                TrackingEvent.device_imei == device_imei
+            )
         )
+        last_checked_time = result.scalar()
 
         if last_checked_time is None:
             return datetime.combine(today_date, datetime.min.time())
         return last_checked_time.replace(microsecond=0)
 
-    def get_asset_points(self, session, device_imei, last_checked_time):
-        return (
-            session.query(TrackingEvent)
-            .filter(
+    async def get_asset_points(self, session, device_imei, last_checked_time):
+        result = await session.execute(
+            session.query(TrackingEvent).filter(
                 TrackingEvent.device_imei == device_imei,
                 TrackingEvent.event_datetime > last_checked_time,
             )
-            .all()
         )
+        return result.scalars().all()
 
     def extract_coordinates_and_events(self, asset_points):
         asset_coordinates_events = [
@@ -653,7 +662,7 @@ class AlertPolicyRepository(BaseRepository):
             asset_coordinates_events, idle_minimum_time
         )
 
-    def create_violation_record(
+    async def create_violation_record(
         self,
         session,
         alert_policy,
@@ -673,23 +682,23 @@ class AlertPolicyRepository(BaseRepository):
             violation_distance=violation_distance,
         )
         session.add(violation)
+        await session.commit()
 
-    def get_violation_record(
+    async def get_violation_record(
         self,
         session,
         alert_policy_uuid,
         geofence_asset_uuid,
     ):
-        return (
-            session.query(AlertPolicyViolation)
-            .filter(
+        result = await session.execute(
+            session.query(AlertPolicyViolation).filter(
                 AlertPolicyViolation.asset_uuid == geofence_asset_uuid,
                 AlertPolicyViolation.alert_policy_uuid == alert_policy_uuid,
             )
-            .first()
         )
+        return result.scalar()
 
-    def update_violation_record(
+    async def update_violation_record(
         self,
         session,
         alert_policy_uuid,
@@ -698,20 +707,19 @@ class AlertPolicyRepository(BaseRepository):
         violation_time=0,
         violation_distance=0,
     ):
-        violation = (
-            session.query(AlertPolicyViolation)
-            .filter(
+        violation = await session.execute(
+            session.query(AlertPolicyViolation).filter(
                 AlertPolicyViolation.alert_policy_uuid == alert_policy_uuid,
                 AlertPolicyViolation.asset_uuid == geofence_asset_uuid,
             )
-            .first()
         )
+        violation = violation.scalar()
         violation.asset_coordinates = asset_coordinates_events
         violation.violation_time = violation_time
         violation.violation_distance = violation_distance
         violation.updated_at = datetime.now()
 
-    def create_maintenance_alert_record(
+    async def create_maintenance_alert_record(
         self, session, asset_uuid, alert_policy_uuid, business_profile_uuid, user_uuid
     ):
         maintenance_alert = MaintenanceAlert(
@@ -736,12 +744,12 @@ class AlertPolicyRepository(BaseRepository):
         for point in asset_points:
             point.last_checked_idling_violation = datetime.now()
 
-    def check_geofence_violation(self):
-        with self.session_factory() as session:
+    async def check_geofence_violation(self):
+        async with self.session_factory() as session:
             violations = []
 
             # Get all active geofence alert policies
-            alert_policies = self.get_active_geofence_alert_policies(session)
+            alert_policies = await self.get_active_geofence_alert_policies(session)
 
             # Get the current date
             today_date = datetime.now().date()
@@ -758,12 +766,12 @@ class AlertPolicyRepository(BaseRepository):
 
                 for geofence_asset in geofence_assets:
                     # Get the last checked time for the asset
-                    last_checked_time = self.get_last_checked_time(
+                    last_checked_time = await self.get_last_checked_time(
                         session, geofence_asset.device_imei, today_date
                     )
 
                     # Query the database for tracking events that occurred after the last checked time
-                    asset_points = self.get_asset_points(
+                    asset_points = await self.get_asset_points(
                         session, geofence_asset.device_imei, last_checked_time
                     )
 
@@ -803,7 +811,7 @@ class AlertPolicyRepository(BaseRepository):
                             }
                         )
 
-                        saved_violation = self.get_violation_record(
+                        saved_violation = await self.get_violation_record(
                             session, alert_policy.uuid, geofence_asset.uuid
                         )
 
@@ -821,7 +829,7 @@ class AlertPolicyRepository(BaseRepository):
                                 )
                             )
                             # update existing violation
-                            self.update_violation_record(
+                            await self.update_violation_record(
                                 session,
                                 alert_policy.uuid,
                                 geofence_asset.uuid,
@@ -831,7 +839,7 @@ class AlertPolicyRepository(BaseRepository):
                             )
                         else:
                             # Create AlertPolicyViolation instance and persist it
-                            self.create_violation_record(
+                            await self.create_violation_record(
                                 session,
                                 alert_policy,
                                 geofence_asset,
@@ -843,17 +851,17 @@ class AlertPolicyRepository(BaseRepository):
                     # Update last checked geofence violation timestamp for the processed events
                     self.update_last_checked_time(asset_points)
 
-            session.commit()
+            await session.commit()
             msg = "Geofence policy data fetched successfully"
             logging.info(msg)
             return {"message": msg, "violations": violations}
 
-    def check_over_speeding_violation(self):
-        with self.session_factory() as session:
+    async def check_over_speeding_violation(self):
+        async with self.session_factory() as session:
             violations = []
 
             # Get all active geofence alert policies
-            alert_policies = self.get_active_over_speeding_alert_policies(session)
+            alert_policies = await self.get_active_over_speeding_alert_policies(session)
 
             # Get the current date
             today_date = datetime.now().date()
@@ -870,15 +878,12 @@ class AlertPolicyRepository(BaseRepository):
 
                 for geofence_asset in alert_assets:
                     # Get the last checked time for the asset
-                    last_checked_time = self.get_last_checked_over_speeding_time(
+                    last_checked_time = await self.get_last_checked_over_speeding_time(
                         session, geofence_asset.device_imei, today_date
                     )
-                    # if not last_checked_time:
-                    #     return geofence_asset
-                    # return last_checked_time
 
                     # Query the database for tracking events that occurred after the last checked time
-                    asset_points = self.get_asset_points(
+                    asset_points = await self.get_asset_points(
                         session, geofence_asset.device_imei, last_checked_time
                     )
 
@@ -917,7 +922,7 @@ class AlertPolicyRepository(BaseRepository):
                         )
 
                         # Create AlertPolicyViolation instance and persist it
-                        self.create_violation_record(
+                        await self.create_violation_record(
                             session,
                             alert_policy,
                             geofence_asset,
@@ -929,17 +934,17 @@ class AlertPolicyRepository(BaseRepository):
                     # Update last checked geofence violation timestamp for the processed events
                     self.update_last_checked_over_speeding_time(asset_points)
 
-            session.commit()
+            await session.commit()
             msg = "Geofence policy data fetched successfully"
             logging.info(msg)
             return {"message": msg, "violations": violations}
 
-    def check_idling_violation(self):
-        with self.session_factory() as session:
+    async def check_idling_violation(self):
+        async with self.session_factory() as session:
             violations = []
 
             # Get all active geofence alert policies
-            alert_policies = self.get_active_idling_alert_policies(session)
+            alert_policies = await self.get_active_idling_alert_policies(session)
 
             # Get the current date
             today_date = datetime.now().date()
@@ -956,19 +961,18 @@ class AlertPolicyRepository(BaseRepository):
 
                 for geofence_asset in alert_assets:
                     # Get the last checked time for the asset
-                    last_checked_time = self.get_last_checked_idling_time(
+                    last_checked_time = await self.get_last_checked_idling_time(
                         session, geofence_asset.device_imei, today_date
                     )
 
                     # Query the database for tracking events that occurred after the last checked time
-                    asset_points = self.get_asset_points(
+                    asset_points = await self.get_asset_points(
                         session, geofence_asset.device_imei, last_checked_time
                     )
 
-                    (
-                        asset_coordinates,
-                        asset_coordinates_events,
-                    ) = self.extract_coordinates_and_events(asset_points)
+                    asset_coordinates_events = self.extract_coordinates_and_events(
+                        asset_points
+                    )
 
                     # Check for geofence violations
                     violated_asset_coordinates = self.check_idling(
@@ -991,7 +995,7 @@ class AlertPolicyRepository(BaseRepository):
                         )
 
                         # Create AlertPolicyViolation instance and persist it
-                        self.create_violation_record(
+                        await self.create_violation_record(
                             session,
                             alert_policy,
                             geofence_asset,
@@ -1001,17 +1005,17 @@ class AlertPolicyRepository(BaseRepository):
                     # Update last checked geofence violation timestamp for the processed events
                     self.update_last_checked_idling_time(asset_points)
 
-            session.commit()
+            await session.commit()
             msg = "Geofence policy data fetched successfully"
             logging.info(msg)
             return {"message": msg, "violations": violations}
 
-    def check_maintenance(self):
-        with self.session_factory() as session:
+    async def check_maintenance(self):
+        async with self.session_factory() as session:
             violations = []
 
             # Get all active maintenance policies
-            maintenance_policies = self.get_active_maintenance_policies(session)
+            maintenance_policies = await self.get_active_maintenance_policies(session)
 
             for maintenance_policy in maintenance_policies:
                 # Get policy speed limit value
@@ -1044,24 +1048,24 @@ class AlertPolicyRepository(BaseRepository):
                         )
 
                         # save maintenance alert into db here
-                        self.create_maintenance_alert_record(
+                        await self.create_maintenance_alert_record(
                             session,
                             asset.uuid,
                             maintenance_policy.uuid,
                             asset.business_profile_uuid,
                             asset.user_uuid,
                         )
-            session.commit()
+            await session.commit()
             msg = "Maintenance alerts check successful"
             logging.info(msg)
             return {"message": msg, "violations": violations}
 
-    def generate_violations_by_asset_uuids_date_range(
+    async def generate_violations_by_asset_uuids_date_range(
         self, start_date: str, end_date: str, asset_uuids: list
     ):
-        with self.session_factory() as session:
+        async with self.session_factory() as session:
             # Query to filter violations by asset UUIDs and date range
-            violations = (
+            violations = await session.execute(
                 session.query(AlertPolicyViolation)
                 .filter(
                     AlertPolicyViolation.asset_uuid.in_(
@@ -1069,11 +1073,11 @@ class AlertPolicyRepository(BaseRepository):
                     ),  # Filter by list of asset_uuids
                     and_(
                         cast(AlertPolicyViolation.created_at, Date)
-                        >= datetime.strptime(start_date, "%d/%m/%Y"),
-                        # Start date filter
+                        >= datetime.strptime(
+                            start_date, "%d/%m/%Y"
+                        ),  # Start date filter
                         cast(AlertPolicyViolation.created_at, Date)
-                        <= datetime.strptime(end_date, "%d/%m/%Y")
-                        # End date filter
+                        <= datetime.strptime(end_date, "%d/%m/%Y"),  # End date filter
                     ),
                 )
                 .options(
@@ -1082,8 +1086,8 @@ class AlertPolicyRepository(BaseRepository):
                         AlertPolicy.alert_policy_type
                     ),  # Load related AlertPolicyType
                 )
-                .all()  # Fetch all matching violations
             )
+            violations = violations.scalars().all()  # Fetch all matching violations
 
             # Process the violations to extract individual events or coordinates
             processed_data = []
@@ -1128,21 +1132,20 @@ class AlertPolicyRepository(BaseRepository):
 
             return processed_data
 
-    def get_all_alert_reminders(self, user_uuid: str):
-        with self.session_factory() as session:
+    async def get_all_alert_reminders(self, user_uuid: str):
+        async with self.session_factory() as session:
             today = datetime.now().date()
             upcoming_date = today + timedelta(days=3)
 
-            opened_reminders_data = (
-                session.query(AlertPolicy.policy_name, AlertPolicy.created_at)
-                .filter(
+            opened_reminders_data = await session.execute(
+                session.query(AlertPolicy.policy_name, AlertPolicy.created_at).filter(
                     AlertPolicy.user_uuid == user_uuid,
                     AlertPolicy.service_status == ServiceStatus.NOT_SERVICED,
                     AlertPolicy.alert_policy_type_uuid
                     == GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
                 )
-                .all()
             )
+            opened_reminders_data = opened_reminders_data.all()
 
             opened_reminders_list = [
                 {"policy_name": policy_name, "created_at": created_at.isoformat()}
@@ -1150,15 +1153,14 @@ class AlertPolicyRepository(BaseRepository):
             ]
             opened_reminders_count = len(opened_reminders_list)
 
-            maintenance_policies = (
-                session.query(AlertPolicy)
-                .filter(
+            maintenance_policies = await session.execute(
+                session.query(AlertPolicy).filter(
                     AlertPolicy.user_uuid == user_uuid,
                     AlertPolicy.alert_policy_type_uuid
                     == GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
                 )
-                .all()
             )
+            maintenance_policies = maintenance_policies.scalars().all()
 
             overdue_reminders = []
             upcoming_reminders = []

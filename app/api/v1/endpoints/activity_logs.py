@@ -6,7 +6,7 @@ from fastapi.responses import ORJSONResponse
 
 from app.core import messages
 from app.core.container import Container
-from app.core.dependencies import get_current_user, get_current_user_with_permission
+from app.core.dependencies import get_current_user_with_permission
 from app.core.exceptions import NotFoundError
 from app.model.user import User
 from app.service.activity_log_service import ActivityLogService
@@ -50,7 +50,7 @@ async def get_business_activity_logs(
     ),
 ):
     try:
-        logs = service.business_activity_logs(
+        logs = await service.business_activity_logs(
             current_user.business_profile_uuid,
             start_date,
             end_date,
@@ -60,7 +60,7 @@ async def get_business_activity_logs(
             search_string,
         )
 
-        logs_count = service.count_business_activity_logs(
+        logs_count = await service.count_business_activity_logs(
             current_user.business_profile_uuid,
             start_date,
             end_date,
@@ -98,11 +98,11 @@ async def get_admin_activity_logs(
     ),
 ):
     try:
-        logs = service.admin_activity_logs(
+        logs = await service.admin_activity_logs(
             start_date, end_date, page, page_size, activity_types, search_string
         )
 
-        logs_count = service.count_admin_activity_logs(
+        logs_count = await service.count_admin_activity_logs(
             start_date, end_date, activity_types, search_string
         )
 
@@ -136,11 +136,11 @@ async def get_all_logs_handler(
     ),
 ):
     try:
-        logs = service.all_activity_logs(
+        logs = await service.all_activity_logs(
             start_date, end_date, page, page_size, activity_types, search_string
         )
 
-        logs_count = service.count_activity_logs(
+        logs_count = await service.count_activity_logs(
             start_date, end_date, activity_types, search_string
         )
 
@@ -165,7 +165,7 @@ async def get_activity_log_details(
     current_user: User = Depends(get_current_user_with_permission("view_activity_log")),
 ):
     try:
-        log = service.get_activity_log(log_uuid=log_uuid)
+        log = await service.get_activity_log(log_uuid=log_uuid)
         return send_data_with_info(data=log, info=messages.GET_SUCCESS + msg_prefix)
     except NotFoundError as e:
         return send_client_side_error(e.detail)

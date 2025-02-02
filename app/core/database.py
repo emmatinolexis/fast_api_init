@@ -1,43 +1,40 @@
-from contextlib import AbstractContextManager, contextmanager
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from typing import Callable
 
-from sqlalchemy import create_engine, orm
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker
 
 from app.model.base_model import Base
 
 
 class Database:
     def __init__(self, db_url: str) -> None:
-        self._engine = create_engine(db_url, echo=False)
-        self._session_factory = orm.scoped_session(
-            orm.sessionmaker(
-                autocommit=False,
-                autoflush=False,
-                bind=self._engine,
-            ),
+        self._engine = create_async_engine(db_url, echo=False)
+        self._session_factory = sessionmaker(
+            self._engine,
+            expire_on_commit=False,
+            class_=AsyncSession
         )
 
-    def connected(self) -> bool:
+    async def connected(self) -> bool:
         try:
-            with self._engine.connect():
+            async with self._engine.connect() as conn:
+                await conn.execute("SELECT 1")
                 return True
         except Exception:
             return False
 
-    def create_database(self) -> None:
-        try:
-            Base.metadata.create_all(self._engine)
-        except Exception as ex:
-            raise ex
+    async def create_database(self) -> None:
+        async with self._engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
 
-    @contextmanager
-    def session(self) -> Callable[..., AbstractContextManager[Session]]:
-        session: Session = self._session_factory()
+    @asynccontextmanager
+    async def session(self) -> Callable[..., AbstractAsyncContextManager[AsyncSession]]:
+        session: AsyncSession = self._session_factory()
         try:
             yield session
         except Exception:
-            session.rollback()
+            await session.rollback()
             raise
         finally:
-            session.close()
+            await session.close()
