@@ -1,7 +1,7 @@
-from contextlib import AbstractContextManager
 from typing import Callable
 
-from sqlalchemy.orm import Session, subqueryload
+from sqlalchemy import select
+from sqlalchemy.orm import subqueryload
 
 from app.model.asset import Asset
 from app.model.asset_device_request import AssetDeviceRequest
@@ -11,40 +11,40 @@ from app.util.enums import AssetDeviceRequestStatus
 
 
 class AssetDeviceRequestRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
+    def __init__(
+        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
+    ):
         self.session_factory = session_factory
         super().__init__(session_factory, AssetDeviceRequest)
 
-    def get_asset_device_request_by_user_by_asset_type_uuid(
+    async def get_asset_device_request_by_user_by_asset_type_uuid(
         self, user_uuid: str, asset_type_uuid: str
     ):
-        with self.session_factory() as session:
-            return (
-                session.query(self.model)
-                .filter(
-                    self.model.asset_type_uuid == asset_type_uuid
-                    and self.model.user_uuid == user_uuid
+        async with self.session_factory() as session:
+            result = await session.execute(
+                select(self.model).filter(
+                    self.model.asset_type_uuid == asset_type_uuid,
+                    self.model.user_uuid == user_uuid,
                 )
-                .first()
             )
+            return result.scalars().first()
 
-    def update_status(self, request_uuid: str):
-        with self.session_factory() as session:
+    async def update_status(self, request_uuid: str):
+        async with self.session_factory() as session:
             try:
-                request = (
-                    session.query(self.model)
-                    .filter(self.model.uuid == request_uuid)
-                    .first()
+                result = await session.execute(
+                    select(self.model).filter(self.model.uuid == request_uuid)
                 )
+                request = result.scalars().first()
                 request.status = AssetDeviceRequestStatus.PROCESSING
-                session.commit()
-                session.refresh(request)
+                await session.commit()
+                await session.refresh(request)
                 return request
             except Exception as e:
-                session.rollback()
+                await session.rollback()
                 return Exception(e)
 
-    def create_asset_device_request(
+    async def create_asset_device_request(
         self, asset_device_request: CreateAssetDeviceRequestPayload
     ):
         device_request = AssetDeviceRequest(
@@ -53,43 +53,44 @@ class AssetDeviceRequestRepository(BaseRepository):
             status=asset_device_request.status,
         )
 
-        with self.session_factory() as session:
+        async with self.session_factory() as session:
             try:
                 session.add(device_request)
-                session.commit()
-                session.refresh(device_request)
+                await session.commit()
+                await session.refresh(device_request)
 
                 # Fetch Asset objects corresponding to the provided UUIDs
-                assets = (
-                    session.query(Asset)
-                    .filter(Asset.uuid.in_(asset_device_request.asset_uuids))
-                    .all()
+                result = await session.execute(
+                    select(Asset).filter(
+                        Asset.uuid.in_(asset_device_request.asset_uuids)
+                    )
                 )
+                assets = result.scalars().all()
                 # Append the fetched Asset objects to device_request.assets
                 device_request.assets.extend(assets)
 
-                session.commit()
+                await session.commit()
 
             except Exception as e:
-                session.rollback()
+                await session.rollback()
                 return Exception(e)
             return device_request
 
-    def get_asset_device_requests_by_user_uuid(self, user_uuid: str):
-        with self.session_factory() as session:
-            return (
-                session.query(self.model)
+    async def get_asset_device_requests_by_user_uuid(self, user_uuid: str):
+        async with self.session_factory() as session:
+            result = await session.execute(
+                select(self.model)
                 .filter(self.model.user_uuid == user_uuid)
                 .options(subqueryload(AssetDeviceRequest.assets))
                 .options(subqueryload(self.model.user))
-                .all()
             )
+            return result.scalars().all()
 
-    def get_asset_device_requests(self):
-        with self.session_factory() as session:
-            return (
-                session.query(self.model)
+    async def get_asset_device_requests(self):
+        async with self.session_factory() as session:
+            result = await session.execute(
+                select(self.model)
                 .options(subqueryload(AssetDeviceRequest.assets))
                 .options(subqueryload(self.model.user))
-                .all()
             )
+            return result.scalars().all()

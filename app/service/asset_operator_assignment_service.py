@@ -23,7 +23,7 @@ class AssetOperatorAssignmentService(BaseService):
         self.user_repository = user_repository
         super().__init__(asset_operator_assignment)
 
-    def assign_operator_to_asset(
+    async def assign_operator_to_asset(
         self,
         asset_uuid: str,
         operator_uuid: str,
@@ -53,7 +53,7 @@ class AssetOperatorAssignmentService(BaseService):
                 )
             )
             existing_asset_operator_assignment = (
-                self.asset_operator_assignment.get_assignment_by_asset_uuid(
+                await self.asset_operator_assignment.get_assignment_by_asset_uuid(
                     asset_uuid=asset_uuid
                 )
             )

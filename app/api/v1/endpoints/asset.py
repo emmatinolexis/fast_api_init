@@ -64,7 +64,7 @@ async def get_asset_handler(
     current_user: User = Depends(get_current_user_with_permission("view_asset")),
 ):
     try:
-        return send_data(service.get_list())
+        return send_data(await service.get_list())
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -90,7 +90,7 @@ async def get_asset_by_user_uuid_handler(
                 403,
             )
 
-        assets = service.get_assets_by_user_uuid(
+        assets = await service.get_assets_by_user_uuid(
             user_uuid=user_uuid,
             asset_type_uuid=asset_type_uuid,
             page=page,
@@ -136,13 +136,13 @@ async def get_asset_by_business_uuid_handler(
                 page_size=page_size,
             )
         else:
-            assets = service.get_assets_by_business_uuid(
+            assets = await service.get_assets_by_business_uuid(
                 business_uuid=business_uuid,
                 asset_type_uuid=asset_type_uuid,
                 page=page,
                 page_size=page_size,
                 search=search,
-                status=status
+                status=status,
             )
         return send_data(assets)
 
@@ -160,7 +160,7 @@ async def create_asset_handler(
     current_user: User = Depends(get_current_user_with_permission("create_asset")),
 ):
     try:
-        asset = service.create_asset(payload, request)
+        asset = await service.create_asset(payload, request)
         logging.info(f"Created asset {asset}")
         ASSET_CREATION_TOTAL.labels(success="true").inc()
         return send_data(asset)
@@ -183,11 +183,11 @@ async def patch_asset_handler(
 ):
     try:
         if current_user.account_type == AccountType.INDIVIDUAL:
-            data = service.edit_asset(
+            data = await service.edit_asset(
                 asset_uuid=uuid, payload=payload, user_uuid=current_user.uuid
             )
         if current_user.account_type == AccountType.BUSINESS:
-            data = service.edit_asset(
+            data = await service.edit_asset(
                 asset_uuid=uuid,
                 payload=payload,
                 business_uuid=current_user.business_profile.uuid,
@@ -215,7 +215,7 @@ async def get_stolen_assets_handler(
     current_user: User = Depends(get_current_user_with_permission("view_stolen_asset")),
 ):
     try:
-        assets = service.get_third_stolen_assets(asset_type_uuid, page, page_size)
+        assets = await service.get_third_stolen_assets(asset_type_uuid, page, page_size)
 
         return send_data(assets)
 
@@ -240,7 +240,7 @@ async def get_third_party_assets_handler(
     current_user: User = Depends(get_current_user_with_permission("view_stolen_asset")),
 ):
     try:
-        assets = service.get_third_party_assets(asset_type_uuid, page, page_size)
+        assets = await service.get_third_party_assets(asset_type_uuid, page, page_size)
 
         return send_data(assets)
 
@@ -259,7 +259,7 @@ async def create_third_party_asset_handler(
     ),
 ):
     try:
-        asset = service.create_third_party_asset(payload)
+        asset = await service.create_third_party_asset(payload)
         logging.info(f"Third party asset created: {asset}")
         return send_data(asset)
     except NotFoundError as e:
@@ -278,7 +278,7 @@ async def update_asset_handler(
     current_user: User = Depends(get_current_user_with_permission("update_asset")),
 ):
     try:
-        asset = service.patch_by_uuid(uuid, payload)
+        asset = await service.patch_by_uuid(uuid, payload)
         if asset is None:
             return send_client_side_error(user_msg=messages.ASSET_NOT_FOUND + uuid)
         return send_data(asset)
@@ -317,7 +317,7 @@ async def assign_device_to_asset(
     ),
 ):
     try:
-        asset = service.assign_device_imei(asset_uuid, payload)
+        asset = await service.assign_device_imei(asset_uuid, payload)
         return send_data(asset)
     except Exception as e:
         msg = messages.UPDATE_FAILED + msg_prefix
@@ -335,7 +335,7 @@ async def get_device_analytics(
     ),
 ):
     try:
-        asset = asset_service.get_by_uuid(asset_uuid)
+        asset = await asset_service.get_by_uuid(asset_uuid)
 
         if asset is None:
             return send_client_side_error(
@@ -368,7 +368,7 @@ async def request_asset_device(
     ),
 ):
     try:
-        request_service.create_asset_device_request(
+        await request_service.create_asset_device_request(
             user_uuid=user_uuid, payload=payload
         )
 
@@ -390,7 +390,9 @@ async def get_asset_device_requests_by_user(
     ),
 ):
     try:
-        requests = request_service.get_asset_device_requests_by_user_uuid(user_uuid)
+        requests = await request_service.get_asset_device_requests_by_user_uuid(
+            user_uuid
+        )
 
         return send_data(requests)
     except Exception as e:
@@ -409,7 +411,7 @@ async def get_asset_device_requests(
     ),
 ):
     try:
-        requests = request_service.get_asset_device_requests()
+        requests = await request_service.get_asset_device_requests()
         return send_data(requests)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix} device requests"
@@ -432,7 +434,7 @@ async def update_status_request(
     ),
 ):
     try:
-        request_service.update_status(request_uuid)
+        await request_service.update_status(request_uuid)
         msg = "Status Updated successfully"
         return send_info(msg)
     except Exception as e:

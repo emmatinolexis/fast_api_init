@@ -7,7 +7,6 @@ from fastapi.responses import ORJSONResponse
 from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user_with_permission
-from app.core.exceptions import NotFoundError
 from app.model.user import User
 from app.schema.asset_schema import AssetTypePayload
 from app.service.asset_type_service import AssetTypeService
@@ -16,7 +15,6 @@ from app.util.utils import (
     allow_admins_only,
     send_client_side_error,
     send_data,
-    send_info,
     send_internal_server_error,
 )
 
@@ -35,7 +33,7 @@ async def get_asset_type_handler(
     current_user: User = Depends(get_current_user_with_permission("view_asset_type")),
 ):
     try:
-        result = service.get_asset_list(status=status)
+        result = await service.get_asset_list(status=status)
         return send_data(result)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
@@ -50,7 +48,7 @@ async def create_asset_type_handler(
     current_user: User = Depends(get_current_user_with_permission("create_asset_type")),
 ):
     try:
-        asset_type = send_data(service.add(payload))
+        asset_type = send_data(await service.add(payload))
         return asset_type
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
@@ -66,7 +64,7 @@ async def update_asset_type_handler(
     current_user: User = Depends(get_current_user_with_permission("update_asset_type")),
 ):
     try:
-        asset_type = service.patch_by_uuid(uuid, payload)
+        asset_type = await service.patch_by_uuid(uuid, payload)
         if asset_type is None:
             return send_client_side_error(user_msg=messages.ASSET_TYPE_NOT_FOUND + uuid)
         return send_data(asset_type)

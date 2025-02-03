@@ -82,9 +82,11 @@ async def create_bulk_fuel_logs_handler(
         service.create_bulk_fuel_logs(
             user_uuid,
             csv_url,
-            str(user.get("business_profile").uuid)
-            if user.get("business_profile").uuid
-            else None,
+            (
+                str(user.get("business_profile").uuid)
+                if user.get("business_profile").uuid
+                else None
+            ),
         )
 
         return send_info(messages.CSV_LOAD_SUCCESS)
@@ -116,12 +118,14 @@ async def create_fuel_log_handler_for_fleet_manager(
                 user_msg=messages.USER_NOT_FOUND, status_code=404
             )
 
-        data = service.create_fleet_manager_single_fuel_log(
+        data = await service.create_fleet_manager_single_fuel_log(
             payload,
             user_uuid,
-            str(user.get("business_profile").uuid)
-            if user.get("business_profile").uuid
-            else None,
+            (
+                str(user.get("business_profile").uuid)
+                if user.get("business_profile").uuid
+                else None
+            ),
         )
 
         return send_data_with_info(data, messages.CREATE_SUCCESS + "fuel log")

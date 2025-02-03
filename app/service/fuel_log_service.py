@@ -127,14 +127,14 @@ class FuelLogService(BaseService):
                 session.rollback()  # Rollback the transaction
             raise e
 
-    def create_fleet_manager_single_fuel_log(
+    async def create_fleet_manager_single_fuel_log(
         self, payload: SingleFuelLog, user_uuid: str, business_profile_uuid: str = None
     ):
-        asset = self.asset_repository.read_by_uuid(payload.asset_uuid)
+        asset = await self.asset_repository.read_by_uuid(payload.asset_uuid)
         if not asset:
             raise NotFoundError(detail=messages.ASSET_NOT_FOUND)
 
-        driver = self.asset_operator_assignment_repository.get_assignment_by_asset_uuid(
+        driver = await self.asset_operator_assignment_repository.get_assignment_by_asset_uuid(
             payload.asset_uuid
         )
 
@@ -155,7 +155,7 @@ class FuelLogService(BaseService):
             fuel_type=payload.fuel_type,
         )
 
-        fuel_log = self.fuel_log_repository.create(full_payload)
+        fuel_log = await self.fuel_log_repository.create(full_payload)
 
         return fuel_log_transformer(fuel_log, self.user_repository)
 
