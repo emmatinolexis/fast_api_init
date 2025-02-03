@@ -216,9 +216,11 @@ async def get_device_configurations_handler(
                     "devconf": {
                         "nodeid": peripheral_device.node_id,
                         "desc": configuration.configuration.get("description"),
-                        "devloc": ""
-                        if not peripheral_device.location
-                        else peripheral_device.location,
+                        "devloc": (
+                            ""
+                            if not peripheral_device.location
+                            else peripheral_device.location
+                        ),
                         "mcu": configuration.configuration.get("microprocessor_unit"),
                         "sensors": str(
                             ", ".join(configuration.configuration.get("sensors"))
@@ -292,9 +294,11 @@ async def get_device_configurations_handler(
                         "desc": configuration.configuration.get("description"),
                         "full_weight": gas_cylinder.cylinder_type.full_weight,
                         "empty_weight": gas_cylinder.cylinder_type.empty_weight,
-                        "devloc": ""
-                        if not peripheral_device.location
-                        else peripheral_device.location,
+                        "devloc": (
+                            ""
+                            if not peripheral_device.location
+                            else peripheral_device.location
+                        ),
                         "mcu": configuration.configuration.get("microprocessor_unit"),
                         "sensors": str(
                             ", ".join(configuration.configuration.get("sensors"))
@@ -501,7 +505,7 @@ async def create_building_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        building = service.create_building_with_peripheral_device(
+        building = await service.create_building_with_peripheral_device(
             current_user.uuid, payload
         )
         return send_data_with_info(info=messages.SUCCESS_MESSAGE, data=building)
