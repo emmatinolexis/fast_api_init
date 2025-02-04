@@ -1,31 +1,38 @@
-from contextlib import AbstractContextManager
+from contextlib import AbstractAsyncContextManager
+from datetime import datetime
 from typing import Callable, List
 from uuid import UUID
 
 from pydantic import EmailStr
-from sqlalchemy import desc, func,and_
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import and_, desc, func
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from app.model.invitation import Invitation
 from app.repository.base_repository import BaseRepository
 from app.schema.invitation_schema import InvitationPayload
 from app.util.enums import InvitationStatus, RoleType
-from datetime import datetime
 
 
 class TeamMemberInvitationRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
+    def __init__(
+        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
+    ):
         self.session_factory = session_factory
         super().__init__(session_factory, Invitation)
 
-    def create_invitation(self, payload: InvitationPayload):
-        return self.create(payload)
+    async def create_invitation(self, payload: InvitationPayload):
+        return await self.create(payload)
 
-    def get_invitation_by_email(self, email: EmailStr) -> Invitation:
-        with self.session_factory() as session:
-            return session.query(self.model).filter(self.model.email == email).first()
+    async def get_invitation_by_email(self, email: EmailStr) -> Invitation:
+        async with self.session_factory() as session:
+            return (
+                await session.query(self.model)
+                .filter(self.model.email == email)
+                .first()
+            )
 
-    def get_user_invitations(
+    async def get_user_invitations(
         self,
         business_uuid: str,
         page: int = 1,
@@ -34,7 +41,7 @@ class TeamMemberInvitationRepository(BaseRepository):
         role_uuids: List[str] = None,
         status: InvitationStatus = None,
     ):
-        with self.session_factory() as session:
+        async with self.session_factory() as session:
             query = session.query(self.model).filter(
                 self.model.business_profile_uuid == business_uuid
             )
@@ -54,13 +61,13 @@ class TeamMemberInvitationRepository(BaseRepository):
                 query = query.filter(self.model.status == status)
 
             # Get total count and calculate pagination
-            total_invitations = query.count()
+            total_invitations = await query.count()
             total_pages = (total_invitations + page_size - 1) // page_size
             offset = (page - 1) * page_size
 
             # Fetch invitations with pagination and eager loading
             invitations = (
-                query.order_by(desc(self.model.created_at))
+                await query.order_by(desc(self.model.created_at))
                 .offset(offset)
                 .limit(page_size)
                 .options(joinedload(self.model.role))
@@ -86,7 +93,7 @@ class TeamMemberInvitationRepository(BaseRepository):
                 "page_size": page_size,
             }
 
-    def get_admin_invitations(
+    async def get_admin_invitations(
         self,
         page=1,
         page_size=10,
@@ -94,7 +101,7 @@ class TeamMemberInvitationRepository(BaseRepository):
         role_uuids: list[str] = None,
         status=None,
     ):
-        with self.session_factory() as session:
+        async with self.session_factory() as session:
             offset = (page - 1) * page_size
 
             # Build the query for invitations with optional filters
@@ -121,14 +128,16 @@ class TeamMemberInvitationRepository(BaseRepository):
                     query = query.filter(self.model.role_uuid.in_(valid_role_uuids))
 
             # Query to get the total count of invitations with filters
-            total_invitations = query.with_entities(func.count(self.model.id)).scalar()
+            total_invitations = await query.with_entities(
+                func.count(self.model.id)
+            ).scalar()
 
             # Calculate total pages
             total_pages = (total_invitations + page_size - 1) // page_size
 
             # Get the invitations with filters, pagination, and sorting
             invitations = (
-                query.order_by(desc(self.model.created_at))
+                await query.order_by(desc(self.model.created_at))
                 .offset(offset)
                 .limit(page_size)
                 .options(joinedload(self.model.role))
@@ -154,25 +163,29 @@ class TeamMemberInvitationRepository(BaseRepository):
                 "current_page": page,
                 "page_size": page_size,
             }
-        
-    def update_expired_invitations(self):
-        with self.session_factory() as session:
+
+    async def update_expired_invitations(self):
+        async with self.session_factory() as session:
             # Get the current timestamp
             current_time = datetime.utcnow()
 
             # Query to find all invitations that are past their expiration date and are still PENDING
-            expired_invitations = session.query(self.model).filter(
-                and_(
-                    self.model.expired_at < current_time,
-                    self.model.status == InvitationStatus.PENDING
+            expired_invitations = (
+                await session.query(self.model)
+                .filter(
+                    and_(
+                        self.model.expired_at < current_time,
+                        self.model.status == InvitationStatus.PENDING,
+                    )
                 )
-            ).all()
+                .all()
+            )
 
             # Update the status of each expired invitation to EXPIRED
             for invitation in expired_invitations:
                 invitation.status = InvitationStatus.EXPIRED
 
             # Commit the changes to the database
-            session.commit()
+            await session.commit()
 
             return len(expired_invitations)

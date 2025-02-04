@@ -1,13 +1,13 @@
 import uuid
-from contextlib import AbstractContextManager
+from contextlib import AbstractAsyncContextManager
 from datetime import datetime, timedelta
 from typing import Callable, List, Optional
 from uuid import UUID
 
 from dateutil.relativedelta import relativedelta
 from pydantic import EmailStr
-from sqlalchemy import desc, func, or_
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import delete, desc, func, or_, select
+from sqlalchemy.orm import joinedload
 
 from app.core.security import extract_user_data, hash_user_password
 from app.core.settings import settings
@@ -33,67 +33,55 @@ from app.util.enums import (
     InvitationStatus,
     RoleType,
 )
-from app.util.utils import (
-    calculate_percentage_change,
-    datetime_parser,
-    parse_date,
-    toggle_status,
-)
+from app.util.utils import calculate_percentage_change, datetime_parser, toggle_status
 
 
 class UserRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
+    def __init__(
+        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
+    ):
         self.session_factory = session_factory
         super().__init__(session_factory, User)
 
-    def update_user_by_uuid(self, uuid: str, user: UpdateUserPayload):
-        try:
-            with self.session_factory() as session:
-                user_to_update = session.query(User).filter(User.uuid == uuid).first()
-                if user_to_update is None:
-                    raise Exception("User not found")
+    async def update_user_by_uuid(self, uuid: str, user: UpdateUserPayload):
+        async with self.session_factory() as session:
+            user_to_update = await session.get(User, uuid)
+            if user_to_update is None:
+                raise Exception("User not found")
 
-                user_to_update.location = user.location
-                user_to_update.address = user.address
-                user_to_update.phone_number = user.phone_number
-                user_to_update.country = user.country
+            user_to_update.location = user.location
+            user_to_update.address = user.address
+            user_to_update.phone_number = user.phone_number
+            user_to_update.country = user.country
 
-                if user.phone_number is not None:
-                    user_to_update.operator_type = user.operator_type
+            if user.phone_number is not None:
+                user_to_update.operator_type = user.operator_type
 
-                # set onboarding status
-                if user_to_update.onboarding_status is None:
-                    user_to_update.onboarding_status = datetime.now()
+            if user_to_update.onboarding_status is None:
+                user_to_update.onboarding_status = datetime.now()
 
-                # Commit the changes to the database
-                session.commit()
-                session.refresh(user_to_update)
+            await session.commit()
+            await session.refresh(user_to_update)
 
-                return
-        except Exception as e:
-            raise e
-
-    def get_user_by_email_address(self, email: EmailStr):
-        with self.session_factory() as session:
-            return (
-                session.query(self.model)
+    async def get_user_by_email_address(self, email: EmailStr):
+        async with self.session_factory() as session:
+            return await session.execute(
+                select(self.model)
                 .filter(self.model.email_address == email)
                 .options(joinedload(User.business_profile))
                 .options(joinedload(User.user_role).joinedload(Role.permissions))
                 .options(joinedload(User.driver_license))
-                .first()
-            )
+            ).scalar_one_or_none()
 
-    def get_user_by_phone_number(self, phone_number: str):
-        with self.session_factory() as session:
-            user = (
-                session.query(User)
+    async def get_user_by_phone_number(self, phone_number: str):
+        async with self.session_factory() as session:
+            user = await session.execute(
+                select(User)
                 .filter(User.phone_number == phone_number)
                 .options(joinedload(User.business_profile))
                 .options(joinedload(User.driver_license))
                 .options(joinedload(User.user_role).joinedload(Role.permissions))
-                .first()
-            )
+            ).scalar_one_or_none()
 
             if not user:
                 return None
@@ -101,24 +89,25 @@ class UserRepository(BaseRepository):
             user_data = extract_user_data(user)
             return user_data
 
-    def update_user_status(self, uuid: str):
-        with self.session_factory() as session:
-            user = session.query(self.model).filter(self.model.uuid == uuid).first()
+    async def update_user_status(self, uuid: str):
+        async with self.session_factory() as session:
+            user = await session.get(self.model, uuid)
             user.status = toggle_status(user.status)
-            session.commit()
-            session.refresh(user)
+            await session.commit()
+            await session.refresh(user)
             return user
 
-    def get_user_by_uuid(self, user_uuid: str):
-        with self.session_factory() as session:
+    async def get_user_by_uuid(self, user_uuid: str):
+        async with self.session_factory() as session:
             # Query the user model with necessary joins
             user: Optional[User] = (
-                session.query(self.model)
-                .filter(User.uuid == user_uuid)
-                .options(joinedload(User.business_profile))
-                .options(joinedload(User.user_role).joinedload(Role.permissions))
-                .first()
-            )
+                await session.execute(
+                    select(self.model)
+                    .filter(User.uuid == user_uuid)
+                    .options(joinedload(User.business_profile))
+                    .options(joinedload(User.user_role).joinedload(Role.permissions))
+                )
+            ).scalar_one_or_none()
 
             # If the user is not found, return None
             if not user:
@@ -129,63 +118,53 @@ class UserRepository(BaseRepository):
 
             return user_data
 
-    def check_business_exists(self, name, email, phone):
-        with self.session_factory() as session:
+    async def check_business_exists(self, name, email, phone):
+        async with self.session_factory() as session:
             business_data = (
-                session.query(BusinessProfile)
-                .filter(
-                    (BusinessProfile.business_name == name)
-                    | (BusinessProfile.business_email == email)
-                    | (BusinessProfile.business_phone == phone)
+                await session.execute(
+                    select(BusinessProfile).filter(
+                        (BusinessProfile.business_name == name)
+                        | (BusinessProfile.business_email == email)
+                        | (BusinessProfile.business_phone == phone)
+                    )
                 )
-                .first()
-            )
+            ).scalar_one_or_none()
             return business_data
 
-    # def check_business_exists(self, name, email, phone):
-    #     with self.session_factory() as session:
-    #         filters = []
-    #         if name is not None:
-    #             filters.append(BusinessProfile.business_name == name)
-    #         if email is not None:
-    #             filters.append(BusinessProfile.business_email == email)
-    #         if phone is not None:
-    #             filters.append(BusinessProfile.business_phone == phone)
-    #
-    #         business_data = session.query(BusinessProfile).filter(
-    #             *filters
-    #         ).first()
-    #
-    #         return business_data
-
-    def change_password(
+    async def change_password(
         self,
         user_uuid,
         new_password: str,
     ):
-        with self.session_factory() as session:
+        async with self.session_factory() as session:
             user = (
-                session.query(self.model).filter(self.model.uuid == user_uuid).first()
-            )
+                await session.execute(
+                    select(self.model).filter(self.model.uuid == user_uuid)
+                )
+            ).scalar_one_or_none()
 
             if not user:
                 return None
 
             user.password = hash_user_password(new_password)
-            session.commit()
-            session.refresh(user)
+            await session.commit()
+            await session.refresh(user)
 
             return extract_user_data(user)
 
-    def update_user_onboard_status(self, uuid):
-        with self.session_factory() as session:
-            user = session.query(self.model).filter(self.model.uuid == uuid).first()
+    async def update_user_onboard_status(self, uuid):
+        async with self.session_factory() as session:
+            user = (
+                await session.execute(
+                    select(self.model).filter(self.model.uuid == uuid)
+                )
+            ).scalar_one_or_none()
             user.onboarding_status = datetime.now()
-            session.commit()
-            session.refresh(user)
+            await session.commit()
+            await session.refresh(user)
             return extract_user_data(user)
 
-    def get_account_users(
+    async def get_account_users(
         self,
         business_uuid: str,
         page=1,
@@ -195,8 +174,8 @@ class UserRepository(BaseRepository):
         status: InvitationStatus = None,
         exclude_user_uuid: str = None,
     ):
-        with self.session_factory() as session:
-            query = session.query(self.model).filter(
+        async with self.session_factory() as session:
+            query = select(self.model).filter(
                 self.model.business_profile_uuid == business_uuid
             )
 
@@ -227,7 +206,9 @@ class UserRepository(BaseRepository):
             if status:
                 query = query.filter(self.model.status == status)
 
-            total_users = query.count()
+            total_users = await session.scalar(
+                select(func.count()).select_from(query.subquery())
+            )
             total_pages = (total_users + page_size - 1) // page_size
 
             offset = (page - 1) * page_size
@@ -237,7 +218,11 @@ class UserRepository(BaseRepository):
                 .limit(page_size)
             )
 
-            account_users = query.options(joinedload(User.user_role)).all()
+            account_users = (
+                (await session.execute(query.options(joinedload(User.user_role))))
+                .scalars()
+                .all()
+            )
 
             users_data = [
                 {
@@ -262,7 +247,7 @@ class UserRepository(BaseRepository):
                 "page_size": page_size,
             }
 
-    def get_admin_team_members(
+    async def get_admin_team_members(
         self,
         page=1,
         page_size=10,
@@ -270,10 +255,10 @@ class UserRepository(BaseRepository):
         role_uuid: str = None,
         status=None,
     ):
-        with self.session_factory() as session:
+        async with self.session_factory() as session:
             offset = (page - 1) * page_size
             # Build the query for invitations with optional filters
-            query = session.query(self.model).filter(self.model.role == RoleType.ADMIN)
+            query = select(self.model).filter(self.model.role == RoleType.ADMIN)
 
             # Add filters based on provided parameters
             if email:
@@ -283,17 +268,24 @@ class UserRepository(BaseRepository):
             if status:
                 query = query.filter(self.model.status == ActiveStatus(status))
             # Query to get the total count of invitations with filters
-            total_team_members = query.with_entities(func.count(self.model.id)).scalar()
+            total_team_members = await session.scalar(
+                select(func.count()).select_from(query.subquery())
+            )
 
             # Calculate total pages
             total_pages = (total_team_members + page_size - 1) // page_size
 
             # Get the invitations with filters, pagination, and sorting
             users = (
-                query.order_by(desc(self.model.created_at))
-                .offset(offset)
-                .limit(page_size)
-                .options(joinedload(self.model.user_role))
+                (
+                    await session.execute(
+                        query.order_by(desc(self.model.created_at))
+                        .offset(offset)
+                        .limit(page_size)
+                        .options(joinedload(self.model.user_role))
+                    )
+                )
+                .scalars()
                 .all()
             )
 
@@ -320,7 +312,7 @@ class UserRepository(BaseRepository):
                 "page_size": page_size,
             }
 
-    def apply_filters(
+    async def apply_filters(
         self,
         query,
         email: str = None,
@@ -342,18 +334,20 @@ class UserRepository(BaseRepository):
             query = query.filter(self.model.status == ActiveStatus(status))
         return query
 
-    def get_total_businesses(self, session, start_date_obj=None, end_date_obj=None):
+    async def get_total_businesses(
+        self, session, start_date_obj=None, end_date_obj=None
+    ):
         """Fetches the count of businesses within the date range, if provided."""
-        business_query = session.query(BusinessProfile)
+        business_query = select(func.count()).select_from(BusinessProfile)
 
         if start_date_obj and end_date_obj:
             business_query = business_query.filter(
                 BusinessProfile.created_at.between(start_date_obj, end_date_obj)
             )
 
-        return business_query.count()
+        return await session.scalar(business_query)
 
-    def get_all_accounts(
+    async def get_all_accounts(
         self,
         page=1,
         page_size=10,
@@ -363,7 +357,7 @@ class UserRepository(BaseRepository):
         end_date: str = None,
         status=None,
     ):
-        with self.session_factory() as session:
+        async with self.session_factory() as session:
             # Calculate offset for pagination
             offset = (page - 1) * page_size
 
@@ -383,26 +377,32 @@ class UserRepository(BaseRepository):
                 )
 
             # Build the base query with filters
-            query = session.query(self.model).filter(self.model.role != RoleType.ADMIN)
-            query = self.apply_filters(
+            query = select(self.model).filter(self.model.role != RoleType.ADMIN)
+            query = await self.apply_filters(
                 query, email, role_uuid, start_date_obj, end_date_obj, status
             )
 
             # Total records in date range
-            total_records = query.with_entities(func.count(self.model.id)).scalar()
-            total_active_users = query.filter(
-                self.model.status == ActiveStatus.ACTIVE
-            ).count()
-            total_inactive_users = query.filter(
-                self.model.status == ActiveStatus.INACTIVE
-            ).count()
-            total_organizations = session.query(BusinessProfile).count()
+            total_records = await session.scalar(
+                select(func.count()).select_from(query.subquery())
+            )
+            total_active_users = await session.scalar(
+                select(func.count()).select_from(
+                    query.filter(self.model.status == ActiveStatus.ACTIVE).subquery()
+                )
+            )
+            total_inactive_users = await session.scalar(
+                select(func.count()).select_from(
+                    query.filter(self.model.status == ActiveStatus.INACTIVE).subquery()
+                )
+            )
+            total_organizations = await self.get_total_businesses(session)
 
             # Previous period data
-            previous_query = session.query(self.model).filter(
+            previous_query = select(self.model).filter(
                 self.model.role != RoleType.ADMIN
             )
-            previous_query = self.apply_filters(
+            previous_query = await self.apply_filters(
                 previous_query,
                 email,
                 role_uuid,
@@ -410,32 +410,47 @@ class UserRepository(BaseRepository):
                 previous_end_date_obj,
                 status,
             )
-            previous_total_records = previous_query.with_entities(
-                func.count(self.model.id)
-            ).scalar()
-            previous_active_users = previous_query.filter(
-                self.model.status == ActiveStatus.ACTIVE
-            ).count()
-            previous_inactive_users = previous_query.filter(
-                self.model.status == ActiveStatus.INACTIVE
-            ).count()
-            previous_organizations_query = session.query(BusinessProfile)
+            previous_total_records = await session.scalar(
+                select(func.count()).select_from(previous_query.subquery())
+            )
+            previous_active_users = await session.scalar(
+                select(func.count()).select_from(
+                    previous_query.filter(
+                        self.model.status == ActiveStatus.ACTIVE
+                    ).subquery()
+                )
+            )
+            previous_inactive_users = await session.scalar(
+                select(func.count()).select_from(
+                    previous_query.filter(
+                        self.model.status == ActiveStatus.INACTIVE
+                    ).subquery()
+                )
+            )
+            previous_organizations_query = select(func.count()).select_from(
+                BusinessProfile
+            )
             if start_date_obj is not None:
                 previous_organizations_query = previous_organizations_query.filter(
                     BusinessProfile.created_at < start_date_obj
                 )
-            previous_organizations = previous_organizations_query.count()
+            previous_organizations = await session.scalar(previous_organizations_query)
 
             # Calculate total pages
             total_pages = (total_records + page_size - 1) // page_size
 
             # Fetch users with pagination and eager loading
             users = (
-                query.order_by(desc(self.model.created_at))
-                .offset(offset)
-                .limit(page_size)
-                .options(joinedload(self.model.business_profile))
-                .options(joinedload(self.model.user_role))
+                (
+                    await session.execute(
+                        query.order_by(desc(self.model.created_at))
+                        .offset(offset)
+                        .limit(page_size)
+                        .options(joinedload(self.model.business_profile))
+                        .options(joinedload(self.model.user_role))
+                    )
+                )
+                .scalars()
                 .all()
             )
 
@@ -447,9 +462,11 @@ class UserRepository(BaseRepository):
                     "status": user.status,
                     "registered_on": user.created_at,
                     "name": f"{user.first_name} {user.last_name}",
-                    "business_name": user.business_profile.business_name
-                    if user.business_profile
-                    else None,
+                    "business_name": (
+                        user.business_profile.business_name
+                        if user.business_profile
+                        else None
+                    ),
                 }
                 for user in users
             ]
@@ -495,19 +512,20 @@ class UserRepository(BaseRepository):
                 },
             }
 
-    def get_admin_team_member(self, team_member_uuid: str):
-        with self.session_factory() as session:
+    async def get_admin_team_member(self, team_member_uuid: str):
+        async with self.session_factory() as session:
             user = (
-                session.query(self.model)
-                .filter(self.model.uuid == team_member_uuid)
-                .options(joinedload(User.user_role))
-                .first()
-            )
+                await session.execute(
+                    select(self.model)
+                    .filter(self.model.uuid == team_member_uuid)
+                    .options(joinedload(User.user_role))
+                )
+            ).scalar_one_or_none()
 
             if not user:
                 return None
 
-            user = {
+            user_data = {
                 "uuid": user.uuid,
                 "email": user.email_address,
                 "role": user.user_role,
@@ -518,31 +536,31 @@ class UserRepository(BaseRepository):
                 "profile_picture_url": user.avatar_url,
             }
 
-            return user
+            return user_data
 
-    def create_user(self, user: UserPayload):
-        with self.session_factory() as session:
+    async def create_user(self, user: UserPayload):
+        async with self.session_factory() as session:
             try:
-                db_user = self._create_user_entry(session, user)
-                self._handle_invitation_status(session, user)
+                db_user = await self._create_user_entry(session, user)
+                await self._handle_invitation_status(session, user)
 
                 if (
                     user.account_type == AccountType.BUSINESS
                     or user.account_type == AccountType.INDIVIDUAL
                 ) and not user.invite_status:
-                    returned_user = self._handle_business_account(
+                    returned_user = await self._handle_business_account(
                         session, user, db_user
                     )
                 else:
-                    returned_user = self._build_user_response(session, db_user)
+                    returned_user = await self._build_user_response(session, db_user)
 
-                session.commit()
+                await session.commit()
                 return returned_user
             except Exception as e:
-                session.rollback()
+                await session.rollback()
                 raise e
 
-    def _create_user_entry(self, session, user: UserPayload):
+    async def _create_user_entry(self, session, user: UserPayload):
         db_user = self.model(
             first_name=user.first_name,
             last_name=user.last_name,
@@ -550,29 +568,29 @@ class UserRepository(BaseRepository):
             password=hash_user_password(user.password),
             account_type=user.account_type,
             role=user.role,
-            business_profile_uuid=user.business_profile_uuid
-            if user.invite_status
-            else None,
-            user_role_uuid=CustomerRoles.ADMIN
-            if not user.invite_status
-            else user.user_role_uuid,
+            business_profile_uuid=(
+                user.business_profile_uuid if user.invite_status else None
+            ),
+            user_role_uuid=(
+                CustomerRoles.ADMIN if not user.invite_status else user.user_role_uuid
+            ),
             status=user.status,
             verifiedAt=datetime.utcnow() if user.invite_status else None,
         )
 
         session.add(db_user)
-        session.commit()
+        await session.commit()
         return db_user
 
-    def _handle_invitation_status(self, session, user: UserPayload):
+    async def _handle_invitation_status(self, session, user: UserPayload):
         if user.invite_status:
             # Delete the invitation where the email matches
-            session.query(Invitation).filter(
-                Invitation.email == user.email_address
-            ).delete()
-            session.commit()
+            await session.execute(
+                delete(Invitation).where(Invitation.email == user.email_address)
+            )
+            await session.commit()
 
-    def _handle_business_account(self, session, user: UserPayload, db_user):
+    async def _handle_business_account(self, session, user: UserPayload, db_user):
         if db_user.account_type == AccountType.BUSINESS:
             business_data = BusinessProfile(
                 business_name=user.business_name,
@@ -589,18 +607,20 @@ class UserRepository(BaseRepository):
             )
 
         session.add(business_data)
-        session.commit()
-        session.refresh(business_data)
+        await session.commit()
+        await session.refresh(business_data)
 
         # Update user with business profile
         created_user = (
-            session.query(self.model)
-            .filter(self.model.email_address == db_user.email_address)
-            .first()
-        )
+            await session.execute(
+                select(self.model).filter(
+                    self.model.email_address == db_user.email_address
+                )
+            )
+        ).scalar_one_or_none()
         created_user.business_profile_uuid = business_data.uuid
-        session.commit()
-        session.refresh(created_user)
+        await session.commit()
+        await session.refresh(created_user)
 
         return {
             "first_name": db_user.first_name,
@@ -617,12 +637,14 @@ class UserRepository(BaseRepository):
             "business_phone": user.business_phone,
         }
 
-    def _build_user_response(self, session, db_user):
+    async def _build_user_response(self, session, db_user):
         created_user = (
-            session.query(self.model)
-            .filter(self.model.email_address == db_user.email_address)
-            .first()
-        )
+            await session.execute(
+                select(self.model).filter(
+                    self.model.email_address == db_user.email_address
+                )
+            )
+        ).scalar_one_or_none()
         return {
             "first_name": db_user.first_name,
             "last_name": db_user.last_name,
@@ -632,12 +654,12 @@ class UserRepository(BaseRepository):
             "status": created_user.status,
         }
 
-    def create_verification_token(
+    async def create_verification_token(
         self,
         user_verify: UserEmailVerification,
         verification_token: EmailVerficationSchema,
     ):
-        with self.session_factory() as session:
+        async with self.session_factory() as session:
             current_date = datetime.now()
 
             db_verify = EmailVerification(
@@ -648,61 +670,62 @@ class UserRepository(BaseRepository):
             )
 
             session.add(db_verify)
-            session.commit()
+            await session.commit()
 
             db_user = (
-                session.query(self.model)
-                .filter(self.model.uuid == user_verify.uuid)
-                .first()
-            )
+                await session.execute(
+                    select(self.model).filter(self.model.uuid == user_verify.uuid)
+                )
+            ).scalar_one_or_none()
 
             return db_user, verification_token["verification_token"]
 
-    def update_user_avatar(self, user_id: str, avatar_url: str) -> User:
-        with self.session_factory() as session:
-            user = session.query(self.model).filter(self.model.uuid == user_id).first()
+    async def update_user_avatar(self, user_id: str, avatar_url: str) -> User:
+        async with self.session_factory() as session:
+            user = (
+                await session.execute(
+                    select(self.model).filter(self.model.uuid == user_id)
+                )
+            ).scalar_one_or_none()
             user.avatar_url = avatar_url
-            session.commit()
-            session.refresh(user)
+            await session.commit()
+            await session.refresh(user)
             return user
 
-    def deactivate_account(
+    async def deactivate_account(
         self, uuid: str, payload: AccountDeactivationPayload
     ) -> User:
-        with self.session_factory() as session:
-            user = session.query(self.model).filter(self.model.uuid == uuid).first()
+        async with self.session_factory() as session:
+            user = (
+                await session.execute(
+                    select(self.model).filter(self.model.uuid == uuid)
+                )
+            ).scalar_one_or_none()
             user.status = ActiveStatus.DEACTIVATED
             user.deactivation_reason = payload.reason
-            session.commit()
-            session.refresh(user)
+            await session.commit()
+            await session.refresh(user)
             return user
 
-    def patch_user_by_uuid(self, uuid: str, user: UserProfileUdatePayload):
-        try:
-            with self.session_factory() as session:
-                user_to_update = (
-                    session.query(self.model).filter(self.model.uuid == uuid).first()
-                )
-                if user_to_update is None:
-                    raise Exception("User not found")
+    async def patch_user_by_uuid(self, uuid: str, user: UserProfileUdatePayload):
+        async with self.session_factory() as session:
+            user_to_update = await session.get(self.model, uuid)
+            if user_to_update is None:
+                raise Exception("User not found")
 
-                # return self.update_by_uuid(uuid, user)
-                if user.first_name is not None:
-                    user_to_update.first_name = user.first_name
-                if user.last_name is not None:
-                    user_to_update.last_name = user.last_name
-                if user.location is not None:
-                    user_to_update.location = user.location
+            if user.first_name is not None:
+                user_to_update.first_name = user.first_name
+            if user.last_name is not None:
+                user_to_update.last_name = user.last_name
+            if user.location is not None:
+                user_to_update.location = user.location
 
-                # Commit the changes to the database
-                session.commit()
-                session.refresh(user_to_update)
+            await session.commit()
+            await session.refresh(user_to_update)
 
-                return user_to_update
-        except Exception as e:
-            raise e
+            return user_to_update
 
-    def get_drivers_by_business_uuid(
+    async def get_drivers_by_business_uuid(
         self,
         business_uuid,
         role_uuid,
@@ -712,84 +735,42 @@ class UserRepository(BaseRepository):
         status: str = None,
         search: Optional[str] = None,
     ):
-        try:
-            with self.session_factory() as session:
-                # Build the query to filter drivers by business and role, and order by created_at descending
-                query = session.query(self.model).filter(
-                    User.business_profile_uuid == business_uuid,
-                    User.user_role_uuid == role_uuid,
-                )  # Order by created_at in descending order
+        async with self.session_factory() as session:
+            query = select(self.model).filter(
+                User.business_profile_uuid == business_uuid,
+                User.user_role_uuid == role_uuid,
+            )
 
-                if search:
-                    search_pattern = f"%{search.strip().lower()}%"
-                    query = query.filter(
-                        or_(
-                            func.lower(User.first_name).ilike(search_pattern),
-                            func.lower(User.last_name).ilike(search_pattern),
-                        )
+            if search:
+                search_pattern = f"%{search.strip().lower()}%"
+                query = query.filter(
+                    or_(
+                        func.lower(User.first_name).ilike(search_pattern),
+                        func.lower(User.last_name).ilike(search_pattern),
                     )
-
-                # Apply additional filters if provided
-                if operator_type:
-                    query = query.filter(User.operator_type.in_(operator_type))
-                if status:
-                    query = query.filter(User.status == status)
-
-                query = query.order_by(
-                    desc(User.created_at)
-                )  # Order by created_at in descending order
-
-                # Get total count of drivers
-                total_drivers = query.count()
-
-                # Calculate total pages
-                total_pages = (total_drivers + page_size - 1) // page_size
-
-                # Apply pagination
-                offset = (page - 1) * page_size
-                drivers = query.offset(offset).limit(page_size).all()
-
-                # Prepare the driver data
-                drivers_data = [
-                    {
-                        "uuid": driver.uuid,
-                        "first_name": driver.first_name,
-                        "last_name": driver.last_name,
-                        "email_address": driver.email_address,
-                        "phone_number": driver.phone_number,
-                        "license_url": driver.license_url,
-                        "profile_picture": driver.avatar_url,
-                        "operator_type": driver.operator_type,
-                        "status": driver.status,
-                        "created_at": driver.created_at,
-                    }
-                    for driver in drivers
-                ]
-
-                return {
-                    "drivers": drivers_data,
-                    "total_drivers": total_drivers,
-                    "total_pages": total_pages,
-                    "current_page": page,
-                    "page_size": page_size,
-                }
-        except Exception as e:
-            raise e
-
-    def get_driver_by_uuid(self, driver_uuid: str):
-        try:
-            with self.session_factory() as session:
-                driver = (
-                    session.query(self.model)
-                    .filter(self.model.uuid == driver_uuid)
-                    .first()
                 )
 
-                if not driver:
-                    return None
+            if operator_type:
+                query = query.filter(User.operator_type.in_(operator_type))
+            if status:
+                query = query.filter(User.status == status)
 
-                # Prepare the driver data for output
-                driver_data = {
+            query = query.order_by(desc(User.created_at))
+
+            total_drivers = await session.scalar(
+                select(func.count()).select_from(query.subquery())
+            )
+            total_pages = (total_drivers + page_size - 1) // page_size
+
+            offset = (page - 1) * page_size
+            drivers = (
+                (await session.execute(query.offset(offset).limit(page_size)))
+                .scalars()
+                .all()
+            )
+
+            drivers_data = [
+                {
                     "uuid": driver.uuid,
                     "first_name": driver.first_name,
                     "last_name": driver.last_name,
@@ -801,31 +782,54 @@ class UserRepository(BaseRepository):
                     "status": driver.status,
                     "created_at": driver.created_at,
                 }
+                for driver in drivers
+            ]
 
-                return driver_data
-        except Exception as e:
-            raise e
+            return {
+                "drivers": drivers_data,
+                "total_drivers": total_drivers,
+                "total_pages": total_pages,
+                "current_page": page,
+                "page_size": page_size,
+            }
 
-    def get_user_by_assigned_asset_uuid(self, assigned_asset_uuid: str):
-        try:
-            with self.session_factory() as session:
-                # Query the User model to find the user with the given assigned_asset_uuid
-                user = (
-                    session.query(User)
-                    .filter(User.assigned_asset_uuid == assigned_asset_uuid)
-                    .first()
-                )
-                if user is None:
-                    return None
+    async def get_driver_by_uuid(self, driver_uuid: str):
+        async with self.session_factory() as session:
+            driver = await session.get(self.model, driver_uuid)
 
-                return user
-        except Exception as e:
-            raise e
+            if not driver:
+                return None
 
-    def get_user_stats(
+            driver_data = {
+                "uuid": driver.uuid,
+                "first_name": driver.first_name,
+                "last_name": driver.last_name,
+                "email_address": driver.email_address,
+                "phone_number": driver.phone_number,
+                "license_url": driver.license_url,
+                "profile_picture": driver.avatar_url,
+                "operator_type": driver.operator_type,
+                "status": driver.status,
+                "created_at": driver.created_at,
+            }
+
+            return driver_data
+
+    async def get_user_by_assigned_asset_uuid(self, assigned_asset_uuid: str):
+        async with self.session_factory() as session:
+            user = await session.execute(
+                select(User).filter(User.assigned_asset_uuid == assigned_asset_uuid)
+            ).scalar_one_or_none()
+
+            if user is None:
+                return None
+
+            return user
+
+    async def get_user_stats(
         self, start_date: datetime, end_date: datetime, group_by: str = "month"
     ):
-        with self.session_factory() as session:
+        async with self.session_factory() as session:
             data = {}
             periods = []
 
@@ -853,15 +857,16 @@ class UserRepository(BaseRepository):
                 key_format = "%Y-%m-%d"
 
             user_counts = (
-                session.query(
-                    func.date_trunc(trunc_field, User.created_at).label("period"),
-                    func.count(User.uuid).label("signups"),
+                await session.execute(
+                    select(
+                        func.date_trunc(trunc_field, User.created_at).label("period"),
+                        func.count(User.uuid).label("signups"),
+                    )
+                    .filter(User.created_at >= start_date, User.created_at <= end_date)
+                    .group_by("period")
+                    .order_by("period")
                 )
-                .filter(User.created_at >= start_date, User.created_at <= end_date)
-                .group_by("period")
-                .order_by("period")
-                .all()
-            )
+            ).all()
 
             for period, signups in user_counts:
                 key = period.strftime(key_format)
@@ -869,20 +874,21 @@ class UserRepository(BaseRepository):
                     data[key]["SignUps"] = signups
 
             conversion_counts = (
-                session.query(
-                    func.date_trunc(trunc_field, UserSubscription.created_at).label(
-                        "period"
-                    ),
-                    func.count(UserSubscription.uuid).label("conversions"),
+                await session.execute(
+                    select(
+                        func.date_trunc(trunc_field, UserSubscription.created_at).label(
+                            "period"
+                        ),
+                        func.count(UserSubscription.uuid).label("conversions"),
+                    )
+                    .filter(
+                        UserSubscription.created_at >= start_date,
+                        UserSubscription.created_at <= end_date,
+                    )
+                    .group_by("period")
+                    .order_by("period")
                 )
-                .filter(
-                    UserSubscription.created_at >= start_date,
-                    UserSubscription.created_at <= end_date,
-                )
-                .group_by("period")
-                .order_by("period")
-                .all()
-            )
+            ).all()
 
             for period, conversions in conversion_counts:
                 key = period.strftime(key_format)
@@ -896,15 +902,13 @@ class UserRepository(BaseRepository):
 
             return sorted_data
 
-    def get_total_users(
+    async def get_total_users(
         self, start_date: datetime, end_date: datetime, group_by: str = "month"
     ):
-        with self.session_factory() as session:
+        async with self.session_factory() as session:
             data = []
-            total_users = (
-                session.query(func.count(User.uuid))
-                .filter(User.created_at <= end_date)
-                .scalar()
+            total_users = await session.scalar(
+                select(func.count(User.uuid)).filter(User.created_at <= end_date)
             )
 
             if group_by == "month":
@@ -918,15 +922,16 @@ class UserRepository(BaseRepository):
                 date_format = "%b %y"
 
             user_counts = (
-                session.query(
-                    func.date_trunc(trunc_field, User.created_at).label("period"),
-                    func.count(User.uuid).label("count"),
+                await session.execute(
+                    select(
+                        func.date_trunc(trunc_field, User.created_at).label("period"),
+                        func.count(User.uuid).label("count"),
+                    )
+                    .filter(User.created_at >= start_date, User.created_at <= end_date)
+                    .group_by("period")
+                    .order_by("period")
                 )
-                .filter(User.created_at >= start_date, User.created_at <= end_date)
-                .group_by("period")
-                .order_by("period")
-                .all()
-            )
+            ).all()
 
             period_counts = {}
             for period, count in user_counts:

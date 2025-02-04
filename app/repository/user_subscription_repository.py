@@ -2,9 +2,9 @@ import logging
 from contextlib import AbstractContextManager
 from typing import Callable
 
-import requests
-from requests.exceptions import HTTPError
-from sqlalchemy.orm import Session
+import aiohttp
+from sqlalchemy import select, update
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.settings import settings
 from app.model.payment import Payment
@@ -16,36 +16,31 @@ from app.util.enums import SubscriptionStatus
 
 
 class UserSubscriptionRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
+    def __init__(
+        self, session_factory: Callable[..., AbstractContextManager[AsyncSession]]
+    ):
         self.session_factory = session_factory
         super().__init__(session_factory, UserSubscription)
 
-    # def get_user_subscription(self, user_email):
-    #     with self.session_factory() as session:
-    #         user = session.query(User).filter(User.email_address == user_email).first()
-    #         user_plan = (
-    #             session.query(self.model)
-    #             .filter(self.model.business_profile_uuid == user.business_profile_uuid)
-    #             .first()
-    #         )
-    #         return user_plan
-
-    def get_user_subscription(self, user_email):
-        with self.session_factory() as session:
+    async def get_user_subscription(self, user_email):
+        async with self.session_factory() as session:
             # Fetch the user from the database
-            user = session.query(User).filter(User.email_address == user_email).first()
+            user = await session.execute(
+                select(User).filter(User.email_address == user_email)
+            )
+            user = user.scalars().first()
 
             if not user:
                 logging.warning(f"No user found with email: {user_email}")
                 return None
 
             # Fetch the user's subscription plan
-            user_plan = (
-                session.query(self.model)
+            user_plan = await session.execute(
+                select(self.model)
                 .filter(self.model.business_profile_uuid == user.business_profile_uuid)
                 .filter(self.model.status == SubscriptionStatus.ACTIVE)
-                .first()
             )
+            user_plan = user_plan.scalars().first()
 
             if not user_plan:
                 logging.warning(f"No subscription plan found for user: {user_email}")
@@ -53,14 +48,14 @@ class UserSubscriptionRepository(BaseRepository):
 
             return user_plan
 
-    def create_user_subscription(self, payload):
-        with self.session_factory() as session:
+    async def create_user_subscription(self, payload):
+        async with self.session_factory() as session:
             event_type = payload.get("event")
 
             logging.info(payload)
 
             user_email = payload["data"]["customer"]["email"]
-            user = self.get_user_by_email(session, user_email)
+            user = await self.get_user_by_email(session, user_email)
 
             if not user:
                 user_not_found = f"user with email {user_email} not found, cannot process subscription event: {event_type}"
@@ -68,7 +63,7 @@ class UserSubscriptionRepository(BaseRepository):
                 return
 
             # get active subscription
-            existing_active_subscription = self.get_user_subscription_(
+            existing_active_subscription = await self.get_user_subscription_(
                 session, user_email, payload["data"]["plan"]["plan_code"]
             )
 
@@ -77,23 +72,22 @@ class UserSubscriptionRepository(BaseRepository):
 
                 # deactivate expired subscription if paystack event type is subscription.not_renew
                 if event_type in ["subscription.not_renew"]:
-                    self.handle_subscription_deactivation(
+                    await self.handle_subscription_deactivation(
                         session, existing_active_subscription
                     )
 
                 # create subscription if paystack event type subscription.create
                 elif event_type == "subscription.create":
 
-                    self.update_all_business_subscriptions_(
+                    await self.update_all_business_subscriptions_(
                         session, payload["data"]["customer"]["business_profile_uuid"]
                     )
 
                     subscription_code = payload["data"]["subscription_code"]
-                    # subscription_status = payload["data"]["status"]
                     subscription_status = SubscriptionStatus.ACTIVE
                     next_payment_date = payload["data"]["next_payment_date"]
 
-                    self.handle_subscription_creation(
+                    await self.handle_subscription_creation(
                         session,
                         subscription_code,
                         existing_active_subscription,
@@ -115,7 +109,7 @@ class UserSubscriptionRepository(BaseRepository):
                         channel=payload["data"]["channel"],
                     )
                     session.add(payment_data)
-                    session.commit()
+                    await session.commit()
                 else:
                     logging.info(f"Unhandled event type: {event_type}")
                     return
@@ -128,44 +122,47 @@ class UserSubscriptionRepository(BaseRepository):
                 logging.error("Subscription not found")
                 return
 
-    def get_user_by_email(self, session, user_email):
-        return session.query(User).filter(User.email_address == user_email).first()
+    async def get_user_by_email(self, session, user_email):
+        result = await session.execute(
+            select(User).filter(User.email_address == user_email)
+        )
+        return result.scalars().first()
 
-    def get_user_subscription_(self, session, user_email, plan_code):
-        return (
-            session.query(UserSubscription)
+    async def get_user_subscription_(self, session, user_email, plan_code):
+        result = await session.execute(
+            select(UserSubscription)
             .filter(UserSubscription.user_email == user_email)
             .filter(UserSubscription.plan_code == plan_code)
             .filter(UserSubscription.status == SubscriptionStatus.ACTIVE)
-            .first()
         )
+        return result.scalars().first()
 
-    def update_all_business_subscriptions_(self, session, business_uuid):
-        session.query(UserSubscription).filter(
-            UserSubscription.business_profile_uuid == business_uuid
-        ).update({UserSubscription.status: SubscriptionStatus.NON_RENEWING}, synchronize_session="fetch")
-        session.commit()
+    async def update_all_business_subscriptions_(self, session, business_uuid):
+        await session.execute(
+            update(UserSubscription)
+            .where(UserSubscription.business_profile_uuid == business_uuid)
+            .values(status=SubscriptionStatus.NON_RENEWING)
+        )
+        await session.commit()
 
-    def get_active_subscription_by_business_uuid(
+    async def get_active_subscription_by_business_uuid(
         self, business_profile_uuid: str, plan: str
     ):
-        with self.session_factory() as session:
-            return (
-                session.query(self.model)
+        async with self.session_factory() as session:
+            result = await session.execute(
+                select(self.model)
                 .filter_by(business_profile_uuid=business_profile_uuid)
                 .filter_by(plan_code=plan)
                 .filter_by(status=SubscriptionStatus.ACTIVE)
-                .first()
             )
+            return result.scalars().first()
 
-    def handle_subscription_deactivation(
-        self, session, existing_subscription
-    ):
+    async def handle_subscription_deactivation(self, session, existing_subscription):
         existing_subscription.status = SubscriptionStatus.NON_RENEWING
-        session.commit()
-        session.refresh(existing_subscription)
+        await session.commit()
+        await session.refresh(existing_subscription)
 
-    def handle_subscription_creation(
+    async def handle_subscription_creation(
         self,
         session,
         subscription_code,
@@ -176,99 +173,100 @@ class UserSubscriptionRepository(BaseRepository):
         existing_subscription.subscription_code = subscription_code
         existing_subscription.status = subscription_status
         existing_subscription.next_payment_date = next_payment_date
-        session.commit()
-        session.refresh(existing_subscription)
+        await session.commit()
+        await session.refresh(existing_subscription)
         logging.info("Subscription updated successfully")
         return
 
-    def create_paystack_subscription(
+    async def create_paystack_subscription(
         self,
         payload: dict,
         plan: dict,
         business_profile_uuid: str,
         update_subscription: bool = False,
     ):
-        try:
-            with self.session_factory() as session:
+        async with aiohttp.ClientSession() as session:
+            try:
                 payload_email = payload.get("email")
                 payload_plan = payload.get("plan")
 
                 # Create Paystack subscription
-                subscription_response = requests.post(
+                async with session.post(
                     settings.PAYSTACK_INITIALIZE_SUBSCRIPTION_URL,
                     headers=settings.PAYSTACK_HEADERS,
                     json=payload,
-                )
+                ) as response:
+                    response.raise_for_status()
+                    subscription_response = await response.json()
 
-                subscription_response.raise_for_status()
-                if subscription_response.json().get("status"):
-                    if update_subscription:
-                        subscription = (
-                            session.query(self.model)
-                            .filter_by(user_email=payload_email)
-                            .first()
-                        )
-                        subscription.plan_code = payload_plan
-                    else:
-                        # save subscription in db
-                        data = UserSubscription(
-                            user_email=payload_email,
-                            plan_code=payload_plan,
-                            business_profile_uuid=business_profile_uuid,
-                            status=SubscriptionStatus.PENDING,
-                            plan={
-                                "name": plan.get("name"),
-                                "amount": plan.get("amount"),
-                                "plan_code": plan.get("plan_code"),
-                            },
-                        )
-                        session.add(data)
+                    if subscription_response.get("status"):
+                        async with self.session_factory() as db_session:
+                            if update_subscription:
+                                subscription = await db_session.execute(
+                                    select(self.model).filter_by(
+                                        user_email=payload_email
+                                    )
+                                )
+                                subscription = subscription.scalars().first()
+                                subscription.plan_code = payload_plan
+                            else:
+                                # save subscription in db
+                                data = UserSubscription(
+                                    user_email=payload_email,
+                                    plan_code=payload_plan,
+                                    business_profile_uuid=business_profile_uuid,
+                                    status=SubscriptionStatus.PENDING,
+                                    plan={
+                                        "name": plan.get("name"),
+                                        "amount": plan.get("amount"),
+                                        "plan_code": plan.get("plan_code"),
+                                    },
+                                )
+                                db_session.add(data)
 
-                    session.commit()
-                    # If successful, return subscription data
-                    subscription_data = subscription_response.json()["data"]
-                    return subscription_data
+                            await db_session.commit()
+                            # If successful, return subscription data
+                            subscription_data = subscription_response["data"]
+                            return subscription_data
 
-        except HTTPError:
-            # If there's an HTTP error, return the error response from Paystack
-            error_message = subscription_response.json().get(
-                "message", "Unknown HTTP Error"
-            )
-            return f"Error creating subscription: {error_message}"
+            except aiohttp.ClientResponseError as e:
+                # If there's an HTTP error, return the error response from Paystack
+                error_message = await e.response.json()
+                return f"Error creating subscription: {error_message.get('message', 'Unknown HTTP Error')}"
 
-        except Exception as err:
-            # For any other exceptions, return a generic error message
-            return f"Error creating subscription: {str(err)}"
+            except Exception as err:
+                # For any other exceptions, return a generic error message
+                return f"Error creating subscription: {str(err)}"
 
-    def update_existing_paystack_subscription(
+    async def update_existing_paystack_subscription(
         self, payload: PaystackSubscriptionPayload, business_profile_uuid: str
     ):
-        try:
-            with self.session_factory() as session:
+        async with aiohttp.ClientSession() as session:
+            try:
                 # Create Paystack subscription
-                subscription_response = requests.post(
+                async with session.post(
                     settings.PAYSTACK_INITIALIZE_SUBSCRIPTION_URL,
                     headers=settings.PAYSTACK_HEADERS,
                     json=payload.dict(),
-                )
-                subscription_response.raise_for_status()  # Raise exception for HTTP errors
+                ) as response:
+                    response.raise_for_status()
+                    subscription_response = await response.json()
 
-                # save subscription in db
-                data = UserSubscription(plan_code=payload.plan)
-                session.refresh(data)
-                session.commit()
+                    async with self.session_factory() as db_session:
+                        # save subscription in db
+                        data = UserSubscription(plan_code=payload.plan)
+                        await db_session.refresh(data)
+                        await db_session.commit()
 
-                # If successful, return subscription data
-                subscription_data = subscription_response.json()["data"]
-                return subscription_data
+                        # If successful, return subscription data
+                        subscription_data = subscription_response["data"]
+                        return subscription_data
 
-        except HTTPError:
-            # If there's an HTTP error, return the error response from Paystack
-            error_message = subscription_response.json().get(
-                "message", "Unknown HTTP Error"
-            )
-            return f"Error creating subscription: {error_message}"
+            except aiohttp.ClientResponseError as e:
+                # If there's an HTTP error, return the error response from Paystack
+                error_message = await e.response.json()
+                return f"Error creating subscription: {error_message.get('message', 'Unknown HTTP Error')}"
 
-        except Exception as err:
-            # For any other exceptions, return a generic error message
-            return f"Error creating subscription: {str(err)}"
+            except Exception as err:
+                # For any other exceptions, return a generic error message
+                return f"Error creating subscription: {str(err)}"

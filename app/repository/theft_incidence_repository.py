@@ -1,8 +1,8 @@
-from contextlib import AbstractContextManager
+from contextlib import AbstractAsyncContextManager
 from typing import Callable
 
 from sqlalchemy import Date, cast, func
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import joinedload
 
 from app.core.security import extract_user_data
 from app.model.asset import Asset
@@ -12,11 +12,13 @@ from app.util.enums import IncidentStatus
 
 
 class TheftIncidenceRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
+    def __init__(
+        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
+    ):
         self.session_factory = session_factory
         super().__init__(session_factory, TheftIncidence)
 
-    def get_all_incidence(
+    async def get_all_incidence(
         self,
         page=1,
         page_size=10,
@@ -25,7 +27,7 @@ class TheftIncidenceRepository(BaseRepository):
         end_date=None,
         status=None,
     ):
-        with self.session_factory() as session:
+        async with self.session_factory() as session:
             try:
                 offset = (page - 1) * page_size
 
@@ -55,20 +57,22 @@ class TheftIncidenceRepository(BaseRepository):
                         cast(self.model.created_at, Date) <= end_date
                     )
 
-                total_incidences = base_query.count()
+                total_incidences = await session.execute(base_query.count())
 
-                resolved_count = (
-                    session.query(func.count())
-                    .filter(self.model.status == IncidentStatus.RESOLVED)
-                    .scalar()
-                )
-                unresolved_count = (
-                    session.query(func.count())
-                    .filter(self.model.status == IncidentStatus.UNRESOLVED)
-                    .scalar()
-                )
+                resolved_count = await session.execute(
+                    session.query(func.count()).filter(
+                        self.model.status == IncidentStatus.RESOLVED
+                    )
+                ).scalar()
+                unresolved_count = await session.execute(
+                    session.query(func.count()).filter(
+                        self.model.status == IncidentStatus.UNRESOLVED
+                    )
+                ).scalar()
 
-                paginated_incidences = base_query.offset(offset).limit(page_size).all()
+                paginated_incidences = await session.execute(
+                    base_query.offset(offset).limit(page_size)
+                ).all()
 
                 result = [
                     {
@@ -96,13 +100,15 @@ class TheftIncidenceRepository(BaseRepository):
                     "unresolved_count": unresolved_count,
                 }
             except Exception as e:
-                session.rollback()
+                await session.rollback()
                 raise e
 
-    def mark_as_resolve(self, incident_uuid: str):
-        with self.session_factory() as session:
-            incidence = session.query(self.model).filter_by(uuid=incident_uuid).first()
+    async def mark_as_resolve(self, incident_uuid: str):
+        async with self.session_factory() as session:
+            incidence = await session.execute(
+                session.query(self.model).filter_by(uuid=incident_uuid)
+            ).first()
             incidence.status = IncidentStatus.RESOLVED
-            session.commit()
-            session.refresh(incidence)
+            await session.commit()
+            await session.refresh(incidence)
             return incidence

@@ -1,13 +1,13 @@
-from contextlib import AbstractContextManager
+from contextlib import AbstractAsyncContextManager
 from typing import Callable
-
-from sqlalchemy.orm import Session
 
 from app.model.vehicle_owner import VehicleOwner
 from app.repository.base_repository import BaseRepository
 
 
 class VehicleOwnerRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
+    def __init__(
+        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
+    ):
         self.session_factory = session_factory
         super().__init__(session_factory, VehicleOwner)

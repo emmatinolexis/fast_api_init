@@ -22,15 +22,16 @@ class TrackingEventService(BaseService):
         self.asset_service = asset_service
         super().__init__(tracking_event_repository)
 
-    def get_events_by_device_imei(self, device_imei: str, date: str):
+    async def get_events_by_device_imei(self, device_imei: str, date: str):
         try:
             if not date:
                 date = datetime.now().strftime("%d/%m/%Y")
 
-            events = self.tracking_event_repository.read_all_events_by_device_imei(
-                device_imei, date
+            events = (
+                await self.tracking_event_repository.read_all_events_by_device_imei(
+                    device_imei, date
+                )
             )
-            # return events
             if not events:
                 return []
 
@@ -78,7 +79,7 @@ class TrackingEventService(BaseService):
         except Exception as e:
             raise e
 
-    def get_events_by_user(
+    async def get_events_by_user(
         self,
         date: str,
         user_uuid: str = None,
@@ -88,7 +89,9 @@ class TrackingEventService(BaseService):
     ) -> Dict[str, Any]:
         try:
             date = self._initialize_date(date)
-            device_events = self._fetch_device_events(date, user_uuid, business_uuid)
+            device_events = await self._fetch_device_events(
+                date, user_uuid, business_uuid
+            )
 
             if device_events is None:
                 return {
@@ -124,15 +127,15 @@ class TrackingEventService(BaseService):
             date = datetime.now().strftime("%d/%m/%Y")
         return date
 
-    def _fetch_device_events(
+    async def _fetch_device_events(
         self, date: str, user_uuid: str, business_uuid: str
     ) -> Union[Dict[str, Any], None]:
         if user_uuid:
-            return self.tracking_event_repository.read_all_events_by_user(
+            return await self.tracking_event_repository.read_all_events_by_user(
                 date=date, user_uuid=user_uuid
             )
         if business_uuid:
-            return self.tracking_event_repository.read_all_events_by_user(
+            return await self.tracking_event_repository.read_all_events_by_user(
                 date=date, business_uuid=business_uuid
             )
         return None
@@ -184,12 +187,15 @@ class TrackingEventService(BaseService):
                                 current_event["start_time"],
                                 current_event["end_time"],
                             ),
-                            "location": {
-                                "longitude": current_event["longitude"],
-                                "latitude": current_event["latitude"],
-                            }
-                            if current_event["longitude"] and current_event["latitude"]
-                            else {},
+                            "location": (
+                                {
+                                    "longitude": current_event["longitude"],
+                                    "latitude": current_event["latitude"],
+                                }
+                                if current_event["longitude"]
+                                and current_event["latitude"]
+                                else {}
+                            ),
                         }
                     )
                     current_event = {
@@ -208,12 +214,14 @@ class TrackingEventService(BaseService):
                     "period": generateTimeRange(
                         current_event["start_time"], current_event["end_time"]
                     ),
-                    "location": {
-                        "longitude": current_event["longitude"],
-                        "latitude": current_event["latitude"],
-                    }
-                    if current_event["longitude"] and current_event["latitude"]
-                    else {},
+                    "location": (
+                        {
+                            "longitude": current_event["longitude"],
+                            "latitude": current_event["latitude"],
+                        }
+                        if current_event["longitude"] and current_event["latitude"]
+                        else {}
+                    ),
                 }
             )
 
@@ -226,36 +234,36 @@ class TrackingEventService(BaseService):
     def generateTimeRange(start_time, end_time):
         return f"{start_time} - {end_time}"
 
-    def get_route_replay_events_by_device_imei(self, device_imei: str, date: str):
+    async def get_route_replay_events_by_device_imei(self, device_imei: str, date: str):
         try:
             if not date:
                 date = datetime.now().strftime("%d/%m/%Y")
-            return self.tracking_event_repository.read_all_route_replay_events_by_device_imei(
+            return await self.tracking_event_repository.read_all_route_replay_events_by_device_imei(
                 device_imei, date
             )
         except Exception as e:
             raise e
 
-    def get_latest_tracking_event_by_device_imei(self, device_imei: str):
+    async def get_latest_tracking_event_by_device_imei(self, device_imei: str):
         try:
-            return self.tracking_event_repository.read_latest_tracking_event_by_device_imei(
+            return await self.tracking_event_repository.read_latest_tracking_event_by_device_imei(
                 device_imei
             )
         except Exception as e:
             raise e
 
-    def get_events_by_device_imei_by_date(self, device_imei: str, date: str):
+    async def get_events_by_device_imei_by_date(self, device_imei: str, date: str):
         try:
             if not date:
                 date = datetime.now().strftime("%d/%m/%Y")
-            return self.tracking_event_repository.read_all_events_by_device_imei(
+            return await self.tracking_event_repository.read_all_events_by_device_imei(
                 device_imei, date
             )
         except Exception as e:
             raise e
 
-    def get_distance_travelled_by_device_imei(self, device_imei: str, date: str):
-        events = self.get_events_by_device_imei_by_date(device_imei, date)
+    async def get_distance_travelled_by_device_imei(self, device_imei: str, date: str):
+        events = await self.get_events_by_device_imei_by_date(device_imei, date)
 
         if not events:
             return f"0 {DISTANCE_UNIT}"
@@ -274,13 +282,13 @@ class TrackingEventService(BaseService):
 
         return f"{distance_travelled} {DISTANCE_UNIT}"
 
-    def get_device_analytics(self, device_imei: str, date: str):
+    async def get_device_analytics(self, device_imei: str, date: str):
         try:
-            latest_tracking_event = self.get_latest_tracking_event_by_device_imei(
+            latest_tracking_event = await self.get_latest_tracking_event_by_device_imei(
                 device_imei
             )
 
-            distance_travelled = self.get_distance_travelled_by_device_imei(
+            distance_travelled = await self.get_distance_travelled_by_device_imei(
                 device_imei, date
             )
 
@@ -296,19 +304,19 @@ class TrackingEventService(BaseService):
         except Exception as e:
             raise e
 
-    def get_asset_average_speed(
+    async def get_asset_average_speed(
         self, device_imei: str, date_from: datetime, date_to: datetime
     ):
         try:
-            return self.tracking_event_repository.read_asset_average_speed(
+            return await self.tracking_event_repository.read_asset_average_speed(
                 device_imei, date_from, date_to
             )
         except Exception as e:
             raise e
 
-    def get_tracking_device_events(self, device_imei: str):
+    async def get_tracking_device_events(self, device_imei: str):
         try:
-            event = self.tracking_event_repository.get_event_by_device_imei(
+            event = await self.tracking_event_repository.get_event_by_device_imei(
                 device_imei=device_imei
             )
 
@@ -319,23 +327,31 @@ class TrackingEventService(BaseService):
         except Exception as e:
             raise e
 
-    def get_devices_without_events_today(self):
+    async def get_devices_without_events_today(self):
         try:
             current_date = datetime.now().strftime("%d/%m/%Y")
-            all_imeis = self.asset_service.get_all_device_imeis()
+            all_imeis = await self.asset_service.get_all_device_imeis()
 
-            events_by_imei = self.tracking_event_repository.get_events_for_all_imeis_on_date(current_date)
-            devices_without_events = [imei for imei in all_imeis if imei not in events_by_imei]
+            events_by_imei = (
+                await self.tracking_event_repository.get_events_for_all_imeis_on_date(
+                    current_date
+                )
+            )
+            devices_without_events = [
+                imei for imei in all_imeis if imei not in events_by_imei
+            ]
 
             return devices_without_events
         except Exception as e:
             raise e
 
-    def get_inactive_assets(self, page: int = 1, page_size: int = 10):
+    async def get_inactive_assets(self, page: int = 1, page_size: int = 10):
         try:
-            inactive_imeis = self.get_devices_without_events_today()
-            paginated_assets, total_records = self.tracking_event_repository.get_inactive_assets_paginated(
-                inactive_imeis, page, page_size
+            inactive_imeis = await self.get_devices_without_events_today()
+            paginated_assets, total_records = (
+                await self.tracking_event_repository.get_inactive_assets_paginated(
+                    inactive_imeis, page, page_size
+                )
             )
             total_pages = ceil(total_records / page_size) if page_size else 1
 
@@ -353,6 +369,4 @@ class TrackingEventService(BaseService):
 def generateTimeRange(start=None, end=None):
     start = start.strftime("%H:%M") if start else "0"
     end = end.strftime("%H:%M") if end else "0"
-    # if end == start:
-    #     end = "0"
     return f"{start} to {end}"

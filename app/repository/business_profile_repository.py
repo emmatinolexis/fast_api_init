@@ -1,10 +1,11 @@
-from contextlib import AbstractContextManager
+from contextlib import AbstractAsyncContextManager
 from datetime import datetime, timedelta
-from typing import Callable, Dict, Optional
+from typing import Callable, Optional
 
 from sqlalchemy import and_, case, func
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import joinedload
 
+from app.core.logger import get_logger
 from app.model.business_profile import BusinessProfile
 from app.model.user import User
 from app.model.user_subscription import UserSubscription
@@ -14,11 +15,13 @@ from app.util.utils import parse_date
 
 
 class BusinessProfileRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
+    def __init__(
+        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
+    ):
         self.session_factory = session_factory
         super().__init__(session_factory, BusinessProfile)
 
-    def get_businesses(
+    async def get_businesses(
         self,
         search_parameter: Optional[str] = None,
         start_date: Optional[str] = None,
@@ -27,13 +30,12 @@ class BusinessProfileRepository(BaseRepository):
         page_size: int = 10,
         status: Optional[ActiveStatus] = None,
     ):
-        with self.session_factory() as session:
+        async with self.session_factory() as session:
             try:
                 start_date_obj = parse_date(start_date) if start_date else None
                 end_date_obj = parse_date(end_date) if end_date else None
             except ValueError as e:
-                print(f"Date parsing error: {e}")
-                raise
+                raise e
 
             if start_date_obj and end_date_obj:
                 delta = end_date_obj - start_date_obj
@@ -53,15 +55,18 @@ class BusinessProfileRepository(BaseRepository):
                 current_query, search_parameter, start_date_obj, end_date_obj, status
             )
 
-            total_records = current_query.count()
+            total_records = await session.scalar(
+                current_query.statement.with_only_columns([func.count()])
+            )
             total_pages = (total_records + page_size - 1) // page_size
 
-            businesses = (
-                current_query.limit(page_size).offset((page - 1) * page_size).all()
+            businesses = await session.execute(
+                current_query.limit(page_size).offset((page - 1) * page_size)
             )
+            businesses = businesses.scalars().all()
 
             if not businesses:
-                print("No businesses found for the given criteria.")
+                get_logger().warn("No businesses found for the given criteria.")
                 return {
                     "businesses": [],
                     "current_page": page,
@@ -88,7 +93,7 @@ class BusinessProfileRepository(BaseRepository):
             if status:
                 current_filters.append(User.status == status)
 
-            current_counts = (
+            current_counts = await session.execute(
                 session.query(
                     func.count(UserSubscription.id).label("total"),
                     func.sum(
@@ -110,8 +115,8 @@ class BusinessProfileRepository(BaseRepository):
                 )
                 .join(User, UserSubscription.user_email == User.email_address)
                 .filter(and_(*current_filters))
-                .one()
             )
+            current_counts = current_counts.one()
 
             total_subscriptions = current_counts.total
             total_active_subscriptions = current_counts.active or 0
@@ -134,7 +139,7 @@ class BusinessProfileRepository(BaseRepository):
                 if status:
                     previous_filters.append(User.status == status)
 
-                previous_counts = (
+                previous_counts = await session.execute(
                     session.query(
                         func.count(UserSubscription.id).label("total"),
                         func.sum(
@@ -164,8 +169,8 @@ class BusinessProfileRepository(BaseRepository):
                     )
                     .join(User, UserSubscription.user_email == User.email_address)
                     .filter(and_(*previous_filters))
-                    .one()
                 )
+                previous_counts = previous_counts.one()
 
                 previous_total_subscriptions = previous_counts.total
                 previous_total_active_subscriptions = previous_counts.active or 0

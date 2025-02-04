@@ -1,22 +1,23 @@
-from contextlib import AbstractContextManager
+from contextlib import AbstractAsyncContextManager
 from typing import Callable
 
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.theft_reports import TheftReport
 from app.repository.base_repository import BaseRepository
 
 
 class TheftReportRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
+    def __init__(
+        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
+    ):
         self.session_factory = session_factory
         super().__init__(session_factory, TheftReport)
 
-    def get_incident_reports(self, incident_uuid: str):
-        with self.session_factory() as session:
-            reports = (
-                session.query(self.model)
-                .filter_by(theft_incident_uuid=incident_uuid)
-                .all()
+    async def get_incident_reports(self, incident_uuid: str):
+        async with self.session_factory() as session:
+            reports = await session.execute(
+                select(self.model).filter_by(theft_incident_uuid=incident_uuid)
             )
-            return reports
+            return reports.scalars().all()

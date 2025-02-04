@@ -73,7 +73,7 @@ class BusinessProfileService(BaseService):
             for py in payments
         ]
 
-    def get_businesses(
+    async def get_businesses(
         self,
         search_parameter: Optional[str] = None,
         start_date: Optional[str] = None,
@@ -83,7 +83,7 @@ class BusinessProfileService(BaseService):
         status: Optional[ActiveStatus] = None,
     ) -> Dict:
         try:
-            businesses_result = self.business_profile_repository.get_businesses(
+            businesses_result = await self.business_profile_repository.get_businesses(
                 search_parameter, start_date, end_date, page, page_size, status
             )
 
@@ -131,17 +131,23 @@ class BusinessProfileService(BaseService):
                 data = {
                     "uuid": business.uuid,
                     "customer": business.business_name,
-                    "active_plan": active_subscription.plan.get("name")
-                    if active_subscription and active_subscription.plan
-                    else FREE_PACKAGE,
-                    "active_plan_amount": active_subscription.plan.get("amount")
-                    if active_subscription
-                    else None,
+                    "active_plan": (
+                        active_subscription.plan.get("name")
+                        if active_subscription and active_subscription.plan
+                        else FREE_PACKAGE
+                    ),
+                    "active_plan_amount": (
+                        active_subscription.plan.get("amount")
+                        if active_subscription
+                        else None
+                    ),
                     "package_features": package_features,
                     "status": "active",
-                    "expiry_date": active_subscription.next_payment_date
-                    if active_subscription
-                    else None,
+                    "expiry_date": (
+                        active_subscription.next_payment_date
+                        if active_subscription
+                        else None
+                    ),
                     "email": business.business_email,
                     "phone": business.business_phone,
                     "created_at": business.created_at,
@@ -160,9 +166,9 @@ class BusinessProfileService(BaseService):
         except Exception as e:
             raise e
 
-    def get_business_by_uuid(self, business_uuid: str):
+    async def get_business_by_uuid(self, business_uuid: str):
         try:
-            devices = self.business_profile_repository.get_by_uuid(business_uuid)
+            devices = await self.business_profile_repository.get_by_uuid(business_uuid)
             return devices
         except Exception as e:
             raise e
