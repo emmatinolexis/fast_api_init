@@ -24,30 +24,30 @@ class InstallationService:
         self.installation_repository = installation_repository
         self.user_repository = user_repository
 
-    def create_installation(self, installation_payload: InstallationPayload):
+    async def create_installation(self, installation_payload: InstallationPayload):
         try:
-            return self.installation_repository.create_installation(
+            return await self.installation_repository.create_installation(
                 installation_payload
             )
         except Exception as e:
             raise e
 
-    def get_installation_by_order_uuid(self, order_uuid: str):
+    async def get_installation_by_order_uuid(self, order_uuid: str):
         try:
-            return self.installation_repository.get_installation_by_order_uuid(
+            return await self.installation_repository.get_installation_by_order_uuid(
                 order_uuid
             )
         except Exception as e:
             raise e
 
-    def assign_installer_to_installation(self, payload: AssignInstallerPayload):
+    async def assign_installer_to_installation(self, payload: AssignInstallerPayload):
         try:
-            installer = self.user_repository.read_by_uuid(uuid=payload.installer_uuid)
-            installation = self.installation_repository.get_installation(
+            installer = await self.user_repository.read_by_uuid(uuid=payload.installer_uuid)
+            installation = await self.installation_repository.get_installation(
                 payload.installation_uuid
             )
 
-            assignment = self.installation_repository.assign_installer_to_installation(
+            assignment = await self.installation_repository.assign_installer_to_installation(
                 payload
             )
             subscriber.publish(
@@ -58,17 +58,17 @@ class InstallationService:
         except Exception as e:
             raise e
 
-    def update_installation_status(
+    async def update_installation_status(
         self, installation_uuid: str, status: InstallationStatus
     ):
         try:
-            return self.installation_repository.update_installation_status(
+            return await self.installation_repository.update_installation_status(
                 installation_uuid, status
             )
         except Exception as e:
             raise e
 
-    def get_towns(self):
+    async def get_towns(self):
         try:
             town_data = []
             for city in cities:
@@ -90,9 +90,9 @@ class InstallationService:
         except Exception as e:
             raise e
 
-    def get_installation(self, installation_uuid: str):
+    async def get_installation(self, installation_uuid: str):
         try:
-            data = self.installation_repository.get_installation(installation_uuid)
+            data = await self.installation_repository.get_installation(installation_uuid)
             if data is None:
                 return None
             order = data.order
@@ -132,10 +132,10 @@ class InstallationService:
         except Exception as e:
             raise e
 
-    def fetch_all_installers(self, installer_uuid):
+    async def fetch_all_installers(self, installer_uuid):
         try:
-            installers = self.installation_repository.get_installers()
-            installation = self.installation_repository.get_installation(installer_uuid)
+            installers = await self.installation_repository.get_installers()
+            installation = await self.installation_repository.get_installation(installer_uuid)
             installation_location = (
                 installation.order.order_shipping_address.address.get("address_name")
             )
@@ -169,7 +169,7 @@ class InstallationService:
         except Exception as e:
             raise e
 
-    def fetch_installations(
+    async def fetch_installations(
         self,
         page,
         page_size,
@@ -180,7 +180,7 @@ class InstallationService:
         search_parameter: str = None,
     ):
         try:
-            installations = self.installation_repository.get_installations(
+            installations = await self.installation_repository.get_installations(
                 page, page_size, installer_uuid, status, start_date, end_date
             )
 

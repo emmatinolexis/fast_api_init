@@ -13,24 +13,25 @@ class GasCylinderEventRepository(BaseRepository):
     def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
         self.session_factory = session_factory
         super().__init__(session_factory, GasCylinderEvent)
-
-    def read_all_gas_events_by_date_range(
+    
+    async def read_all_gas_events_by_date_range(
         self, device_serial_number: str, start_date: str, end_date: str
     ):
-        with self.session_factory() as session:
-            query = (
-                session.query(self.model)
+        async with self.session_factory() as session:
+            # Convert string dates to datetime objects before querying
+            start_dt = datetime.strptime(start_date, "%d/%m/%Y")
+            end_dt = datetime.strptime(end_date, "%d/%m/%Y")
+            stmt = (
+                select(self.model)
                 .filter(
                     self.model.device_serial_number == device_serial_number,
                     and_(
-                        cast(self.model.event_timestamp, Date)
-                        >= datetime.strptime(start_date, "%d/%m/%Y"),
-                        cast(self.model.event_timestamp, Date)
-                        <= datetime.strptime(end_date, "%d/%m/%Y"),
+                        cast(self.model.event_timestamp, Date) >= start_dt,
+                        cast(self.model.event_timestamp, Date) <= end_dt,
                     ),
                 )
                 .order_by(self.model.event_timestamp)
-                .all()
             )
 
-            return query
+            result = await session.execute(stmt) 
+            return result.scalars().all()

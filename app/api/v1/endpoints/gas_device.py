@@ -35,7 +35,7 @@ async def load_csv_handler(
 ):
     try:
         serial_numbers = load_gas_device_serial_number_from_csv(csv_url=csv_url)
-        return send_info(service.load_csv(serial_numbers, user))
+        return send_info(await service.load_csv(serial_numbers, user))
     except Exception as e:
         msg = messages.CSV_LOAD_FAILED
         return send_internal_server_error(user_msg=msg, error=e)
@@ -55,7 +55,7 @@ async def get_gas_devices_handler(
 ):
     try:
         return send_data(
-            service.(serial_number, device_type, page, limit)
+            await service.get_all_devices(serial_number, device_type, page, limit)
         )
     except Exception as e:
         msg = messages.GET_FAILED + " gas devices"
@@ -74,13 +74,13 @@ async def create_gas_device_handler(
     ),
 ):
     try:
-        user = user_service.get_user_by_uuid(user_id)
+        user = await user_service.get_user_by_uuid(user_id)
 
         if not user:
             msg = f"{messages.USER_NOT_FOUND} {user_id}"
             return send_internal_server_error(user_msg=msg, error=msg)
 
-        data = service.create_device(
+        data = await service.create_device(
             business_profile_uuid=user.get("business_profile").uuid,
             payload=payload,
             user_uuid=user_id,
@@ -101,12 +101,12 @@ async def update_device_handler(
     service: GasDeviceService = Depends(Provide[Container.gas_device_service]),
 ):
     try:
-        device = service.get_device_by_uuid(device_uuid)
+        device = await service.get_device_by_uuid(device_uuid)
 
         if not device:
             msg = f"{messages.GAS_DEVICE_NOT_FOUND} "
             return send_client_side_error(user_msg=msg)
-        return send_data(service.patch_by_uuid(device_uuid, payload))
+        return send_data(await service.patch_by_uuid(device_uuid, payload))
     except Exception as e:
         msg = messages.UPDATE_FAILED + " gas device"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -123,13 +123,13 @@ async def get_gas_devices_by_user_handler(
     ),
 ):
     try:
-        user = user_service.get_user_by_uuid(user_id)
+        user = await user_service.get_user_by_uuid(user_id)
 
         if not user:
             msg = f"{messages.USER_NOT_FOUND} {user_id}"
             return send_client_side_error(user_msg=msg, status_code=404)
 
-        data = service.get_business_devices(user.get("business_profile").uuid)
+        data = await service.get_business_devices(user.get("business_profile").uuid)
 
         return send_data_with_info(data, messages.GET_SUCCESS + " gas devices")
     except NotFoundError as e:
@@ -150,7 +150,7 @@ async def get_gas_devices_by_building_handler(
     ),
 ):
     try:
-        data = service.get_building_devices(building_uuid, device_type)
+        data = await service.get_building_devices(building_uuid, device_type)
         return send_data_with_info(data, messages.GET_SUCCESS + " gas devices")
     except Exception as e:
         msg = messages.GET_FAILED + " gas devices"

@@ -13,29 +13,30 @@ class ImmobilizerReportRepository(BaseRepository):
         self.session_factory = session_factory
         super().__init__(session_factory, ImmobilizerReport)
 
-    def get_all_immobilizer_report(self):
-        with self.session_factory() as session:
+    async def get_all_immobilizer_report(self):
+        async with self.session_factory() as session:
             try:
-                reports = (
-                    session.query(self.model)
+                result = await session.execute(
+                    select(self.model)
                     .options(joinedload(self.model.user))
                     .options(joinedload(self.model.asset))
-                    .all()
                 )
+                reports = result.scalars().all()
                 return reports
-            except Exception as e:
+            except SQLAlchemyError as e:
                 raise e
 
-    def get_last_immobilizer_action(self, asset_uuid: str):
-        with self.session_factory() as session:
+    async def get_last_immobilizer_action(self, asset_uuid: str):
+        async with self.session_factory() as session:
             try:
-                action = (
-                    session.query(self.model)
+                result = await session.execute(
+                    select(self.model)
                     .filter_by(asset_uuid=asset_uuid)
                     .options(joinedload(self.model.asset))
                     .order_by(desc(self.model.created_at))
-                    .first()
+                    .limit(1)
                 )
+                action = result.scalars().first()
                 return action
-            except Exception as e:
+            except SQLAlchemyError as e:
                 raise e

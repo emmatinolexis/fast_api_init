@@ -32,7 +32,7 @@ async def get_configuration_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        config = service.get_gateway_configuration_by_uuid(uuid)
+        config = await service.get_gateway_configuration_by_uuid(uuid)
         return send_data(config)
     except NotFoundError as e:
         msg = str(e)
@@ -52,7 +52,7 @@ async def create_configuration_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        config = service.create_gateway_configuration(payload)
+        config = await service.create_gateway_configuration(payload)
         return send_data(config)
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
@@ -70,7 +70,7 @@ async def update_configuration_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        config = service.update_gateway_configuration_by_uuid(uuid, payload)
+        config = await service.update_gateway_configuration_by_uuid(uuid, payload)
         return send_data(config)
     except NotFoundError as e:
         msg = str(e)

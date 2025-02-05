@@ -35,15 +35,15 @@ class FuelLogService(BaseService):
         self.asset_operator_assignment_repository = asset_operator_assignment_repository
         super().__init__(fuel_log_repository)
 
-    def create_individual_fuel_log(
+    async def create_individual_fuel_log(
         self, payload: FuelLogSchema, user_uuid: str, business_profile_uuid: str = None
     ):
-        driver = self.user_repository.read_by_uuid(user_uuid)
+        driver = await self.user_repository.read_by_uuid(user_uuid)
         if not driver:
             raise NotFoundError(detail=messages.DRIVER_NOT_FOUND + user_uuid)
 
         asset_assignment = (
-            self.asset_operator_assignment_repository.get_assignment_by_operator_uuid(
+            await self.asset_operator_assignment_repository.get_assignment_by_operator_uuid(
                 user_uuid
             )
         )
@@ -52,7 +52,7 @@ class FuelLogService(BaseService):
                 detail=messages.DRIVER_NOT_ASSIGNED.format(driver.email_address)
             )
 
-        asset = self.asset_repository.read_by_uuid(asset_assignment.asset_uuid)
+        asset = await self.asset_repository.read_by_uuid(asset_assignment.asset_uuid)
         if not asset:
             raise NotFoundError(detail=messages.ASSET_NOT_FOUND)
 
@@ -70,21 +70,21 @@ class FuelLogService(BaseService):
             fuel_type=payload.fuel_type,
         )
 
-        log = self.fuel_log_repository.create(log_payload)
+        log = await self.fuel_log_repository.create(log_payload)
 
         return fuel_log_transformer(log, self.user_repository)
 
-    def create_bulk_fuel_logs(
+    async def create_bulk_fuel_logs(
         self, user_uuid: str, csv_url: str, business_profile_uuid: str = None
     ):
         try:
-            with self.fuel_log_repository.session_factory() as session:
+            async with self.fuel_log_repository.session_factory() as session:
                 data = load_bulk_fuel_logs(csv_url)
                 fuel_logs = []  # Accumulate all fuel logs here
 
                 for item in data:
                     driver_email = item.get("driver_email")
-                    driver_details = self.user_repository.get_user_by_email_address(
+                    driver_details = await self.user_repository.get_user_by_email_address(
                         driver_email
                     )
                     if not driver_details:
@@ -92,7 +92,7 @@ class FuelLogService(BaseService):
                             detail=messages.WRONG_DRIVER_EMAIL + driver_email
                         )
 
-                    drivers_asset = self.asset_operator_assignment_repository.get_assignment_by_operator_uuid(
+                    drivers_asset = await self.asset_operator_assignment_repository.get_assignment_by_operator_uuid(
                         driver_details.uuid
                     )
                     if not drivers_asset:
@@ -100,7 +100,7 @@ class FuelLogService(BaseService):
                             detail=messages.DRIVER_NOT_ASSIGNED.format(driver_email)
                         )
 
-                    asset = self.asset_repository.read_by_uuid(drivers_asset.asset_uuid)
+                    asset = await self.asset_repository.read_by_uuid(drivers_asset.asset_uuid)
 
                     log_payload = FleetManagerFuelLog(
                         amount=item.get("amount"),
@@ -159,7 +159,7 @@ class FuelLogService(BaseService):
 
         return fuel_log_transformer(fuel_log, self.user_repository)
 
-    def get_fuel_logs_by_user_uuid(
+    async def get_fuel_logs_by_user_uuid(
         self,
         user_uuid: str,
         page: int = 1,
@@ -169,7 +169,7 @@ class FuelLogService(BaseService):
         end_date: str = None,
     ):
         try:
-            fuel_logs = self.fuel_log_repository.get_fuel_logs_by_user_uuid(
+            fuel_logs = await self.fuel_log_repository.get_fuel_logs_by_user_uuid(
                 user_uuid, search, start_date, end_date
             )
 
@@ -189,7 +189,7 @@ class FuelLogService(BaseService):
         except Exception as e:
             raise e
 
-    def get_fuel_logs_by_business_uuid(
+    async def get_fuel_logs_by_business_uuid(
         self,
         business_uuid: str,
         page: int = 1,
@@ -199,7 +199,7 @@ class FuelLogService(BaseService):
         end_date: str = None,
     ):
         try:
-            fuel_logs = self.fuel_log_repository.get_fuel_logs_by_business_uuid(
+            fuel_logs = await self.fuel_log_repository.get_fuel_logs_by_business_uuid(
                 business_uuid, search, start_date, end_date
             )
 
@@ -219,13 +219,13 @@ class FuelLogService(BaseService):
         except Exception as e:
             raise e
 
-    def update_fuel_log_receipt(self, fuel_log_uuid: str, payload: SingleFuelLog):
-        updated_fuel_log = self.fuel_log_repository.update_attr_by_uuid(
+    async def update_fuel_log_receipt(self, fuel_log_uuid: str, payload: SingleFuelLog):
+        updated_fuel_log = await self.fuel_log_repository.update_attr_by_uuid(
             fuel_log_uuid, "receipt_image", payload.receipt_image
         )
 
         return fuel_log_transformer(updated_fuel_log, self.user_repository)
 
-    def get_receipt_by_uuid(self, fuel_log_uuid: str):
-        fuel_log = self.fuel_log_repository.read_by_uuid(fuel_log_uuid)
+    async def get_receipt_by_uuid(self, fuel_log_uuid: str):
+        fuel_log = await self.fuel_log_repository.read_by_uuid(fuel_log_uuid)
         return fuel_log_transformer(fuel_log, self.user_repository)

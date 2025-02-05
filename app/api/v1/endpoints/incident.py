@@ -39,7 +39,7 @@ async def create_incident(
     ),
 ):
     try:
-        incident = service.create_incident(payload)
+        incident = await service.create_incident(payload)
         logging.info(f"Incident reported: {incident}")
         return send_data_with_info(data=incident.dto(), info=messages.CREATE_SUCCESS)
     except Exception as e:
@@ -64,11 +64,11 @@ async def get_all_incidents(
     ),
 ):
     try:
-        incidents = service.get_all_incidents(
+        incidents = await service.get_all_incidents(
             incident_type=incident_type, page_size=page_size, page=page, status=status
         )
 
-        incident_count = service.get_all_incidents_count()
+        incident_count = await service.get_all_incidents_count()
 
         pagination_data = pagination(
             total=incident_count,
@@ -97,7 +97,7 @@ async def get_incidents_by_location(
     ),
 ):
     try:
-        incidents = service.get_incidents_by_location(
+        incidents = await service.get_incidents_by_location(
             longitude=longitude, latitude=latitude, radius=radius
         )
         return send_data(data=[i.dto() for i in incidents])
@@ -119,7 +119,7 @@ async def get_incidents_by_incident_type(
     ),
 ):
     try:
-        incidents = service.get_incidents_by_location_incident_type(
+        incidents = await service.get_incidents_by_location_incident_type(
             longitude=longitude,
             latitude=latitude,
             radius=radius,
@@ -152,7 +152,7 @@ async def get_incidents_report(
     ),
 ):
     try:
-        incidents = service.get_incident_reports(
+        incidents = await service.get_incident_reports(
             start_date=start_date,
             end_date=end_date,
             page=page,

@@ -24,7 +24,7 @@ async def get_all_fine_report_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.get_fine_reports())
+        return send_data(await service.get_fine_reports())
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -38,7 +38,7 @@ async def create_fine_report_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        fine_report = service.add(payload)
+        fine_report = await service.add(payload)
         return send_data(fine_report)
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
@@ -54,7 +54,7 @@ async def update_fine_report_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        fine_report = service.patch_by_uuid(uuid, payload)
+        fine_report = await service.patch_by_uuid(uuid, payload)
         if fine_report is None:
             return send_client_side_error(
                 user_msg=messages.FINE_REPORT_NOT_FOUND + uuid
@@ -73,7 +73,7 @@ async def get_fine_report_by_uuid_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        fine_report = service.get_fine_report(uuid)
+        fine_report = await service.get_fine_report(uuid)
         if fine_report is None:
             return send_client_side_error(
                 user_msg=messages.FINE_REPORT_NOT_FOUND + uuid

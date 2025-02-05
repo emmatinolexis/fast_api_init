@@ -58,7 +58,7 @@ async def create_gas_cylinder_event_handler(
     ),
 ):
     try:
-        created_gas_cylinder = service.add(gas_cylinder)
+        created_gas_cylinder = await service.add(gas_cylinder)
         response = GasCylinderEventResponse(
             id=created_gas_cylinder.id,
         )
@@ -83,14 +83,14 @@ async def create_gas_cylinder_handler(
     ),
 ):
     try:
-        user = user_service.get_user_by_uuid(user_uuid)
+        user = await user_service.get_user_by_uuid(user_uuid)
         if not user:
             return send_client_side_error(
                 user_msg=messages.USER_NOT_FOUND + user_uuid,
                 dev_msg=messages.USER_NOT_FOUND + user_uuid,
             )
 
-        gas_device = gas_device_service.get_gas_device_by_serial_no(
+        gas_device = await gas_device_service.get_gas_device_by_serial_no(
             gas_cylinder.gas_device_serial_number
         )
 
@@ -110,14 +110,11 @@ async def create_gas_cylinder_handler(
 
         gas_cylinder_data = gas_cylinder.dict()
 
-        # if user.get("account_type") == AccountType.BUSINESS:
-        #     gas_cylinder_data["business_id"] = user.get("id")
-
         gas_cylinder_data["business_id"] = user.get("id")
         gas_cylinder_data["user_uuid"] = user_uuid
         new_gas_cylinder = CreateGasCylinder(**gas_cylinder_data)
 
-        created_gas_cylinder = service.add(new_gas_cylinder)
+        created_gas_cylinder = await service.add(new_gas_cylinder)
         return send_data(created_gas_cylinder)
     except Exception as e:
         msg = f"{messages.CREATE_FAILED} - {str(e)}"
@@ -136,14 +133,14 @@ async def link_gas_cylinder_to_device_handler(
     ),
 ):
     try:
-        device = device_service.get_device_by_uuid(gas_device_id)
+        device = await device_service.get_device_by_uuid(gas_device_id)
         if not device:
             return send_client_side_error(
                 user_msg=messages.GAS_DEVICE_NOT_FOUND + gas_device_id,
                 dev_msg=messages.GAS_DEVICE_NOT_FOUND + gas_device_id,
             )
 
-        gas_cylinder = service.get_by_uuid(gas_cylinder_id)
+        gas_cylinder = await service.get_by_uuid(gas_cylinder_id)
         if not gas_cylinder:
             return send_client_side_error(
                 user_msg=messages.GAS_CYLINDER_NOT_FOUND + gas_cylinder_id,
@@ -162,7 +159,7 @@ async def link_gas_cylinder_to_device_handler(
                 dev_msg=messages.CYLINDER_ALREADY_LINKED,
             )
 
-        gas_cylinder = service.link_to_gas_device(gas_cylinder_id, gas_device_id)
+        gas_cylinder = await service.link_to_gas_device(gas_cylinder_id, gas_device_id)
         return send_data(gas_cylinder)
     except (NotFoundError, BadRequestError) as e:
         return send_client_side_error(user_msg=str(e), dev_msg=str(e))
@@ -184,7 +181,7 @@ async def unlink_gas_cylinder_from_device_handler(
     ),
 ):
     try:
-        gas_cylinder = service.get_by_uuid(gas_cylinder_id)
+        gas_cylinder = await service.get_by_uuid(gas_cylinder_id)
         if not gas_cylinder:
             return send_client_side_error(
                 user_msg=messages.GAS_CYLINDER_NOT_FOUND + gas_cylinder_id,
@@ -197,7 +194,7 @@ async def unlink_gas_cylinder_from_device_handler(
                 dev_msg=messages.ALREADY_UNLINKED,
             )
 
-        service.unlink_gas_cylinder(gas_cylinder_id)
+        await service.unlink_gas_cylinder(gas_cylinder_id)
         return send_info(messages.CYLINDER_UNLINKED)
     except Exception as e:
         # Handle unexpected errors
@@ -216,7 +213,7 @@ async def check_gas_level_handler(
     ),
 ):
     try:
-        created_gas_cylinder = service.add(gas_cylinder)
+        created_gas_cylinder = await service.add(gas_cylinder)
         response = GasCylinderEventResponse(
             id=created_gas_cylinder.id,
         )
@@ -241,14 +238,14 @@ async def create_gas_cylinder_only_handler(
     ),
 ):
     try:
-        user = user_service.get_user_by_uuid(user_uuid)
+        user = await user_service.get_user_by_uuid(user_uuid)
         if not user:
             return send_client_side_error(
                 user_msg=messages.USER_NOT_FOUND + user_uuid,
                 dev_msg=messages.USER_NOT_FOUND + user_uuid,
             )
 
-        gas_device = gas_device_service.get_gas_device_by_serial_no(
+        gas_device = await gas_device_service.get_gas_device_by_serial_no(
             gas_cylinder_payload.gas_device_serial_number
         )
 
@@ -259,7 +256,7 @@ async def create_gas_cylinder_only_handler(
             )
 
         if user.get("account_type") == AccountType.BUSINESS:
-            gas_cylinder = service.create_gas_cylinder_without_device(
+            gas_cylinder = await service.create_gas_cylinder_without_device(
                 gas_cylinder_payload,
                 user_uuid,
                 business_uuid=user.get("business_profile").uuid,
@@ -267,7 +264,7 @@ async def create_gas_cylinder_only_handler(
             return send_data_with_info(gas_cylinder, "Cylinder updated successfully")
 
         if user.get("account_type") == AccountType.INDIVIDUAL:
-            gas_cylinder = service.create_gas_cylinder_without_device(
+            gas_cylinder = await service.create_gas_cylinder_without_device(
                 gas_cylinder_payload, user_uuid
             )
             return send_data_with_info(gas_cylinder, "Cylinder updated successfully")
@@ -285,7 +282,7 @@ async def get_cylinder_by_id_handler(
     current_user: User = Depends(get_current_user_with_permission("view_gas_cylinder")),
 ):
     try:
-        cylinder = service.get_cylinder_by_uuid(cylinder_uuid)
+        cylinder = await service.get_cylinder_by_uuid(cylinder_uuid)
         return send_data(cylinder)
     except Exception as e:
         msg = f"{messages.CREATE_FAILED} - {str(e)}"
@@ -302,7 +299,7 @@ async def delete_gas_cylinder_handler(
     ),
 ):
     try:
-        service.delete_gas_cylinder(cylinder_uuid, current_user)
+        await service.delete_gas_cylinder(cylinder_uuid, current_user)
         return send_info(messages.DELETE_SUCCESS + f"{msg_prefix}")
     except (NotFoundError, AuthError) as e:
         return send_client_side_error(user_msg=str(e.detail), dev_msg=str(e.detail))
@@ -331,7 +328,7 @@ async def create_spare_gas_cylinder_handler(
                 dev_msg=messages.USER_NOT_FOUND + user_uuid,
             )
 
-        data = service.create_spare_cylinder(
+        data = await service.create_spare_cylinder(
             gas_cylinder_payload,
             user_uuid,
             str(user.get("business_profile").uuid)
