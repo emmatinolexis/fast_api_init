@@ -21,7 +21,6 @@ class GasCylinderEventRepository(BaseRepository):
             # Convert string dates to datetime objects before querying
             start_dt = datetime.strptime(start_date, "%d/%m/%Y")
             end_dt = datetime.strptime(end_date, "%d/%m/%Y")
-
             stmt = (
                 select(self.model)
                 .filter(
