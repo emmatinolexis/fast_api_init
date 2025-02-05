@@ -13,7 +13,7 @@ class DeviceConfigurationService(BaseService):
         self.device_configuration_repository = device_configuration_repository
         super().__init__(device_configuration_repository)
 
-    def create_gateway_configuration(self, payload: CreateGatewayDeviceConfiguration):
+    async def create_gateway_configuration(self, payload: CreateGatewayDeviceConfiguration):
         try:
             data = CreateDeviceConfigurationInput(
                 configuration_version=payload.configuration_version,
@@ -35,16 +35,16 @@ class DeviceConfigurationService(BaseService):
                     "hide_wifi": payload.hide_wifi,
                 },
             )
-            conf = self.device_configuration_repository.get_configuration_by_type(
+            conf = await self.device_configuration_repository.get_configuration_by_type(
                 payload.configuration_version
             )
             if conf is None:
-                return self.device_configuration_repository.create(data)
-            return self.device_configuration_repository.update_by_uuid(conf.uuid, data)
+                return await self.device_configuration_repository.create(data)
+            return await self.device_configuration_repository.update_by_uuid(conf.uuid, data)
         except Exception as e:
             raise e
 
-    def create_node_configuration(self, payload: CreateNodeConfiguration):
+    async def create_node_configuration(self, payload: CreateNodeConfiguration):
         try:
             if (
                 payload.configuration_version
@@ -119,21 +119,21 @@ class DeviceConfigurationService(BaseService):
                     },
                 )
 
-            conf = self.device_configuration_repository.get_configuration_by_type(
+            conf = await self.device_configuration_repository.get_configuration_by_type(
                 payload.configuration_version
             )
             if conf is None:
-                return self.device_configuration_repository.create(data)
-            return self.device_configuration_repository.update_by_uuid(conf.uuid, data)
+                return await self.device_configuration_repository.create(data)
+            return await self.device_configuration_repository.update_by_uuid(conf.uuid, data)
         except Exception as e:
             raise e
 
-    def get_device_configuration(
+    async def get_device_configuration(
         self, configuration_version: DeviceConfigurationVersion
     ):
         try:
             configuration = (
-                self.device_configuration_repository.get_configuration_by_type(
+                await self.device_configuration_repository.get_configuration_by_type(
                     configuration_version
                 )
             )

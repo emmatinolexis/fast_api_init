@@ -9,16 +9,16 @@ class DeviceService(BaseService):
         self.device_repository = device_repository
         super().__init__(device_repository)
 
-    def get_devices_by_user_uuid(self, user_uuid: str):
+    async def get_devices_by_user_uuid(self, user_uuid: str):
         try:
-            devices = self.device_repository.get_devices_by_user_uuid(user_uuid)
+            devices = await self.device_repository.get_devices_by_user_uuid(user_uuid)
             return devices
         except Exception as e:
             raise e
 
-    def get_devices_by_business_uuid(self, business_uuid: str):
+    async def get_devices_by_business_uuid(self, business_uuid: str):
         try:
-            devices = self.device_repository.get_devices_by_business_uuid(business_uuid)
+            devices = await self.device_repository.get_devices_by_business_uuid(business_uuid)
             # return devices
             device_data = []
             for device in devices:
@@ -37,14 +37,14 @@ class DeviceService(BaseService):
         except Exception as e:
             raise e
 
-    def get_user_data_by_device_uuid(self, device_imei: str):
+    async def get_user_data_by_device_uuid(self, device_imei: str):
         try:
-            device = self.device_repository.get_user_data_by_device_uuid(device_imei)
+            device = await self.device_repository.get_user_data_by_device_uuid(device_imei)
             return device
         except Exception as e:
             raise e
 
-    def get_all_devices(
+    async def get_all_devices(
         self,
         page: int = 1,
         page_size: int = 10,
@@ -52,30 +52,30 @@ class DeviceService(BaseService):
         status=None,
     ):
         try:
-            devices = self.device_repository.get_all_devices(
+            devices = await self.device_repository.get_all_devices(
                 page=page, page_size=page_size, search_query=search_query, status=status
             )
             return devices
         except Exception as e:
             raise e
 
-    def get_all_devices_to_assign(
+    async def get_all_devices_to_assign(
         self,
         page: int = 1,
         page_size: int = 10,
         search_query: Optional[str] = None,
     ):
         try:
-            devices = self.device_repository.get_all_devices_to_assign(
+            devices = await self.device_repository.get_all_devices_to_assign(
                 page=page, page_size=page_size, search_query=search_query
             )
             return devices
         except Exception as e:
             raise e
 
-    def assign_imei(self, device_uuid: str, imei: str):
+    async def assign_imei(self, device_uuid: str, imei: str):
         try:
-            device = self.device_repository.assign_imei(device_uuid, imei)
+            device = await self.device_repository.assign_imei(device_uuid, imei)
             return device
         except Exception as e:
             raise e

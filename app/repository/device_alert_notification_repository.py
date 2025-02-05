@@ -1,32 +1,34 @@
-from contextlib import AbstractContextManager
+from contextlib import AbstractAsyncContextManager
 from typing import Callable
 
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from sqlalchemy.orm import joinedload
 
 from app.model.device_alert_notification import DeviceAlertNotification
 from app.repository.base_repository import BaseRepository
 
 
 class DeviceAlertNotificationRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
+    def __init__(self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]):
         self.session_factory = session_factory
         super().__init__(session_factory, DeviceAlertNotification)
 
-    def get_recipients_by_node_id(self, node_id: str):
-        with self.session_factory() as session:
-            recipients = []
-            data = (
-                session.query(self.model)
+    async def get_recipients_by_node_id(self, node_id: str):
+        async with self.session_factory() as session:
+            stmt = (
+                select(self.model)
                 .filter(self.model.node_id == str(node_id))
                 .options(joinedload(self.model.user))
-                .all()
             )
-            for record in data:
-                user = {
-                    "name": f"{record.user.first_name} {record.user.last_name}",
-                    "email": record.user.email_address,
-                    "phone_number": record.user.phone_number,
-                }
-                recipients.append(user)
+            result = await session.execute(stmt)
+            data = result.scalars().all()
 
-            return recipients
+            return [
+                {
+                    "name": f"{record.user.first_name} {record.user.last_name}" if record.user else "Unknown",
+                    "email": record.user.email_address if record.user else None,
+                    "phone_number": record.user.phone_number if record.user else None,
+                }
+                for record in data
+            ]

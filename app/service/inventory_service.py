@@ -30,12 +30,12 @@ class InventoryService(BaseService):
         except Exception as e:
             raise e
 
-    def create_inventory(self, device_payload: InventoryPayload):
+    async def create_inventory(self, device_payload: InventoryPayload):
         try:
             inventory = self.inventory_repository.create_inventory(device_payload)
-            self.device_repository.create_devices(inventory)
+            await self.device_repository.create_devices(inventory)
             for image in device_payload.images:
-                self.device_image_repository.create_image(
+                await self.device_image_repository.create_image(
                     inventory_uuid=inventory.uuid, image=image
                 )
             return inventory
@@ -51,7 +51,7 @@ class InventoryService(BaseService):
         except Exception as e:
             raise e
 
-    def update_inventory(self, inventory_uuid: UUID, payload: InventoryUpdatePayload):
+    async def update_inventory(self, inventory_uuid: UUID, payload: InventoryUpdatePayload):
         try:
             inventory = self.inventory_repository.get_inventory_by_uuid(inventory_uuid)
             if not inventory:
@@ -70,7 +70,7 @@ class InventoryService(BaseService):
             if payload.description:
                 inventory.description = payload.description
             if payload.image:
-                self.device_image_repository.update_images(
+                await self.device_image_repository.update_images(
                     inventory_uuid=inventory.uuid, new_image=payload.image
                 )
 

@@ -55,7 +55,7 @@ async def get_gas_devices_handler(
 ):
     try:
         return send_data(
-            service.get_all_devices(serial_number, device_type, page, limit)
+            service.(serial_number, device_type, page, limit)
         )
     except Exception as e:
         msg = messages.GET_FAILED + " gas devices"

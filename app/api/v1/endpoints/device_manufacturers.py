@@ -32,7 +32,7 @@ async def get_all_device_manafacturers_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.get_list())
+        return send_data(await service.get_list())
     except Exception as e:
         msg = f"{messages.GET_FAILED} {msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -48,7 +48,7 @@ async def create_device_manufacturer_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        manufacturer = service.add(payload)
+        manufacturer = await service.add(payload)
         return send_data(manufacturer)
     except NotFoundError as e:
         return send_client_side_error(
@@ -70,7 +70,7 @@ async def update_device_manufacturer_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        device = service.patch_by_uuid(uuid, payload)
+        device = await service.patch_by_uuid(uuid, payload)
         if device is None:
             return send_client_side_error(
                 user_msg=messages.DEVICE_MANUFACTURER_NOT_FOUND + uuid

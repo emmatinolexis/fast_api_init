@@ -16,31 +16,18 @@ class DeviceEventService(BaseService):
         self.device_event_repository = device_event_repository
         super().__init__(device_event_repository)
 
-    def get_devices_latest_reading(self, node_id: str):
+    async def get_devices_latest_reading(self, node_id: str):
         try:
-            devices = self.device_event_repository.get_device_latest_reading(node_id)
+            devices = await self.device_event_repository.get_device_latest_reading(node_id)
             return devices
         except Exception as e:
             raise e
+        
 
-    def __init__(
-        self,
-        device_event_repository: DeviceEventRepository,
-    ):
-        self.device_event_repository = device_event_repository
-        super().__init__(device_event_repository)
-
-    def get_devices_latest_reading(self, node_id: str):
-        try:
-            devices = self.device_event_repository.get_device_latest_reading(node_id)
-            return devices
-        except Exception as e:
-            raise e
-
-    def generate_report_single_cylinder(
+    async def generate_report_single_cylinder(
         self, cylinder_uuid: str, start_date: str, end_date: str
     ):
-        cylinder = self.device_event_repository.read_gas_cylinder_by_uuid(cylinder_uuid)
+        cylinder = await self.device_event_repository.read_gas_cylinder_by_uuid(cylinder_uuid)
 
         if not cylinder:
             raise NotFoundError(detail=cylinder)
@@ -51,7 +38,7 @@ class DeviceEventService(BaseService):
         device_name = cylinder.cylinder_name
 
         peripheral_device = (
-            self.device_event_repository.get_peripheral_device_by_serial_number(
+            await self.device_event_repository.get_peripheral_device_by_serial_number(
                 gas_device_serial_number
             )
         )
@@ -77,7 +64,7 @@ class DeviceEventService(BaseService):
         start_date_obj = datetime.combine(start_date_obj.date(), datetime.min.time())
         end_date_obj = datetime.combine(end_date_obj.date(), datetime.max.time())
 
-        events = self.device_event_repository.get_device_events_between_dates(
+        events = await self.device_event_repository.get_device_events_between_dates(
             node_id=node_id,
             start_date=start_date_obj,
             end_date=end_date_obj,

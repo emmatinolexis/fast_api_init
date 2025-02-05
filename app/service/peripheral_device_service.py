@@ -60,12 +60,12 @@ class PeripheralDeviceService(BaseService):
         except Exception as e:
             raise e
 
-    def toggle_send_alert_status(
+    async def toggle_send_alert_status(
         self,
         peripheral_device_uuid: str,
     ):
         try:
-            return self.device_node_config_repository.toggle_send_alert_status(
+            return await self.device_node_config_repository.toggle_send_alert_status(
                 peripheral_device_uuid
             )
         except Exception as e:
@@ -161,9 +161,9 @@ class PeripheralDeviceService(BaseService):
         except Exception as e:
             raise e
 
-    def get_device_conf_by_peripheral_uuid(self, peripheral_uuid: str):
+    async def get_device_conf_by_peripheral_uuid(self, peripheral_uuid: str):
         try:
-            device = self.device_node_config_repository.get_device_node_config_by_device_uuid(
+            device = await self.device_node_config_repository.get_device_node_config_by_device_uuid(
                 peripheral_uuid
             )
             return device
@@ -303,7 +303,7 @@ class PeripheralDeviceService(BaseService):
         except Exception as e:
             raise e
 
-    def update_device_threshold(
+    async def update_device_threshold(
         self,
         device_serial_number: str,
         payload: UpdateDeviceConfigThreshold,
@@ -338,7 +338,7 @@ class PeripheralDeviceService(BaseService):
                 raise AuthError(messages.UNAUTHORIZED_ACTION)
 
             # Handle the device configuration based on device type
-            config = self.device_node_config_repository.get_device_node_config_by_device_uuid(
+            config = await self.device_node_config_repository.get_device_node_config_by_device_uuid(
                 device.uuid
             )
 
@@ -461,7 +461,7 @@ class PeripheralDeviceService(BaseService):
         except Exception as e:
             raise e
 
-    def device_config_by_serial_number(self, serial_number: str):
+    async def device_config_by_serial_number(self, serial_number: str):
         try:
             device = self.peripheral_device_repository.get_by_serial_number(
                 serial_number
@@ -471,7 +471,7 @@ class PeripheralDeviceService(BaseService):
                     messages.PERIPHERAL_DEVICE_NOT_FOUND + serial_number
                 )
 
-            config = self.device_node_config_repository.get_device_node_config_by_device_uuid(
+            config = await self.device_node_config_repository.get_device_node_config_by_device_uuid(
                 device.uuid
             )
             if not config:

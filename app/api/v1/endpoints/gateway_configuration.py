@@ -92,7 +92,7 @@ async def create_default_device_gateway_configuration(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        config = service.create_gateway_configuration(payload)
+        config = await service.create_gateway_configuration(payload)
         return send_data(config)
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix

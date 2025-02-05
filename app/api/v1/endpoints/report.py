@@ -386,7 +386,7 @@ async def get_cylinder_report(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        data = service.generate_report_single_cylinder(
+        data = await service.generate_report_single_cylinder(
             cylinder_uuid=cylinder_uuid, start_date=start_date, end_date=end_date
         )
         return send_data_with_info(data, messages.GET_SUCCESS + "Cylinder Report")

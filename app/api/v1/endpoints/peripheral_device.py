@@ -142,7 +142,7 @@ async def create_gateway_configuration_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        service.create_gateway_configuration(payload)
+        await service.create_gateway_configuration(payload)
         return send_info("Gateway Configuration created successfully")
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
@@ -159,7 +159,7 @@ async def create_node_configuration_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        service.create_node_configuration(payload)
+        await service.create_node_configuration(payload)
         return send_info("Node Configuration created successfully")
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
@@ -204,7 +204,7 @@ async def get_device_configurations_handler(
         if not peripheral_device:
             return send_client_side_error("Device not found")
 
-        configuration = service.get_device_configuration(payload.device_type)
+        configuration = await service.get_device_configuration(payload.device_type)
 
         if not configuration:
             return send_client_side_error("Configuration not found")
@@ -456,7 +456,7 @@ async def update_sent_alert_status(
                 messages.PERIPHERAL_DEVICE_NOT_FOUND_MSG,
             )
 
-        device_config = peripheral_service.get_device_conf_by_peripheral_uuid(
+        device_config = await peripheral_service.get_device_conf_by_peripheral_uuid(
             peripheral_device_uuid
         )
 
@@ -465,7 +465,7 @@ async def update_sent_alert_status(
                 messages.DEVICE_CONFIG_NOT_FOUND, messages.DEVICE_CONFIG_NOT_FOUND
             )
 
-        device_update = peripheral_service.toggle_send_alert_status(
+        device_update = await peripheral_service.toggle_send_alert_status(
             peripheral_device_uuid
         )
         return send_data_with_info(device_update, messages.SUCCESS_MESSAGE)

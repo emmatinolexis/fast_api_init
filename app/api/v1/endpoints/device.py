@@ -29,7 +29,7 @@ msg_prefix = "device"
 
 @router.get("/", response_class=ORJSONResponse)
 @inject
-async def get_all_devices_handler(
+async def _handler(
     page: int = Query(1, ge=1, description="Page number, default is 1"),
     page_size: int = Query(
         10, ge=1, le=100, description="Items per page, default is 10"
@@ -42,7 +42,7 @@ async def get_all_devices_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        devices = service.get_all_devices(
+        devices = await service.get_all_devices(
             page=page, page_size=page_size, search_query=search_query, status=status
         )
         return send_data(devices)
@@ -53,7 +53,7 @@ async def get_all_devices_handler(
 
 @router.get("/assign", response_class=ORJSONResponse)
 @inject
-async def get_all_devices_handler(
+async def _handler(
     page: int = Query(1, ge=1, description="Page number, default is 1"),
     page_size: int = Query(
         10, ge=1, le=100, description="Items per page, default is 10"
@@ -65,7 +65,7 @@ async def get_all_devices_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        devices = service.get_all_devices_to_assign(
+        devices = service._to_assign(
             page=page, page_size=page_size, search_query=search_query
         )
         return send_data(devices)
@@ -82,7 +82,7 @@ async def get_all_user_devices(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.get_devices_by_user_uuid(user_uuid))
+        return send_data(await service.get_devices_by_user_uuid(user_uuid))
     except Exception as e:
         msg = f"{messages.GET_FAILED}  {msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -99,7 +99,7 @@ async def get_all_business_devices(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        business = business_service.get_business_by_uuid(business_uuid)
+        business = await business_service.get_business_by_uuid(business_uuid)
 
         if business is None:
             return send_client_side_error(messages.BUSINESS_PROFILE_NOT_FOUND_MSG)
@@ -117,7 +117,7 @@ async def get_user_by_device_uuid(
     current_app_service: User = Depends(get_current_app_service),
 ):
     try:
-        return send_data(service.get_user_data_by_device_uuid(device_imei))
+        return send_data(await service.get_user_data_by_device_uuid(device_imei))
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -131,7 +131,7 @@ async def create_device_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        device = service.add(payload)
+        device = await service.add(payload)
         return send_data(device)
     except NotFoundError as e:
         return send_client_side_error(
@@ -151,7 +151,7 @@ async def update_device_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        device = service.patch_by_uuid(uuid, payload)
+        device = await service.patch_by_uuid(uuid, payload)
         if device is None:
             return send_client_side_error(user_msg=messages.DEVICE_NOT_FOUND + uuid)
         return send_data(device)
@@ -168,7 +168,7 @@ async def get_device_by_uuid_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        device = service.get_by_uuid(uuid)
+        device = await service.get_by_uuid(uuid)
         if device is None:
             return send_client_side_error(user_msg=messages.DEVICE_NOT_FOUND + uuid)
         return send_data(device)
@@ -185,7 +185,7 @@ async def delete_device_by_uuid_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        service.remove_by_uuid(uuid)
+        await service.remove_by_uuid(uuid)
         return send_info(messages.DELETE_SUCCESS + msg_prefix)
     except NotFoundError as e:
         return send_client_side_error(
@@ -205,7 +205,7 @@ async def assign_imei_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        device = service.assign_imei(device_uuid, payload.device_imei)
+        device = await service.assign_imei(device_uuid, payload.device_imei)
         return send_data(device)
     except NotFoundError as e:
         return send_client_side_error(

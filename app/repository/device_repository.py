@@ -1,8 +1,9 @@
-from contextlib import AbstractContextManager
+from contextlib import AbstractAsyncContextManager
 from typing import Callable, Optional
 
-from sqlalchemy import desc, or_
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import desc, or_,select,func
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from app.model.device import Device, DeviceManufacturer
 from app.model.inventory import Inventory
@@ -12,26 +13,29 @@ from app.util.enums import AccountType, DeviceStatus
 
 
 class DeviceRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
+    def __init__(self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]):
         self.session_factory = session_factory
         super().__init__(session_factory, Device)
 
-    def get_all_devices(
+    async def get_all_devices(
         self,
         page: int = 1,
         page_size: int = 10,
         search_query: Optional[str] = None,
         status=None,
     ):
-        with self.session_factory() as session:
+        async with self.session_factory() as session:
             try:
                 offset = (page - 1) * page_size
 
                 # Base query with joins
-                base_query = session.query(self.model).options(
-                    joinedload(Device.inventory).joinedload(Inventory.manufacturer),
-                    joinedload(Device.asset),
-                    joinedload(Device.user),
+                base_query = (
+                    select(self.model)
+                    .options(
+                        joinedload(Device.inventory).joinedload(Inventory.manufacturer),
+                        joinedload(Device.asset),
+                        joinedload(Device.user),
+                    )
                 )
 
                 # Apply search query filter
@@ -42,9 +46,7 @@ class DeviceRepository(BaseRepository):
                         .filter(
                             or_(
                                 Inventory.device_name.ilike(f"%{search_query}%"),
-                                DeviceManufacturer.manufacturer_name.ilike(
-                                    f"%{search_query}%"
-                                ),
+                                DeviceManufacturer.manufacturer_name.ilike(f"%{search_query}%"),
                                 Device.device_imei.ilike(f"%{search_query}%"),
                             )
                         )
@@ -52,23 +54,21 @@ class DeviceRepository(BaseRepository):
 
                 # Apply status filter
                 if status == DeviceStatus.ASSIGNED:
-                    base_query = base_query.filter(
-                        self.model.assign_to_asset_status.isnot(None)
-                    )
+                    base_query = base_query.filter(self.model.assign_to_asset_status.isnot(None))
                 elif status == DeviceStatus.NOT_ASSIGNED:
-                    base_query = base_query.filter(
-                        self.model.assign_to_asset_status.is_(None)
-                    )
+                    base_query = base_query.filter(self.model.assign_to_asset_status.is_(None))
 
                 # Order by created_at in descending order
                 base_query = base_query.order_by(desc(self.model.created_at))
 
                 # Get total count of devices
-                total_devices = base_query.count()
+                total_result = await session.execute(select(func.count()).select_from(base_query.subquery()))
+                total_devices = total_result.scalar()
 
                 # Apply pagination
                 paginated_query = base_query.offset(offset).limit(page_size)
-                devices = paginated_query.all()
+                result = await session.execute(paginated_query)
+                devices = result.unique().scalars().all()
 
                 # Calculate total pages
                 total_pages = (total_devices + page_size - 1) // page_size
@@ -81,62 +81,51 @@ class DeviceRepository(BaseRepository):
                     "page_size": page_size,
                 }
             except Exception as e:
-                session.rollback()
+                await session.rollback()
                 raise e
 
-    def get_all_devices_to_assign(
+    async def get_all_devices_to_assign(
         self,
         page: int = 1,
         page_size: int = 10,
         search_query: Optional[str] = None,
     ):
-        with self.session_factory() as session:
+        async with self.session_factory() as session:
             try:
                 offset = (page - 1) * page_size
 
-                # Base query with filters for device_imei and assign_to_asset_status
                 base_query = (
-                    session.query(self.model)
+                    select(self.model)
                     .options(
                         joinedload(Device.inventory).joinedload(Inventory.manufacturer),
                         joinedload(Device.asset),
                         joinedload(Device.user),
                     )
                     .filter(
-                        Device.device_imei.isnot(
-                            None
-                        ),  # Filter where device_imei is not null
-                        self.model.assign_to_asset_status.is_(
-                            None
-                        ),  # Filter where asset_assign_status is null
+                        Device.device_imei.isnot(None),
+                        self.model.assign_to_asset_status.is_(None),
                     )
                 )
 
-                # Apply search query filter
                 if search_query:
                     base_query = (
                         base_query.join(Device.inventory)
                         .join(Inventory.manufacturer)
                         .filter(
                             or_(
-                                DeviceManufacturer.manufacturer_name.ilike(
-                                    f"%{search_query}%"
-                                ),
-                                Device.device_imei.ilike(
-                                    f"%{search_query}%"
-                                ),  # IMEI included in search
+                                DeviceManufacturer.manufacturer_name.ilike(f"%{search_query}%"),
+                                Device.device_imei.ilike(f"%{search_query}%"),
                             )
                         )
                     )
 
-                # Get total count of devices
-                total_devices = base_query.count()
+                total_result = await session.execute(select(func.count()).select_from(base_query.subquery()))
+                total_devices = total_result.scalar()
 
-                # Apply pagination
                 paginated_query = base_query.offset(offset).limit(page_size)
-                devices = paginated_query.all()
+                result = await session.execute(paginated_query)
+                devices = result.unique().scalars().all()
 
-                # Calculate total pages
                 total_pages = (total_devices + page_size - 1) // page_size
 
                 return {
@@ -147,21 +136,23 @@ class DeviceRepository(BaseRepository):
                     "page_size": page_size,
                 }
             except Exception as e:
-                session.rollback()
+                await session.rollback()
                 raise e
 
-    def get_user_data_by_device_uuid(self, device_imei: str):
-        with self.session_factory() as session:
+    async def get_user_data_by_device_uuid(self, device_imei: str):
+        async with self.session_factory() as session:
             try:
-                device = (
-                    session.query(self.model)
+                query = (
+                    select(self.model)
                     .filter(self.model.device_imei == device_imei)
                     .options(
                         joinedload(Device.inventory).joinedload(Inventory.manufacturer),
                         joinedload(Device.user),
                     )
-                    .first()
                 )
+                result = await session.execute(query)
+                device = result.unique().scalar_one_or_none()
+
                 if device:
                     if device.user_uuid:
                         if device.user:
@@ -170,93 +161,94 @@ class DeviceRepository(BaseRepository):
                     else:
                         raise Exception("There is no user assigned to this device")
                 else:
-                    raise Exception(
-                        f"There is no device with the given imei: {device_imei}"
-                    )
+                    raise Exception(f"There is no device with the given imei: {device_imei}")
             except Exception as e:
                 raise e
 
-    def create_devices(self, inventory):
-        with self.session_factory() as session:
-            devices = []
-            for _ in range(inventory.quantity):
-                device = Device(device_inventory_uuid=inventory.uuid)
-                devices.append(device)
-            session.add_all(devices)
-            session.commit()
+    async def create_devices(self, inventory):
+        async with self.session_factory() as session:
+            try:
+                devices = [Device(device_inventory_uuid=inventory.uuid) for _ in range(inventory.quantity)]
+                session.add_all(devices)
+                await session.commit()
+            except Exception as e:
+                await session.rollback()
+                raise e
 
-    def get_devices_by_user_uuid(self, user_uuid):
-        with self.session_factory() as session:
-            user = session.query(User).filter(User.uuid == user_uuid).first()
+    async def get_devices_by_user_uuid(self, user_uuid):
+        async with self.session_factory() as session:
+            user_query = select(User).filter(User.uuid == user_uuid)
+            result = await session.execute(user_query)
+            user = result.scalar_one_or_none()
 
             if not user:
                 raise Exception("User not found")
 
             if user.account_type == AccountType.INDIVIDUAL:
-                devices = (
-                    session.query(self.model)
+                query = (
+                    select(self.model)
                     .filter(self.model.user_uuid == user.uuid)
-                    .options(joinedload(Device.asset))
-                    .options(joinedload(Device.inventory).joinedload(Inventory.images))
-                    .all()
-                )
-
-            if user.account_type == AccountType.BUSINESS:
-                devices = (
-                    session.query(self.model)
-                    .filter(
-                        self.model.business_profile_uuid == user.business_profile_uuid
+                    .options(
+                        joinedload(Device.asset),
+                        joinedload(Device.inventory).joinedload(Inventory.images)
                     )
-                    .options(joinedload(Device.asset))
-                    .options(joinedload(Device.inventory).joinedload(Inventory.images))
-                    .all()
+                )
+            else:  # AccountType.BUSINESS
+                query = (
+                    select(self.model)
+                    .filter(self.model.business_profile_uuid == user.business_profile_uuid)
+                    .options(
+                        joinedload(Device.asset),
+                        joinedload(Device.inventory).joinedload(Inventory.images)
+                    )
                 )
 
-            return devices
+            result = await session.execute(query)
+            return result.unique().scalars().all()
 
-    def get_devices_by_business_uuid(self, business_uuid):
-        with self.session_factory() as session:
-            devices = (
-                session.query(self.model)
+    async def get_devices_by_business_uuid(self, business_uuid):
+        async with self.session_factory() as session:
+            query = (
+                select(self.model)
                 .filter(self.model.business_profile_uuid == business_uuid)
-                .options(joinedload(Device.asset))
-                .options(joinedload(Device.inventory).joinedload(Inventory.images))
-                .all()
-            )
-            return devices
-
-    def assign_imei(self, device_uuid, imei):
-        with self.session_factory() as session:
-            try:
-                device = (
-                    session.query(self.model)
-                    .filter(self.model.uuid == device_uuid)
-                    .first()
+                .options(
+                    joinedload(Device.asset),
+                    joinedload(Device.inventory).joinedload(Inventory.images)
                 )
+            )
+            result = await session.execute(query)
+            return result.unique().scalars().all()
+
+    async def assign_imei(self, device_uuid, imei):
+        async with self.session_factory() as session:
+            try:
+                query = select(self.model).filter(self.model.uuid == device_uuid)
+                result = await session.execute(query)
+                device = result.scalar_one_or_none()
+                
                 if not device:
                     raise Exception(f"Device not found for the ID: {device_uuid}")
+                
                 device.device_imei = imei
-                session.commit()
-                session.refresh(device)
+                await session.commit()
+                await session.refresh(device)
                 return device
             except Exception as e:
-                session.rollback()
+                await session.rollback()
                 raise e
 
-    def get_device_for_engine_shutdown(self, device_imei: str):
-        with self.session_factory() as session:
+    async def get_device_for_engine_shutdown(self, device_imei: str):
+        async with self.session_factory() as session:
             try:
-                device = (
-                    session.query(self.model)
+                query = (
+                    select(self.model)
                     .filter(self.model.device_imei == device_imei)
                     .options(
                         joinedload(Device.asset),
-                    )
-                    .options(
                         joinedload(Device.manufacturer),
                     )
-                    .first()
                 )
-                return device
+                result = await session.execute(query)
+                return result.unique().scalar_one_or_none()
             except Exception as e:
                 raise e

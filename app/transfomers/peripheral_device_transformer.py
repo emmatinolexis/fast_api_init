@@ -23,7 +23,7 @@ def gas_node_config_transformer(device_node_config: DeviceNodeConfig):
     }
 
 
-def peripheral_device_transformer(
+async def peripheral_device_transformer(
     device: PeripheralDevice,
     device_repo: PeripheralDeviceRepository,
     config_repo: DeviceNodeConfigRepository,
@@ -58,7 +58,7 @@ def peripheral_device_transformer(
         if cylinder:
             gas_cylinder_data = {"name": cylinder.cylinder_name, "uuid": cylinder.uuid}
 
-    latest_event = device_event_repository.get_device_latest_reading(device.node_id)
+    latest_event = await device_event_repository.get_device_latest_reading(device.node_id)
 
     if latest_event:
         if device.device_type == PeripheralDeviceType.PYROGUARD_NODE_DEVICE:

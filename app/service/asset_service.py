@@ -533,11 +533,11 @@ class AssetService(BaseService):
         except Exception as e:
             raise e
 
-    def shutdown_engine(self, asset_uuid: uuid):
+    async def shutdown_engine(self, asset_uuid: uuid):
         try:
-            asset = self.get_by_uuid(asset_uuid)
+            asset = await self.get_by_uuid(asset_uuid)
             if asset.device_imei:
-                asset_device = self.device_repository.get_device_for_engine_shutdown(
+                asset_device = await self.device_repository.get_device_for_engine_shutdown(
                     asset.device_imei
                 )
                 return asset_device
