@@ -26,7 +26,7 @@ async def create_notification_handler(
     service: NotificationService = Depends(Provide[Container.notification_service]),
 ):
     try:
-        notification = service.add(payload)
+        notification = await service.add(payload)
         return send_data(notification)
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
@@ -42,7 +42,7 @@ async def get_user_notifications_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        notifications = service.get_user_notifications(user_uuid, is_read)
+        notifications = await service.get_user_notifications(user_uuid, is_read)
         return send_data(notifications)
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
@@ -56,7 +56,7 @@ async def clear_all_notifications_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        service.clear_all_notifications(current_user.uuid)
+        await service.clear_all_notifications(current_user.uuid)
         return send_info(messages.NOTIFICATIONS_CLEARED)
     except Exception as e:
         msg = messages.UPDATE_FAILED + msg_prefix
@@ -71,7 +71,7 @@ async def read_notification_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        service.read_notification(notification_uuid)
+        await service.read_notification(notification_uuid)
         return send_info(messages.UPDATE_SUCCESS + msg_prefix)
     except Exception as e:
         msg = messages.UPDATE_FAILED + msg_prefix

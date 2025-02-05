@@ -47,15 +47,17 @@ class OnboardingService(BaseService):
         self.feature_repository = feature_repository
         super().__init__(onboarding_repository)
 
-    def create_individual_onboarding(self, onboarding: OnboardingPayload):
+    async def create_individual_onboarding(self, onboarding: OnboardingPayload):
         try:
-            if self.user_repository.read_by_uuid(onboarding.user_uuid) is None:
+            if await self.user_repository.read_by_uuid(onboarding.user_uuid) is None:
                 raise NotFoundError(
                     detail=messages.USER_NOT_FOUND + str(onboarding.user_uuid)
                 )
 
             if (
-                self.asset_type_repository.read_by_uuid(onboarding.asset_type_uuid)
+                await self.asset_type_repository.read_by_uuid(
+                    onboarding.asset_type_uuid
+                )
                 is None
             ):
                 raise NotFoundError(
@@ -63,13 +65,16 @@ class OnboardingService(BaseService):
                     + str(onboarding.asset_type_uuid)
                 )
 
-            if self.package_repository.read_by_uuid(onboarding.package_uuid) is None:
+            if (
+                await self.package_repository.read_by_uuid(onboarding.package_uuid)
+                is None
+            ):
                 raise NotFoundError(
                     detail=messages.PACKAGE_NOT_FOUND + str(onboarding.package_uuid)
                 )
 
             for item in onboarding.features_uuid:
-                if self.feature_repository.read_by_uuid(item) is None:
+                if await self.feature_repository.read_by_uuid(item) is None:
                     raise NotFoundError(detail=messages.FEATURE_NOT_FOUND + str(item))
 
             onboarding_item = OnboardingIndividualInput(
@@ -80,7 +85,7 @@ class OnboardingService(BaseService):
                 onboarding_type=AccountType.INDIVIDUAL,
             )
 
-            create_onboarding = self.onboarding_repository.create(onboarding_item)
+            create_onboarding = await self.onboarding_repository.create(onboarding_item)
 
             for item in onboarding.features_uuid:
                 feature = {
@@ -88,7 +93,7 @@ class OnboardingService(BaseService):
                     "feature_uuid": item,
                 }
 
-                self.onboading_feature_assignment_repository.create(
+                await self.onboading_feature_assignment_repository.create(
                     OnboardingFeatureAssignment(**feature)
                 )
 
@@ -143,6 +148,58 @@ class OnboardingService(BaseService):
 
             # update user onboarding status
             self.user_repository.update_user_onboard_status(onboarding.user_uuid)
+
+            return create_onboarding
+
+        except Exception as e:
+            raise e
+
+    async def create_business_onboarding(self, onboarding: BusinessOnboardingPayload):
+        try:
+            if await self.user_repository.read_by_uuid(onboarding.user_uuid) is None:
+                raise NotFoundError(
+                    detail=messages.USER_NOT_FOUND + str(onboarding.user_uuid)
+                )
+
+            for item in onboarding.features_uuid:
+                if await self.feature_repository.read_by_uuid(item) is None:
+                    raise NotFoundError(detail=messages.FEATURE_NOT_FOUND + str(item))
+
+            for item in onboarding.asset_types_uuid:
+                if await self.asset_type_repository.read_by_uuid(item) is None:
+                    raise NotFoundError(detail=messages.ASSET_NOT_FOUND + str(item))
+
+            # Create onboarding
+            onboarding_item = OnboardingBusinessInput(
+                number_of_assets=onboarding.number_of_assets,
+                user_uuid=onboarding.user_uuid,
+                onboarding_type=AccountType.BUSINESS,
+            )
+
+            create_onboarding = await self.onboarding_repository.create(onboarding_item)
+
+            # Assign features to onboarding
+            for item in onboarding.features_uuid:
+                feature = {
+                    "onboarding_uuid": create_onboarding.uuid,
+                    "feature_uuid": item,
+                }
+                await self.onboading_feature_assignment_repository.create(
+                    OnboardingFeatureAssignment(**feature)
+                )
+
+            # Assign asset types to onboarding
+            for item in onboarding.asset_types_uuid:
+                asset_type = {
+                    "onboarding_uuid": create_onboarding.uuid,
+                    "asset_type_uuid": item,
+                }
+                await self.onboarding_asset_type_assignment_repository.create(
+                    OnboardingAssetTypeAssignment(**asset_type)
+                )
+
+            # Update user onboarding status
+            await self.user_repository.update_user_onboard_status(onboarding.user_uuid)
 
             return create_onboarding
 

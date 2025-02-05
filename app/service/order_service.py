@@ -1,7 +1,6 @@
 from typing import Optional
 from uuid import UUID
-
-import requests
+import httpx
 
 from app.core.exceptions import NotFoundError
 from app.core.settings import settings
@@ -36,36 +35,36 @@ class OrderService(BaseService):
 
         super().__init__(order_repository)
 
-    def get_order_by_uuid(self, order_uuid: UUID):
+    async def get_order_by_uuid(self, order_uuid: UUID):
         try:
-            order = self.order_repository.get_order_by_uuid(order_uuid)
+            order = await self.order_repository.get_order_by_uuid(order_uuid)
             if not order:
                 raise NotFoundError(detail=order_uuid)
             return order
         except Exception as e:
             raise e
 
-    def create_order(self, order_payload: OrderPayload):
+    async def create_order(self, order_payload: OrderPayload):
         try:
-            order = self.order_repository.create_order(order_payload)
+            order = await self.order_repository.create_order(order_payload)
             if order:
                 for device in order_payload.devices:
-                    self.order_device_assignments_repository.create_order_device(
+                    await self.order_device_assignments_repository.create_order_device(
                         device, order.uuid
                     )
 
-                    self.inventory_repository.reduce_inventory_no(
+                    await self.inventory_repository.reduce_inventory_no(
                         device.inventory_uuid, device.quantity
                     )
 
-                self.order_shipping_address_repository.create_order_address(
+                await self.order_shipping_address_repository.create_order_address(
                     order_payload, order.uuid
                 )
                 return order
         except Exception as e:
             raise e
 
-    def get_all_orders(
+    async def get_all_orders(
         self,
         page=1,
         page_size=10,
@@ -75,7 +74,7 @@ class OrderService(BaseService):
         status: Optional[OrderStatus] = None,
     ):
         try:
-            orders = self.order_repository.get_all_orders(
+            orders = await self.order_repository.get_all_orders(
                 page=page,
                 page_size=page_size,
                 search_query=search_query,
@@ -87,9 +86,10 @@ class OrderService(BaseService):
         except Exception as e:
             raise e
 
-    def update_order_status_to_ready(self, order_uuid: str):
+    async def update_order_status_to_ready(self, order_uuid: str):
         try:
-            order = self.order_repository.update_order_status(
+            # Update order status to READY_FOR_PICKUP
+            order = await self.order_repository.update_order_status(
                 order_uuid, OrderStatus.READY_FOR_PICKUP
             )
 
@@ -123,34 +123,36 @@ class OrderService(BaseService):
                     "created_at": order.created_at.isoformat(),
                 }
 
-                rtd_order = requests.post(
-                    settings.RTD_BASE_URL,
-                    headers=settings.RTD_HEADERS,
-                    json=rtd_data,
-                )
-            return rtd_order.json()
+                # Make the HTTP request asynchronously
+                async with httpx.AsyncClient() as client:
+                    rtd_order = await client.post(
+                        settings.RTD_BASE_URL,
+                        headers=settings.RTD_HEADERS,
+                        json=rtd_data,
+                    )
+                return rtd_order.json()
         except Exception as e:
             raise e
 
-    def update_order_status(self, order_uuid: str, status: str):
+    async def update_order_status(self, order_uuid: str, status: str):
         try:
-            order = self.order_repository.update_order_status(order_uuid, status)
+            order = await self.order_repository.update_order_status(order_uuid, status)
             return order
         except Exception as e:
             raise e
 
-    def update_order_status_to_delivered(self, order_uuid: str):
+    async def update_order_status_to_delivered(self, order_uuid: str):
         try:
-            order = self.order_repository.update_order_status(
+            order = await self.order_repository.update_order_status(
                 order_uuid, OrderStatus.DELIVERED
             )
             return order
         except Exception as e:
             raise e
 
-    def get_total_orders_count(self, search_query=None):
+    async def get_total_orders_count(self, search_query=None):
         try:
-            total_orders = self.order_repository.get_total_orders_count(
+            total_orders = await self.order_repository.get_total_orders_count(
                 search_query=search_query
             )
             return total_orders

@@ -34,7 +34,7 @@ async def get_all_onboardings_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.get_list())
+        return send_data(await service.get_list())
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -48,7 +48,7 @@ async def create_individual_onboarding_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        onboarding = service.create_individual_onboarding(payload)
+        onboarding = await service.create_individual_onboarding(payload)
         return send_data(onboarding)
     except NotFoundError as e:
         return send_client_side_error(user_msg=str(e.detail))
@@ -65,7 +65,7 @@ async def create_organisation_onboarding_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        onboarding = service.create_business_onboarding(payload)
+        onboarding = await service.create_business_onboarding(payload)
         return send_data(onboarding)
     except NotFoundError as e:
         return send_client_side_error(user_msg=str(e.detail))
@@ -83,7 +83,7 @@ async def update_onboarding_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        onboarding = service.patch_by_uuid(uuid, payload)
+        onboarding = await service.patch_by_uuid(uuid, payload)
         if onboarding is None:
             return send_client_side_error(user_msg=messages.ONBOARDING_NOT_FOUND + uuid)
         return send_data(onboarding)
@@ -100,7 +100,7 @@ async def get_onboarding_by_uuid_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.get_by_uuid(uuid))
+        return send_data(await service.get_by_uuid(uuid))
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
@@ -114,7 +114,7 @@ async def delete_onboarding_by_uuid_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        service.remove_by_uuid(uuid)
+        await service.remove_by_uuid(uuid)
         return send_info(messages.DELETE_SUCCESS + msg_prefix)
     except NotFoundError as e:
         return send_client_side_error(

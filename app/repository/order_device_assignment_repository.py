@@ -12,8 +12,8 @@ class OrderDeviceAssignmentRepository(BaseRepository):
         self.session_factory = session_factory
         super().__init__(session_factory, OrderDeviceAssignment)
 
-    def create_order_device(self, device, order_uuid: str):
-        with self.session_factory() as session:
+    async def create_order_device(self, device, order_uuid: str):
+        async with self.session_factory() as session:  # Async session
             try:
                 device_data = OrderDeviceAssignment(
                     inventory_uuid=device.inventory_uuid,
@@ -21,7 +21,7 @@ class OrderDeviceAssignmentRepository(BaseRepository):
                     order_uuid=order_uuid,
                 )
                 session.add(device_data)
-                session.commit()
+                await session.commit()
             except Exception as e:
-                session.rollback()
+                await session.rollback()
                 raise e

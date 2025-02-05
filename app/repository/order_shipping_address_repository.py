@@ -13,8 +13,8 @@ class OrderShippingAddressRepository(BaseRepository):
         self.session_factory = session_factory
         super().__init__(session_factory, OrderShippingAddress)
 
-    def create_order_address(self, order_payload: OrderPayload, order_uuid: str):
-        with self.session_factory() as session:
+    async def create_order_address(self, order_payload: OrderPayload, order_uuid: str):
+        async with self.session_factory() as session:
             try:
                 address = OrderShippingAddress(
                     country=order_payload.shipping_address.country,
@@ -32,9 +32,9 @@ class OrderShippingAddressRepository(BaseRepository):
                     city=order_payload.shipping_address.city,
                 )
                 session.add(address)
-                session.commit()
-                session.refresh(address)
+                await session.commit()
+                await session.refresh(address)
                 return address
             except Exception as e:
-                session.rollback()
+                await session.rollback()
                 raise e
