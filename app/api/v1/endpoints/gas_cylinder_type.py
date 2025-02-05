@@ -46,7 +46,7 @@ async def get_all_gas_cylinder_types_handler(
     ),
 ):
     try:
-        data = service.filter_by_status_and_name(
+        data = await service.filter_by_status_and_name(
             status=status, search_query=search_query, page=page, page_size=page_size
         )
         return send_data_with_info(data, messages.SUCCESS_MESSAGE)
@@ -67,7 +67,8 @@ async def create_gas_cylinder_type_handler(
     ),
 ):
     try:
-        return send_data_with_info(service.add(payload), messages.SUCCESS_MESSAGE)
+        data = await service.add(payload)
+        return send_data_with_info(data, messages.SUCCESS_MESSAGE)
     except Exception as e:
         msg = messages.CREATE_FAILED + f"{msg_prefix}"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -86,7 +87,7 @@ async def update_gas_cylinder_type_handler(
     ),
 ):
     try:
-        cylinder_type = service.get_by_uuid(cylinder_type_uuid)
+        cylinder_type = await service.get_by_uuid(cylinder_type_uuid)
         if not cylinder_type:
             return send_client_side_error(
                 user_msg=messages.GAS_CYLINDER_TYPE_NOT_FOUND + cylinder_type_uuid
@@ -112,7 +113,7 @@ async def create_other_gas_cylinder_type_handler(
     ),
 ):
     try:
-        created_cylinder_type = service.create_other_gas_cylinder_type(
+        created_cylinder_type = await service.create_other_gas_cylinder_type(
             user_uuid, payload
         )
         return send_data_with_info(created_cylinder_type, messages.SUCCESS_MESSAGE)

@@ -23,35 +23,35 @@ class GasCylinderService(BaseService):
         self.gas_device_repository = gas_device_repository
         super().__init__(gas_cylinder_repository)
 
-    def link_to_gas_device(self, gas_cylinder_uuid: str, gas_device_uuid: str):
-        self.gas_cylinder_repository.update_attr_by_uuid(
+    async def link_to_gas_device(self, gas_cylinder_uuid: str, gas_device_uuid: str):
+        await self.gas_cylinder_repository.update_attr_by_uuid(
             gas_cylinder_uuid, "gas_device_uuid", gas_device_uuid
         )
 
-        self.gas_device_repository.update_attr_by_uuid(
+        await self.gas_device_repository.update_attr_by_uuid(
             gas_device_uuid, "status", DeviceStatus.ASSIGNED
         )
 
-        return self.get_by_uuid(gas_cylinder_uuid)
+        return await self.get_by_uuid(gas_cylinder_uuid)
 
-    def unlink_gas_cylinder(self, gas_cylinder_uuid: str):
-        cylinder = self.get_by_uuid(gas_cylinder_uuid)
+    async def unlink_gas_cylinder(self, gas_cylinder_uuid: str):
+        cylinder = await self.get_by_uuid(gas_cylinder_uuid)
         gas_device_uuid = cylinder.gas_device_uuid
 
-        self.gas_cylinder_repository.update_attr_by_uuid(
+        await self.gas_cylinder_repository.update_attr_by_uuid(
             gas_cylinder_uuid, "gas_device_uuid", None
         )
 
-        self.gas_device_repository.update_attr_by_uuid(
+        await self.gas_device_repository.update_attr_by_uuid(
             gas_device_uuid, "status", DeviceStatus.NOT_ASSIGNED
         )
 
         return cylinder
 
-    def get_user_cylinders(self, user_uuid: str):
-        return self.gas_cylinder_repository.read_all_by_user_uuid(user_uuid)
+    async def get_user_cylinders(self, user_uuid: str):
+        return await self.gas_cylinder_repository.read_all_by_user_uuid(user_uuid)
 
-    def create_gas_cylinder_without_device(
+    async def create_gas_cylinder_without_device(
         self,
         payload: CreateGasCylinderPayload,
         user_uuid: str,
@@ -63,14 +63,14 @@ class GasCylinderService(BaseService):
 
             # Create a gas cylinder if cylinder_name is provided
             if payload.cylinder_name:
-                cylinder = self.gas_cylinder_repository.create_gas_cylinder(
+                cylinder = await self.gas_cylinder_repository.create_gas_cylinder(
                     payload, user_uuid, business_uuid
                 )
 
             # If a gas_cylinder_uuid and gas_device_serial_number are provided, handle device linking
             if payload.gas_cylinder_uuid and payload.gas_device_serial_number:
                 # Fetch the gas device by serial number
-                gas_device = self.gas_device_repository.get_device_by_serial_no(
+                gas_device = await self.gas_device_repository.get_device_by_serial_no(
                     payload.gas_device_serial_number
                 )
                 # If the device is not found, raise an error
@@ -81,39 +81,39 @@ class GasCylinderService(BaseService):
 
                 # Check if there is already a cylinder associated with this gas device
                 cylinder_with_given_gas_device = (
-                    self.gas_cylinder_repository.get_cylinder_by_device_serial_number(
+                    await self.gas_cylinder_repository.get_cylinder_by_device_serial_number(
                         payload.gas_device_serial_number
                     )
                 )
 
                 # If a cylinder is associated with the device, dissociate the device from it
                 if cylinder_with_given_gas_device:
-                    self.gas_cylinder_repository.update_attr_by_uuid(
+                    await self.gas_cylinder_repository.update_attr_by_uuid(
                         cylinder_with_given_gas_device.uuid,
                         "gas_device_serial_number",
                         None,
                     )
-                    self.gas_cylinder_repository.update_attr_by_uuid(
+                    await self.gas_cylinder_repository.update_attr_by_uuid(
                         cylinder_with_given_gas_device.uuid,
                         "status",
                         ActiveStatus.INACTIVE,
                     )
 
                 # Now associate the gas device with the specified cylinder
-                self.gas_cylinder_repository.update_attr_by_uuid(
+                await self.gas_cylinder_repository.update_attr_by_uuid(
                     payload.gas_cylinder_uuid,
                     "gas_device_serial_number",
                     payload.gas_device_serial_number,
                 )
 
                 # Update the gas device status and its associated building
-                self.gas_device_repository.update_attr_by_uuid(
+                await self.gas_device_repository.update_attr_by_uuid(
                     gas_device.uuid, "status", DeviceStatus.ASSIGNED
                 )
-                self.gas_cylinder_repository.update_attr_by_uuid(
+                await self.gas_cylinder_repository.update_attr_by_uuid(
                     payload.gas_cylinder_uuid, "status", ActiveStatus.ACTIVE
                 )
-                self.gas_device_repository.update_attr_by_uuid(
+                await self.gas_device_repository.update_attr_by_uuid(
                     gas_device.uuid, "building_uuid", payload.building_uuid
                 )
 
@@ -124,29 +124,29 @@ class GasCylinderService(BaseService):
             # Handle exceptions and raise as needed
             raise e
 
-    def get_cylinder_by_uuid(
+    async def get_cylinder_by_uuid(
         self,
         cylinder_uuid: str = None,
     ):
         try:
-            return self.gas_cylinder_repository.get_gas_cylinder_by_uuid(cylinder_uuid)
+            return await self.gas_cylinder_repository.get_gas_cylinder_by_uuid(cylinder_uuid)
         except Exception as e:
             raise e
 
-    def get_cylinder_by_device_serial(self, serial_number: str):
+    async def get_cylinder_by_device_serial(self, serial_number: str):
         try:
-            return self.gas_cylinder_repository.get_cylinder_by_device_serial_number(
+            return await self.gas_cylinder_repository.get_cylinder_by_device_serial_number(
                 serial_number
             )
         except Exception as e:
             raise e
 
-    def delete_gas_cylinder(self, cylinder_uuid: str, user: User):
+    async def delete_gas_cylinder(self, cylinder_uuid: str, user: User):
         try:
             user_uuid = user.uuid
             user_account_type = user.account_type
 
-            cylinder = self.gas_cylinder_repository.read_by_uuid(cylinder_uuid)
+            cylinder = await self.gas_cylinder_repository.read_by_uuid(cylinder_uuid)
             if not cylinder:
                 raise NotFoundError(messages.GAS_CYLINDER_NOT_FOUND + cylinder_uuid)
 
@@ -165,16 +165,16 @@ class GasCylinderService(BaseService):
                 cylinder.gas_device_serial_number
             )
             if device:
-                self.gas_device_repository.update_attr_by_uuid(
+                await self.gas_device_repository.update_attr_by_uuid(
                     device.uuid, "status", DeviceStatus.NOT_ASSIGNED
                 )
 
-            self.gas_cylinder_repository.delete_by_uuid(cylinder_uuid)
+            await self.gas_cylinder_repository.delete_by_uuid(cylinder_uuid)
 
         except Exception as e:
             raise Exception(f"An unexpected error occurred: {str(e)}")
 
-    def create_spare_cylinder(
+    async def create_spare_cylinder(
         self,
         payload: CreateSpareGasCylinder,
         user_uuid: str,
@@ -186,7 +186,7 @@ class GasCylinderService(BaseService):
                 user_uuid=user_uuid,
                 business_profile_uuid=business_profile_uuid,
             )
-            created_cylinder = self.gas_cylinder_repository.create(full_payload)
+            created_cylinder = await self.gas_cylinder_repository.create(full_payload)
             return gas_cylinder_transformer(created_cylinder)
 
         except Exception as e:

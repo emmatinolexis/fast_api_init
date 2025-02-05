@@ -60,70 +60,65 @@ class FuelLogRepository(BaseRepository):
 
         return query
 
-    def get_fuel_logs_by_user_uuid(
+    async def get_fuel_logs_by_user_uuid(
         self,
         user_uuid: str,
         search: str = None,
         start_date: str = None,
         end_date: str = None,
     ):
-        with self.session_factory() as session:
-            query = session.query(FuelLog).filter(FuelLog.user_uuid == user_uuid)
+        async with self.session_factory() as session:
+            query = select(self.FuelLog).filter(FuelLog.user_uuid == user_uuid)
             query = self._apply_common_filters(query, search, start_date, end_date)
-
             query = query.order_by(FuelLog.created_at.desc())
-            return query.all()
+            
+            result = await session.execute(query)
+            return result.scalars().all()
 
-    def get_fuel_logs_by_business_uuid(
+    async def get_fuel_logs_by_business_uuid(
         self,
         business_uuid: str,
         search: str = None,
         start_date: str = None,
         end_date: str = None,
     ):
-        with self.session_factory() as session:
+        async with self.session_factory() as session:
             query = (
-                session.query(FuelLog)
+                select(self.FuelLog)
                 .outerjoin(Driver, FuelLog.driver_uuid == Driver.uuid)
                 .filter(FuelLog.business_profile_uuid == business_uuid)
             )
-
             query = self._apply_common_filters(
                 query, search, start_date, end_date, is_driver_joined=True
             )
-
             query = query.order_by(FuelLog.created_at.desc())
-            return query.all()
+            
+            result = await session.execute(query)
+            return result.scalars().all()
 
-    def get_fuel_log_by_asset(
+    async def get_fuel_log_by_asset(
         self,
         asset_uuid: str,
         start_date: str,
         end_date: str,
     ):
-        with self.session_factory() as session:
-            date_from_obj = datetime.strptime(
-                start_date, get_settings().DATE_FORMAT_YEAR
-            ).date()
-            date_to_obj = datetime.strptime(
-                end_date, get_settings().DATE_FORMAT_YEAR
-            ).date()
+        async with self.session_factory() as session:
+            # Convert date strings to date objects
+            date_from_obj = datetime.strptime(start_date, get_settings().DATE_FORMAT_YEAR).date()
+            date_to_obj = datetime.strptime(end_date, get_settings().DATE_FORMAT_YEAR).date()
 
-            # Build the base query
-            base_query = session.query(self.model).options(
-                joinedload(self.model.asset).joinedload(Asset.equipment)
+            # Build query with filters
+            stmt = (
+                select(self.model)
+                .options(joinedload(self.model.asset).joinedload(Asset.equipment))
+                .filter(
+                    self.model.asset_uuid == asset_uuid,
+                    and_(
+                        cast(self.model.purchase_date, Date) >= date_from_obj,
+                        cast(self.model.purchase_date, Date) <= date_to_obj,
+                    ),
+                )
             )
-
-            # Define the filters
-            filters = [
-                self.model.asset_uuid == asset_uuid,
-                and_(
-                    cast(self.model.purchase_date, Date) >= date_from_obj,
-                    cast(self.model.purchase_date, Date) <= date_to_obj,
-                ),
-            ]
-
-            # Apply the filters and execute the query
-            violations = base_query.filter(and_(*filters)).all()
-
-            return violations
+            # Execute query
+            result = await session.execute(stmt)
+            return result.scalars().all()

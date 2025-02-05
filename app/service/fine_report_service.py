@@ -7,16 +7,16 @@ class FineReportService(BaseService):
         self.fine_report_repository = fine_report_repository
         super().__init__(fine_report_repository)
 
-    def get_fine_reports(self):
+    async def get_fine_reports(self):
         try:
-            reports = self.fine_report_repository.get_fine_reports()
+            reports = await self.fine_report_repository.get_fine_reports()
             return reports
         except Exception as e:
             raise e
 
-    def get_fine_report(self, uuid: str):
+    async def get_fine_report(self, uuid: str):
         try:
-            reports = self.fine_report_repository.get_fine_report(uuid)
+            reports = await self.fine_report_repository.get_fine_report(uuid)
             return reports
         except Exception as e:
             raise e

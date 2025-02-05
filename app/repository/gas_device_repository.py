@@ -12,71 +12,63 @@ class GasDeviceRepository(BaseRepository):
         self.session_factory = session_factory
         super().__init__(session_factory, PeripheralDevice)
 
-    def get_by_uuid(self, uuid: str):
-        with self.session_factory() as session:
-            return (
-                session.query(PeripheralDevice)
-                .filter(PeripheralDevice.uuid == uuid)
-                .first()
+    async def get_by_uuid(self, uuid: str):
+        async with self.session_factory() as session:
+            result = await session.execute(
+                select(PeripheralDevice).filter(PeripheralDevice.uuid == uuid)
             )
+            return result.scalars().first()
 
-    def get_device_by_serial_no(self, device_serial_no: str):
-        with self.session_factory() as session:
-            device = (
-                session.query(self.model)
-                .filter(self.model.serial_number == device_serial_no)
-                .first()
+    async def get_device_by_serial_no(self, device_serial_no: str):
+        async with self.session_factory() as session:
+            result = await session.execute(
+                select(self.model).filter(self.model.serial_number == device_serial_no)
             )
-            return device
+            return result.scalars().first()
 
-    def search(self, serial_number: str = None):
-        with self.session_factory() as session:
-            query = session.query(self.model)
+    async def search(self, serial_number: Optional[str] = None):
+        async with self.session_factory() as session:
+            stmt = select(self.model)
+            
             if serial_number:
-                query = query.filter(
-                    self.model.serial_number.ilike(f"%{serial_number}%")
-                )
-            return query.all()
+                stmt = stmt.filter(self.model.serial_number.ilike(f"%{serial_number}%"))
+            
+            result = await session.execute(stmt)
+            return result.scalars().all()
 
-    def get_user_devices(self, user_uuid: str):
-        with self.session_factory() as session:
-            return (
-                session.query(self.model)
-                .filter(self.model.user_uuid == user_uuid)
-                .all()
+    async def get_user_devices(self, user_uuid: str):
+        async with self.session_factory() as session:
+            result = await session.execute(
+                select(self.model).filter(self.model.user_uuid == user_uuid)
             )
+            return result.scalars().all()
 
-    def get_business_devices(self, business_profile_uuid: str):
-        with self.session_factory() as session:
-            return (
-                session.query(self.model)
-                .filter(self.model.business_profile_uuid == business_profile_uuid)
-                .all()
+    async def get_business_devices(self, business_profile_uuid: str):
+        async with self.session_factory() as session:
+            result = await session.execute(
+                select(self.model).filter(self.model.business_profile_uuid == business_profile_uuid)
             )
+            return result.scalars().all()
 
-    def get_building_devices(self, building_uuid: str, device_type: str = None):
-        with self.session_factory() as session:
-            query = session.query(self.model).filter(
-                self.model.building_uuid == building_uuid
-            )
+    async def get_building_devices(self, building_uuid: str, device_type: Optional[str] = None):
+        async with self.session_factory() as session:
+            stmt = select(self.model).filter(self.model.building_uuid == building_uuid)
+
             if device_type:
-                query = query.filter(self.model.device_type == device_type)
-            return query.all()
+                stmt = stmt.filter(self.model.device_type == device_type)
 
-    def get_all_devices(self, serial_number: str = None, device_type: str = None):
-        with self.session_factory() as session:
-            query = session.query(self.model)
+            result = await session.execute(stmt)
+            return result.scalars().all()
 
-            # Apply filtering based on serial_number if provided
+    async def get_all_devices(self, serial_number: Optional[str] = None, device_type: Optional[str] = None):
+        async with self.session_factory() as session:
+            stmt = select(self.model)
+
             if serial_number:
-                query = query.filter(
-                    self.model.serial_number.ilike(f"%{serial_number}%")
-                )
+                stmt = stmt.filter(self.model.serial_number.ilike(f"%{serial_number}%"))
 
-            # Apply filtering based on device_type if provided
             if device_type:
-                query = query.filter(self.model.device_type == device_type)
+                stmt = stmt.filter(self.model.device_type == device_type)
 
-            # Pagination
-
-            return query.all()
+            result = await session.execute(stmt)
+            return result.scalars().all()

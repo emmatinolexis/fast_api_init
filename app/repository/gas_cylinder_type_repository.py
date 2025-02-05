@@ -14,32 +14,42 @@ class GasCylinderTypeRepository(BaseRepository):
         self.session_factory = session_factory
         super().__init__(session_factory, CylinderTypes)
 
-    def filter_by_status_and_name(
+    
+    async def filter_by_status_and_name(
         self,
         status: Optional[str] = None,
         search_query: Optional[str] = None,
         page: int = 1,
         page_size: int = 10,
     ):
-        with self.session_factory() as session:
-            query = session.query(CylinderTypes)
+        async with self.session_factory() as session:
+            stmt = select(CylinderTypes)
 
+            # Apply status filter
             if status:
-                query = query.filter(CylinderTypes.status == ActiveStatus(status))
+                stmt = stmt.filter(CylinderTypes.status == ActiveStatus(status))
 
+            # Apply search filter
             if search_query:
-                query = query.filter(
-                    cast(CylinderTypes.name, String).ilike(f"%{search_query}%")
-                )
+                stmt = stmt.filter(cast(CylinderTypes.name, String).ilike(f"%{search_query}%"))
 
-            total_records = query.count()
+            # Get total record count
+            total_records_stmt = select(func.count()).select_from(stmt.subquery())
+            total_records_result = await session.execute(total_records_stmt)
+            total_records = total_records_result.scalar()
+
+            # Apply pagination
             offset = (page - 1) * page_size
-            cylinder_types = query.offset(offset).limit(page_size).all()
+            stmt = stmt.offset(offset).limit(page_size)
+
+            # Execute main query
+            result = await session.execute(stmt)
+            cylinder_types = result.scalars().all()
 
             return {
                 "data": cylinder_types,
                 "total_records": total_records,
                 "page": page,
                 "page_size": page_size,
-                "total_pages": (total_records + page_size - 1) // page_size,
+                "total_pages": (total_records + page_size - 1) // page_size if total_records else 0,
             }

@@ -20,16 +20,16 @@ class GasCylinderEventService(BaseService):
         self.gas_cylinder_type_repository = gas_cylinder_type_repository
         super().__init__(gas_cylinder_event_repository)
 
-    def query_between_dates(
+    async def query_between_dates(
         self, device_serial_number: str, start_date: str, end_date: str
     ):
-        return self.gas_cylinder_event_repository.read_all_gas_events_by_date_range(
+        return await self.gas_cylinder_event_repository.read_all_gas_events_by_date_range(
             device_serial_number=device_serial_number,
             start_date=start_date,
             end_date=end_date,
         )
 
-    def generate_report(
+    async def generate_report(
         self,
         user_uuid: str,
         start_date: str,
@@ -37,7 +37,7 @@ class GasCylinderEventService(BaseService):
         search: Optional[str] = None,
     ):
         # Read all cylinders associated with the user
-        user_cylinders = self.gas_cylinder_repository.read_all_by_user_uuid(user_uuid)
+        user_cylinders = await self.gas_cylinder_repository.read_all_by_user_uuid(user_uuid)
 
         if search:
             user_cylinders = [
@@ -70,7 +70,7 @@ class GasCylinderEventService(BaseService):
             )  # Assuming device_name is an attribute of the cylinder
 
             # Query events between the specified dates
-            events = self.query_between_dates(
+            events = await self.query_between_dates(
                 device_serial_number=device_serial_number,
                 start_date=start_date,
                 end_date=end_date,
@@ -138,7 +138,7 @@ class GasCylinderEventService(BaseService):
 
         return all_devices_daily_usage
 
-    def generate_report_business(
+    async def generate_report_business(
         self,
         business_uuid: str,
         start_date: str,
@@ -146,7 +146,7 @@ class GasCylinderEventService(BaseService):
         search: Optional[str] = None,
     ):
         # Read all cylinders associated with the business
-        business_cylinders = self.gas_cylinder_repository.read_all_by_business_uuid(
+        business_cylinders = await self.gas_cylinder_repository.read_all_by_business_uuid(
             business_uuid
         )
 
@@ -179,7 +179,7 @@ class GasCylinderEventService(BaseService):
             device_name = cylinder.cylinder_name
 
             # Query events between the specified dates
-            events = self.query_between_dates(
+            events = await self.query_between_dates(
                 device_serial_number=device_serial_number,
                 start_date=start_date,
                 end_date=end_date,
@@ -242,11 +242,11 @@ class GasCylinderEventService(BaseService):
 
         return all_devices_daily_usage
 
-    def generate_report_single_cylinder(
+    async def generate_report_single_cylinder(
         self, cylinder_uuid: str, start_date: str, end_date: str
     ):
         # Fetch the cylinder by its UUID
-        cylinder = self.gas_cylinder_repository.read_by_uuid(cylinder_uuid)
+        cylinder = await self.gas_cylinder_repository.read_by_uuid(cylinder_uuid)
 
         if not cylinder or cylinder.gas_device_serial_number is None:
             return None  # Cylinder does not exist or has no device serial number
@@ -255,7 +255,7 @@ class GasCylinderEventService(BaseService):
         device_name = cylinder.cylinder_name
 
         # Query events between the specified dates
-        events = self.query_between_dates(
+        events = await self.query_between_dates(
             device_serial_number=device_serial_number,
             start_date=start_date,
             end_date=end_date,

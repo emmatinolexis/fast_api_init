@@ -13,9 +13,9 @@ class GateWayConfigurationService(BaseService):
         super().__init__(gateway_configuration_repository)
         self.gateway_configuration_repository = gateway_configuration_repository
 
-    def get_gateway_configuration_by_uuid(self, uuid: str):
+    async def get_gateway_configuration_by_uuid(self, uuid: str):
         config = (
-            self.gateway_configuration_repository.get_gateway_configuration_by_uuid(
+            await self.gateway_configuration_repository.get_gateway_configuration_by_uuid(
                 uuid
             )
         )
@@ -23,18 +23,18 @@ class GateWayConfigurationService(BaseService):
             raise NotFoundError("Gateway configuration not found")
         return config
 
-    def create_gateway_configuration(
+    async def create_gateway_configuration(
         self, gateway_configuration: GatewayConfigurationSchema
     ):
         data = gateway_configuration.model_dump()
-        return self.gateway_configuration_repository.create_gateway_configuration(data)
+        return await self.gateway_configuration_repository.create_gateway_configuration(data)
 
-    def update_gateway_configuration_by_uuid(
+    async def update_gateway_configuration_by_uuid(
         self, uuid: str, gateway_configuration: GatewayConfigurationSchema
     ):
         data = gateway_configuration.model_dump(exclude_unset=True)
         config = (
-            self.gateway_configuration_repository.update_gateway_configuration_by_uuid(
+            await self.gateway_configuration_repository.update_gateway_configuration_by_uuid(
                 uuid, data
             )
         )
