@@ -168,8 +168,8 @@ class AuthService(BaseService):
 
         return extract_user_data(user)
 
-    def verify_token(self, token_data: VerifyToken):
-        user_token = self.email_verification_repository.get_by_token(token_data.Token)
+    async def verify_token(self, token_data: VerifyToken):
+        user_token = await self.email_verification_repository.get_by_token(token_data.Token)
         if user_token:
             current_datetime = datetime.now()
             date_format = "%Y-%m-%d %H:%M:%S.%f"
@@ -210,7 +210,7 @@ class AuthService(BaseService):
                     }
             else:
                 # delete expired verification token
-                self.email_verification_repository.delete_by_verification_token(
+                await self.email_verification_repository.delete_by_verification_token(
                     token_data.Token
                 )
 
@@ -218,7 +218,7 @@ class AuthService(BaseService):
         else:
             raise NotFoundError(detail="Verification token not found")
 
-    def verify_user_email(self, user: UserEmailVerification):
+    async def verify_user_email(self, user: UserEmailVerification):
         try:
             # check if user already verified
             db_user = self.user_repository.read_by_uuid(user.uuid)
@@ -226,7 +226,7 @@ class AuthService(BaseService):
                 if db_user.verifiedAt is None:
                     # check if token already generated
                     verified_user = (
-                        self.email_verification_repository.read_by_user_uuid(user.uuid)
+                        await self.email_verification_repository.read_by_user_uuid(user.uuid)
                     )
                     if verified_user:
                         log.info(
@@ -234,7 +234,7 @@ class AuthService(BaseService):
                             extra={"user": verified_user.user_uuid},
                         )
                         # Delete old verification token
-                        self.email_verification_repository.delete_by_user_uuid(
+                        await self.email_verification_repository.delete_by_user_uuid(
                             user.uuid
                         )
 

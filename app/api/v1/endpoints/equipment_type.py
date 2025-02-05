@@ -39,7 +39,7 @@ async def get_paginated_equipment_types_handler(
     ),
 ):
     try:
-        result = service.get_paginated_equipment_types(
+        result = await service.get_paginated_equipment_types(
             page=page, page_size=page_size, search_query=search_query, status=status
         )
         return send_data(result)
@@ -58,7 +58,7 @@ async def create_equipment_type_handler(
     ),
 ):
     try:
-        equipment_type = service.create_equipment_type(payload)
+        equipment_type = await service.create_equipment_type(payload)
         return send_data(equipment_type)
     except NotFoundError as e:
         return send_client_side_error(
@@ -80,7 +80,7 @@ async def update_equipment_type_handler(
     ),
 ):
     try:
-        equipment_type = service.update_equipment_type(uuid, payload)
+        equipment_type = await service.update_equipment_type(uuid, payload)
         if equipment_type is None:
             return send_client_side_error(
                 user_msg=messages.EQUIPMENT_TYPE_NOT_FOUND + uuid
@@ -108,7 +108,7 @@ async def get_equipment_type_by_equipment_uuid_handler(
     ),
 ):
     try:
-        equipment_type = service.get_equipment_type_by_equipment_uuid(equipment_uuid)
+        equipment_type = await service.get_equipment_type_by_equipment_uuid(equipment_uuid)
 
         if equipment_type is None:
             return send_client_side_error(

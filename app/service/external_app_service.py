@@ -23,29 +23,29 @@ class ExternalAppService(BaseService):
         self.device_configuration_repository = device_configuration_repository
         super().__init__(external_app_repository)
 
-    def create_external_app(self, payload: ExternalAppPayload):
+    async def create_external_app(self, payload: ExternalAppPayload):
         try:
-            external_app = self.external_app_repository.create_external_app(payload)
+            external_app = await self.external_app_repository.create_external_app(payload)
             return external_app
         except Exception as e:
             raise e
 
-    def get_app_service_by_secret_key(self, secret_key: str):
+    async def get_app_service_by_secret_key(self, secret_key: str):
         try:
-            external_app = self.external_app_repository.get_app_service_by_secret_key(
+            external_app = await self.external_app_repository.get_app_service_by_secret_key(
                 secret_key
             )
             return external_app
         except Exception as e:
             raise e
 
-    def generate_token(self, payload: ExternalAppGenerateTokenPayload):
+    async def generate_token(self, payload: ExternalAppGenerateTokenPayload):
         try:
-            external_app = self.external_app_repository.get_app_service(payload)
+            external_app = await self.external_app_repository.get_app_service(payload)
             expiry_minutes = days_to_minutes(external_app.no_of_days_to_expire)
             if payload.requires_conf:
                 device_configuration = (
-                    self.device_configuration_repository.get_configuration_by_type(
+                    await self.device_configuration_repository.get_configuration_by_type(
                         DeviceConfigurationVersion.SG_GATEWAY_VI
                     )
                 )

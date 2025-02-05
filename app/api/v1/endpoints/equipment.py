@@ -36,7 +36,7 @@ async def get_paginated_equipments_handler(
     current_user: User = Depends(get_current_user_with_permission("view_equipment")),
 ):
     try:
-        result = service.get_paginated_equipments(
+        result = await service.get_paginated_equipments(
             page=page, page_size=page_size, search_query=search_query, status=status
         )
         return send_data(result)
@@ -55,7 +55,7 @@ async def get_all_equipments_by_asset_type_handler(
     current_user: User = Depends(get_current_user_with_permission("view_equipment")),
 ):
     try:
-        return send_data(service.get_list_by_uuid(asset_type_uuid))
+        return send_data(await service.get_list_by_uuid(asset_type_uuid))
     except Exception as e:
         msg = f"{messages.GET_FAILED} {msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -69,7 +69,7 @@ async def create_equipment_handler(
     current_user: User = Depends(get_current_user_with_permission("create_equipment")),
 ):
     try:
-        equipment = service.add(payload)
+        equipment =await service.add(payload)
         return send_data(equipment)
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
@@ -85,7 +85,7 @@ async def update_equipment_handler(
     current_user: User = Depends(get_current_user_with_permission("update_equipment")),
 ):
     try:
-        equipment = service.patch_by_uuid(uuid, payload)
+        equipment =await service.patch_by_uuid(uuid, payload)
         if equipment is None:
             return send_client_side_error(user_msg=messages.EQUIPMENT_NOT_FOUND + uuid)
         return send_data(equipment)
