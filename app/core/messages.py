@@ -95,7 +95,7 @@ INSTALLATION_NOT_FOUND_MSG = "Installation not found"
 CREATE_SUCCESS = "Successfully created "
 GET_SUCCESS = "Successfully retrieved "
 WRONG_DRIVER_EMAIL = "No driver was found with the given email : "
-DRIVER_NOT_ASSIGNED = "Driver with {driver_email} is not assigned to any asset"
+DRIVER_NOT_ASSIGNED = "Driver is not assigned to any asset"
 FUEL_LOG_NOT_FOUND = "No fuel log was found with the given uuid : "
 SMART_REPORT_NOT_FOUND = "Smart Report was not found"
 
