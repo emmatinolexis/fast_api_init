@@ -9,7 +9,9 @@ from app.repository.base_repository import BaseRepository
 
 
 class DriverRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]):
+    def __init__(
+        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
+    ):
         self.session_factory = session_factory
         super().__init__(session_factory, Driver)
 
@@ -20,9 +22,8 @@ class DriverRepository(BaseRepository):
             offset = (page - 1) * page_size
 
             # Query to get the total count of drivers
-            count_query = (
-                select(func.count(self.model.id))
-                .filter(self.model.user_uuid == user_uuid)
+            count_query = select(func.count(self.model.id)).filter(
+                self.model.user_uuid == user_uuid
             )
             total_result = await session.execute(count_query)
             total_drivers = total_result.scalar()
@@ -54,7 +55,7 @@ class DriverRepository(BaseRepository):
             try:
                 query = select(self.model).filter(self.model.uuid == driver_uuid)
                 result = await session.execute(query)
-                driver = result.scalar_one_or_none()
+                driver = result.scalar_.one_or_none()
 
                 if driver:
                     driver.asset_uuid = asset_uuid
@@ -73,9 +74,8 @@ class DriverRepository(BaseRepository):
             offset = (page - 1) * page_size
 
             # Query to get the total count of drivers
-            count_query = (
-                select(func.count(self.model.id))
-                .filter(self.model.business_uuid == business_uuid)
+            count_query = select(func.count(self.model.id)).filter(
+                self.model.business_uuid == business_uuid
             )
             total_result = await session.execute(count_query)
             total_drivers = total_result.scalar()
@@ -104,23 +104,20 @@ class DriverRepository(BaseRepository):
 
     async def get_driver_phone_number(self, phone_number: str) -> Driver:
         async with self.session_factory() as session:
-            query = (
-                select(self.model)
-                .filter(self.model.phone_number == phone_number)
-            )
+            query = select(self.model).filter(self.model.phone_number == phone_number)
             result = await session.execute(query)
-            return result.scalar_one_or_none()
+            return result.scalar_.one_or_none()
 
     async def unassign_driver(self, driver_uuid: str) -> Driver:
         async with self.session_factory() as session:
             try:
                 query = select(self.model).filter(self.model.uuid == driver_uuid)
                 result = await session.execute(query)
-                driver = result.scalar_one_or_none()
-                
+                driver = result.scalar_.one_or_none()
+
                 if not driver:
                     raise Exception("Driver not found")
-                
+
                 driver.asset_uuid = None
                 await session.commit()
                 await session.refresh(driver)
@@ -133,10 +130,10 @@ class DriverRepository(BaseRepository):
         async with self.session_factory() as session:
             query = select(self.model).filter(self.model.email == email)
             result = await session.execute(query)
-            return result.scalar_one_or_none()
+            return result.scalar_.one_or_none()
 
     async def get_driver_by_asset_uuid(self, asset_uuid: str) -> Driver:
         async with self.session_factory() as session:
             query = select(self.model).filter(self.model.asset_uuid == asset_uuid)
             result = await session.execute(query)
-            return result.scalar_one_or_none()
+            return result.scalar_.one_or_none()

@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
 from starlette.middleware.cors import CORSMiddleware
@@ -8,13 +10,25 @@ from app.core.settings import settings
 from app.util.class_object import singleton
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await app_creator.db.create_database()
+    if await app_creator.db.connected():
+        get_logger().info("Successfully connected to the PostgreSQL database")
+    else:
+        get_logger().error("Failed to connect to the PostgreSQL database")
+    yield
+    await app_creator.db.close()
+
+
 @singleton
 class AppCreator:
     def __init__(self):
         # set app default
         self.app = FastAPI(
+            lifespan=lifespan,
             title=settings.PROJECT_NAME + " - Consumer",
-            version=settings.API_VERSION
+            version=settings.API_VERSION,
         )
 
         # Initialize prometheus middleware
@@ -23,17 +37,10 @@ class AppCreator:
         # set db and container
         self.container = Container()
         self.db = self.container.db()
-        self.db.create_database()
-
-        if self.db.connected():
-            get_logger().info("Successfully connected to the PostgreSQL database")
-        else:
-            get_logger().error("Failed to connect to the PostgreSQL database")
 
         # set mqtt service
         self.mqtt_service = self.container.mqtt_service()
         self.mqtt_client = self.mqtt_service.connect_mqtt()
-        self.mqtt_service.subscribe(self.mqtt_client)
 
         # set cors
         if settings.BACKEND_CORS_ORIGINS:
@@ -56,3 +63,8 @@ app = app_creator.app
 db = app_creator.db
 container = app_creator.container
 mqtt_service = app_creator.mqtt_service
+
+
+@app.on_event("startup")
+async def startup_event():
+    await mqtt_service.subscribe(app_creator.mqtt_client)

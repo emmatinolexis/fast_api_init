@@ -9,7 +9,7 @@ class GasCylinderTypeService(BaseService):
         self.gas_cylinder_type_repository = gas_cylinder_type_repository
         super().__init__(gas_cylinder_type_repository)
 
-    def filter_by_status_and_name(
+    async def filter_by_status_and_name(
         self,
         status: Optional[str] = None,
         search_query: Optional[str] = None,

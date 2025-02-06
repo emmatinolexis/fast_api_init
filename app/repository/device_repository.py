@@ -1,7 +1,7 @@
 from contextlib import AbstractAsyncContextManager
 from typing import Callable, Optional
 
-from sqlalchemy import desc, or_,select,func
+from sqlalchemy import desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -13,7 +13,9 @@ from app.util.enums import AccountType, DeviceStatus
 
 
 class DeviceRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]):
+    def __init__(
+        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
+    ):
         self.session_factory = session_factory
         super().__init__(session_factory, Device)
 
@@ -29,13 +31,10 @@ class DeviceRepository(BaseRepository):
                 offset = (page - 1) * page_size
 
                 # Base query with joins
-                base_query = (
-                    select(self.model)
-                    .options(
-                        joinedload(Device.inventory).joinedload(Inventory.manufacturer),
-                        joinedload(Device.asset),
-                        joinedload(Device.user),
-                    )
+                base_query = select(self.model).options(
+                    joinedload(Device.inventory).joinedload(Inventory.manufacturer),
+                    joinedload(Device.asset),
+                    joinedload(Device.user),
                 )
 
                 # Apply search query filter
@@ -46,7 +45,9 @@ class DeviceRepository(BaseRepository):
                         .filter(
                             or_(
                                 Inventory.device_name.ilike(f"%{search_query}%"),
-                                DeviceManufacturer.manufacturer_name.ilike(f"%{search_query}%"),
+                                DeviceManufacturer.manufacturer_name.ilike(
+                                    f"%{search_query}%"
+                                ),
                                 Device.device_imei.ilike(f"%{search_query}%"),
                             )
                         )
@@ -54,15 +55,21 @@ class DeviceRepository(BaseRepository):
 
                 # Apply status filter
                 if status == DeviceStatus.ASSIGNED:
-                    base_query = base_query.filter(self.model.assign_to_asset_status.isnot(None))
+                    base_query = base_query.filter(
+                        self.model.assign_to_asset_status.isnot(None)
+                    )
                 elif status == DeviceStatus.NOT_ASSIGNED:
-                    base_query = base_query.filter(self.model.assign_to_asset_status.is_(None))
+                    base_query = base_query.filter(
+                        self.model.assign_to_asset_status.is_(None)
+                    )
 
                 # Order by created_at in descending order
                 base_query = base_query.order_by(desc(self.model.created_at))
 
                 # Get total count of devices
-                total_result = await session.execute(select(func.count()).select_from(base_query.subquery()))
+                total_result = await session.execute(
+                    select(func.count()).select_from(base_query.subquery())
+                )
                 total_devices = total_result.scalar()
 
                 # Apply pagination
@@ -113,13 +120,17 @@ class DeviceRepository(BaseRepository):
                         .join(Inventory.manufacturer)
                         .filter(
                             or_(
-                                DeviceManufacturer.manufacturer_name.ilike(f"%{search_query}%"),
+                                DeviceManufacturer.manufacturer_name.ilike(
+                                    f"%{search_query}%"
+                                ),
                                 Device.device_imei.ilike(f"%{search_query}%"),
                             )
                         )
                     )
 
-                total_result = await session.execute(select(func.count()).select_from(base_query.subquery()))
+                total_result = await session.execute(
+                    select(func.count()).select_from(base_query.subquery())
+                )
                 total_devices = total_result.scalar()
 
                 paginated_query = base_query.offset(offset).limit(page_size)
@@ -161,14 +172,19 @@ class DeviceRepository(BaseRepository):
                     else:
                         raise Exception("There is no user assigned to this device")
                 else:
-                    raise Exception(f"There is no device with the given imei: {device_imei}")
+                    raise Exception(
+                        f"There is no device with the given imei: {device_imei}"
+                    )
             except Exception as e:
                 raise e
 
     async def create_devices(self, inventory):
         async with self.session_factory() as session:
             try:
-                devices = [Device(device_inventory_uuid=inventory.uuid) for _ in range(inventory.quantity)]
+                devices = [
+                    Device(device_inventory_uuid=inventory.uuid)
+                    for _ in range(inventory.quantity)
+                ]
                 session.add_all(devices)
                 await session.commit()
             except Exception as e:
@@ -179,7 +195,7 @@ class DeviceRepository(BaseRepository):
         async with self.session_factory() as session:
             user_query = select(User).filter(User.uuid == user_uuid)
             result = await session.execute(user_query)
-            user = result.scalar_one_or_none()
+            user = result.scalar_.one_or_none()
 
             if not user:
                 raise Exception("User not found")
@@ -190,16 +206,18 @@ class DeviceRepository(BaseRepository):
                     .filter(self.model.user_uuid == user.uuid)
                     .options(
                         joinedload(Device.asset),
-                        joinedload(Device.inventory).joinedload(Inventory.images)
+                        joinedload(Device.inventory).joinedload(Inventory.images),
                     )
                 )
             else:  # AccountType.BUSINESS
                 query = (
                     select(self.model)
-                    .filter(self.model.business_profile_uuid == user.business_profile_uuid)
+                    .filter(
+                        self.model.business_profile_uuid == user.business_profile_uuid
+                    )
                     .options(
                         joinedload(Device.asset),
-                        joinedload(Device.inventory).joinedload(Inventory.images)
+                        joinedload(Device.inventory).joinedload(Inventory.images),
                     )
                 )
 
@@ -213,7 +231,7 @@ class DeviceRepository(BaseRepository):
                 .filter(self.model.business_profile_uuid == business_uuid)
                 .options(
                     joinedload(Device.asset),
-                    joinedload(Device.inventory).joinedload(Inventory.images)
+                    joinedload(Device.inventory).joinedload(Inventory.images),
                 )
             )
             result = await session.execute(query)
@@ -224,11 +242,11 @@ class DeviceRepository(BaseRepository):
             try:
                 query = select(self.model).filter(self.model.uuid == device_uuid)
                 result = await session.execute(query)
-                device = result.scalar_one_or_none()
-                
+                device = result.scalar_.one_or_none()
+
                 if not device:
                     raise Exception(f"Device not found for the ID: {device_uuid}")
-                
+
                 device.device_imei = imei
                 await session.commit()
                 await session.refresh(device)
@@ -249,6 +267,6 @@ class DeviceRepository(BaseRepository):
                     )
                 )
                 result = await session.execute(query)
-                return result.unique().scalar_one_or_none()
+                return result.unique().scalar_.one_or_none()
             except Exception as e:
                 raise e

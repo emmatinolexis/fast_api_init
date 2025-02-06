@@ -2,7 +2,7 @@ from contextlib import AbstractAsyncContextManager
 from typing import Callable, Optional
 
 from sqlalchemy import String, cast
-from sqlalchemy.ext import AsynSession
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.gas_cylinders import CylinderTypes
 from app.repository.base_repository import BaseRepository
@@ -11,7 +11,7 @@ from app.util.enums import ActiveStatus
 
 class GasCylinderTypeRepository(BaseRepository):
     def __init__(
-        self, session_factory: Callable[..., AbstractAsyncContextManager[AsynSession]]
+        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
     ):
         self.session_factory = session_factory
         super().__init__(session_factory, CylinderTypes)

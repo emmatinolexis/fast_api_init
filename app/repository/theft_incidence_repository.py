@@ -2,6 +2,7 @@ from contextlib import AbstractAsyncContextManager
 from typing import Callable
 
 from sqlalchemy import Date, cast, func
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from app.core.security import extract_user_data

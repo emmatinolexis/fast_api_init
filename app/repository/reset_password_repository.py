@@ -2,7 +2,7 @@ from contextlib import AbstractAsyncContextManager
 from datetime import datetime, timedelta
 from typing import Callable
 
-from sqlalchemy.ext import AsynSession
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import generate_reset_token, hash_user_password
 from app.core.settings import setting
@@ -13,7 +13,7 @@ from app.repository.base_repository import BaseRepository
 
 class PasswordResetRepository(BaseRepository):
     def __init__(
-        self, session_factory: Callable[..., AbstractAsyncContextManager[AsynSession]]
+        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
     ):
         self.session_factory = session_factory
         super().__init__(session_factory, PasswordReset)

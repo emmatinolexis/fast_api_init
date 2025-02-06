@@ -1,7 +1,7 @@
 from contextlib import AbstractAsyncContextManager
 from typing import Callable
 
-from sqlalchemy.ext import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.package_item import PackageItem
 from app.repository.base_repository import BaseRepository

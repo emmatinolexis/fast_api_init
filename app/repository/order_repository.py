@@ -5,8 +5,9 @@ from uuid import UUID
 
 from dateutil.relativedelta import relativedelta
 from sqlalchemy import Date, cast
-from sqlalchemy.ext import AsynSession, joinedload
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import joinedload
 
 from app.model.inventory import Inventory
 from app.model.order import Order, OrderDeviceAssignment
@@ -18,7 +19,7 @@ from app.util.utils import calculate_percentage_change, parse_date
 
 class OrderRepository(BaseRepository):
     def __init__(
-        self, session_factory: Callable[..., AbstractAsyncContextManager[AsynSession]]
+        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
     ):
         self.session_factory = session_factory
         super().__init__(session_factory, OrderRepository)

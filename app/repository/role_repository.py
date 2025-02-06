@@ -54,6 +54,6 @@ class RoleRepository(BaseRepository):
                     .filter_by(uuid=role_uuid)
                     .options(joinedload(self.model.permissions))
                 )
-                return result.scalar_one_or_none()
+                return result.scalar_.one_or_none()
             except Exception as e:
                 raise e

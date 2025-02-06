@@ -78,7 +78,7 @@ class Settings(BaseSettings):
     DB_ENGINE: str = os.getenv("DB", "postgresql")
 
     DATABASE_URI: str = (
-        "{db_engine}://{user}:{password}@{host}:{port}/{database}".format(
+        "{db_engine}+asyncpg://{user}:{password}@{host}:{port}/{database}".format(
             db_engine=DB_ENGINE,
             user=DB_USER,
             password=DB_PASSWORD,

@@ -1,6 +1,8 @@
+from contextlib import AbstractAsyncContextManager
 from typing import Callable
 
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import subqueryload
 
 from app.model.asset import Asset

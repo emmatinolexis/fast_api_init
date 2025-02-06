@@ -1,6 +1,8 @@
 from contextlib import AbstractAsyncContextManager
 from typing import Callable
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.model.vehicle_owner import VehicleOwner
 from app.repository.base_repository import BaseRepository
 

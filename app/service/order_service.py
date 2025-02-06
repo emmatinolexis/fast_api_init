@@ -1,6 +1,7 @@
 from typing import Optional
 from uuid import UUID
-import httpx
+
+import aiohttp
 
 from app.core.exceptions import NotFoundError
 from app.core.settings import settings
@@ -124,13 +125,14 @@ class OrderService(BaseService):
                 }
 
                 # Make the HTTP request asynchronously
-                async with httpx.AsyncClient() as client:
-                    rtd_order = await client.post(
+                async with aiohttp.ClientSession() as session:
+                    async with session.post(
                         settings.RTD_BASE_URL,
                         headers=settings.RTD_HEADERS,
                         json=rtd_data,
-                    )
-                return rtd_order.json()
+                    ) as response:
+                        rtd_order = await response.json()
+                        return rtd_order
         except Exception as e:
             raise e
 

@@ -1,7 +1,7 @@
 from contextlib import AbstractAsyncContextManager
 from typing import Callable
 
-from sqlalchemy.ext import AsynSession, joinedload
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from app.model.gas_cylinders import GasCylinder
@@ -13,7 +13,7 @@ from app.util.utils import calculate_gas_level_percentage
 
 class GasCylinderRepository(BaseRepository):
     def __init__(
-        self, session_factory: Callable[..., AbstractAsyncContextManager[AsynSession]]
+        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
     ):
         self.session_factory = session_factory
         super().__init__(session_factory, GasCylinder)

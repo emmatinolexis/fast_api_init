@@ -3,7 +3,8 @@ from datetime import datetime
 from typing import Callable
 
 from sqlalchemy import and_
-from sqlalchemy.ext import AsynSession, joinedload
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from app.model.installation import Installation
 from app.model.order import Order, OrderDeviceAssignment
@@ -16,7 +17,7 @@ from app.util.utils import calculate_percentage_change, parse_date
 
 class InstallationRepository(BaseRepository):
     def __init__(
-        self, session_factory: Callable[..., AbstractAsyncContextManager[AsynSession]]
+        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
     ):
         self.session_factory = session_factory
         super().__init__(session_factory, Installation)

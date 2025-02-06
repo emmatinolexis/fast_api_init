@@ -7,6 +7,7 @@ from uuid import UUID
 from dateutil.relativedelta import relativedelta
 from pydantic import EmailStr
 from sqlalchemy import delete, desc, func, or_, select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from app.core.security import extract_user_data, hash_user_password
@@ -65,23 +66,25 @@ class UserRepository(BaseRepository):
 
     async def get_user_by_email_address(self, email: EmailStr):
         async with self.session_factory() as session:
-            return await session.execute(
+            result = await session.execute(
                 select(self.model)
                 .filter(self.model.email_address == email)
                 .options(joinedload(User.business_profile))
                 .options(joinedload(User.user_role).joinedload(Role.permissions))
                 .options(joinedload(User.driver_license))
-            ).scalar_one_or_none()
+            )
+            return result.scalar_one_or_none()
 
     async def get_user_by_phone_number(self, phone_number: str):
         async with self.session_factory() as session:
-            user = await session.execute(
+            result = await session.execute(
                 select(User)
                 .filter(User.phone_number == phone_number)
                 .options(joinedload(User.business_profile))
                 .options(joinedload(User.driver_license))
                 .options(joinedload(User.user_role).joinedload(Role.permissions))
-            ).scalar_one_or_none()
+            )
+            user = result.scalar_one_or_none()
 
             if not user:
                 return None
@@ -100,14 +103,13 @@ class UserRepository(BaseRepository):
     async def get_user_by_uuid(self, user_uuid: str):
         async with self.session_factory() as session:
             # Query the user model with necessary joins
-            user: Optional[User] = (
-                await session.execute(
-                    select(self.model)
-                    .filter(User.uuid == user_uuid)
-                    .options(joinedload(User.business_profile))
-                    .options(joinedload(User.user_role).joinedload(Role.permissions))
-                )
-            ).scalar_one_or_none()
+            result = await session.execute(
+                select(self.model)
+                .filter(User.uuid == user_uuid)
+                .options(joinedload(User.business_profile))
+                .options(joinedload(User.user_role).joinedload(Role.permissions))
+            )
+            user: Optional[User] = result.scalar_one_or_none()
 
             # If the user is not found, return None
             if not user:
@@ -120,15 +122,14 @@ class UserRepository(BaseRepository):
 
     async def check_business_exists(self, name, email, phone):
         async with self.session_factory() as session:
-            business_data = (
-                await session.execute(
-                    select(BusinessProfile).filter(
-                        (BusinessProfile.business_name == name)
-                        | (BusinessProfile.business_email == email)
-                        | (BusinessProfile.business_phone == phone)
-                    )
+            result = await session.execute(
+                select(BusinessProfile).filter(
+                    (BusinessProfile.business_name == name)
+                    | (BusinessProfile.business_email == email)
+                    | (BusinessProfile.business_phone == phone)
                 )
-            ).scalar_one_or_none()
+            )
+            business_data = result.scalar_one_or_none()
             return business_data
 
     async def change_password(
@@ -137,11 +138,10 @@ class UserRepository(BaseRepository):
         new_password: str,
     ):
         async with self.session_factory() as session:
-            user = (
-                await session.execute(
-                    select(self.model).filter(self.model.uuid == user_uuid)
-                )
-            ).scalar_one_or_none()
+            result = await session.execute(
+                select(self.model).filter(self.model.uuid == user_uuid)
+            )
+            user = result.scalar_.one_or_none()
 
             if not user:
                 return None
@@ -154,11 +154,10 @@ class UserRepository(BaseRepository):
 
     async def update_user_onboard_status(self, uuid):
         async with self.session_factory() as session:
-            user = (
-                await session.execute(
-                    select(self.model).filter(self.model.uuid == uuid)
-                )
-            ).scalar_one_or_none()
+            result = await session.execute(
+                select(self.model).filter(self.model.uuid == uuid)
+            )
+            user = result.scalar_one_or_none()
             user.onboarding_status = datetime.now()
             await session.commit()
             await session.refresh(user)
@@ -514,13 +513,13 @@ class UserRepository(BaseRepository):
 
     async def get_admin_team_member(self, team_member_uuid: str):
         async with self.session_factory() as session:
-            user = (
-                await session.execute(
-                    select(self.model)
-                    .filter(self.model.uuid == team_member_uuid)
-                    .options(joinedload(User.user_role))
-                )
-            ).scalar_one_or_none()
+            result = await session.execute(
+                select(self.model)
+                .filter(self.model.uuid == team_member_uuid)
+                .options(joinedload(User.user_role))
+            )
+
+            user = result.scalar_one_or_none()
 
             if not user:
                 return None
@@ -611,13 +610,10 @@ class UserRepository(BaseRepository):
         await session.refresh(business_data)
 
         # Update user with business profile
-        created_user = (
-            await session.execute(
-                select(self.model).filter(
-                    self.model.email_address == db_user.email_address
-                )
-            )
-        ).scalar_one_or_none()
+        result = await session.execute(
+            select(self.model).filter(self.model.email_address == db_user.email_address)
+        )
+        created_user = result.scalar_one_or_none()
         created_user.business_profile_uuid = business_data.uuid
         await session.commit()
         await session.refresh(created_user)
@@ -638,13 +634,10 @@ class UserRepository(BaseRepository):
         }
 
     async def _build_user_response(self, session, db_user):
-        created_user = (
-            await session.execute(
-                select(self.model).filter(
-                    self.model.email_address == db_user.email_address
-                )
-            )
-        ).scalar_one_or_none()
+        result = await session.execute(
+            select(self.model).filter(self.model.email_address == db_user.email_address)
+        )
+        created_user = result.scalar_one_or_none()
         return {
             "first_name": db_user.first_name,
             "last_name": db_user.last_name,
@@ -672,21 +665,18 @@ class UserRepository(BaseRepository):
             session.add(db_verify)
             await session.commit()
 
-            db_user = (
-                await session.execute(
-                    select(self.model).filter(self.model.uuid == user_verify.uuid)
-                )
-            ).scalar_one_or_none()
-
+            result = await session.execute(
+                select(self.model).filter(self.model.uuid == user_verify.uuid)
+            )
+            db_user = result.scalar_one_or_none()
             return db_user, verification_token["verification_token"]
 
     async def update_user_avatar(self, user_id: str, avatar_url: str) -> User:
         async with self.session_factory() as session:
-            user = (
-                await session.execute(
-                    select(self.model).filter(self.model.uuid == user_id)
-                )
-            ).scalar_one_or_none()
+            result = await session.execute(
+                select(self.model).filter(self.model.uuid == user_id)
+            )
+            user = result.scalar_one_or_none()
             user.avatar_url = avatar_url
             await session.commit()
             await session.refresh(user)
@@ -696,11 +686,10 @@ class UserRepository(BaseRepository):
         self, uuid: str, payload: AccountDeactivationPayload
     ) -> User:
         async with self.session_factory() as session:
-            user = (
-                await session.execute(
-                    select(self.model).filter(self.model.uuid == uuid)
-                )
-            ).scalar_one_or_none()
+            result = await session.execute(
+                select(self.model).filter(self.model.uuid == uuid)
+            )
+            user = result.scalar_one_or_none()
             user.status = ActiveStatus.DEACTIVATED
             user.deactivation_reason = payload.reason
             await session.commit()
@@ -817,10 +806,10 @@ class UserRepository(BaseRepository):
 
     async def get_user_by_assigned_asset_uuid(self, assigned_asset_uuid: str):
         async with self.session_factory() as session:
-            user = await session.execute(
+            result = await session.execute(
                 select(User).filter(User.assigned_asset_uuid == assigned_asset_uuid)
-            ).scalar_one_or_none()
-
+            )
+            user = result.scalar_one_or_none()
             if user is None:
                 return None
 

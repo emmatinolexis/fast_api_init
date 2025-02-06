@@ -25,18 +25,12 @@ class AppCreator:
         # set app default
         self.app = FastAPI(
             title=settings.PROJECT_NAME + " - Jobs",
-            version=settings.API_VERSION
+            version=settings.API_VERSION,
         )
 
         # set db and container
         self.container = Container()
         self.db = self.container.db()
-        self.db.create_database()
-
-        if self.db.connected():
-            get_logger().info("Successfully connected to the PostgreSQL database")
-        else:
-            get_logger().error("Failed to connect to the PostgreSQL database")
 
         # set routes
         @self.app.get("/")
@@ -53,6 +47,15 @@ container = app_creator.container
 @app.on_event("startup")
 async def startup_event():
     get_logger().info("Starting the job schedulers")
+    try:
+        await db.create_database()
+        if await db.connected():
+            get_logger().info("Successfully connected to the PostgreSQL database")
+        else:
+            get_logger().error("Failed to connect to the PostgreSQL database")
+    except Exception as e:
+        get_logger().error(f"Failed to connect to the PostgreSQL database: {e}")
+        raise e
     scheduler.start()
     if settings.ENV != "test":
         # check over speeding every 2 minutes
@@ -107,11 +110,16 @@ async def startup_event():
             check_admin_invitation_handler,
             "interval",
             hours=6,
-            id="update invitation statuses"
-
+            id="update invitation statuses",
         )
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
     scheduler.shutdown()
+    try:
+        await db.close()
+        get_logger().info("Successfully closed the PostgreSQL database")
+    except Exception as e:
+        get_logger().error(f"Failed to close the PostgreSQL database: {e}")
+        raise e

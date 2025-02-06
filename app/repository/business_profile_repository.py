@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from typing import Callable, Optional
 
 from sqlalchemy import and_, case, func
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from app.core.logger import get_logger

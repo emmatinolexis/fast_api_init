@@ -142,7 +142,7 @@ class GasDeviceService(BaseService):
         except Exception as e:
             raise e
 
-    def get_user_devices(self, user_uuid: str):
+    async def get_user_devices(self, user_uuid: str):
         try:
             devices = await self.gas_device_repository.get_user_devices(user_uuid)
             return [gas_device_transformer(device) for device in devices]
@@ -176,9 +176,9 @@ class GasDeviceService(BaseService):
                 location=payload.location,
                 building_uuid=building_uuid,
                 user_uuid=str(user.uuid),
-                business_profile_uuid=str(user.business_profile.uuid)
-                if user.business_profile
-                else None,
+                business_profile_uuid=(
+                    str(user.business_profile.uuid) if user.business_profile else None
+                ),
                 device_type=DeviceType.FIRE_DETECTOR,
             )
 

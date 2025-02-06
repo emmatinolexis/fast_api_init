@@ -1,7 +1,8 @@
 from contextlib import AbstractAsyncContextManager
-from typing import Callable
+from typing import Callable, Optional
 
-from sqlalchemy.ext import AsynSession
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.peripheral_devices import PeripheralDevice
 from app.repository.base_repository import BaseRepository
@@ -9,7 +10,7 @@ from app.repository.base_repository import BaseRepository
 
 class GasDeviceRepository(BaseRepository):
     def __init__(
-        self, session_factory: Callable[..., AbstractAsyncContextManager[AsynSession]]
+        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
     ):
         self.session_factory = session_factory
         super().__init__(session_factory, PeripheralDevice)

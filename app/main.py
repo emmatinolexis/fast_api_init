@@ -26,12 +26,6 @@ class AppCreator:
         # set db and container
         self.container = Container()
         self.db = self.container.db()
-        self.db.create_database()
-
-        if self.db.connected():
-            get_logger().info("Successfully connected to the PostgreSQL database")
-        else:
-            get_logger().error("Failed to connect to the PostgreSQL database")
 
         # set cors
         if settings.BACKEND_CORS_ORIGINS:
@@ -55,3 +49,26 @@ app_creator = AppCreator()
 app = app_creator.app
 db = app_creator.db
 container = app_creator.container
+
+
+@app.on_event("startup")
+async def startup_event():
+    try:
+        await db.create_database()
+        if await db.connected():
+            get_logger().info("Successfully connected to the PostgreSQL database")
+        else:
+            get_logger().error("Failed to connect to the PostgreSQL database")
+    except Exception as e:
+        get_logger().error(f"Failed to connect to the PostgreSQL database: {e}")
+        raise e
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    try:
+        await db.close()
+        get_logger().info("Successfully closed the PostgreSQL database")
+    except Exception as e:
+        get_logger().error(f"Failed to close the PostgreSQL database: {e}")
+        raise e
