@@ -1,20 +1,22 @@
-from contextlib import AbstractContextManager
+from contextlib import AbstractAsyncContextManager
 from typing import Callable
 
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.ext import AsynSession, joinedload
+from sqlalchemy.future import select
 
 from app.model.gas_cylinders import GasCylinder
 from app.repository.base_repository import BaseRepository
 from app.schema.gas_cylinder_schema import CreateGasCylinderPayload
 from app.util.enums import ActiveStatus
 from app.util.utils import calculate_gas_level_percentage
-from sqlalchemy.future import select
+
 
 class GasCylinderRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
+    def __init__(
+        self, session_factory: Callable[..., AbstractAsyncContextManager[AsynSession]]
+    ):
         self.session_factory = session_factory
         super().__init__(session_factory, GasCylinder)
-
 
     async def read_all_cylinders_no_pagination(
         self,
@@ -42,27 +44,26 @@ class GasCylinderRepository(BaseRepository):
             return cylinders
 
     async def get_gas_cylinder_by_building_uuid(
-            self, building_uuid: str, cylinder_status: str = None
-        ):
-            async with self.session_factory() as session:
-                stmt = select(self.model).filter(self.model.building_uuid == building_uuid)
+        self, building_uuid: str, cylinder_status: str = None
+    ):
+        async with self.session_factory() as session:
+            stmt = select(self.model).filter(self.model.building_uuid == building_uuid)
 
-                # Apply status filter before execution
-                if cylinder_status:
-                    stmt = stmt.filter(self.model.status == cylinder_status)
+            # Apply status filter before execution
+            if cylinder_status:
+                stmt = stmt.filter(self.model.status == cylinder_status)
 
-                result = await session.execute(stmt) 
-                cylinders = result.scalars().all() 
-                
-                return cylinders
+            result = await session.execute(stmt)
+            cylinders = result.scalars().all()
+
+            return cylinders
 
     async def read_all_by_user_uuid(self, user_uuid: str):
         with self.session_factory() as session:
             query = await session.execute(
-                        select(self.model)
-                        .filter(self.model.user_uuid == user_uuid)
-                    )
-            result = await session.execute(stmt) 
+                select(self.model).filter(self.model.user_uuid == user_uuid)
+            )
+            result = await session.execute(stmt)
             result = query.scalars().all()
             return result
 
@@ -76,9 +77,12 @@ class GasCylinderRepository(BaseRepository):
             if gas_payload.gas_cylinder_uuid:
                 return await self._link_existing_gas_cylinder(session, gas_payload)
             else:
-                await self._unlink_existing_gas_cylinder(session, gas_payload)  # ✅ Awaited
-                return await self._create_new_gas_cylinder(session, gas_payload, user_uuid, business_uuid)
-
+                await self._unlink_existing_gas_cylinder(
+                    session, gas_payload
+                )  # ✅ Awaited
+                return await self._create_new_gas_cylinder(
+                    session, gas_payload, user_uuid, business_uuid
+                )
 
     async def _link_existing_gas_cylinder(self, session, gas_payload):
         result = await session.execute(
@@ -89,28 +93,32 @@ class GasCylinderRepository(BaseRepository):
         if gas_to_link:
             gas_to_link.gas_device_serial_number = gas_payload.gas_device_serial_number
             gas_to_link.status = ActiveStatus.ACTIVE
-            await session.commit()  
-            await session.refresh(gas_to_link) 
+            await session.commit()
+            await session.refresh(gas_to_link)
             return gas_to_link
 
-        raise ValueError(f"Gas cylinder with UUID {gas_payload.gas_cylinder_uuid} not found")
-
+        raise ValueError(
+            f"Gas cylinder with UUID {gas_payload.gas_cylinder_uuid} not found"
+        )
 
     async def _unlink_existing_gas_cylinder(self, session, gas_payload):
         result = await session.execute(
             select(self.model).filter(
-                self.model.gas_device_serial_number == gas_payload.gas_device_serial_number
+                self.model.gas_device_serial_number
+                == gas_payload.gas_device_serial_number
             )
         )
         gas_to_unlink = result.scalars().first()
         if gas_to_unlink:
             gas_to_unlink.gas_device_serial_number = None
             gas_to_unlink.status = ActiveStatus.INACTIVE
-            await session.commit()  
+            await session.commit()
             await session.refresh(gas_to_unlink)
             return gas_to_unlink
 
-        raise ValueError(f"Gas cylinder with serial number {gas_payload.gas_device_serial_number} not found")
+        raise ValueError(
+            f"Gas cylinder with serial number {gas_payload.gas_device_serial_number} not found"
+        )
 
     async def _find_existing_gas(self, session, cylinder_uuid):
         result = await session.execute(
@@ -120,9 +128,11 @@ class GasCylinderRepository(BaseRepository):
 
     def _deactivate_existing_gas(self, existing_gas):
         existing_gas.gas_device_serial_number = None
-        existing_gas.status = ActiveStatus.INACTIVE    
+        existing_gas.status = ActiveStatus.INACTIVE
 
-    async def _create_new_gas_cylinder(self, session, gas_payload, user_uuid, business_uuid):
+    async def _create_new_gas_cylinder(
+        self, session, gas_payload, user_uuid, business_uuid
+    ):
         gas_data = GasCylinder(
             cylinder_name=gas_payload.cylinder_name,
             gas_device_serial_number=gas_payload.gas_device_serial_number,
@@ -138,8 +148,10 @@ class GasCylinderRepository(BaseRepository):
 
     async def read_all_by_business_uuid(self, business_uuid: str):
         async with self.session_factory() as session:
-            stmt = select(self.model).filter(self.model.business_profile_uuid == business_uuid)
-            
+            stmt = select(self.model).filter(
+                self.model.business_profile_uuid == business_uuid
+            )
+
             result = await session.execute(stmt)
             return result.scalars().all()
 
@@ -154,8 +166,8 @@ class GasCylinderRepository(BaseRepository):
                 )
                 .filter(self.model.uuid == cylinder_uuid)
             )
-    
-            result = await session.execute(query)  
+
+            result = await session.execute(query)
             cylinder = result.scalars().one_or_none()
 
             gas_level = 0
@@ -194,6 +206,5 @@ class GasCylinderRepository(BaseRepository):
                 .options(joinedload(self.model.cylinder_type))
             )
 
-            result = await session.execute(stmt) 
+            result = await session.execute(stmt)
             return result.scalars().first()
-            

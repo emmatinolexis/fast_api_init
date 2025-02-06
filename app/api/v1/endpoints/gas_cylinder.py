@@ -43,7 +43,7 @@ async def get_all_gas_cylinder_handler(
     current_user: User = Depends(get_current_user_with_permission("view_gas_cylinder")),
 ):
     try:
-        return send_data(service.get_list())
+        return send_data(await service.get_list())
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -320,7 +320,7 @@ async def create_spare_gas_cylinder_handler(
     ),
 ):
     try:
-        user = user_service.get_user_by_uuid(user_uuid)
+        user = await user_service.get_user_by_uuid(user_uuid)
 
         if not user:
             return send_client_side_error(
@@ -331,9 +331,11 @@ async def create_spare_gas_cylinder_handler(
         data = await service.create_spare_cylinder(
             gas_cylinder_payload,
             user_uuid,
-            str(user.get("business_profile").uuid)
-            if user.get("business_profile").uuid
-            else None,
+            (
+                str(user.get("business_profile").uuid)
+                if user.get("business_profile").uuid
+                else None
+            ),
         )
 
         return send_data_with_info(data, messages.GAS_CYLINDER_CREATED)

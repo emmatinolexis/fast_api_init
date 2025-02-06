@@ -1,11 +1,11 @@
-from contextlib import AbstractContextManager
+from contextlib import AbstractAsyncContextManager
 from datetime import datetime, timedelta
 from typing import Callable, Optional
 from uuid import UUID
 
 from dateutil.relativedelta import relativedelta
 from sqlalchemy import Date, cast
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.ext import AsynSession, joinedload
 from sqlalchemy.future import select
 
 from app.model.inventory import Inventory
@@ -17,7 +17,9 @@ from app.util.utils import calculate_percentage_change, parse_date
 
 
 class OrderRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
+    def __init__(
+        self, session_factory: Callable[..., AbstractAsyncContextManager[AsynSession]]
+    ):
         self.session_factory = session_factory
         super().__init__(session_factory, OrderRepository)
 
@@ -69,116 +71,6 @@ class OrderRepository(BaseRepository):
             .order_by(Order.created_at.desc())
         )
 
-    # def get_all_orders(
-    #     self,
-    #     page=1,
-    #     page_size=10,
-    #     search_query=None,
-    #     start_date=None,
-    #     end_date=None,
-    #     status=None,
-    # ):
-    #     with self.session_factory() as session:
-    #         if start_date and end_date:
-    #             try:
-    #                 parsed_start_str = parse_date(start_date)
-    #                 parsed_end_str = parse_date(end_date)
-
-    #                 current_start_date = datetime.strptime(parsed_start_str, "%Y-%m-%d")
-    #                 current_end_date = datetime.strptime(parsed_end_str, "%Y-%m-%d")
-    #             except ValueError as ve:
-    #                 raise ValueError(f"Date parsing error: {ve}")
-    #         else:
-    #             if end_date:
-    #                 try:
-    #                     parsed_end_str = parse_date(end_date)
-    #                     current_end_date = datetime.combine(
-    #                         datetime.strptime(parsed_end_str, "%Y-%m-%d"),
-    #                         datetime.max.time(),
-    #                     )
-    #                 except ValueError as ve:
-    #                     raise ValueError(f"Date parsing error: {ve}")
-    #             else:
-    #                 current_end_date = datetime.utcnow()
-
-    #             if start_date:
-    #                 try:
-    #                     parsed_start_str = parse_date(start_date)
-    #                     current_start_date = datetime.combine(
-    #                         datetime.strptime(parsed_start_str, "%Y-%m-%d"),
-    #                         datetime.min.time(),
-    #                     )
-    #                 except ValueError as ve:
-    #                     raise ValueError(f"Date parsing error: {ve}")
-    #             else:
-    #                 current_start_date = current_end_date - relativedelta(months=12)
-
-    #         delta = current_end_date - current_start_date
-    #         previous_start_date = current_start_date - delta
-    #         previous_end_date = current_start_date - timedelta(seconds=1)
-
-    #         base_query = self._get_base_query(session)
-
-    #         query_current = self.apply_filters(
-    #             base_query, search_query, current_start_date, current_end_date, status
-    #         )
-
-    #         query_previous = self.apply_filters(
-    #             base_query, search_query, previous_start_date, previous_end_date, status
-    #         )
-
-    #         total_orders_current = query_current.count()
-    #         fulfilled_orders_current = query_current.filter(
-    #             Order.order_status == OrderStatus.DELIVERED
-    #         ).count()
-    #         ready_for_pickup_orders_current = query_current.filter(
-    #             Order.order_status == OrderStatus.READY_FOR_PICKUP
-    #         ).count()
-    #         processing_orders_current = query_current.filter(
-    #             Order.order_status == OrderStatus.PROCESSING
-    #         ).count()
-
-    #         total_orders_previous = query_previous.count()
-    #         fulfilled_orders_previous = query_previous.filter(
-    #             Order.order_status == OrderStatus.DELIVERED
-    #         ).count()
-    #         ready_for_pickup_orders_previous = query_previous.filter(
-    #             Order.order_status == OrderStatus.READY_FOR_PICKUP
-    #         ).count()
-    #         processing_orders_previous = query_previous.filter(
-    #             Order.order_status == OrderStatus.PROCESSING
-    #         ).count()
-
-    #         total_orders_percentage_change = calculate_percentage_change(
-    #             total_orders_current, total_orders_previous
-    #         )
-    #         fulfilled_orders_percentage_change = calculate_percentage_change(
-    #             fulfilled_orders_current, fulfilled_orders_previous
-    #         )
-    #         ready_for_pickup_orders_percentage_change = calculate_percentage_change(
-    #             ready_for_pickup_orders_current, ready_for_pickup_orders_previous
-    #         )
-    #         processing_orders_percentage_change = calculate_percentage_change(
-    #             processing_orders_current, processing_orders_previous
-    #         )
-
-    #         offset = (page - 1) * page_size
-    #         paginated_orders = query_current.offset(offset).limit(page_size).all()
-
-    #         return {
-    #             "orders": paginated_orders,
-    #             "current_page": page,
-    #             "page_size": page_size,
-    #             "total_orders": total_orders_current,
-    #             "fulfilled_orders": fulfilled_orders_current,
-    #             "ready_for_pickup_orders": ready_for_pickup_orders_current,
-    #             "processing_orders": processing_orders_current,
-    #             "total_orders_percentage_change": total_orders_percentage_change,
-    #             "fulfilled_orders_percentage_change": fulfilled_orders_percentage_change,
-    #             "ready_for_pickup_orders_percentage_change": ready_for_pickup_orders_percentage_change,
-    #             "processing_orders_percentage_change": processing_orders_percentage_change,
-    #             "total_pages": (total_orders_current + page_size - 1) // page_size,
-    #         }
     async def get_all_orders(
         self,
         page=1,

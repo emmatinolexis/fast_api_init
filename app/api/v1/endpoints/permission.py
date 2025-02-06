@@ -37,7 +37,7 @@ async def synchronize_permissions_handler(
     ),
 ):
     try:
-        permissions = service.synchronize_permissions()
+        permissions = await service.synchronize_permissions()
         return send_data(permissions)
     except Exception as e:
         msg = messages.FAILED_TO_CREATE + f"{msg_prefix}s"
@@ -52,7 +52,7 @@ async def get_all_permission_handler(
     current_user: User = Depends(get_current_user_with_permission("view_permissions")),
 ):
     try:
-        permissions = service.get_permissions(permission_type)
+        permissions = await service.get_permissions(permission_type)
         return send_data_with_info(permissions, messages.SUCCESS_MESSAGE)
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
@@ -67,7 +67,7 @@ async def get_all_roles_handler(
     current_user: User = Depends(get_current_user_with_permission("view_roles")),
 ):
     try:
-        return send_data(service.get_all_roles(role_type))
+        return send_data(await service.get_all_roles(role_type))
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -81,7 +81,7 @@ async def create_role_handler(
     current_user: User = Depends(get_current_user_with_permission("create_role")),
 ):
     try:
-        role = service.create_role_permission(payload)
+        role = await service.create_role_permission(payload)
         logging.info(f"Role created: {role}")
         return send_data_with_info(role, messages.SUCCESS_MESSAGE)
     except Exception as e:
@@ -98,7 +98,7 @@ async def update_role_handler(
     current_user: User = Depends(get_current_user_with_permission("update_roles")),
 ):
     try:
-        role = service.get_by_uuid(role_uuid)
+        role = await service.get_by_uuid(role_uuid)
         if role:
             update_role = service.update_role(payload, role_uuid)
             logging.info(f"Role updated: {update_role}")
@@ -120,7 +120,7 @@ async def get_role_handler(
     current_user: User = Depends(get_current_user_with_permission("view_roles")),
 ):
     try:
-        role = service.get_role(role_uuid)
+        role = await service.get_role(role_uuid)
         return send_data(role)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
@@ -134,7 +134,7 @@ async def get_user_role_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        role = service.get_role(current_user.user_role_uuid)
+        role = await service.get_role(current_user.user_role_uuid)
         return send_data(role)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"

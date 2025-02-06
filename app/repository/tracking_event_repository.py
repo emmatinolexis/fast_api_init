@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from typing import Callable, Dict, List
 
 from sqlalchemy import Date, and_, cast
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from app.core.constants import ALLOWED_EVENT_TYPES

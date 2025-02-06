@@ -1,5 +1,5 @@
 import logging
-from contextlib import AbstractContextManager
+from contextlib import AbstractAsyncContextManager
 from typing import Callable, List
 
 from sqlalchemy import text
@@ -12,7 +12,7 @@ from app.util.enums import IncidenceType, IncidentStatus, IncidentType
 
 
 class IncidentRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager]):
+    def __init__(self, session_factory: Callable[..., AbstractAsyncContextManager]):
         self.session_factory = session_factory
         super().__init__(session_factory, Incident)
 

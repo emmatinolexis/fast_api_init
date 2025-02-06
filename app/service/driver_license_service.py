@@ -10,5 +10,5 @@ class DriverLicenseService(BaseService):
         self.driver_license_repository = driver_license_repository
         super().__init__(driver_license_repository)
 
-    def get_all_licenses(self) -> List[DriverLicense]:
-        return self.driver_license_repository.get_all_licenses()
+    async def get_all_licenses(self) -> List[DriverLicense]:
+        return await self.driver_license_repository.get_all_licenses()

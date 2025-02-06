@@ -56,7 +56,7 @@ async def generate_distance_traveled_report_handler(
     ),
 ):
     try:
-        user = user_service.get_user_by_uuid(user_uuid)
+        user = await user_service.get_user_by_uuid(user_uuid)
         if user:
             return send_data_with_info(
                 report_service.generate_distance_speed_report(
@@ -91,10 +91,10 @@ async def generate_violation_reminders_report_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        user = user_service.get_user_by_uuid(user_uuid)
+        user = await user_service.get_user_by_uuid(user_uuid)
         if user:
             return send_data_with_info(
-                report_service.generate_violation_reminder_report(
+                await report_service.generate_violation_reminder_report(
                     business_uuid=user.get("business_profile").uuid,
                     start_date=start_date,
                     end_date=end_date,
@@ -122,7 +122,7 @@ async def create_smart_report_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        user = user_service.get_user_by_uuid(str(smart_report_payload.user_uuid))
+        user = await user_service.get_user_by_uuid(str(smart_report_payload.user_uuid))
 
         if user:
             smart_report_input = SmartReportInput(
@@ -137,7 +137,7 @@ async def create_smart_report_handler(
                 status=SmartReportStatus.PENDING,
             )
 
-            report = smart_report_service.add(smart_report_input)
+            report = await smart_report_service.add(smart_report_input)
             logging.info(f"Smart report created: {report}")
             return send_data_with_info(report, messages.SUCCESS_MESSAGE)
         else:
@@ -166,7 +166,7 @@ async def get_smart_report_by_user_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        user = user_service.get_user_by_uuid(str(user_uuid))
+        user = await user_service.get_user_by_uuid(str(user_uuid))
         if user:
             reports = smart_report_service.get_reports(
                 business_profile_uuid=user.get("business_profile").uuid,
@@ -201,7 +201,7 @@ async def get_gas_report(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        user = user_service.get_user_by_uuid(user_uuid)
+        user = await user_service.get_user_by_uuid(user_uuid)
 
         if not user:
             return send_client_side_error(
@@ -233,17 +233,17 @@ async def generate_smart_report_handler(
     ),
 ):
     try:
-        smart_report = smart_report_service.get_unprocessed_smart_report_by_uuid()
+        smart_report = await smart_report_service.get_unprocessed_smart_report_by_uuid()
 
         if not smart_report:
             msg = "There are no smart report to process"
             return send_info(msg)
         if smart_report:
-            smart_report_service.update_smart_report_status(
+            await smart_report_service.update_smart_report_status(
                 smart_report.get("uuid"), SmartReportStatus.PROCESSING
             )
 
-            report = smart_report_service.generate_smart_report(smart_report)
+            report = await smart_report_service.generate_smart_report(smart_report)
 
             if report:
                 report_json = json.dumps(report, indent=4, default=str)
@@ -257,7 +257,7 @@ async def generate_smart_report_handler(
                     content_type=content_type,
                     folder_name="smart_reports",
                 )
-                smart_report_service.update_smart_report_status(
+                await smart_report_service.update_smart_report_status(
                     smart_report.get("uuid"), SmartReportStatus.PROCESSED, url
                 )
 
@@ -296,13 +296,15 @@ async def get_processed_smart_report_handler(
     ),
 ):
     try:
-        smart_report = smart_report_service.get_by_uuid(smart_report_uuid)
+        smart_report = await smart_report_service.get_by_uuid(smart_report_uuid)
         if smart_report:
             if smart_report.status != SmartReportStatus.PROCESSED:
                 msg = "Smart report not processed"
                 send_client_side_error(msg)
 
-            smart_report = smart_report_service.get_processed_smart_report(smart_report)
+            smart_report = await smart_report_service.get_processed_smart_report(
+                smart_report
+            )
 
             return send_data_with_info(smart_report, "Report fetched successfully")
 
@@ -325,7 +327,7 @@ async def share_smart_report_handler(
 ):
     try:
         # get the smart report
-        smart_report = smart_report_service.get_by_uuid(smart_report_uuid)
+        smart_report = await smart_report_service.get_by_uuid(smart_report_uuid)
 
         # throw an error if smart report not found
         if not smart_report:
@@ -336,7 +338,7 @@ async def share_smart_report_handler(
 
         # get all the users to share
         for user_uuid in smart_report_share_payload.user_uuids:
-            user = user_service.get_by_uuid(str(user_uuid))
+            user = await user_service.get_by_uuid(str(user_uuid))
 
             if not user:
                 return send_client_side_error(
@@ -371,7 +373,6 @@ async def share_smart_report_handler(
 
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
-        logging.info(e)
         return send_internal_server_error(user_msg=msg, error=e)
 
 

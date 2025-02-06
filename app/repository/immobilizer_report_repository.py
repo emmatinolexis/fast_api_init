@@ -1,15 +1,17 @@
-from contextlib import AbstractContextManager
+from contextlib import AbstractAsyncContextManager
 from typing import Callable
 
 from sqlalchemy import desc
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.ext import AsynSession, joinedload
 
 from app.model.immobilize_report import ImmobilizerReport
 from app.repository.base_repository import BaseRepository
 
 
 class ImmobilizerReportRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
+    def __init__(
+        self, session_factory: Callable[..., AbstractAsyncContextManager[AsynSession]]
+    ):
         self.session_factory = session_factory
         super().__init__(session_factory, ImmobilizerReport)
 

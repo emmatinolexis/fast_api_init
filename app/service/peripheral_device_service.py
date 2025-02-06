@@ -52,9 +52,9 @@ class PeripheralDeviceService(BaseService):
         self.gas_cylinder_repository = gas_cylinder_repository
         super().__init__(peripheral_device_repository)
 
-    def get_list(self, page=1, page_size=10, device_type=None, search=None):
+    async def get_list(self, page=1, page_size=10, device_type=None, search=None):
         try:
-            return self.peripheral_device_repository.read_all(
+            return await self.peripheral_device_repository.read_all(
                 page=page, page_size=page_size, device_type=device_type, search=search
             )
         except Exception as e:
@@ -71,11 +71,13 @@ class PeripheralDeviceService(BaseService):
         except Exception as e:
             raise e
 
-    def create_peripheral_device(self, payload: CreatePeripheralDevice):
+    async def create_peripheral_device(self, payload: CreatePeripheralDevice):
         try:
             device_type = payload.device_type
-            last_created_device = self.peripheral_device_repository.get_last_device(
-                payload.device_type
+            last_created_device = (
+                await self.peripheral_device_repository.get_last_device(
+                    payload.device_type
+                )
             )
 
             if last_created_device:
@@ -89,7 +91,9 @@ class PeripheralDeviceService(BaseService):
                     data = CreatePeripheralDeviceInput(
                         serial_number=serial_number, device_type=device_type
                     )
-                    peripheral_device = self.peripheral_device_repository.create(data)
+                    peripheral_device = await self.peripheral_device_repository.create(
+                        data
+                    )
 
                     # Create default configuration based on device type
                     self.create_default_config(peripheral_device.uuid, device_type)
@@ -100,7 +104,7 @@ class PeripheralDeviceService(BaseService):
                         serial_number=INITIAL_PYROGUARD_DEVICE_SERIAL_NUMBER,
                         device_type=device_type,
                     )
-                    peripheral_device = self.peripheral_device_repository.create(
+                    peripheral_device = await self.peripheral_device_repository.create(
                         initial_data
                     )
 
@@ -112,7 +116,7 @@ class PeripheralDeviceService(BaseService):
                         serial_number=INITIAL_GAS_DEVICE_SERIAL_NUMBER,
                         device_type=device_type,
                     )
-                    peripheral_device = self.peripheral_device_repository.create(
+                    peripheral_device = await self.peripheral_device_repository.create(
                         initial_data
                     )
 
@@ -124,7 +128,7 @@ class PeripheralDeviceService(BaseService):
                         serial_number=INITIAL_GATEWAY_DEVICE_SERIAL_NUMBER,
                         device_type=device_type,
                     )
-                    peripheral_device = self.peripheral_device_repository.create(
+                    peripheral_device = await self.peripheral_device_repository.create(
                         initial_data
                     )
         except Exception as e:
@@ -145,18 +149,18 @@ class PeripheralDeviceService(BaseService):
             )
             self.device_node_config_repository.create(gas_config)
 
-    def get_devices_by_serial_number(self, serial_number: str):
+    async def get_devices_by_serial_number(self, serial_number: str):
         try:
-            devices = self.peripheral_device_repository.get_by_serial_number(
+            devices = await self.peripheral_device_repository.get_by_serial_number(
                 serial_number
             )
             return devices
         except Exception as e:
             raise e
 
-    def get_device_by_node_id(self, node_id: str):
+    async def get_device_by_node_id(self, node_id: str):
         try:
-            device = self.peripheral_device_repository.get_device_node_id(node_id)
+            device = await self.peripheral_device_repository.get_device_node_id(node_id)
             return device
         except Exception as e:
             raise e
@@ -170,16 +174,18 @@ class PeripheralDeviceService(BaseService):
         except Exception as e:
             raise e
 
-    def update_peripheral_device(
+    async def update_peripheral_device(
         self, user_uuid, payload: UpdatePeripheralDevice, building_uuid: str
     ):
         try:
-            user = self.user_repository.get_user_by_uuid(user_uuid=user_uuid)
+            user = await self.user_repository.get_user_by_uuid(user_uuid=user_uuid)
             if not user:
                 raise BadRequestError(messages.USER_NOT_FOUND + user_uuid)
 
-            peripheral_device = self.peripheral_device_repository.get_by_serial_number(
-                payload.serial_number
+            peripheral_device = (
+                await self.peripheral_device_repository.get_by_serial_number(
+                    payload.serial_number
+                )
             )
 
             if not peripheral_device:
@@ -198,15 +204,17 @@ class PeripheralDeviceService(BaseService):
 
             data = UpdatePeripheralDeviceFull(
                 user_uuid=str(user_uuid),
-                business_profile_uuid=str(user.get("business_profile").uuid)
-                if user.get("business_profile")
-                else None,
+                business_profile_uuid=(
+                    str(user.get("business_profile").uuid)
+                    if user.get("business_profile")
+                    else None
+                ),
                 location=payload.location,
                 serial_number=payload.serial_number,
                 building_uuid=building_uuid,
             )
 
-            self.peripheral_device_repository.update_by_uuid(
+            await self.peripheral_device_repository.update_by_uuid(
                 uuid=peripheral_device.uuid, schema=data
             )
 
@@ -216,9 +224,9 @@ class PeripheralDeviceService(BaseService):
         except Exception as e:
             raise e
 
-    def get_user_devices(self, user_uuid, device_type: str = None):
+    async def get_user_devices(self, user_uuid, device_type: str = None):
         try:
-            devices = self.peripheral_device_repository.get_user_devices(
+            devices = await self.peripheral_device_repository.get_user_devices(
                 user_uuid, device_type
             )
 
@@ -235,16 +243,20 @@ class PeripheralDeviceService(BaseService):
         except Exception as e:
             raise e
 
-    def get_business_devices(self, business_profile_uuid, device_type: str = None):
+    async def get_business_devices(
+        self, business_profile_uuid, device_type: str = None
+    ):
         try:
             dev_data = []
-            devices = self.peripheral_device_repository.get_business_devices(
+            devices = await self.peripheral_device_repository.get_business_devices(
                 business_profile_uuid, device_type
             )
 
             for device in devices:
-                latest_event = self.device_events_service.get_devices_latest_reading(
-                    device.node_id
+                latest_event = (
+                    await self.device_events_service.get_devices_latest_reading(
+                        device.node_id
+                    )
                 )
                 data = {
                     "uuid": str(device.uuid),
@@ -252,20 +264,22 @@ class PeripheralDeviceService(BaseService):
                     "node_id": str(device.node_id) if device.node_id else None,
                     "status": device.status.name if device.status else None,
                     "user_uuid": str(device.user_uuid) if device.user_uuid else None,
-                    "business_profile_uuid": str(device.business_profile_uuid)
-                    if device.business_profile_uuid
-                    else None,
-                    "building_uuid": str(device.building_uuid)
-                    if device.building_uuid
-                    else None,
+                    "business_profile_uuid": (
+                        str(device.business_profile_uuid)
+                        if device.business_profile_uuid
+                        else None
+                    ),
+                    "building_uuid": (
+                        str(device.building_uuid) if device.building_uuid else None
+                    ),
                     "location": device.location,
-                    "device_type": device.device_type.name
-                    if device.device_type
-                    else None,
+                    "device_type": (
+                        device.device_type.name if device.device_type else None
+                    ),
                     "send_alert_status": "",
-                    "current_device_reading": latest_event.measurements
-                    if latest_event
-                    else None,
+                    "current_device_reading": (
+                        latest_event.measurements if latest_event else None
+                    ),
                 }
                 dev_data.append(data)
             return dev_data
@@ -273,9 +287,9 @@ class PeripheralDeviceService(BaseService):
         except Exception as e:
             raise e
 
-    def get_building_devices(self, building_uuid, device_type: str = None):
+    async def get_building_devices(self, building_uuid, device_type: str = None):
         try:
-            devices = self.peripheral_device_repository.get_building_devices(
+            devices = await self.peripheral_device_repository.get_building_devices(
                 building_uuid, device_type=device_type
             )
 
@@ -292,12 +306,10 @@ class PeripheralDeviceService(BaseService):
         except Exception as e:
             raise e
 
-    def set_device_configuration_to_default(self, peripheral_device_uuid: str):
+    async def set_device_configuration_to_default(self, peripheral_device_uuid: str):
         try:
-            device = (
-                self.device_node_config_repository.set_peripheral_device_to_default(
-                    peripheral_device_uuid
-                )
+            device = await self.device_node_config_repository.set_peripheral_device_to_default(
+                peripheral_device_uuid
             )
             return device
         except Exception as e:
@@ -311,7 +323,7 @@ class PeripheralDeviceService(BaseService):
     ):
         try:
             # Retrieve the peripheral device by serial number
-            device = self.peripheral_device_repository.get_by_serial_number(
+            device = await self.peripheral_device_repository.get_by_serial_number(
                 device_serial_number
             )
 
@@ -322,7 +334,7 @@ class PeripheralDeviceService(BaseService):
                 )
 
             # Retrieve the user by UUID
-            user = self.user_repository.get_user_by_uuid(user_uuid)
+            user = await self.user_repository.get_user_by_uuid(user_uuid)
 
             # Check if the user exists
             if not user:
@@ -354,7 +366,9 @@ class PeripheralDeviceService(BaseService):
                     )
 
             # Update the device configuration
-            self.device_node_config_repository.update_by_uuid(config.uuid, payload)
+            await self.device_node_config_repository.update_by_uuid(
+                config.uuid, payload
+            )
 
             # Return the transformed device data
             return peripheral_device_transformer(
@@ -368,9 +382,9 @@ class PeripheralDeviceService(BaseService):
         except Exception as e:
             raise e
 
-    def get_device_by_peripheral_uuid(self, device_uuid: str):
+    async def get_device_by_peripheral_uuid(self, device_uuid: str):
         try:
-            device = self.peripheral_device_repository.read_by_uuid(device_uuid)
+            device = await self.peripheral_device_repository.read_by_uuid(device_uuid)
 
             if not device:
                 raise NotFoundError(messages.PERIPHERAL_DEVICE_NOT_FOUND + device_uuid)
@@ -384,11 +398,11 @@ class PeripheralDeviceService(BaseService):
         except Exception as e:
             raise e
 
-    def link_gas_cylinder_to_peripheral_device(
+    async def link_gas_cylinder_to_peripheral_device(
         self, user_uuid, payload: LinkGasCylinderToDevice
     ):
         try:
-            device = self.peripheral_device_repository.get_by_serial_number(
+            device = await self.peripheral_device_repository.get_by_serial_number(
                 payload.serial_number
             )
 
@@ -400,7 +414,7 @@ class PeripheralDeviceService(BaseService):
             if device.device_type != DeviceType.GAS_NODE_DEVICE:
                 raise BadRequestError(messages.INVALID_DEVICE_TYPE)
 
-            user = self.user_repository.get_user_by_uuid(user_uuid)
+            user = await self.user_repository.get_user_by_uuid(user_uuid)
 
             is_authorized = (
                 device.user_uuid == user.get("uuid")
@@ -413,10 +427,10 @@ class PeripheralDeviceService(BaseService):
             # Check if there's an existing gas cylinder linked to the device
             if device.gas_cylinder_uuid:
                 # Unlink the existing gas cylinder
-                self.gas_cylinder_repository.update_attr_by_uuid(
+                await self.gas_cylinder_repository.update_attr_by_uuid(
                     device.gas_cylinder_uuid, "status", ActiveStatus.INACTIVE
                 )
-                self.peripheral_device_repository.update_attr_by_uuid(
+                await self.peripheral_device_repository.update_attr_by_uuid(
                     device.uuid, "gas_cylinder_uuid", None
                 )
 
@@ -429,25 +443,25 @@ class PeripheralDeviceService(BaseService):
                     cylinder_type_uuid=payload.gas_cylinder.cylinder_type_uuid,
                 )
                 payload.gas_cylinder_uuid = (
-                    self.gas_cylinder_repository.create(cylinder_payload)
+                    await self.gas_cylinder_repository.create(cylinder_payload)
                 ).uuid
 
             device_with_existing_cylinder = (
-                self.peripheral_device_repository.get_device_by_cylinder_uuid(
+                await self.peripheral_device_repository.get_device_by_cylinder_uuid(
                     payload.gas_cylinder_uuid
                 )
             )
 
             if device_with_existing_cylinder is not None:
-                self.peripheral_device_repository.update_attr_by_uuid(
+                await self.peripheral_device_repository.update_attr_by_uuid(
                     device_with_existing_cylinder.uuid, "gas_cylinder_uuid", None
                 )
 
-            self.peripheral_device_repository.update_attr_by_uuid(
+            await self.peripheral_device_repository.update_attr_by_uuid(
                 device.uuid, "gas_cylinder_uuid", payload.gas_cylinder_uuid
             )
 
-            self.gas_cylinder_repository.update_attr_by_uuid(
+            await self.gas_cylinder_repository.update_attr_by_uuid(
                 payload.gas_cylinder_uuid, "status", ActiveStatus.ACTIVE
             )
 
@@ -463,7 +477,7 @@ class PeripheralDeviceService(BaseService):
 
     async def device_config_by_serial_number(self, serial_number: str):
         try:
-            device = self.peripheral_device_repository.get_by_serial_number(
+            device = await self.peripheral_device_repository.get_by_serial_number(
                 serial_number
             )
             if not device:

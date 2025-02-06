@@ -1,7 +1,8 @@
-from contextlib import AbstractContextManager
+from contextlib import AbstractAsyncContextManager
 from typing import Callable
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 
 from app.model.permission import Permission
 from app.repository.base_repository import BaseRepository
@@ -9,18 +10,22 @@ from app.util.enums import PermissionType
 
 
 class PermissionRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
+    def __init__(
+        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
+    ):
         self.session_factory = session_factory
         super().__init__(session_factory, Permission)
 
-    def get_list(self):
-        with self.session_factory() as session:
-            return session.query(Permission).all()
+    async def get_list(self):
+        async with self.session_factory() as session:
+            result = await session.execute(select(Permission))
+            return result.scalars().all()
 
-    def get_all_permissions(self, permission_type: str = None):
-        with self.session_factory() as session:
+    async def get_all_permissions(self, permission_type: str = None):
+        async with self.session_factory() as session:
             # Get all permissions
-            permissions = session.query(self.model).all()
+            result = await session.execute(select(self.model))
+            permissions = result.scalars().all()
 
             # If permission_type is specified and is either admin or customer
             if permission_type == PermissionType.admin:
@@ -46,9 +51,9 @@ class PermissionRepository(BaseRepository):
             # If permission_type is None or unrecognized, return all permissions
             return permissions
 
-    def create(self, permission: Permission) -> Permission:
-        with self.session_factory() as session:
+    async def create(self, permission: Permission) -> Permission:
+        async with self.session_factory() as session:
             session.add(permission)
-            session.commit()
-            session.refresh(permission)
+            await session.commit()
+            await session.refresh(permission)
             return permission

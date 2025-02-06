@@ -32,7 +32,7 @@ async def get_all_subscription_payment_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.get_list())
+        return send_data(await service.get_list())
     except Exception as e:
         msg = f"{messages.GET_FAILED} {msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -48,7 +48,7 @@ async def create_subscription_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        subscription_payment = service.add(payload)
+        subscription_payment = await service.add(payload)
         return send_data(subscription_payment)
     except NotFoundError as e:
         return send_client_side_error(
@@ -70,7 +70,7 @@ async def update_subscription_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        subscription_payment = service.patch_by_uuid(uuid, payload)
+        subscription_payment = await service.patch_by_uuid(uuid, payload)
         if subscription_payment is None:
             return send_client_side_error(
                 user_msg=messages.SUBSCRIPTION_PAYMENT_NOT_FOUND + uuid
@@ -91,7 +91,7 @@ async def delete_subscription_by_uuid_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        service.remove_by_uuid(uuid)
+        await service.remove_by_uuid(uuid)
         return send_info(messages.DELETE_SUCCESS + msg_prefix)
     except NotFoundError as e:
         return send_client_side_error(

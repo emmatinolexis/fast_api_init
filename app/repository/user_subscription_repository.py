@@ -1,5 +1,5 @@
 import logging
-from contextlib import AbstractContextManager
+from contextlib import AbstractAsyncContextManager
 from typing import Callable
 
 import aiohttp
@@ -17,7 +17,7 @@ from app.util.enums import SubscriptionStatus
 
 class UserSubscriptionRepository(BaseRepository):
     def __init__(
-        self, session_factory: Callable[..., AbstractContextManager[AsyncSession]]
+        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
     ):
         self.session_factory = session_factory
         super().__init__(session_factory, UserSubscription)

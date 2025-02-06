@@ -16,6 +16,7 @@ from app.core.exceptions import (
     NotFoundError,
     UnAuthorizedError,
 )
+from app.core.logger import get_logger
 from app.core.security import extract_user_data, verify_password
 from app.core.settings import settings
 from app.model.user import User
@@ -65,18 +66,12 @@ from app.util.utils import (
     send_internal_server_error,
     serialize_datetime,
 )
-from app.core.logger import get_logger
 
 router = APIRouter(
     prefix="/users",
     tags=["users"],
 )
 msg_prefix = "user"
-
-
-
-
-
 
 
 @router.get("/stats", response_class=ORJSONResponse)
@@ -104,7 +99,7 @@ async def get_user_stats(
 
         user_provided_dates = start_date is not None and end_date is not None
 
-        data = service.get_user_stats(
+        data = await service.get_user_stats(
             start_date_dt,
             end_date_dt,
             group_by,
@@ -139,7 +134,7 @@ async def get_total_users(
         else:
             group_by = "month"
 
-        data = service.get_total_users(start_date_dt, end_date_dt, group_by)
+        data = await service.get_total_users(start_date_dt, end_date_dt, group_by)
         return send_data(data)
     except Exception as e:
         msg = messages.GET_FAILED + " total users"
@@ -153,7 +148,7 @@ async def create_user_handler(
     service: UserService = Depends(Provide[Container.user_service]),
 ):
     try:
-        found_user = service.get_user_by_email_address(payload.email_address)
+        found_user = await service.get_user_by_email_address(payload.email_address)
         if found_user:
             USER_SIGNUP_TOTAL.labels(success="false").inc()
             return send_client_side_error(
@@ -165,7 +160,7 @@ async def create_user_handler(
             payload.account_type == AccountType.BUSINESS
             and payload.invite_status is False
         ):
-            found_business = service.check_business_exists(
+            found_business = await service.check_business_exists(
                 payload.business_name, payload.business_email, payload.business_phone
             )
             if found_business:
@@ -174,7 +169,7 @@ async def create_user_handler(
                     user_msg="Business already exists with the same name, email or phone"
                 )
 
-        user = service.create_user(payload)
+        user = await service.create_user(payload)
         logging.info(f"Created user: {payload.email_address}")
         USER_SIGNUP_TOTAL.labels(success="true").inc()
         return send_data(user)
@@ -182,21 +177,6 @@ async def create_user_handler(
         msg = messages.CREATE_FAILED + msg_prefix
         USER_SIGNUP_TOTAL.labels(success="false").inc()
         return send_internal_server_error(user_msg=msg, error=e)
-
-
-# @router.get("/", dependencies=[allow_admins_only], response_class=ORJSONResponse)
-# @inject
-# async def get_users(
-#     service: UserService = Depends(Provide[Container.user_service]),
-#     current_user: User = Depends(get_current_user),
-# ):
-#     try:
-#         users = service.get_list()
-#         users_info = [extract_user_data(user) for user in users]
-#         return send_data(users_info)
-#     except Exception as e:
-#         msg = messages.GET_FAILED + f"{msg_prefix}s"
-#         return send_internal_server_error(user_msg=msg, error=e)
 
 
 @router.get(
@@ -221,7 +201,7 @@ async def get_all_accounts(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        users = service.get_all_accounts(
+        users = await service.get_all_accounts(
             page, page_size, email_address, role_uuid, start_date, end_date, status
         )
         return send_data(users)
@@ -253,7 +233,7 @@ async def get_all_customers(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        businesses = business_service.get_businesses(
+        businesses = await business_service.get_businesses(
             search_parameter, start_date, end_date, page, page_size, status
         )
 
@@ -271,7 +251,7 @@ async def update_phone_handler(
     phone_otp_service: PhoneOTPService = Depends(Provide[Container.phone_otp_service]),
     current_user: User = Depends(get_current_user),
 ):
-    user = service.get_by_uuid(current_user.uuid)
+    user = await service.get_by_uuid(current_user.uuid)
 
     if user is None:
         return send_client_side_error(
@@ -287,8 +267,8 @@ async def update_phone_handler(
         )
 
     try:
-        service.patch_by_uuid(current_user.uuid, payload)
-        token = phone_otp_service.create_phone_verification_token(user.uuid)
+        await service.patch_by_uuid(current_user.uuid, payload)
+        token = await phone_otp_service.create_phone_verification_token(user.uuid)
         await send_otp_email(
             recipient_name=user.first_name,
             email=user.email_address,
@@ -310,13 +290,13 @@ async def update_user(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        user = service.get_by_uuid(uuid)
+        user = await service.get_by_uuid(uuid)
         if user is None:
             return send_client_side_error(
                 user_msg=messages.USER_NOT_FOUND_MSG,
             )
 
-        user_by_phone = service.get_user_by_phone_number(payload.phone_number)
+        user_by_phone = await service.get_user_by_phone_number(payload.phone_number)
 
         if user_by_phone is not None:
             if user.email_address != user_by_phone.get("email_address"):
@@ -324,7 +304,7 @@ async def update_user(
                     user_msg=messages.PHONE_NUMBER_EXISTS,
                 )
 
-        service.update_user_by_uuid(uuid, payload)
+        await service.update_user_by_uuid(uuid, payload)
 
         return send_info("User updated successfully")
     except UnAuthorizedError as e:
@@ -343,13 +323,13 @@ async def update_installer_locations(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        user = service.get_by_uuid(uuid)
+        user = await service.get_by_uuid(uuid)
         if user is None:
             return send_client_side_error(
                 user_msg=messages.USER_NOT_FOUND_MSG,
             )
 
-        service.patch_by_uuid(uuid, payload)
+        await service.patch_by_uuid(uuid, payload)
 
         return send_info("Installer updated successfully")
     except UnAuthorizedError as e:
@@ -368,7 +348,7 @@ async def user_profile_update(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        user = service.patch_user_by_uuid(uuid, payload)
+        user = await service.patch_user_by_uuid(uuid, payload)
         if user is None:
             return send_client_side_error(
                 user_msg=messages.USER_NOT_FOUND + uuid,
@@ -387,7 +367,7 @@ async def update_user_status(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        user = service.update_user_status(uuid)
+        user = await service.update_user_status(uuid)
         if user is None:
             return send_client_side_error(
                 user_msg=messages.USER_NOT_FOUND + uuid,
@@ -406,7 +386,7 @@ async def get_user_by_email(
     service: UserService = Depends(Provide[Container.user_service]),
 ):
     try:
-        user = service.get_user_by_email_address(email_address)
+        user = await service.get_user_by_email_address(email_address)
         if user is None:
             return send_client_side_error(
                 user_msg=messages.USER_NOT_FOUND + email_address
@@ -424,7 +404,7 @@ async def check_user_exist_by_email(
     service: UserService = Depends(Provide[Container.user_service]),
 ):
     try:
-        user = service.get_user_by_email_address(email_address)
+        user = await service.get_user_by_email_address(email_address)
         if user is None:
             return send_data("false")
         return send_data("true")
@@ -441,7 +421,7 @@ async def get_user_by_uuid_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        user = service.get_user_by_uuid(user_uuid)
+        user = await service.get_user_by_uuid(user_uuid)
         if user is None:
             return send_client_side_error(user_msg=messages.USER_NOT_FOUND + user_uuid)
         return send_data(user)
@@ -468,14 +448,14 @@ async def user_account(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        business = business_service.get_by_uuid(business_uuid)
+        business = await business_service.get_by_uuid(business_uuid)
         if business is None:
             msg = f"{messages.BUSINESS_PROFILE_NOT_FOUND}{business_uuid}"
             return send_internal_server_error(user_msg=msg, error=msg)
 
         exclude_user_uuid = current_user.uuid
 
-        accounts = service.get_account_users(
+        accounts = await service.get_account_users(
             business_uuid,
             page,
             page_size,
@@ -502,7 +482,7 @@ async def change_password_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        user_to_update = service.get_by_uuid(user_uuid)
+        user_to_update = await service.get_by_uuid(user_uuid)
         if user_to_update is None:
             return send_client_side_error(
                 user_msg=messages.USER_NOT_FOUND,
@@ -523,7 +503,7 @@ async def change_password_handler(
                 user_msg=user_msg,
             )
 
-        user = service.change_password(user_uuid, payload.new_password)
+        user = await service.change_password(user_uuid, payload.new_password)
 
         data = resolve_data_from_request(request=request)
 
@@ -552,12 +532,12 @@ async def send_password_link_handler(
     user_service: UserService = Depends(Provide[Container.user_service]),
 ):
     try:
-        found_user = user_service.get_user_by_email_address(email_address)
+        found_user = await user_service.get_user_by_email_address(email_address)
         if not found_user:
             return send_client_side_error(
                 user_msg=f"Email address : {email_address} does not exist",
             )
-        reset_password_token = service.reset_password(found_user.uuid)
+        reset_password_token = await service.reset_password(found_user.uuid)
 
         if reset_password_token:
             try:
@@ -593,7 +573,7 @@ async def update_password_handler(
     service: ResetPassword = Depends(Provide[Container.reset_password_service]),
 ):
     try:
-        password_update = service.update_password(
+        password_update = await service.update_password(
             payload.token, payload.new_password, payload.password_confirmation
         )
         return send_data(password_update)
@@ -610,7 +590,9 @@ async def update_user_avatar_handler(
     service: UserService = Depends(Provide[Container.user_service]),
 ):
     try:
-        user = service.update_user_avatar(user_id=uuid, avatar_url=payload.avatar_url)
+        user = await service.update_user_avatar(
+            user_id=uuid, avatar_url=payload.avatar_url
+        )
         return send_data(UpdateUserAvatar(avatar_url=user.avatar_url))
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
@@ -627,7 +609,9 @@ async def deactivate_account_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        user = service.deactivate_user_account(uuid, payload, current_user, request)
+        user = await service.deactivate_user_account(
+            uuid, payload, current_user, request
+        )
 
         if user is None:
             return send_client_side_error(
@@ -657,12 +641,12 @@ async def create_team_member_invitation(
 ):
     try:
         for invitation in payload.invitations:
-            existing_user = service.get_user_by_email_address(invitation.email)
+            existing_user = await service.get_user_by_email_address(invitation.email)
             if existing_user:
                 msg = "User already exist, "
                 raise NotFoundError(detail=msg + f" email: {invitation.email}")
 
-            invitation_exists = invitation_service.get_invitation_by_email(
+            invitation_exists = await invitation_service.get_invitation_by_email(
                 invitation.email
             )
             if invitation_exists:
@@ -670,7 +654,7 @@ async def create_team_member_invitation(
                     user_msg=f"Invitation already exists for : {invitation.email}",
                 )
 
-            user = service.get_by_uuid(user_uuid)
+            user = await service.get_by_uuid(user_uuid)
 
             if not user:
                 raise NotFoundError(
@@ -681,13 +665,13 @@ async def create_team_member_invitation(
                 email=invitation.email, role_uuid=invitation.role_uuid
             )
 
-            role = role_service.get_by_uuid(str(invitation.role_uuid))
+            role = await role_service.get_by_uuid(str(invitation.role_uuid))
             if role is None:
                 return send_client_side_error(
                     user_msg=messages.ROLE_NOT_FOUND,
                 )
 
-            created_invite = service.create_team_member_invitation(
+            created_invite = await service.create_team_member_invitation(
                 user_uuid, invitation_payload, user, request
             )
 
@@ -711,7 +695,6 @@ async def create_team_member_invitation(
         return send_internal_server_error(user_msg=msg, error=str(e))
 
 
-
 @router.put(
     "/invitations/check",
 )
@@ -720,12 +703,13 @@ async def check_admin_invitation_handler(
     service: InvitationService = Depends(Provide[Container.invitation_service]),
 ):
     try:
-        number = service.update_expired_invitations()
+        number = await service.update_expired_invitations()
         get_logger().info(f"{number} invitations have been updated")
     except Exception as e:
         get_logger().error("Failed to update invitation statuses")
         msg = messages.GET_FAILED + "invitation"
         return send_internal_server_error(user_msg=msg, error=str(e))
+
 
 @router.get("/businesses/invitations/{business_uuid}", response_class=ORJSONResponse)
 @inject
@@ -744,7 +728,7 @@ async def get_all_user_invitations_by_business_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        invitations = invitation_service.get_all_user_invites(
+        invitations = await invitation_service.get_all_user_invites(
             business_uuid, page, page_size, search, role_uuids, status
         )
         return send_data(invitations)
@@ -762,14 +746,14 @@ async def phone_token_verification_handler(
     phone_otp_service: PhoneOTPService = Depends(Provide[Container.phone_otp_service]),
     current_user: User = Depends(Provide[get_current_user]),
 ):
-    user = service.get_by_uuid(user_uuid)
+    user = await service.get_by_uuid(user_uuid)
     if not user:
         return send_client_side_error(
             user_msg=messages.USER_NOT_FOUND + user_uuid,
         )
 
     try:
-        phone_otp_service.verify_token(payload.token)
+        await phone_otp_service.verify_token(payload.token)
         msg = msg_prefix + "phone number updated successfully"
         logging.info(f"Phone number updated for user {user.email_address}")
         return send_info(info=msg)
@@ -794,7 +778,7 @@ async def resend_invitation_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        invitation = invitation_service.get_by_uuid(invitation_uuid)
+        invitation = await invitation_service.get_by_uuid(invitation_uuid)
         if not invitation:
             return send_client_side_error(
                 user_msg=messages.INVITATION_NOT_FOUND + invitation_uuid,
@@ -806,7 +790,7 @@ async def resend_invitation_handler(
                 user_msg=messages.ACTION_NOT_ALLOWED,
             )
 
-        updated_invite = invitation_service.update_invitation_expiry(
+        updated_invite = await invitation_service.update_invitation_expiry(
             invitation_uuid, datetime.now() + timedelta(days=3)
         )
 
@@ -847,12 +831,12 @@ async def create_admin_user_invitation(
 ):
     try:
         for invitation in payload.invitations:
-            existing_user = service.get_user_by_email_address(invitation.email)
+            existing_user = await service.get_user_by_email_address(invitation.email)
             if existing_user:
                 msg = "User already exist, "
                 raise NotFoundError(detail=msg + f" email: {invitation.email}")
 
-            invitation_exists = invitation_service.get_invitation_by_email(
+            invitation_exists = await invitation_service.get_invitation_by_email(
                 invitation.email
             )
             if invitation_exists:
@@ -860,7 +844,7 @@ async def create_admin_user_invitation(
                     user_msg=f"Invitation already exists for : {invitation.email}",
                 )
 
-            role = role_service.get_by_uuid(str(invitation.role_uuid))
+            role = await role_service.get_by_uuid(str(invitation.role_uuid))
             if role is None:
                 return send_client_side_error(
                     user_msg=messages.ROLE_NOT_FOUND,
@@ -870,7 +854,7 @@ async def create_admin_user_invitation(
                 email=invitation.email, role_uuid=invitation.role_uuid
             )
 
-            created_invite = service.create_admin_user_invitation(
+            created_invite = await service.create_admin_user_invitation(
                 invitation_payload, current_user, request
             )
 
@@ -882,7 +866,7 @@ async def create_admin_user_invitation(
                 role=str(invitation.role_uuid),
                 role_type=RoleType.ADMIN,
                 expiry_date=serialize_datetime(created_invite.expired_at),
-                user_type=current_user.account_type
+                user_type=current_user.account_type,
             )
         msg = "Invitations sent successfully"
         return send_info(msg)
@@ -915,7 +899,7 @@ async def get_all_user_invitations_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        invitations = invitation_service.get_all_admin_invites(
+        invitations = await invitation_service.get_all_admin_invites(
             page, page_size, email, role_uuids, status
         )
         return send_data(invitations)
@@ -939,16 +923,13 @@ async def delete_admin_invite_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        invitation_service.delete_invitation(invite_uuid, current_user, request)
+        await invitation_service.delete_invitation(invite_uuid, current_user, request)
         return send_info(messages.DELETE_SUCCESS)
     except NotFoundError as e:
         return send_client_side_error(e.detail)
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
-
-
-
 
 
 @router.get(
@@ -965,13 +946,13 @@ async def resend_admin_invitation_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        invitation = invitation_service.get_by_uuid(invitation_uuid)
+        invitation = await invitation_service.get_by_uuid(invitation_uuid)
         if not invitation:
             return send_client_side_error(
                 user_msg=messages.INVITATION_NOT_FOUND + invitation_uuid,
             )
 
-        updated_invite = invitation_service.update_invitation_expiry(
+        updated_invite = await invitation_service.update_invitation_expiry(
             invitation_uuid, datetime.now() + timedelta(days=3)
         )
 
@@ -983,7 +964,7 @@ async def resend_admin_invitation_handler(
             role=str(updated_invite.role_uuid),
             role_type=RoleType.ADMIN,
             expiry_date=serialize_datetime(updated_invite.expired_at),
-            user_type=current_user.account_type
+            user_type=current_user.account_type,
         )
 
         msg = "Invitation resent successfully"
@@ -1011,7 +992,7 @@ async def get_all_admin_team_members_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        team_members = user_service.get_all_admin_team_members(
+        team_members = await user_service.get_all_admin_team_members(
             page=page,
             page_size=page_size,
             email=email,
@@ -1036,7 +1017,7 @@ async def get_team_member_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        team_member = user_service.get_admin_team_member(team_member_uuid)
+        team_member = await user_service.get_admin_team_member(team_member_uuid)
         return send_data(team_member)
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
@@ -1056,7 +1037,7 @@ async def update_team_member_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        user_service.update_team_member_handler(
+        await user_service.update_team_member_handler(
             team_member_uuid=team_member_uuid,
             payload=payload,
             current_user=current_user,

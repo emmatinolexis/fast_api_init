@@ -38,7 +38,7 @@ async def check_drivers_license_expiry(
     service: DriverLicenseService = Depends(Provide[Container.driver_license_service]),
 ):
     try:
-        licenses = service.get_all_licenses()
+        licenses = await service.get_all_licenses()
 
         for license in licenses:
             if license.expires_soon():
@@ -115,7 +115,7 @@ async def unassign_driver_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        service.unassign_driver(driver_uuid)
+        await service.unassign_driver(driver_uuid)
         return send_info(messages.DRIVER_UNASSIGNED_SUCCESS)
     except BadRequestError as e:
         return send_client_side_error(user_msg=e.detail)
@@ -132,7 +132,7 @@ async def get_driver_by_uuid_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        driver =await  user_service.get_driver_by_uuid(uuid)
+        driver = await user_service.get_driver_by_uuid(uuid)
         return send_data(driver)
     except NotFoundError as e:
         return send_client_side_error(e.detail)

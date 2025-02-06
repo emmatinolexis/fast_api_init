@@ -1,7 +1,7 @@
-from contextlib import AbstractContextManager
+from contextlib import AbstractAsyncContextManager
 from typing import Callable
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext import AsynSession
 
 from app.core.exceptions import NotFoundError
 from app.model.gateway_configuration import GatewayConfiguration
@@ -9,7 +9,9 @@ from app.repository.base_repository import BaseRepository
 
 
 class GatewayConfigurationRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
+    def __init__(
+        self, session_factory: Callable[..., AbstractAsyncContextManager[AsynSession]]
+    ):
         super().__init__(session_factory, GatewayConfiguration)
         self.session_factory = session_factory
 

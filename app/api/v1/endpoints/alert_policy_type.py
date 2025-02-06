@@ -31,7 +31,7 @@ async def get_alert_policy_types_handler(
     current_user: User = Depends(get_current_user_with_permission("view_policy_type")),
 ):
     try:
-        return send_data(service.get_list())
+        return send_data(await service.get_list())
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -49,7 +49,7 @@ async def create_alert_policy_type_handler(
     ),
 ):
     try:
-        alert_policy_type = service.add(payload)
+        alert_policy_type = await service.add(payload)
         return send_data(alert_policy_type)
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
@@ -69,7 +69,7 @@ async def update_alert_policy_type_handler(
     ),
 ):
     try:
-        alert_policy_type = service.patch_by_uuid(uuid, payload)
+        alert_policy_type = await service.patch_by_uuid(uuid, payload)
         if alert_policy_type is None:
             return send_client_side_error(
                 user_msg=messages.ALERT_POLICY_TYPE_NOT_FOUND + uuid
@@ -90,7 +90,7 @@ async def get_alert_policy_types_by_uuid_handler(
     current_user: User = Depends(get_current_user_with_permission("view_policy_type")),
 ):
     try:
-        alert_policy_type = service.get_by_uuid(uuid)
+        alert_policy_type = await service.get_by_uuid(uuid)
         if alert_policy_type is None:
             return send_client_side_error(
                 user_msg=messages.ALERT_POLICY_TYPE_NOT_FOUND + uuid
@@ -99,24 +99,3 @@ async def get_alert_policy_types_by_uuid_handler(
     except Exception as e:
         msg = messages.UPDATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
-
-
-# @router.delete("/{uuid}", dependencies=[allow_admins_only], response_class=ORJSONResponse)
-# @inject
-# async def delete_alert_policy_type_by_uuid_handler(
-#     uuid: str,
-#     service: AlertPolicyTypeService = Depends(
-#         Provide[Container.alert_policy_type_service]
-#     ),
-#     current_user: User = Depends(get_current_user),
-# ):
-#     try:
-#         service.remove_by_uuid(uuid)
-#         return send_info(messages.DELETE_SUCCESS + msg_prefix)
-#     except NotFoundError as e:
-#         return send_client_side_error(
-#             user_msg=messages.ALERT_POLICY_TYPE_NOT_FOUND + str(e.detail)
-#         )
-#     except Exception as e:
-#         msg = messages.DELETE_FAILED + msg_prefix
-#         return send_internal_server_error(user_msg=msg, error=e)

@@ -85,13 +85,13 @@ async def update_device_manufacturer_handler(
 @inject
 async def delete_device_manufacturer_by_uuid_handler(
     uuid: str,
-    service: DeviceManufacturerPayload = Depends(
+    service: DeviceManufacturerService = Depends(
         Provide[Container.device_manufacturer_service]
     ),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        service.remove_by_uuid(uuid)
+        await service.remove_by_uuid(uuid)
         return send_info(messages.DELETE_SUCCESS + msg_prefix)
     except NotFoundError as e:
         return send_client_side_error(

@@ -1,9 +1,9 @@
-from contextlib import AbstractContextManager
+from contextlib import AbstractAsyncContextManager
 from datetime import datetime
 from typing import Callable
 
 from sqlalchemy import Date, and_, cast, or_
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.ext import AsynSession, joinedload
 
 from app.core.settings import get_settings, settings
 from app.model.asset import Asset
@@ -13,7 +13,9 @@ from app.repository.base_repository import BaseRepository
 
 
 class FuelLogRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
+    def __init__(
+        self, session_factory: Callable[..., AbstractAsyncContextManager[AsynSession]]
+    ):
         self.session_factory = session_factory
         super().__init__(session_factory, FuelLog)
 
@@ -71,7 +73,7 @@ class FuelLogRepository(BaseRepository):
             query = select(self.FuelLog).filter(FuelLog.user_uuid == user_uuid)
             query = self._apply_common_filters(query, search, start_date, end_date)
             query = query.order_by(FuelLog.created_at.desc())
-            
+
             result = await session.execute(query)
             return result.scalars().all()
 
@@ -92,7 +94,7 @@ class FuelLogRepository(BaseRepository):
                 query, search, start_date, end_date, is_driver_joined=True
             )
             query = query.order_by(FuelLog.created_at.desc())
-            
+
             result = await session.execute(query)
             return result.scalars().all()
 
@@ -104,8 +106,12 @@ class FuelLogRepository(BaseRepository):
     ):
         async with self.session_factory() as session:
             # Convert date strings to date objects
-            date_from_obj = datetime.strptime(start_date, get_settings().DATE_FORMAT_YEAR).date()
-            date_to_obj = datetime.strptime(end_date, get_settings().DATE_FORMAT_YEAR).date()
+            date_from_obj = datetime.strptime(
+                start_date, get_settings().DATE_FORMAT_YEAR
+            ).date()
+            date_to_obj = datetime.strptime(
+                end_date, get_settings().DATE_FORMAT_YEAR
+            ).date()
 
             # Build query with filters
             stmt = (

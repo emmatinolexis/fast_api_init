@@ -28,7 +28,7 @@ async def get_all_third_party_apps_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.get_list())
+        return send_data(await service.get_list())
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -42,7 +42,7 @@ async def create_third_party_app_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        app = service.add(payload)
+        app = await service.add(payload)
         return send_data(app)
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
@@ -58,10 +58,10 @@ async def update_third_party_app_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        app = service.patch_by_uuid(app_uuid, payload)
+        app = await service.patch_by_uuid(app_uuid, payload)
         return send_data(app)
     except Exception as e:
-        msg = messages.CREATE_FAILED + msg_prefix
+        msg = messages.UPDATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
 
 
@@ -74,7 +74,7 @@ async def get_all_third_party_apps_users_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.get_app_users())
+        return send_data(await service.get_app_users())
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -90,7 +90,7 @@ async def create_third_party_app_user_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        app = service.add(payload)
+        app = await service.add(payload)
         return send_data(app)
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
@@ -108,8 +108,8 @@ async def update_third_party_app_user_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        app = service.patch_by_uuid(app_user_uuid, payload)
+        app = await service.patch_by_uuid(app_user_uuid, payload)
         return send_data(app)
     except Exception as e:
-        msg = messages.CREATE_FAILED + msg_prefix
+        msg = messages.UPDATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)

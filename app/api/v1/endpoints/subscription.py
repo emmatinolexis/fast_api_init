@@ -1,6 +1,6 @@
 import logging
 
-import requests
+import aiohttp
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
@@ -41,7 +41,7 @@ async def paystack_subscriptions_handler(
     current_user: User = Depends(get_current_user_with_permission("view_subscription")),
 ):
     try:
-        return send_data(service.get_all_paystack_subscriptions(page, page_size))
+        return send_data(await service.get_all_paystack_subscriptions(page, page_size))
     except Exception as e:
         msg = f"{messages.GET_FAILED} {msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -57,7 +57,7 @@ async def toggle_subscription_status_handler(
     ),
 ):
     try:
-        return send_data(service.toggle_subscription_status(subscription_code))
+        return send_data(await service.toggle_subscription_status(subscription_code))
     except Exception as e:
         msg = f"{messages.GET_FAILED} {msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -70,7 +70,7 @@ async def get_all_paystack_payment_handler(
     current_user: User = Depends(get_current_user_with_permission("view_payments")),
 ):
     try:
-        return send_data(service.get_paystack_payments())
+        return send_data(await service.get_paystack_payments())
     except Exception as e:
         msg = f"{messages.GET_FAILED} {msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -84,7 +84,7 @@ async def paystack_subscription_handler(
     current_user: User = Depends(get_current_user_with_permission("view_subscription")),
 ):
     try:
-        return send_data(service.get_paystack_subscription(subscription_code))
+        return send_data(await service.get_paystack_subscription(subscription_code))
     except Exception as e:
         msg = f"{messages.GET_FAILED} {msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -98,7 +98,7 @@ async def paystack_subscription_by_email_handler(
     current_user: User = Depends(get_current_user_with_permission("view_subscription")),
 ):
     try:
-        return send_data(service.get_paystack_subscription_by_email(user_email))
+        return send_data(await service.get_paystack_subscription_by_email(user_email))
     except Exception as e:
         msg = f"{messages.GET_FAILED} {msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -117,44 +117,49 @@ async def create_paystack_subscription_handler(
     ),
 ):
     try:
-        user = user_service.get_user_by_email_address(payload.email)
+        user = await user_service.get_user_by_email_address(payload.email)
 
         if not user:
             return send_client_side_error(messages.USER_NOT_FOUND_MSG)
 
-        paystack_plan = requests.get(
-            settings.PAYSTACK_PLAN_URL + f"/{payload.plan}",
-            headers=settings.PAYSTACK_HEADERS,
-        )
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                settings.PAYSTACK_PLAN_URL + f"/{payload.plan}",
+                headers=settings.PAYSTACK_HEADERS,
+            ) as response:
+                paystack_plan = await response.json()
 
-        if paystack_plan.json().get("status"):
-            payload_data = {
-                "plan": payload.plan,
-                "email": payload.email,
-                "amount": payload.amount,
-                "callback_url": payload.callback_url,
-                "metadata": {
-                    "business_profile_uuid": str(user.business_profile_uuid),
-                    "payment_type": PaymentTypes.SUBSCRIPTION_PAYMENT,
-                },
-            }
+                if paystack_plan.get("status"):
+                    payload_data = {
+                        "plan": payload.plan,
+                        "email": payload.email,
+                        "amount": payload.amount,
+                        "callback_url": payload.callback_url,
+                        "metadata": {
+                            "business_profile_uuid": str(user.business_profile_uuid),
+                            "payment_type": PaymentTypes.SUBSCRIPTION_PAYMENT,
+                        },
+                    }
 
-            existing_subscription = service.get_active_subscription_by_business_uuid(
-                user.business_profile_uuid, payload_data.get("plan")
-            )
+                existing_subscription = (
+                    await service.get_active_subscription_by_business_uuid(
+                        user.business_profile_uuid, payload_data.get("plan")
+                    )
+                )
 
-            if existing_subscription:
-                return send_client_side_error(messages.SUBSCRIPTION_ALREADY_EXISTS)
+                if existing_subscription:
+                    return send_client_side_error(messages.SUBSCRIPTION_ALREADY_EXISTS)
 
-            # create a new subscription
-            subscription = service.create_paystack_subscription(
-                payload_data, paystack_plan.json()["data"], user.business_profile_uuid
-            )
-            logging.info(f"Subscription created: {subscription}")
-            return send_data(subscription)
+                # create a new subscription
+                subscription = await service.create_paystack_subscription(
+                    payload_data,
+                    paystack_plan.json()["data"],
+                    user.business_profile_uuid,
+                )
+                logging.info(f"Subscription created: {subscription}")
+                return send_data(subscription)
 
-        else:
-            return send_client_side_error(paystack_plan.json().get("message"))
+        return send_client_side_error(paystack_plan.json().get("message"))
 
     except Exception as e:
         msg = f"{messages.GET_FAILED} {msg_prefix}s"
@@ -175,38 +180,42 @@ async def paystack_subscription_webhook_handler(
             # check if subscription exist
             subscription_code = paystack_payload["data"]["subscription_code"]
             # return subscription_code
-            paystack_subscription = requests.get(
-                settings.PAYSTACK_SUBSCRIPTION_URL + f"/{subscription_code}",
-                headers=settings.PAYSTACK_HEADERS,
-            )
-            subscription_data = paystack_subscription.json()
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    settings.PAYSTACK_SUBSCRIPTION_URL + f"/{subscription_code}",
+                    headers=settings.PAYSTACK_HEADERS,
+                ) as response:
+                    subscription_data = await response.json()
 
-            if not subscription_data["status"]:
-                logging.info(
-                    subscription_data["message"]
-                    + f" for subscription code: {subscription_code}"
-                )
-                return send_client_side_error(
-                    subscription_data["message"]
-                    + f" for subscription code: {subscription_code}"
-                )
+                    if not subscription_data["status"]:
+                        logging.info(
+                            subscription_data["message"]
+                            + f" for subscription code: {subscription_code}"
+                        )
+                        return send_client_side_error(
+                            subscription_data["message"]
+                            + f" for subscription code: {subscription_code}"
+                        )
 
         if event_type == "charge.success":
             # validate payment
             payment_reference = paystack_payload["data"]["reference"]
-            payment = requests.get(
-                settings.PAYSTACK_PAYMENT_VERIFICATION_URL + f"/{payment_reference}",
-                headers=settings.PAYSTACK_HEADERS,
-            )
-            payment_data = payment.json()
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    settings.PAYSTACK_PAYMENT_VERIFICATION_URL
+                    + f"/{payment_reference}",
+                    headers=settings.PAYSTACK_HEADERS,
+                ) as response:
+                    payment_data = await response.json()
 
-            if not payment_data["status"]:
-                logging.info(payment_data["message"])
-                return send_client_side_error(
-                    payment_data["message"] + f" Transaction code : {payment_reference}"
-                )
+                    if not payment_data["status"]:
+                        logging.info(payment_data["message"])
+                        return send_client_side_error(
+                            payment_data["message"]
+                            + f" Transaction code : {payment_reference}"
+                        )
 
-        subscription = service.create_user_subscription(paystack_payload)
+        subscription = await service.create_user_subscription(paystack_payload)
         return send_info(subscription)
     except Exception as e:
         msg = f"{messages.GET_FAILED} {msg_prefix}s"

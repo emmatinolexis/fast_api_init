@@ -537,8 +537,10 @@ class AssetService(BaseService):
         try:
             asset = await self.get_by_uuid(asset_uuid)
             if asset.device_imei:
-                asset_device = await self.device_repository.get_device_for_engine_shutdown(
-                    asset.device_imei
+                asset_device = (
+                    await self.device_repository.get_device_for_engine_shutdown(
+                        asset.device_imei
+                    )
                 )
                 return asset_device
             else:
@@ -548,7 +550,7 @@ class AssetService(BaseService):
         except Exception as e:
             raise e
 
-    def generate_gas_cylinder_report(
+    async def generate_gas_cylinder_report(
         self,
         start_date: str,
         end_date: str,
@@ -564,14 +566,14 @@ class AssetService(BaseService):
 
             # Fetch assets based on provided parameters
             if business_uuid or user_uuid or cylinder_uuid:
-                gas_cylinders = self.get_gas_cylinders(
+                gas_cylinders = await self.get_gas_cylinders(
                     business_uuid, user_uuid, cylinder_uuid
                 )
 
             for cylinder in gas_cylinders:
                 if cylinder.gas_device_serial_number:
                     # Get asset points for today in tracking events table
-                    cylinder_events = self.gas_cylinder_event_repository.read_all_gas_events_by_date_range(
+                    cylinder_events = await self.gas_cylinder_event_repository.read_all_gas_events_by_date_range(
                         cylinder.gas_device_serial_number, start_date, end_date
                     )
                     return cylinder_events
@@ -725,26 +727,36 @@ class AssetService(BaseService):
 
         return assets
 
-    def get_gas_cylinders(self, business_uuid=None, user_uuid=None, cylinder_uuid=None):
+    async def get_gas_cylinders(
+        self, business_uuid=None, user_uuid=None, cylinder_uuid=None
+    ):
         assets = []
 
         if business_uuid:
             if cylinder_uuid:
-                assets = self.gas_cylinder_repository.read_all_cylinders_no_pagination(
-                    cylinder_uuid=cylinder_uuid, business_uuid=business_uuid
+                assets = (
+                    await self.gas_cylinder_repository.read_all_cylinders_no_pagination(
+                        cylinder_uuid=cylinder_uuid, business_uuid=business_uuid
+                    )
                 )
             else:
-                assets = self.gas_cylinder_repository.read_all_cylinders_no_pagination(
-                    business_uuid=business_uuid
+                assets = (
+                    await self.gas_cylinder_repository.read_all_cylinders_no_pagination(
+                        business_uuid=business_uuid
+                    )
                 )
         elif user_uuid:
             if cylinder_uuid:
-                assets = self.gas_cylinder_repository.read_all_cylinders_no_pagination(
-                    cylinder_uuid=cylinder_uuid, user_uuid=user_uuid
+                assets = (
+                    await self.gas_cylinder_repository.read_all_cylinders_no_pagination(
+                        cylinder_uuid=cylinder_uuid, user_uuid=user_uuid
+                    )
                 )
             else:
-                assets = self.gas_cylinder_repository.read_all_cylinders_no_pagination(
-                    user_uuid=user_uuid
+                assets = (
+                    await self.gas_cylinder_repository.read_all_cylinders_no_pagination(
+                        user_uuid=user_uuid
+                    )
                 )
 
         return assets
@@ -903,7 +915,7 @@ class AssetService(BaseService):
         else:
             return {}
 
-    def calculate_total_distance(self, assets, start_date, end_date):
+    async def calculate_total_distance(self, assets, start_date, end_date):
         total_distance_traveled_current_range = 0
         total_distance_traveled_past_range = 0
         fuel_level_current_range = 0
@@ -913,7 +925,7 @@ class AssetService(BaseService):
             if asset.device_imei:
                 # Get asset points for the specified date range
                 asset_events = (
-                    self.tracking_event_repository.read_all_events_by_date_range(
+                    await self.tracking_event_repository.read_all_events_by_date_range(
                         asset.device_imei, start_date, end_date
                     )
                 )
@@ -964,7 +976,7 @@ class AssetService(BaseService):
             fuel_level_past_range,
         )
 
-    def generate_violation_reminder_report(
+    async def generate_violation_reminder_report(
         self,
         start_date: str,
         end_date: str,
@@ -975,7 +987,7 @@ class AssetService(BaseService):
     ):
         try:
             # Fetch violations reminders based on provided parameters
-            violations = self.get_violations_reminders(
+            violations = await self.get_violations_reminders(
                 start_date,
                 end_date,
                 business_uuid,
@@ -990,7 +1002,7 @@ class AssetService(BaseService):
             assets = []
 
             if business_uuid or user_uuid or asset_uuid or asset_type_uuid:
-                assets = self.get_assets(
+                assets = await self.get_assets(
                     business_uuid=business_uuid,
                     user_uuid=user_uuid,
                     asset_uuid=asset_uuid,
@@ -1003,7 +1015,7 @@ class AssetService(BaseService):
                 total_distance_traveled_past_range,
                 fuel_level_current_range,
                 fuel_level_past_range,
-            ) = self.calculate_total_distance(assets, start_date, end_date)
+            ) = await self.calculate_total_distance(assets, start_date, end_date)
 
             if fuel_level_current_range == 0:
                 fuel_efficiency_current_range = 0

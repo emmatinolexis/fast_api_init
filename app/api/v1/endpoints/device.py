@@ -29,7 +29,7 @@ msg_prefix = "device"
 
 @router.get("/", response_class=ORJSONResponse)
 @inject
-async def _handler(
+async def get_all_devices(
     page: int = Query(1, ge=1, description="Page number, default is 1"),
     page_size: int = Query(
         10, ge=1, le=100, description="Items per page, default is 10"
@@ -53,7 +53,7 @@ async def _handler(
 
 @router.get("/assign", response_class=ORJSONResponse)
 @inject
-async def _handler(
+async def get_all_device_to_assign(
     page: int = Query(1, ge=1, description="Page number, default is 1"),
     page_size: int = Query(
         10, ge=1, le=100, description="Items per page, default is 10"
@@ -65,7 +65,7 @@ async def _handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        devices = service._to_assign(
+        devices = await service.get_all_devices_to_assign(
             page=page, page_size=page_size, search_query=search_query
         )
         return send_data(devices)
@@ -103,7 +103,7 @@ async def get_all_business_devices(
 
         if business is None:
             return send_client_side_error(messages.BUSINESS_PROFILE_NOT_FOUND_MSG)
-        return send_data(service.get_devices_by_business_uuid(business_uuid))
+        return send_data(business)
     except Exception as e:
         msg = f"{messages.GET_FAILED}  {msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)

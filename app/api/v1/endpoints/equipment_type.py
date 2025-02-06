@@ -108,7 +108,9 @@ async def get_equipment_type_by_equipment_uuid_handler(
     ),
 ):
     try:
-        equipment_type = await service.get_equipment_type_by_equipment_uuid(equipment_uuid)
+        equipment_type = await service.get_equipment_type_by_equipment_uuid(
+            equipment_uuid
+        )
 
         if equipment_type is None:
             return send_client_side_error(
@@ -119,22 +121,3 @@ async def get_equipment_type_by_equipment_uuid_handler(
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
-
-
-# @router.delete("/{uuid}", response_class=ORJSONResponse)
-# @inject
-# async def delete_equipment_type_handler(
-#     uuid: str,
-#     service: EquipmentTypeService = Depends(Provide[Container.equipment_type_service]),
-#     current_user: User = Depends(get_current_user),
-# ):
-#     try:
-#         service.remove_by_uuid(uuid)
-#         return send_info(messages.DELETE_SUCCESS + msg_prefix)
-#     except NotFoundError as e:
-#         return send_client_side_error(
-#             user_msg=messages.EQUIPMENT_TYPE_NOT_FOUND + str(e.detail)
-#         )
-#     except Exception as e:
-#         msg = messages.DELETE_FAILED + msg_prefix
-#         return send_internal_server_error(user_msg=msg, error=e)

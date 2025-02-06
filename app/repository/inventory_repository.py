@@ -1,17 +1,17 @@
-import uuid
-from contextlib import AbstractContextManager
+from contextlib import AbstractAsyncContextManager
 from typing import Callable
 from uuid import UUID
 
-from sqlalchemy import or_
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.ext import AsynSession, joinedload
 
 from app.model.inventory import Inventory
 from app.repository.base_repository import BaseRepository
 
 
 class InventoryRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
+    def __init__(
+        self, session_factory: Callable[..., AbstractAsyncContextManager[AsynSession]]
+    ):
         self.session_factory = session_factory
         super().__init__(session_factory, Inventory)
 
@@ -109,7 +109,9 @@ class InventoryRepository(BaseRepository):
         async with self.session_factory() as session:
             inventory_query = await session.execute(
                 select(self.model)
-                .options(joinedload(self.model.manufacturer), joinedload(self.model.images))
+                .options(
+                    joinedload(self.model.manufacturer), joinedload(self.model.images)
+                )
                 .filter(self.model.uuid == inventory_uuid)
             )
             return inventory_query.scalars().first()

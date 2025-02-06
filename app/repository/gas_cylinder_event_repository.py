@@ -1,19 +1,21 @@
-from contextlib import AbstractContextManager
+from contextlib import AbstractAsyncContextManager
 from datetime import datetime
 from typing import Callable
 
 from sqlalchemy import Date, and_, cast
-from sqlalchemy.orm import Session
+from sqlalchemy.ext import AsynSession
 
 from app.model.gas_cylinders import GasCylinderEvent
 from app.repository.base_repository import BaseRepository
 
 
 class GasCylinderEventRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
+    def __init__(
+        self, session_factory: Callable[..., AbstractAsyncContextManager[AsynSession]]
+    ):
         self.session_factory = session_factory
         super().__init__(session_factory, GasCylinderEvent)
-    
+
     async def read_all_gas_events_by_date_range(
         self, device_serial_number: str, start_date: str, end_date: str
     ):
@@ -33,5 +35,5 @@ class GasCylinderEventRepository(BaseRepository):
                 .order_by(self.model.event_timestamp)
             )
 
-            result = await session.execute(stmt) 
+            result = await session.execute(stmt)
             return result.scalars().all()

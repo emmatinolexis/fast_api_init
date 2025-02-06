@@ -511,35 +511,6 @@ async def update_alert_policy_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-# @router.delete("/{alert_uuid}", response_class=ORJSONResponse)
-# @inject
-# async def delete_alert_policy_handler(
-#     alert_uuid: str,
-#     service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
-#     user_service: UserService = Depends(Provide[Container.user_service]),
-#     current_user: User = Depends(get_current_user_with_permission("update_policy")),
-# ):
-#     try:
-#         user = user_service.get_user_by_uuid(current_user.uuid)
-#
-#         if user.get("account_type") == AccountType.INDIVIDUAL:
-#             service.delete_alert_policy(
-#                 alert_policy_uuid=alert_uuid, user_uuid=current_user.uuid
-#             )
-#         if user.get("account_type") == AccountType.BUSINESS:
-#             service.delete_alert_policy(
-#                 alert_policy_uuid=alert_uuid,
-#                 business_profile_uuid=current_user.business_profile_uuid,
-#             )
-#
-#         return send_info(messages.DELETE_SUCCESS + "alert policy")
-#     except (NotFoundError, UnAuthorizedError) as e:
-#         return send_client_side_error(user_msg=e.detail, status_code=e.status_codes)
-#     except Exception as e:
-#         msg = messages.DELETE_FAILED + msg_prefix
-#         return send_internal_server_error(user_msg=msg, error=e)
-
-
 @router.patch("/{maintenance_alert_uuid}/toggle_status", response_class=ORJSONResponse)
 @inject
 async def toggle_maintenance_alert(

@@ -2,7 +2,7 @@ import logging
 from collections import defaultdict
 from datetime import datetime, timedelta
 
-import requests
+import aiohttp
 from dateutil import parser
 from dateutil.relativedelta import relativedelta
 
@@ -54,7 +54,7 @@ class SmartReportService(BaseService):
         self.fuel_log_repository = fuel_log_repository
         super().__init__(smart_report_repository)
 
-    def get_reports(
+    async def get_reports(
         self,
         user_uuid: str = None,
         query_parameter: str = None,
@@ -64,7 +64,7 @@ class SmartReportService(BaseService):
         page_size=10,
     ):
         try:
-            return self.smart_report_repository.read_all_reports(
+            return await self.smart_report_repository.read_all_reports(
                 user_uuid=user_uuid,
                 business_uuid=business_profile_uuid,
                 query_parameter=query_parameter,
@@ -75,7 +75,7 @@ class SmartReportService(BaseService):
         except Exception as e:
             raise e
 
-    def generate_total_distance_report(
+    async def generate_total_distance_report(
         self,
         date_from: str,
         date_to: str,
@@ -84,7 +84,7 @@ class SmartReportService(BaseService):
         try:
             assets = []
             for asset_uuid in asset_uuids:
-                asset = self.asset_repository.get_asset_with_relationships(
+                asset = await self.asset_repository.get_asset_with_relationships(
                     asset_uuid, date_from, date_to
                 )
 
@@ -114,7 +114,7 @@ class SmartReportService(BaseService):
         except Exception as e:
             raise e
 
-    def process_asset(self, asset, start_date, end_date):
+    async def process_asset(self, asset, start_date, end_date):
         # Retrieve equipment name
         equipment_name = asset.equipment.name if asset.equipment else "Unknown"
 
@@ -179,7 +179,7 @@ class SmartReportService(BaseService):
         for month in months_to_remove:
             del incidents_rate[month]
 
-    def generate_violation_fleet_performance_report(
+    async def generate_violation_fleet_performance_report(
         self, date_from: str, date_to: str, assets: list
     ):
         try:
@@ -188,7 +188,7 @@ class SmartReportService(BaseService):
 
             # Process each asset
             for asset in assets:
-                self.process_assets(asset, date_from, date_to, data)
+                await self.process_assets(asset, date_from, date_to, data)
 
             # Calculate KMPG for each make
             data["fuel_utilization_mpg"] = self.calculate_kmpg(data)
@@ -234,13 +234,13 @@ class SmartReportService(BaseService):
             "incidents_assets": defaultdict(int),
         }
 
-    def process_assets(self, asset, date_from, date_to, data):
+    async def process_assets(self, asset, date_from, date_to, data):
         (
             asset,
             equipment_name,
             rapid_acceleration,
             emergency_braking,
-        ) = self.process_asset(asset, start_date=date_from, end_date=date_to)
+        ) = await self.process_asset(asset, start_date=date_from, end_date=date_to)
 
         data["total_rapid_acceleration"] += rapid_acceleration
         data["total_emergency_braking"] += emergency_braking
@@ -249,12 +249,12 @@ class SmartReportService(BaseService):
             asset.tracking_events
         )
 
-        asset_violations_data = self.asset_repository.get_violations_by_asset(
+        asset_violations_data = await self.asset_repository.get_violations_by_asset(
             asset.uuid, date_from, date_to
         )
         data["asset_violations"].extend(asset_violations_data)
 
-        fuel_purchase = self.fuel_log_repository.get_fuel_log_by_asset(
+        fuel_purchase = await self.fuel_log_repository.get_fuel_log_by_asset(
             asset.uuid, date_from, date_to
         )
         data["fuel_purchased"].extend(fuel_purchase)
@@ -355,7 +355,7 @@ class SmartReportService(BaseService):
 
         return fuel_utilization_mpg
 
-    def process_violations(self, data):
+    async def process_violations(self, data):
         # Initialize or reset the total_incidents count
 
         for violation in data["asset_violations"]:
@@ -500,10 +500,10 @@ class SmartReportService(BaseService):
         unique_months = sorted(set(months), key=lambda x: datetime.strptime(x, "%B"))
         return date_from_dt, date_to_dt, unique_months
 
-    def retrieve_assets(self, asset_uuids, date_from, date_to):
+    async def retrieve_assets(self, asset_uuids, date_from, date_to):
         assets = []
         for asset_uuid in asset_uuids:
-            asset = self.asset_repository.get_asset_with_relationships(
+            asset = await self.asset_repository.get_asset_with_relationships(
                 asset_uuid, date_from, date_to
             )
             assets.append(asset)
@@ -554,7 +554,7 @@ class SmartReportService(BaseService):
         }
         return report
 
-    def generate_smart_report_fleet_overview(
+    async def generate_smart_report_fleet_overview(
         self,
         date_from: str,
         date_to: str,
@@ -575,7 +575,7 @@ class SmartReportService(BaseService):
             bad_assets = []
 
             for asset in assets:
-                asset_violation = self.get_asset_violation(
+                asset_violation = await self.get_asset_violation(
                     asset,
                     date_from_dt,
                     date_to_dt,
@@ -628,10 +628,10 @@ class SmartReportService(BaseService):
     def initialize_monthly_utilization(self, unique_months):
         return {month: {"hours_worked": 0, "idle_time": 0} for month in unique_months}
 
-    def get_asset_violation(
+    async def get_asset_violation(
         self, asset, date_from_dt, date_to_dt, business_uuid, asset_type_uuid, user_uuid
     ):
-        return self.asset_repository.get_violations_by_alert_type(
+        return await self.asset_repository.get_violations_by_alert_type(
             GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
             date_from_dt,
             date_to_dt,
@@ -641,7 +641,7 @@ class SmartReportService(BaseService):
             user_uuid=user_uuid,
         )
 
-    def update_monthly_utilization(self, monthly_utilization, asset):
+    async def update_monthly_utilization(self, monthly_utilization, asset):
         monthly_events = self.group_events_by_month(asset)
         for month, events in monthly_events.items():
             moving_time, idle_time = self.calculate_times(events)
@@ -657,7 +657,7 @@ class SmartReportService(BaseService):
             monthly_utilization[month]["hours_worked"] += hours_worked_percentage
             monthly_utilization[month]["idle_time"] += idle_time_percentage
 
-    def update_grouped_assets(self, grouped_assets, asset):
+    async def update_grouped_assets(self, grouped_assets, asset):
         overall_moving_time, overall_idle_time = self.calculate_times(
             asset.tracking_events
         )
@@ -716,7 +716,7 @@ class SmartReportService(BaseService):
                 monthly_utilization[month]["idle_time"], 2
             )
 
-    def calculate_total_distance(self, assets, start_date, end_date):
+    async def calculate_total_distance(self, assets, start_date, end_date):
         total_distance_traveled_current_range = 0
         total_distance_traveled_past_range = 0
         fuel_level_current_range = 0
@@ -726,7 +726,7 @@ class SmartReportService(BaseService):
             if asset.device_imei:
                 # Get asset points for the specified date range
                 asset_events = (
-                    self.tracking_event_repository.read_all_events_by_date_range(
+                    await self.tracking_event_repository.read_all_events_by_date_range(
                         asset.device_imei, start_date, end_date
                     )
                 )
@@ -777,7 +777,7 @@ class SmartReportService(BaseService):
             fuel_level_past_range,
         )
 
-    def generate_fuel_usage_report(
+    async def generate_fuel_usage_report(
         self,
         start_date: str,
         end_date: str,
@@ -790,7 +790,7 @@ class SmartReportService(BaseService):
 
             # Retrieve assets and their tracking events
             for asset_uuid in asset_uuids:
-                asset = self.asset_repository.get_asset_with_relationships(
+                asset = await self.asset_repository.get_asset_with_relationships(
                     asset_uuid, start_date, end_date
                 )
                 assets.append(asset)
@@ -800,9 +800,9 @@ class SmartReportService(BaseService):
             current_date = start_date_dt.replace(day=1)
             while current_date <= end_date_dt:
                 month_key = current_date.strftime("%B")
-                fuel_usage_report[
-                    month_key
-                ] = 0.0  # Ensure the initial value is a float
+                fuel_usage_report[month_key] = (
+                    0.0  # Ensure the initial value is a float
+                )
                 # Move to the next month
                 next_month = current_date.month % 12 + 1
                 next_year = current_date.year + (current_date.month // 12)
@@ -842,7 +842,7 @@ class SmartReportService(BaseService):
         except Exception as e:
             raise e
 
-    def get_violations_reminders(
+    async def get_violations_reminders(
         self,
         start_date,
         end_date,
@@ -853,7 +853,7 @@ class SmartReportService(BaseService):
     ):
         if business_uuid:
             return {
-                "geofence_violations": self.asset_repository.get_violations_by_alert_type(
+                "geofence_violations": await self.asset_repository.get_violations_by_alert_type(
                     GeofenceTypeUuid.GEOFENCE_ALERT_POLICY,
                     start_date,
                     end_date,
@@ -861,7 +861,7 @@ class SmartReportService(BaseService):
                     asset_uuid=asset_uuid,
                     asset_type_uuid=asset_type_uuid,
                 ),
-                "over_speeding_violations": self.asset_repository.get_violations_by_alert_type(
+                "over_speeding_violations": await self.asset_repository.get_violations_by_alert_type(
                     GeofenceTypeUuid.OVER_SPEEDING_ALERT_POLICY,
                     start_date,
                     end_date,
@@ -869,7 +869,7 @@ class SmartReportService(BaseService):
                     asset_uuid=asset_uuid,
                     asset_type_uuid=asset_type_uuid,
                 ),
-                "idling_violations": self.asset_repository.get_violations_by_alert_type(
+                "idling_violations": await self.asset_repository.get_violations_by_alert_type(
                     GeofenceTypeUuid.IDLING_ALERT_POLICY,
                     start_date,
                     end_date,
@@ -877,7 +877,7 @@ class SmartReportService(BaseService):
                     asset_uuid=asset_uuid,
                     asset_type_uuid=asset_type_uuid,
                 ),
-                "break_inspection": self.asset_repository.get_maintenance_by_alert_type(
+                "break_inspection": await self.asset_repository.get_maintenance_by_alert_type(
                     GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
                     AlertPolicy.BRAKE_INSPECTION,
                     start_date,
@@ -886,7 +886,7 @@ class SmartReportService(BaseService):
                     asset_uuid=asset_uuid,
                     asset_type_uuid=asset_type_uuid,
                 ),
-                "oil_change": self.asset_repository.get_maintenance_by_alert_type(
+                "oil_change": await self.asset_repository.get_maintenance_by_alert_type(
                     GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
                     AlertPolicy.OIL_CHANGE,
                     start_date,
@@ -895,7 +895,7 @@ class SmartReportService(BaseService):
                     asset_uuid=asset_uuid,
                     asset_type_uuid=asset_type_uuid,
                 ),
-                "tire_rotation": self.asset_repository.get_maintenance_by_alert_type(
+                "tire_rotation": await self.asset_repository.get_maintenance_by_alert_type(
                     GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
                     AlertPolicy.TIRE_ROTATION,
                     start_date,
@@ -904,7 +904,7 @@ class SmartReportService(BaseService):
                     asset_uuid=asset_uuid,
                     asset_type_uuid=asset_type_uuid,
                 ),
-                "general_servicing": self.asset_repository.get_maintenance_by_alert_type(
+                "general_servicing": await self.asset_repository.get_maintenance_by_alert_type(
                     GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
                     AlertPolicy.GENERAL_SERVICING,
                     start_date,
@@ -913,7 +913,7 @@ class SmartReportService(BaseService):
                     asset_uuid=asset_uuid,
                     asset_type_uuid=asset_type_uuid,
                 ),
-                "others": self.asset_repository.get_maintenance_by_alert_type(
+                "others": await self.asset_repository.get_maintenance_by_alert_type(
                     GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
                     AlertPolicy.OTHER,
                     start_date,
@@ -925,7 +925,7 @@ class SmartReportService(BaseService):
             }
         elif user_uuid:
             return {
-                "geofence_violations": self.asset_repository.get_violations_by_alert_type(
+                "geofence_violations": await self.asset_repository.get_violations_by_alert_type(
                     GeofenceTypeUuid.GEOFENCE_ALERT_POLICY,
                     start_date,
                     end_date,
@@ -933,7 +933,7 @@ class SmartReportService(BaseService):
                     asset_uuid=asset_uuid,
                     asset_type_uuid=asset_type_uuid,
                 ),
-                "over_speeding_violations": self.asset_repository.get_violations_by_alert_type(
+                "over_speeding_violations": await self.asset_repository.get_violations_by_alert_type(
                     GeofenceTypeUuid.OVER_SPEEDING_ALERT_POLICY,
                     start_date,
                     end_date,
@@ -941,13 +941,13 @@ class SmartReportService(BaseService):
                     asset_uuid=asset_uuid,
                     asset_type_uuid=asset_type_uuid,
                 ),
-                "idling_violations": self.asset_repository.get_violations_by_alert_type(
+                "idling_violations": await self.asset_repository.get_violations_by_alert_type(
                     GeofenceTypeUuid.IDLING_ALERT_POLICY,
                     start_date,
                     end_date,
                     user_uuid=user_uuid,
                 ),
-                "break_inspection": self.asset_repository.get_maintenance_by_alert_type(
+                "break_inspection": await self.asset_repository.get_maintenance_by_alert_type(
                     GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
                     AlertPolicy.BRAKE_INSPECTION,
                     start_date,
@@ -956,7 +956,7 @@ class SmartReportService(BaseService):
                     asset_uuid=asset_uuid,
                     asset_type_uuid=asset_type_uuid,
                 ),
-                "oil_change": self.asset_repository.get_maintenance_by_alert_type(
+                "oil_change": await self.asset_repository.get_maintenance_by_alert_type(
                     GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
                     AlertPolicy.OIL_CHANGE,
                     start_date,
@@ -965,7 +965,7 @@ class SmartReportService(BaseService):
                     asset_uuid=asset_uuid,
                     asset_type_uuid=asset_type_uuid,
                 ),
-                "tire_rotation": self.asset_repository.get_maintenance_by_alert_type(
+                "tire_rotation": await self.asset_repository.get_maintenance_by_alert_type(
                     GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
                     AlertPolicy.TIRE_ROTATION,
                     start_date,
@@ -974,7 +974,7 @@ class SmartReportService(BaseService):
                     asset_uuid=asset_uuid,
                     asset_type_uuid=asset_type_uuid,
                 ),
-                "general_servicing": self.asset_repository.get_maintenance_by_alert_type(
+                "general_servicing": await self.asset_repository.get_maintenance_by_alert_type(
                     GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
                     AlertPolicy.GENERAL_SERVICING,
                     start_date,
@@ -983,7 +983,7 @@ class SmartReportService(BaseService):
                     asset_uuid=asset_uuid,
                     asset_type_uuid=asset_type_uuid,
                 ),
-                "others": self.asset_repository.get_maintenance_by_alert_type(
+                "others": await self.asset_repository.get_maintenance_by_alert_type(
                     GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
                     AlertPolicy.OTHER,
                     start_date,
@@ -996,7 +996,7 @@ class SmartReportService(BaseService):
         else:
             return {}
 
-    def generate_fuel_utilization_report(
+    async def generate_fuel_utilization_report(
         self,
         start_date: str,
         end_date: str,
@@ -1009,7 +1009,7 @@ class SmartReportService(BaseService):
 
             # Step 1: Retrieve assets and filter events by date range
             for asset_uuid in asset_uuids:
-                asset = self.asset_repository.get_asset_with_relationships(
+                asset = await self.asset_repository.get_asset_with_relationships(
                     asset_uuid, start_date, end_date
                 )
                 assets.append(asset)
@@ -1055,7 +1055,7 @@ class SmartReportService(BaseService):
         except Exception as e:
             raise e
 
-    def generate_fuel_usage_by_asset_type_report(
+    async def generate_fuel_usage_by_asset_type_report(
         self,
         start_date: str,
         end_date: str,
@@ -1066,7 +1066,7 @@ class SmartReportService(BaseService):
 
             # Step 1: Retrieve assets and filter events by date range
             for asset_uuid in asset_uuids:
-                asset = self.asset_repository.get_asset_with_relationships(
+                asset = await self.asset_repository.get_asset_with_relationships(
                     asset_uuid, start_date, end_date
                 )
                 assets.append(asset)
@@ -1077,40 +1077,39 @@ class SmartReportService(BaseService):
         except Exception as e:
             raise e
 
-    def get_unprocessed_smart_report_by_uuid(self):
+    async def get_unprocessed_smart_report_by_uuid(self):
         try:
-            report = self.smart_report_repository.get_unprocessed_report()
+            report = await self.smart_report_repository.get_unprocessed_report()
             return report
         except Exception as e:
             raise e
 
-    def get_processed_smart_report(self, smart_report):
+    async def get_processed_smart_report(self, smart_report):
         try:
             url = smart_report.result_url
 
             # Fetch the content from the URL
-            response = requests.get(url)
-            response.raise_for_status()  # Check if the request was successful
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as response:
+                    response.raise_for_status()  # Check if the request was successful
+                    smart_report = await response.json()
 
-            # Parse the JSON content
-            smart_report = response.json()
-
-            return smart_report
+                    return smart_report
         except Exception as e:
             raise e
 
-    def update_smart_report_status(
+    async def update_smart_report_status(
         self, smart_report_uuid: str, status: SmartReportStatus, url: str = None
     ):
         try:
-            report = self.smart_report_repository.update_smart_report_status(
+            report = await self.smart_report_repository.update_smart_report_status(
                 smart_report_uuid, status, url
             )
             return report
         except Exception as e:
             raise e
 
-    def generate_smart_report(self, report):
+    async def generate_smart_report(self, report):
         try:
             if not report:
                 logging.info("No smart report to process")
@@ -1127,12 +1126,12 @@ class SmartReportService(BaseService):
             report_date = convert_iso_datetime_format(report.get("created_at"))
 
             # Retrieve user and business details
-            user, business_uuid, business_name = self.get_user_and_business_details(
-                user_uuid, report
+            user, business_uuid, business_name = (
+                await self.get_user_and_business_details(user_uuid, report)
             )
 
             # Retrieve assets
-            assets = self.get_assets(asset_uuids, start_date, end_date)
+            assets = await self.get_assets(asset_uuids, start_date, end_date)
 
             # Calculate distances and fuel efficiency
             (
@@ -1140,7 +1139,7 @@ class SmartReportService(BaseService):
                 total_distance_traveled_past_range,
                 fuel_level_current_range,
                 fuel_level_past_range,
-            ) = self.calculate_total_distance(assets, start_date, end_date)
+            ) = await self.calculate_total_distance(assets, start_date, end_date)
 
             (
                 fuel_efficiency_current_range,
@@ -1157,7 +1156,7 @@ class SmartReportService(BaseService):
             if SmartReportType.FLEET_OVERVIEW in report_types:
                 if user.get("account_type") == AccountType.INDIVIDUAL:
                     smart_report_fleet_overview = (
-                        self.generate_smart_report_fleet_overview(
+                        await self.generate_smart_report_fleet_overview(
                             start_date,
                             end_date,
                             asset_type_uuid,
@@ -1167,7 +1166,7 @@ class SmartReportService(BaseService):
                     )
                 elif user.get("account_type") == AccountType.BUSINESS:
                     smart_report_fleet_overview = (
-                        self.generate_smart_report_fleet_overview(
+                        await self.generate_smart_report_fleet_overview(
                             start_date,
                             end_date,
                             asset_type_uuid,
@@ -1180,7 +1179,7 @@ class SmartReportService(BaseService):
             smart_report_fleet_performance = {}
             if SmartReportType.FLEET_PERFORMANCE in report_types:
                 smart_report_fleet_performance = (
-                    self.generate_violation_fleet_performance_report(
+                    await self.generate_violation_fleet_performance_report(
                         start_date, end_date, assets
                     )
                 )
@@ -1188,7 +1187,7 @@ class SmartReportService(BaseService):
             # Generate cost analysis report section
             cost_analysis = {}
             if SmartReportType.COST_ANALYSIS in report_types:
-                cost_analysis = self.generate_cost_analysis_report(
+                cost_analysis = await self.generate_cost_analysis_report(
                     start_date, end_date, assets
                 )
 
@@ -1215,8 +1214,8 @@ class SmartReportService(BaseService):
         except Exception as e:
             raise e
 
-    def get_user_and_business_details(self, user_uuid, report):
-        user = self.user_repository.get_user_by_uuid(user_uuid)
+    async def get_user_and_business_details(self, user_uuid, report):
+        user = await self.user_repository.get_user_by_uuid(user_uuid)
         if user.get("account_type") == AccountType.BUSINESS:
             business_uuid = report.get("business_profile_uuid")
             business_name = report.get("business_name")
@@ -1225,10 +1224,10 @@ class SmartReportService(BaseService):
             business_name = None
         return user, business_uuid, business_name
 
-    def get_assets(self, asset_uuids, start_date, end_date):
+    async def get_assets(self, asset_uuids, start_date, end_date):
         assets = []
         for asset_uuid in asset_uuids:
-            asset = self.asset_repository.get_asset_with_relationships(
+            asset = await self.asset_repository.get_asset_with_relationships(
                 asset_uuid, start_date, end_date
             )
             if asset and asset.device_imei:
@@ -1254,7 +1253,7 @@ class SmartReportService(BaseService):
         )
         return fuel_efficiency_current_range, fuel_efficiency_past_range
 
-    def generate_fleet_overview(
+    async def generate_fleet_overview(
         self,
         report_types,
         user,
@@ -1268,7 +1267,7 @@ class SmartReportService(BaseService):
             return {}
 
         if user.get("account_type") == AccountType.INDIVIDUAL:
-            return self.generate_smart_report_fleet_overview(
+            return await self.generate_smart_report_fleet_overview(
                 start_date,
                 end_date,
                 asset_type_uuid,
@@ -1276,7 +1275,7 @@ class SmartReportService(BaseService):
                 user_uuid=user.get("uuid"),
             )
         elif user.get("account_type") == AccountType.BUSINESS:
-            return self.generate_smart_report_fleet_overview(
+            return await self.generate_smart_report_fleet_overview(
                 start_date,
                 end_date,
                 asset_type_uuid,
@@ -1395,7 +1394,9 @@ class SmartReportService(BaseService):
 
         return rapid_acceleration_by_month, emergency_braking_by_month
 
-    def generate_cost_analysis_report(self, date_from: str, date_to: str, assets: list):
+    async def generate_cost_analysis_report(
+        self, date_from: str, date_to: str, assets: list
+    ):
         try:
             fuel_purchased = []
             fuel_usage_by_month = defaultdict(
@@ -1418,7 +1419,7 @@ class SmartReportService(BaseService):
 
             # Fetch fuel purchase logs for each asset
             for asset in assets:
-                fuel_purchase = self.fuel_log_repository.get_fuel_log_by_asset(
+                fuel_purchase = await self.fuel_log_repository.get_fuel_log_by_asset(
                     asset.uuid, date_from, date_to
                 )
                 fuel_purchased.extend(fuel_purchase)

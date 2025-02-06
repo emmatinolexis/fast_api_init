@@ -1,11 +1,12 @@
-from contextlib import AbstractContextManager
+from contextlib import AbstractAsyncContextManager
 from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Callable, Optional
 
 from dateutil.relativedelta import relativedelta
 from sqlalchemy import Float, func, or_
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from app.model.payment import Payment
 from app.model.user import User
@@ -15,11 +16,13 @@ from app.util.utils import calculate_percentage_change, parse_date
 
 
 class PaymentRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
+    def __init__(
+        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
+    ):
         self.session_factory = session_factory
         super().__init__(session_factory, Payment)
 
-    def get_all_payments(
+    async def get_all_payments(
         self,
         search_parameter: str = None,
         start_date: str = None,
@@ -28,7 +31,7 @@ class PaymentRepository(BaseRepository):
         page_size: int = 10,
         status=None,
     ):
-        with self.session_factory() as session:
+        async with self.session_factory() as session:
             current_start_date, current_end_date = self.determine_current_period(
                 start_date, end_date
             )
@@ -48,18 +51,19 @@ class PaymentRepository(BaseRepository):
                 status,
             )
 
-            total_records = query_current.count()
+            total_records = await session.scalar(query_current.count())
             total_pages = (total_records + page_size - 1) // page_size
 
             paginated_query = query_current.limit(page_size).offset(
                 (page - 1) * page_size
             )
-            payments = paginated_query.all()
+            payments = await session.execute(paginated_query)
+            payments = payments.scalars().all()
 
-            metrics_current = self.calculate_metrics(
+            metrics_current = await self.calculate_metrics(
                 session, search_parameter, status, current_start_date, current_end_date
             )
-            metrics_previous = self.calculate_metrics(
+            metrics_previous = await self.calculate_metrics(
                 session,
                 search_parameter,
                 status,
@@ -129,9 +133,9 @@ class PaymentRepository(BaseRepository):
         previous_end_date = current_start - timedelta(days=1)
         return previous_start_date, previous_end_date
 
-    def calculate_metrics(
+    async def calculate_metrics(
         self,
-        session: Session,
+        session: AsyncSession,
         search_parameter: Optional[str],
         status: Optional[str],
         start_date: datetime,
@@ -150,7 +154,7 @@ class PaymentRepository(BaseRepository):
             )
         if status:
             sum_query = sum_query.filter(self.model.status == PaymentStatus(status))
-        total_sum = Decimal(sum_query.scalar() or "0.00")
+        total_sum = Decimal(await session.scalar(sum_query) or "0.00")
 
         count_success = session.query(func.count(self.model.uuid)).filter(
             self.model.status == PaymentStatus.SUCCESS,
@@ -164,7 +168,7 @@ class PaymentRepository(BaseRepository):
                     self.model.user.has(User.last_name.ilike(f"%{search_parameter}%")),
                 )
             )
-        count_success = count_success.scalar()
+        count_success = await session.scalar(count_success)
 
         count_failed = session.query(func.count(self.model.uuid)).filter(
             self.model.status == PaymentStatus.FAILED,
@@ -178,7 +182,7 @@ class PaymentRepository(BaseRepository):
                     self.model.user.has(User.last_name.ilike(f"%{search_parameter}%")),
                 )
             )
-        count_failed = count_failed.scalar()
+        count_failed = await session.scalar(count_failed)
 
         return {
             "sum": total_sum,

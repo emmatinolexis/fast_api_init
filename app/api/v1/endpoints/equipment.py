@@ -69,7 +69,7 @@ async def create_equipment_handler(
     current_user: User = Depends(get_current_user_with_permission("create_equipment")),
 ):
     try:
-        equipment =await service.add(payload)
+        equipment = await service.add(payload)
         return send_data(equipment)
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
@@ -85,31 +85,10 @@ async def update_equipment_handler(
     current_user: User = Depends(get_current_user_with_permission("update_equipment")),
 ):
     try:
-        equipment =await service.patch_by_uuid(uuid, payload)
+        equipment = await service.patch_by_uuid(uuid, payload)
         if equipment is None:
             return send_client_side_error(user_msg=messages.EQUIPMENT_NOT_FOUND + uuid)
         return send_data(equipment)
     except Exception as e:
         msg = messages.UPDATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
-
-
-# @router.delete(
-#     "/{uuid}", dependencies=[allow_admins_only], response_class=ORJSONResponse
-# )
-# @inject
-# async def delete_equipment_handler(
-#     uuid: str,
-#     service: EquipmentService = Depends(Provide[Container.equipment_service]),
-#     current_user: User = Depends(get_current_user),
-# ):
-#     try:
-#         service.remove_by_uuid(uuid)
-#         return send_info(messages.DELETE_SUCCESS + msg_prefix)
-#     except NotFoundError as e:
-#         return send_client_side_error(
-#             user_msg=messages.EQUIPMENT_NOT_FOUND + str(e.detail)
-#         )
-#     except Exception as e:
-#         msg = messages.DELETE_FAILED + msg_prefix
-#         return send_internal_server_error(user_msg=msg, error=e)

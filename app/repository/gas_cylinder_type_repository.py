@@ -1,8 +1,8 @@
-from contextlib import AbstractContextManager
+from contextlib import AbstractAsyncContextManager
 from typing import Callable, Optional
 
 from sqlalchemy import String, cast
-from sqlalchemy.orm import Session
+from sqlalchemy.ext import AsynSession
 
 from app.model.gas_cylinders import CylinderTypes
 from app.repository.base_repository import BaseRepository
@@ -10,11 +10,12 @@ from app.util.enums import ActiveStatus
 
 
 class GasCylinderTypeRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
+    def __init__(
+        self, session_factory: Callable[..., AbstractAsyncContextManager[AsynSession]]
+    ):
         self.session_factory = session_factory
         super().__init__(session_factory, CylinderTypes)
 
-    
     async def filter_by_status_and_name(
         self,
         status: Optional[str] = None,
@@ -31,7 +32,9 @@ class GasCylinderTypeRepository(BaseRepository):
 
             # Apply search filter
             if search_query:
-                stmt = stmt.filter(cast(CylinderTypes.name, String).ilike(f"%{search_query}%"))
+                stmt = stmt.filter(
+                    cast(CylinderTypes.name, String).ilike(f"%{search_query}%")
+                )
 
             # Get total record count
             total_records_stmt = select(func.count()).select_from(stmt.subquery())
@@ -51,5 +54,7 @@ class GasCylinderTypeRepository(BaseRepository):
                 "total_records": total_records,
                 "page": page,
                 "page_size": page_size,
-                "total_pages": (total_records + page_size - 1) // page_size if total_records else 0,
+                "total_pages": (
+                    (total_records + page_size - 1) // page_size if total_records else 0
+                ),
             }

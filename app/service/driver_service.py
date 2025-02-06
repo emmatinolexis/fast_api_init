@@ -49,7 +49,9 @@ class DriverService(BaseService):
         except Exception as e:
             raise e
 
-    async def get_drivers_by_business_uuid(self, business_uuid: str, page=1, page_size=10):
+    async def get_drivers_by_business_uuid(
+        self, business_uuid: str, page=1, page_size=10
+    ):
         try:
             driver = await self.driver_repository.get_drivers_by_business_uuid(
                 business_uuid, page, page_size
@@ -67,23 +69,25 @@ class DriverService(BaseService):
         except Exception as e:
             raise e
 
-    def unassign_driver(self, driver_uuid: str):
+    async def unassign_driver(self, driver_uuid: str):
         try:
-            driver_assset = self.asset_operator_assignment_repository.get_assignment_by_operator_uuid(
+            driver_assset = await self.asset_operator_assignment_repository.get_assignment_by_operator_uuid(
                 operator_uuid=driver_uuid
             )
 
             if driver_assset is None:
                 raise BadRequestError(messages.NOT_ASSIGNED)
 
-            asset = self.asset_repository.read_by_uuid(driver_assset.asset_uuid)
+            asset = await self.asset_repository.read_by_uuid(driver_assset.asset_uuid)
 
-            operator = self.user_repository.read_by_uuid(driver_uuid)
+            operator = await self.user_repository.read_by_uuid(driver_uuid)
 
             subscriber.publish(
                 VehicleUnassignment, VehicleUnassignment(asset=asset, user=operator)
             )
-            self.asset_operator_assignment_repository.delete_by_uuid(driver_assset.uuid)
+            await self.asset_operator_assignment_repository.delete_by_uuid(
+                driver_assset.uuid
+            )
         except Exception as e:
             raise e
 
@@ -110,7 +114,9 @@ class DriverService(BaseService):
                 raise BadRequestError(messages.DRIVER_ALREADY_ASSIGNED_SAME_ASSET)
 
             # Update the old driver's asset UUID to None if it exists
-            old_driver = await self.driver_repository.get_driver_by_asset_uuid(asset_uuid)
+            old_driver = await self.driver_repository.get_driver_by_asset_uuid(
+                asset_uuid
+            )
             if old_driver:
                 await self.driver_repository.update_attr_by_uuid(
                     old_driver.uuid, "asset_uuid", None

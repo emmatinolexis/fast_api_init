@@ -15,20 +15,20 @@ class AssetLocationService(BaseService):
         self.asset_repository = asset_repository
         super().__init__(asset_location_repository)
 
-    def create_asset_location(self, payload: AssetLocationPayload):
+    async def create_asset_location(self, payload: AssetLocationPayload):
         try:
-            if self.asset_repository.read_by_uuid(payload.asset_uuid) is None:
+            if await self.asset_repository.read_by_uuid(payload.asset_uuid) is None:
                 raise NotFoundError(detail=payload.asset_uuid)
-            asset_location = self.asset_location_repository.create(payload)
+            asset_location = await self.asset_location_repository.create(payload)
             return asset_location
         except Exception as e:
             raise e
 
-    def update_asset_location(self, uuid: str, payload: AssetLocationPayload):
+    async def update_asset_location(self, uuid: str, payload: AssetLocationPayload):
         try:
-            if self.asset_repository.read_by_uuid(payload.asset_uuid) is None:
+            if await self.asset_repository.read_by_uuid(payload.asset_uuid) is None:
                 raise NotFoundError(detail=payload.asset_uuid)
-            asset_location = self.asset_location_repository.update_by_uuid(
+            asset_location = await self.asset_location_repository.update_by_uuid(
                 uuid, payload
             )
             return asset_location

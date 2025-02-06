@@ -1,7 +1,7 @@
-from contextlib import AbstractContextManager
+from contextlib import AbstractAsyncContextManager
 from typing import Callable
 
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.ext import AsynSession, joinedload
 
 from app.model.asset import Asset
 from app.model.fine_report import FineReport
@@ -9,15 +9,18 @@ from app.repository.base_repository import BaseRepository
 
 
 class FineReportRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
+    def __init__(
+        self, session_factory: Callable[..., AbstractAsyncContextManager[AsynSession]]
+    ):
         self.session_factory = session_factory
         super().__init__(session_factory, FineReport)
 
     async def get_fine_reports(self):
         async with self.session_factory() as session:
             query = await session.execute(
-                select(self.model)
-                .options(joinedload(self.model.asset).joinedload(Asset.vehicle_owner))
+                select(self.model).options(
+                    joinedload(self.model.asset).joinedload(Asset.vehicle_owner)
+                )
             )
             result = query.scalars().all()
             return result

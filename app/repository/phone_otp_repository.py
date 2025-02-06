@@ -1,9 +1,9 @@
-from contextlib import AbstractContextManager
+from contextlib import AbstractAsyncContextManager
 from datetime import datetime, timedelta
 from typing import Callable
 
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.phone_otp_token import PhoneOtpToken
 from app.repository.base_repository import BaseRepository
@@ -11,24 +11,25 @@ from app.util.utils import generate_unique_token
 
 
 class PhoneOtpTokenRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
+    def __init__(
+        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
+    ):
         self.session_factory = session_factory
         super().__init__(session_factory, PhoneOtpToken)
 
-    def generate_token(self) -> str:
-        with self.session_factory() as session:
+    async def generate_token(self) -> str:
+        async with self.session_factory() as session:
             while True:
                 token = generate_unique_token(size=3)
-                if (
-                    not session.query(self.model)
-                    .filter(self.model.token == token)
-                    .first()
-                ):
+                result = await session.execute(
+                    session.query(self.model).filter(self.model.token == token)
+                )
+                if not result.scalars().first():
                     return token
 
-    def create_token(self, user_uuid: str) -> PhoneOtpToken:
-        with self.session_factory() as session:
-            token = self.generate_token()
+    async def create_token(self, user_uuid: str) -> PhoneOtpToken:
+        async with self.session_factory() as session:
+            token = await self.generate_token()
             query = self.model(
                 token=token,
                 user_uuid=user_uuid,
@@ -36,31 +37,39 @@ class PhoneOtpTokenRepository(BaseRepository):
             )
             try:
                 session.add(query)
-                session.commit()
-                session.refresh(query)
+                await session.commit()
+                await session.refresh(query)
             except IntegrityError as e:
+                await session.rollback()
                 raise e
             except Exception as e:
+                await session.rollback()
                 raise e
             return query
 
-    def get_token(self, token: str) -> PhoneOtpToken:
-        with self.session_factory() as session:
-            return session.query(self.model).filter(self.model.token == token).first()
-
-    def delete_by_user_uuid(self, user_id: str):
-        with self.session_factory() as session:
-            tokens = (
-                session.query(self.model).filter(self.model.user_uuid == user_id).all()
+    async def get_token(self, token: str) -> PhoneOtpToken:
+        async with self.session_factory() as session:
+            result = await session.execute(
+                session.query(self.model).filter(self.model.token == token)
             )
+            return result.scalars().first()
+
+    async def delete_by_user_uuid(self, user_id: str):
+        async with self.session_factory() as session:
+            result = await session.execute(
+                session.query(self.model).filter(self.model.user_uuid == user_id)
+            )
+            tokens = result.scalars().all()
 
             if not tokens:
                 return None
             try:
                 for token in tokens:
-                    session.delete(token)
-                    session.commit()
+                    await session.delete(token)
+                await session.commit()
             except IntegrityError as e:
+                await session.rollback()
                 raise e
             except Exception as e:
+                await session.rollback()
                 raise e

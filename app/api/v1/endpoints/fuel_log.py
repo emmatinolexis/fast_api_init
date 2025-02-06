@@ -182,7 +182,7 @@ async def get_fuel_logs_handler(
 
 @router.patch("/receipt/{fuel_log_uuid}", response_class=ORJSONResponse)
 @inject
-def upload_fuel_log_receipt_handler(
+async def upload_fuel_log_receipt_handler(
     fuel_log_uuid: str,
     payload: UpdateFuelLog,
     service: FuelLogService = Depends(Provide[Container.fuel_log_service]),
@@ -219,7 +219,7 @@ def upload_fuel_log_receipt_handler(
 
 @router.get("/receipt/{fuel_log_uuid}", response_class=ORJSONResponse)
 @inject
-def get_fuel_log_receipt_handler(
+async def get_fuel_log_receipt_handler(
     fuel_log_uuid: str,
     service: FuelLogService = Depends(Provide[Container.fuel_log_service]),
     current_user: User = Depends(
