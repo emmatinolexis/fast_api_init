@@ -1,4 +1,3 @@
-from contextlib import AbstractAsyncContextManager
 from datetime import datetime
 from typing import Callable, List, Optional
 
@@ -13,9 +12,7 @@ from app.util.enums import ActivityLogClass
 
 
 class ActivityLogRepository(BaseRepository):
-    def __init__(
-        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
-    ):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, ActivityLog)
 

@@ -1,4 +1,3 @@
-from contextlib import AbstractAsyncContextManager
 from typing import Any, Callable, Dict, Optional
 
 from sqlalchemy import desc
@@ -15,9 +14,7 @@ from app.util.utils import calculate_gas_level_percentage
 
 
 class BuildingRepository(BaseRepository):
-    def __init__(
-        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
-    ):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, Building)
 
@@ -41,7 +38,7 @@ class BuildingRepository(BaseRepository):
                     ),
                 )
             )
-            building = building.scalars().first()
+            building = building.unique().scalars().first()
 
             cylinders = []
 
@@ -101,7 +98,8 @@ class BuildingRepository(BaseRepository):
                 .limit(page_size)
             )
 
-            assets = self._load_related_models(paginated_query).all()
+            results = await session.execute(self._load_related_models(paginated_query))
+            assets = assets.unique().scalars().all()
             buildings = self._build_building_assets(assets)
 
             return {

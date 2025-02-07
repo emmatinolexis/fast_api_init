@@ -1,4 +1,3 @@
-from contextlib import AbstractAsyncContextManager
 from typing import Callable
 
 from sqlalchemy import Date, cast, func
@@ -13,9 +12,7 @@ from app.util.enums import IncidentStatus
 
 
 class TheftIncidenceRepository(BaseRepository):
-    def __init__(
-        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
-    ):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, TheftIncidence)
 
@@ -71,9 +68,10 @@ class TheftIncidenceRepository(BaseRepository):
                     )
                 ).scalar()
 
-                paginated_incidences = await session.execute(
+                results = await session.execute(
                     base_query.offset(offset).limit(page_size)
-                ).all()
+                )
+                paginated_incidences = results.unique().scalars().all()
 
                 result = [
                     {

@@ -1,4 +1,3 @@
-from contextlib import AbstractAsyncContextManager
 from datetime import datetime, timedelta
 from typing import Callable, Optional
 from uuid import UUID
@@ -18,9 +17,7 @@ from app.util.utils import calculate_percentage_change, parse_date
 
 
 class OrderRepository(BaseRepository):
-    def __init__(
-        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
-    ):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, OrderRepository)
 
@@ -37,7 +34,7 @@ class OrderRepository(BaseRepository):
                     )
                     .filter(Order.uuid == order_uuid)
                 )
-                order = result.scalars().first()
+                order = result.unique().scalars().first()
                 return order
             except Exception as e:
                 await session.rollback()
@@ -60,7 +57,7 @@ class OrderRepository(BaseRepository):
                 await session.rollback()
                 raise e
 
-    async def _get_base_query(self):
+    def _get_base_query(self):
         return (
             select(Order)
             .options(
@@ -120,7 +117,7 @@ class OrderRepository(BaseRepository):
             previous_start_date = current_start_date - delta
             previous_end_date = current_start_date - timedelta(seconds=1)
 
-            base_query = await self._get_base_query(session)
+            base_query = self._get_base_query(session)
 
             query_current = self.apply_filters(
                 base_query, search_query, current_start_date, current_end_date, status
@@ -261,7 +258,7 @@ class OrderRepository(BaseRepository):
                     )
                 )
 
-                order = result.scalars().first()
+                order = result.unique().scalars().first()
                 return order
 
             except Exception as e:

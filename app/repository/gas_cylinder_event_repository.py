@@ -1,4 +1,3 @@
-from contextlib import AbstractAsyncContextManager
 from datetime import datetime
 from typing import Callable
 
@@ -10,9 +9,7 @@ from app.repository.base_repository import BaseRepository
 
 
 class GasCylinderEventRepository(BaseRepository):
-    def __init__(
-        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
-    ):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, GasCylinderEvent)
 

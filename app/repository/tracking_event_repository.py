@@ -1,4 +1,3 @@
-from contextlib import AbstractAsyncContextManager
 from datetime import datetime, timedelta
 from typing import Callable, Dict, List
 
@@ -15,9 +14,7 @@ from app.util.utils import calculate_average_speed, get_status
 
 
 class TrackingEventRepository(BaseRepository):
-    def __init__(
-        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
-    ):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, TrackingEvent)
 
@@ -152,7 +149,7 @@ class TrackingEventRepository(BaseRepository):
                     .order_by(self.model.event_datetime)
                 )
                 events_by_device[device_imei] = {
-                    "events": query.scalars().all(),
+                    "events": query.unique().scalars().all(),
                     "asset": asset,
                 }
 
@@ -296,4 +293,4 @@ class TrackingEventRepository(BaseRepository):
                 for asset in assets.scalars().all()
             ]
 
-            return paginated_assets, total_records.scalar()
+            return paginated_assets, total_records.unique().scalar()

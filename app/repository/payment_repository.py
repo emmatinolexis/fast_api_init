@@ -1,4 +1,3 @@
-from contextlib import AbstractAsyncContextManager
 from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Callable, Optional
@@ -16,9 +15,7 @@ from app.util.utils import calculate_percentage_change, parse_date
 
 
 class PaymentRepository(BaseRepository):
-    def __init__(
-        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
-    ):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, Payment)
 
@@ -58,7 +55,7 @@ class PaymentRepository(BaseRepository):
                 (page - 1) * page_size
             )
             payments = await session.execute(paginated_query)
-            payments = payments.scalars().all()
+            payments = payments.unique().scalars().all()
 
             metrics_current = await self.calculate_metrics(
                 session, search_parameter, status, current_start_date, current_end_date

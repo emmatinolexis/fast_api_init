@@ -1,4 +1,3 @@
-from contextlib import AbstractAsyncContextManager
 from datetime import date
 from typing import Callable, List, Tuple
 
@@ -23,9 +22,7 @@ from app.util.enums import ActiveStatus, SubscriptionStatus
 
 
 class SubscriptionRepository(BaseRepository):
-    def __init__(
-        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
-    ):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, Subscription)
 
@@ -36,7 +33,7 @@ class SubscriptionRepository(BaseRepository):
                 .options(joinedload(Subscription.user))
                 .options(joinedload(Subscription.package))
             )
-            return result.scalars().all()
+            return result.unique().scalars().all()
 
     async def get_subscription_by_business_uuid(
         self, business_profile_uuid: str, plan: str
@@ -80,7 +77,7 @@ class SubscriptionRepository(BaseRepository):
                     .filter(PackageItemAssignment.paystack_plan_code == plan_code)
                     .options(joinedload(PackageItemAssignment.package_item))
                 )
-                package_items = result.scalars().all()
+                package_items = result.unique().scalars().all()
 
                 subscription["package_items"] = package_items
 
@@ -165,7 +162,7 @@ class SubscriptionRepository(BaseRepository):
             )
 
             result = await session.execute(query)
-            results = result.all()
+            results = result.unique().scalars().all()
 
             if results:
                 total_subscriptions = results[0].total_subscriptions
@@ -215,7 +212,7 @@ class SubscriptionRepository(BaseRepository):
                     )
                 )
             )
-            subscriptions = result.scalars().all()
+            subscriptions = result.unique().scalars().all()
 
             return subscriptions, total_subscription
 

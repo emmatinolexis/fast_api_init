@@ -1,4 +1,3 @@
-from contextlib import AbstractAsyncContextManager
 from datetime import datetime
 from typing import Any, Callable, Dict, List, Tuple
 
@@ -24,9 +23,7 @@ from app.util.utils import get_status
 
 
 class AssetRepository(BaseRepository):
-    def __init__(
-        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
-    ):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, Asset)
 
@@ -185,7 +182,7 @@ class AssetRepository(BaseRepository):
                 )
                 .options(joinedload(self.model.equipment))
             )
-            assets = assets.scalars().all()
+            assets = assets.unique().scalars().all()
 
             # Process assets (including operator info and tracking event)
             processed_assets = await self.process_assets(session, assets)
@@ -276,7 +273,7 @@ class AssetRepository(BaseRepository):
                 .options(joinedload(self.model.device).joinedload(Device.inventory))
                 .options(joinedload(self.model.equipment))
             )
-            assets = assets.scalars().all()
+            assets = assets.unique().scalars().all()
 
             processed_assets = await self.process_assets(session, assets)
 
@@ -420,7 +417,7 @@ class AssetRepository(BaseRepository):
                 .options(joinedload(Asset.equipment))
                 .options(joinedload(Asset.vehicle_owner))
             )
-            assets = assets.scalars().all()
+            assets = assets.unique().scalars().all()
 
             return assets, total_assets
 
@@ -453,7 +450,7 @@ class AssetRepository(BaseRepository):
                 .options(joinedload(Asset.equipment))
                 .options(joinedload(Asset.vehicle_owner))
             )
-            assets = assets.scalars().all()
+            assets = assets.unique().scalars().all()
 
             for asset in assets:
                 # check if asset has device imei
@@ -699,7 +696,7 @@ class AssetRepository(BaseRepository):
 
             # Apply the filters and execute the query
             violations = await session.execute(base_query.filter(and_(*filters)))
-            return violations.scalars().all()
+            return violations.unique().scalars().all()
 
     async def get_asset_with_relationships(
         self, asset_uuid: str, date_from: str, date_to: str
@@ -722,7 +719,7 @@ class AssetRepository(BaseRepository):
                     joinedload(self.model.asset_type), joinedload(self.model.equipment)
                 )
             )
-            asset = asset.scalar()
+            asset = asset.unique().scalar()
 
             if asset and asset.device_imei:
                 # Get device's tracking events within the specified date range
@@ -823,7 +820,7 @@ class AssetRepository(BaseRepository):
 
             # Execute the query and fetch results
             maintenance_alerts = await session.execute(base_query)
-            return maintenance_alerts.scalars().all()
+            return maintenance_alerts.unique().scalars().all()
 
     async def get_asset_by_user_uuid(self, user_uuid: str):
         async with self.session_factory() as session:

@@ -1,4 +1,3 @@
-from contextlib import AbstractAsyncContextManager
 from typing import Callable
 
 from sqlalchemy import select
@@ -11,9 +10,7 @@ from app.repository.base_repository import BaseRepository
 
 
 class FineReportRepository(BaseRepository):
-    def __init__(
-        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
-    ):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, FineReport)
 
@@ -24,7 +21,7 @@ class FineReportRepository(BaseRepository):
                     joinedload(self.model.asset).joinedload(Asset.vehicle_owner)
                 )
             )
-            result = query.scalars().all()
+            result = query.unique().scalars().all()
             return result
 
     async def get_fine_report(self, uuid: str):
@@ -34,5 +31,5 @@ class FineReportRepository(BaseRepository):
                 .filter(self.model.uuid == uuid)
                 .options(joinedload(self.model.asset))
             )
-            result = query.scalars().first()
+            result = query.unique().scalars().first()
             return result

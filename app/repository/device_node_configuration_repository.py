@@ -1,4 +1,3 @@
-from contextlib import AbstractAsyncContextManager
 from typing import Callable
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,11 +17,13 @@ from app.util.enums import PeripheralDeviceType
 
 
 class DeviceNodeConfigRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, DeviceNodeConfig)
 
-    async def get_device_node_config_by_device_uuid(self, uuid: str) -> DeviceNodeConfig:
+    async def get_device_node_config_by_device_uuid(
+        self, uuid: str
+    ) -> DeviceNodeConfig:
         async with self.session_factory() as session:
             stmt = select(self.model).filter(self.model.peripheral_device_uuid == uuid)
             result = await session.execute(stmt)
@@ -36,16 +37,24 @@ class DeviceNodeConfigRepository(BaseRepository):
                 .options(joinedload(self.model.peripheral_device))
             )
             result = await session.execute(stmt)
-            device = result.scalars().first()
+            device = result.unique().scalars().first()
 
             if not device:
-                return None 
+                return None
 
-            if device.peripheral_device.device_type == PeripheralDeviceType.GAS_NODE_DEVICE:
+            if (
+                device.peripheral_device.device_type
+                == PeripheralDeviceType.GAS_NODE_DEVICE
+            ):
                 device.minimum_threshold = GAS_DEVICE_MINIMUM_THRESHOLD
 
-            if device.peripheral_device.device_type == PeripheralDeviceType.PYROGUARD_NODE_DEVICE:
-                device.ambient_temperature_threshold = PYRO_AMBIENT_TEMPERATURE_THRESHOLD
+            if (
+                device.peripheral_device.device_type
+                == PeripheralDeviceType.PYROGUARD_NODE_DEVICE
+            ):
+                device.ambient_temperature_threshold = (
+                    PYRO_AMBIENT_TEMPERATURE_THRESHOLD
+                )
                 device.humidity_threshold = PYRO_HUMIDITY_THRESHOLD
                 device.target_temperature_threshold = PYRO_TARGET_TEMPERATURE_THRESHOLD
                 device.flammable_smoke_threshold = PYRO_FLAMMABLE_SMOKE_THRESHOLD
@@ -56,7 +65,9 @@ class DeviceNodeConfigRepository(BaseRepository):
 
     async def toggle_send_alert_status(self, peripheral_device_uuid: str):
         async with self.session_factory() as session:
-            stmt = select(self.model).filter_by(peripheral_device_uuid=peripheral_device_uuid)
+            stmt = select(self.model).filter_by(
+                peripheral_device_uuid=peripheral_device_uuid
+            )
             result = await session.execute(stmt)
             device = result.scalars().first()
 

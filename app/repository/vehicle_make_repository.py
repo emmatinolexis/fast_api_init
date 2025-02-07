@@ -1,5 +1,4 @@
 import uuid
-from contextlib import AbstractAsyncContextManager
 from datetime import datetime
 from typing import Callable, List, Optional
 
@@ -14,8 +13,7 @@ from app.schema.asset_schema import VehicleMakeInput
 
 class VehicleMakeRepository(BaseRepository):
     def __init__(
-        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
-    ):
+        self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, VehicleMake)
 
@@ -52,7 +50,7 @@ class VehicleMakeRepository(BaseRepository):
                 .filter_by(uuid=make_uuid)
             )
             result = await session.execute(query)
-            make = result.scalars().first()
+            make = result.unique().scalars().first()
             return make
 
     async def get_vehicle_make_name(self, name: str) -> Optional[VehicleMake]:

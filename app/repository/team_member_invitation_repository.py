@@ -1,4 +1,3 @@
-from contextlib import AbstractAsyncContextManager
 from datetime import datetime
 from typing import Callable, List
 from uuid import UUID
@@ -15,9 +14,7 @@ from app.util.enums import InvitationStatus, RoleType
 
 
 class TeamMemberInvitationRepository(BaseRepository):
-    def __init__(
-        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
-    ):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, Invitation)
 
@@ -61,18 +58,18 @@ class TeamMemberInvitationRepository(BaseRepository):
                 query = query.filter(self.model.status == status)
 
             # Get total count and calculate pagination
-            total_invitations = await query.count()
+            total_invitations = await session.scalar(query.with_entities(func.count()))
             total_pages = (total_invitations + page_size - 1) // page_size
             offset = (page - 1) * page_size
 
             # Fetch invitations with pagination and eager loading
-            invitations = (
-                await query.order_by(desc(self.model.created_at))
+            result = await session.execute(
+                query.order_by(desc(self.model.created_at))
                 .offset(offset)
                 .limit(page_size)
                 .options(joinedload(self.model.role))
-                .all()
             )
+            invitations = result.unique().scalars().all()
 
             invitations_data = [
                 {
@@ -136,13 +133,13 @@ class TeamMemberInvitationRepository(BaseRepository):
             total_pages = (total_invitations + page_size - 1) // page_size
 
             # Get the invitations with filters, pagination, and sorting
-            invitations = (
-                await query.order_by(desc(self.model.created_at))
+            result = await session.execute(
+                query.order_by(desc(self.model.created_at))
                 .offset(offset)
                 .limit(page_size)
                 .options(joinedload(self.model.role))
-                .all()
             )
+            invitations = result.unique().scalars().all()
 
             # Prepare the invitation data
             invitations_data = [

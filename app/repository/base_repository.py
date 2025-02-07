@@ -1,4 +1,3 @@
-from contextlib import AbstractAsyncContextManager
 from typing import Callable
 
 from sqlalchemy import update
@@ -15,7 +14,9 @@ from app.util.query_builder import dict_to_sqlalchemy_filter_options
 
 class BaseRepository:
     def __init__(
-        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]], model
+        self,
+        session_factory: Callable[..., AsyncSession],
+        model,
     ) -> None:
         self.session_factory = session_factory
         self.model = model
@@ -42,10 +43,12 @@ class BaseRepository:
             query = filtered_query.order_by(order_query)
             if page_size == "all":
                 result = await session.execute(query)
-                query = result.scalars().all()
+                query = result.unique().scalars().all()
             else:
-                result = await session.execute(query.limit(page_size).offset((page - 1) * page_size))
-                query = result.scalars().all()
+                result = await session.execute(
+                    query.limit(page_size).offset((page - 1) * page_size)
+                )
+                query = result.unique().scalars().all()
             total_count = await session.scalar(filtered_query.count())
             return {
                 "founds": query,
@@ -64,7 +67,7 @@ class BaseRepository:
                 for eager in getattr(self.model, "eagers", []):
                     query = query.options(joinedload(getattr(self.model, eager)))
             result = await session.execute(query)
-            return result.scalars().all()
+            return result.unique().scalars().all()
 
     async def read_all_by_uuid(self, uuid: str, eager=False):
         async with self.session_factory() as session:
@@ -73,16 +76,18 @@ class BaseRepository:
                 for eager in getattr(self.model, "eagers", []):
                     query = query.options(joinedload(getattr(self.model, eager)))
             result = await session.execute(query)
-            return result.scalars().all()
+            return result.unique().scalars().all()
 
     async def get_equipment_by_uuid(self, equipment_uuid: str, eager=False):
         async with self.session_factory() as session:
-            query = select(EquipmentType).filter(EquipmentType.equipment_uuid == equipment_uuid)
+            query = select(EquipmentType).filter(
+                EquipmentType.equipment_uuid == equipment_uuid
+            )
             if eager:
                 for eager in getattr(EquipmentType, "eagers", []):
                     query = query.options(joinedload(getattr(EquipmentType, eager)))
             result = await session.execute(query)
-            query = result.scalars().first()
+            query = result.unique().scalars().first()
             if not query:
                 return None
             return query
@@ -94,7 +99,7 @@ class BaseRepository:
                 for eager in getattr(self.model, "eagers", []):
                     query = query.options(joinedload(getattr(self.model, eager)))
             result = await session.execute(query)
-            query = result.scalars().first()
+            query = result.unique().scalars().first()
             if not query:
                 raise NotFoundError(detail=f"not found id : {id}")
             return query
@@ -106,7 +111,7 @@ class BaseRepository:
                 for eager in getattr(self.model, "eagers", []):
                     query = query.options(joinedload(getattr(self.model, eager)))
             result = await session.execute(query)
-            query = result.scalars().first()
+            query = result.unique().scalars().first()
             if not query:
                 return None
             return query
@@ -127,7 +132,9 @@ class BaseRepository:
     async def update(self, id: int, schema):
         async with self.session_factory() as session:
             await session.execute(
-                update(self.model).where(self.model.id == id).values(schema.dict(exclude_none=True))
+                update(self.model)
+                .where(self.model.id == id)
+                .values(schema.dict(exclude_none=True))
             )
             await session.commit()
             return await self.read_by_id(id)
@@ -135,7 +142,9 @@ class BaseRepository:
     async def update_by_uuid(self, uuid: str, schema):
         async with self.session_factory() as session:
             await session.execute(
-                update(self.model).where(self.model.uuid == uuid).values(schema.dict(exclude_none=True))
+                update(self.model)
+                .where(self.model.uuid == uuid)
+                .values(schema.dict(exclude_none=True))
             )
             await session.commit()
             return await self.read_by_uuid(uuid)
@@ -151,7 +160,9 @@ class BaseRepository:
     async def update_attr_by_uuid(self, uuid: str, column: str, value):
         async with self.session_factory() as session:
             await session.execute(
-                update(self.model).where(self.model.uuid == uuid).values({column: value})
+                update(self.model)
+                .where(self.model.uuid == uuid)
+                .values({column: value})
             )
             await session.commit()
             return await self.read_by_uuid(uuid)
@@ -166,7 +177,9 @@ class BaseRepository:
 
     async def delete_by_id(self, id: int):
         async with self.session_factory() as session:
-            query = await session.execute(select(self.model).filter(self.model.id == id))
+            query = await session.execute(
+                select(self.model).filter(self.model.id == id)
+            )
             query = query.scalars().first()
             if not query:
                 raise NotFoundError(detail=f"not found id : {id}")
@@ -175,7 +188,9 @@ class BaseRepository:
 
     async def delete_by_uuid(self, uuid: str):
         async with self.session_factory() as session:
-            query = await session.execute(select(self.model).filter(self.model.uuid == uuid))
+            query = await session.execute(
+                select(self.model).filter(self.model.uuid == uuid)
+            )
             query = query.scalars().first()
             if not query:
                 raise NotFoundError(detail=f"not found uuid : {uuid}")

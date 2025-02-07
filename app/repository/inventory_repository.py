@@ -1,7 +1,7 @@
-from contextlib import AbstractAsyncContextManager
 from typing import Callable
 from uuid import UUID
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -10,9 +10,7 @@ from app.repository.base_repository import BaseRepository
 
 
 class InventoryRepository(BaseRepository):
-    def __init__(
-        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
-    ):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, Inventory)
 
@@ -60,7 +58,7 @@ class InventoryRepository(BaseRepository):
                 paginated_result = await session.execute(
                     base_query.offset(offset).limit(page_size)
                 )
-                inventories = paginated_result.scalars().all()
+                inventories = paginated_result.unique().scalars().all()
 
                 # Count total in-stock and out-of-stock inventories
                 in_stock_result = await session.execute(
@@ -115,7 +113,7 @@ class InventoryRepository(BaseRepository):
                 )
                 .filter(self.model.uuid == inventory_uuid)
             )
-            return inventory_query.scalars().first()
+            return inventory_query.unique().scalars().first()
 
     async def save_inventory(self, inventory):
         async with self.session_factory() as session:

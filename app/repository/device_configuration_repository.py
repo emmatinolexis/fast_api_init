@@ -1,4 +1,3 @@
-from contextlib import AbstractAsyncContextManager
 from typing import Callable
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,7 +9,7 @@ from app.util.enums import DeviceConfigurationVersion
 
 
 class DeviceConfigurationRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, DeviceConfiguration)
 
@@ -18,6 +17,8 @@ class DeviceConfigurationRepository(BaseRepository):
         self, configuration_version: DeviceConfigurationVersion
     ):
         async with self.session_factory() as session:
-            stmt = select(self.model).filter(self.model.configuration_version == configuration_version)
+            stmt = select(self.model).filter(
+                self.model.configuration_version == configuration_version
+            )
             result = await session.execute(stmt)
             return result.scalars().first()

@@ -1,9 +1,9 @@
-from contextlib import AbstractAsyncContextManager
 from datetime import datetime
 from typing import Callable
 
-from sqlalchemy import Date, and_, cast, or_
+from sqlalchemy import Date, and_, cast, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from app.core.settings import get_settings, settings
 from app.model.asset import Asset
@@ -13,9 +13,7 @@ from app.repository.base_repository import BaseRepository
 
 
 class FuelLogRepository(BaseRepository):
-    def __init__(
-        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
-    ):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, FuelLog)
 
@@ -127,4 +125,4 @@ class FuelLogRepository(BaseRepository):
             )
             # Execute query
             result = await session.execute(stmt)
-            return result.scalars().all()
+            return result.unique().scalars().all()

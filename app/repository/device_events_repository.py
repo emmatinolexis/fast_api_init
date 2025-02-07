@@ -1,4 +1,3 @@
-from contextlib import AbstractAsyncContextManager
 from datetime import datetime
 from typing import Callable
 
@@ -12,7 +11,7 @@ from app.repository.base_repository import BaseRepository
 
 
 class DeviceEventRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, DeviceEvent)
 
@@ -51,6 +50,8 @@ class DeviceEventRepository(BaseRepository):
 
     async def get_peripheral_device_by_serial_number(self, serial_number: str):
         async with self.session_factory() as session:
-            stmt = select(PeripheralDevice).filter(PeripheralDevice.serial_number == serial_number)
+            stmt = select(PeripheralDevice).filter(
+                PeripheralDevice.serial_number == serial_number
+            )
             result = await session.execute(stmt)
             return result.scalars().first()

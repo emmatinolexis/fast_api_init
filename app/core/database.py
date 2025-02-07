@@ -1,8 +1,7 @@
-from contextlib import AbstractAsyncContextManager, asynccontextmanager
-from typing import Callable
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator
 
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.model.base_model import Base
 
@@ -10,17 +9,17 @@ from app.model.base_model import Base
 class Database:
     def __init__(self, db_url: str) -> None:
         self._engine = create_async_engine(db_url, echo=False)
-        self._session_factory = sessionmaker(
+        self._session_factory = async_sessionmaker(
             self._engine, expire_on_commit=False, class_=AsyncSession
         )
 
     async def connected(self) -> bool:
         try:
             async with self._engine.connect() as conn:
-                await conn.execute("SELECT 1")
+                # await conn.run_sync(User.__table__.select)
                 return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise e
 
     async def close(self) -> None:
         await self._engine.dispose()
@@ -30,12 +29,12 @@ class Database:
             await conn.run_sync(Base.metadata.create_all)
 
     @asynccontextmanager
-    async def session(self) -> Callable[..., AbstractAsyncContextManager[AsyncSession]]:
+    async def session(self) -> AsyncGenerator[AsyncSession, None]:
         session: AsyncSession = self._session_factory()
         try:
             yield session
-        except Exception:
+        except Exception as e:
             await session.rollback()
-            raise
+            raise e
         finally:
             await session.close()

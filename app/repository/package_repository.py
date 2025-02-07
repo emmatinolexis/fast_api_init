@@ -1,4 +1,3 @@
-from contextlib import AbstractAsyncContextManager
 from typing import Callable
 
 import aiohttp
@@ -14,9 +13,7 @@ from app.schema.package_schema import PackageItemAssignmentPayload
 
 
 class PackageRepository(BaseRepository):
-    def __init__(
-        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
-    ):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, Package)
 
@@ -86,7 +83,7 @@ class PackageRepository(BaseRepository):
                                         joinedload(PackageItemAssignment.package_item)
                                     )
                                 )
-                                package_items = result.scalars().all()
+                                package_items = result.unique().scalars().all()
                                 package = {
                                     "package_plan_code": plan["plan_code"],
                                     "package_name": plan["name"],
@@ -122,7 +119,7 @@ class PackageRepository(BaseRepository):
                                 )
                                 .options(joinedload(PackageItemAssignment.package_item))
                             )
-                            package_items = result.scalars().all()
+                            package_items = result.unique().scalars().all()
                             package = {
                                 "package_plan_code": plan_data["plan_code"],
                                 "package_name": plan_data["name"],

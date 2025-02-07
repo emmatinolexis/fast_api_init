@@ -1,5 +1,3 @@
-from contextlib import asynccontextmanager
-
 from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
 from starlette.middleware.cors import CORSMiddleware
@@ -10,23 +8,11 @@ from app.core.settings import settings
 from app.util.class_object import singleton
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    await app_creator.db.create_database()
-    if await app_creator.db.connected():
-        get_logger().info("Successfully connected to the PostgreSQL database")
-    else:
-        get_logger().error("Failed to connect to the PostgreSQL database")
-    yield
-    await app_creator.db.close()
-
-
 @singleton
 class AppCreator:
     def __init__(self):
         # set app default
         self.app = FastAPI(
-            lifespan=lifespan,
             title=settings.PROJECT_NAME + " - Consumer",
             version=settings.API_VERSION,
         )
@@ -68,3 +54,24 @@ mqtt_service = app_creator.mqtt_service
 @app.on_event("startup")
 async def startup_event():
     await mqtt_service.subscribe(app_creator.mqtt_client)
+
+    try:
+        await db.create_database()
+        if await db.connected():
+            get_logger().info("Successfully connected to the PostgreSQL database")
+        else:
+            get_logger().error("Failed to connect to the PostgreSQL database")
+    except Exception as e:
+        get_logger().error(f"Failed to connect to the PostgreSQL database: {e}")
+        raise e
+    get_logger().info("Starting the consumer")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    try:
+        await db.close()
+        get_logger().info("Successfully closed the PostgreSQL database")
+    except Exception as e:
+        get_logger().error(f"Failed to close the PostgreSQL database: {e}")
+        raise e

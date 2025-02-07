@@ -1,7 +1,7 @@
-from contextlib import AbstractAsyncContextManager
 from typing import Callable
 
-from sqlalchemy import desc
+from sqlalchemy import desc, select
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -10,9 +10,7 @@ from app.repository.base_repository import BaseRepository
 
 
 class ImmobilizerReportRepository(BaseRepository):
-    def __init__(
-        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
-    ):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, ImmobilizerReport)
 
@@ -24,7 +22,7 @@ class ImmobilizerReportRepository(BaseRepository):
                     .options(joinedload(self.model.user))
                     .options(joinedload(self.model.asset))
                 )
-                reports = result.scalars().all()
+                reports = result.unique().scalars().all()
                 return reports
             except SQLAlchemyError as e:
                 raise e
@@ -39,7 +37,7 @@ class ImmobilizerReportRepository(BaseRepository):
                     .order_by(desc(self.model.created_at))
                     .limit(1)
                 )
-                action = result.scalars().first()
+                action = result.unique().scalars().first()
                 return action
             except SQLAlchemyError as e:
                 raise e

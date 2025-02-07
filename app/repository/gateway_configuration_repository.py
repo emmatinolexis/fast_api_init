@@ -1,4 +1,3 @@
-from contextlib import AbstractAsyncContextManager
 from typing import Callable
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,9 +8,7 @@ from app.repository.base_repository import BaseRepository
 
 
 class GatewayConfigurationRepository(BaseRepository):
-    def __init__(
-        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
-    ):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         super().__init__(session_factory, GatewayConfiguration)
         self.session_factory = session_factory
 

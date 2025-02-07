@@ -1,8 +1,8 @@
-from contextlib import AbstractAsyncContextManager
 from typing import Callable
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import joinedload
 
 from app.model.gas_cylinders import GasCylinder
 from app.repository.base_repository import BaseRepository
@@ -12,9 +12,7 @@ from app.util.utils import calculate_gas_level_percentage
 
 
 class GasCylinderRepository(BaseRepository):
-    def __init__(
-        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
-    ):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, GasCylinder)
 
@@ -63,8 +61,8 @@ class GasCylinderRepository(BaseRepository):
             query = await session.execute(
                 select(self.model).filter(self.model.user_uuid == user_uuid)
             )
-            result = await session.execute(stmt)
-            result = query.scalars().all()
+            result = await session.execute(query)
+            result = result.unique().scalars().all()
             return result
 
     async def create_gas_cylinder(
@@ -168,7 +166,7 @@ class GasCylinderRepository(BaseRepository):
             )
 
             result = await session.execute(query)
-            cylinder = result.scalars().one_or_none()
+            cylinder = result.unique().scalars().one_or_none()
 
             gas_level = 0
 
@@ -207,4 +205,4 @@ class GasCylinderRepository(BaseRepository):
             )
 
             result = await session.execute(stmt)
-            return result.scalars().first()
+            return result.unique().scalars().first()

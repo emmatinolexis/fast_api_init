@@ -1,8 +1,7 @@
 import logging
-from contextlib import AbstractAsyncContextManager
 from typing import Any, Callable, Dict
 
-from sqlalchemy import String, cast, desc, or_
+from sqlalchemy import String, cast, desc, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
@@ -14,9 +13,7 @@ from app.util.enums import SmartReportStatus
 
 
 class SmartReportRepository(BaseRepository):
-    def __init__(
-        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
-    ):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, SmartReport)
 
@@ -61,20 +58,14 @@ class SmartReportRepository(BaseRepository):
             offset = (page - 1) * page_size
 
             # Fetch paginated results with ordering and eager loading of relationships
-            reports = (
-                (
-                    await session.execute(
-                        query.order_by(desc(self.model.created_at))
-                        .offset(offset)
-                        .limit(page_size)
-                        .options(
-                            joinedload(self.model.user)
-                        )  # Eager load user relationship
-                    )
-                )
-                .scalars()
-                .all()
+            results = await session.execute(
+                query.order_by(desc(self.model.created_at))
+                .offset(offset)
+                .limit(page_size)
+                .options(joinedload(self.model.user))  # Eager load user relationship
             )
+
+            reports = results.unique().scalars().all()
 
             # Process the results into a list of dictionaries
             smart_reports = [
@@ -106,22 +97,15 @@ class SmartReportRepository(BaseRepository):
             async with self.session_factory() as session:
                 logging.info("Generating smart report")
                 report_data = []
-                report = (
-                    (
-                        await session.execute(
-                            select(self.model)
-                            .filter(self.model.status == SmartReportStatus.PENDING)
-                            .options(
-                                joinedload(self.model.user).joinedload(
-                                    User.business_profile
-                                )
-                            )
-                            .order_by(desc(self.model.created_at))
-                        )
+                result = await session.execute(
+                    select(self.model)
+                    .filter(self.model.status == SmartReportStatus.PENDING)
+                    .options(
+                        joinedload(self.model.user).joinedload(User.business_profile)
                     )
-                    .scalars()
-                    .first()
+                    .order_by(desc(self.model.created_at))
                 )
+                report = result.unique().scalars().first()
 
                 if not report:
                     return report_data
@@ -157,21 +141,14 @@ class SmartReportRepository(BaseRepository):
     ):
         try:
             async with self.session_factory() as session:
-                report = (
-                    (
-                        await session.execute(
-                            select(self.model)
-                            .filter(self.model.uuid == smart_uuid)
-                            .options(
-                                joinedload(self.model.user).joinedload(
-                                    User.business_profile
-                                )
-                            )
-                        )
+                result = await session.execute(
+                    select(self.model)
+                    .filter(self.model.uuid == smart_uuid)
+                    .options(
+                        joinedload(self.model.user).joinedload(User.business_profile)
                     )
-                    .scalars()
-                    .first()
                 )
+                report = result.unique().scalars().first()
                 report.status = status
 
                 if url:

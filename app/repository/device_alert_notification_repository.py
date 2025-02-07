@@ -1,4 +1,3 @@
-from contextlib import AbstractAsyncContextManager
 from typing import Callable
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,7 +9,7 @@ from app.repository.base_repository import BaseRepository
 
 
 class DeviceAlertNotificationRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, DeviceAlertNotification)
 
@@ -22,11 +21,15 @@ class DeviceAlertNotificationRepository(BaseRepository):
                 .options(joinedload(self.model.user))
             )
             result = await session.execute(stmt)
-            data = result.scalars().all()
+            data = result.unique().scalars().all()
 
             return [
                 {
-                    "name": f"{record.user.first_name} {record.user.last_name}" if record.user else "Unknown",
+                    "name": (
+                        f"{record.user.first_name} {record.user.last_name}"
+                        if record.user
+                        else "Unknown"
+                    ),
                     "email": record.user.email_address if record.user else None,
                     "phone_number": record.user.phone_number if record.user else None,
                 }

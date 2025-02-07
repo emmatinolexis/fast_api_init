@@ -1,4 +1,3 @@
-from contextlib import AbstractAsyncContextManager
 from typing import Any, Callable, Dict, List, Optional
 
 from sqlalchemy import func, select
@@ -11,9 +10,7 @@ from app.util.enums import ActiveStatus
 
 
 class EquipmentRepository(BaseRepository):
-    def __init__(
-        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
-    ):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, Equipment)
 

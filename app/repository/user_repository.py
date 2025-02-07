@@ -1,5 +1,4 @@
 import uuid
-from contextlib import AbstractAsyncContextManager
 from datetime import datetime, timedelta
 from typing import Callable, List, Optional
 from uuid import UUID
@@ -38,9 +37,7 @@ from app.util.utils import calculate_percentage_change, datetime_parser, toggle_
 
 
 class UserRepository(BaseRepository):
-    def __init__(
-        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
-    ):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, User)
 
@@ -73,7 +70,7 @@ class UserRepository(BaseRepository):
                 .options(joinedload(User.user_role).joinedload(Role.permissions))
                 .options(joinedload(User.driver_license))
             )
-            return result.scalar_one_or_none()
+            return result.unique().scalar_one_or_none()
 
     async def get_user_by_phone_number(self, phone_number: str):
         async with self.session_factory() as session:
@@ -84,7 +81,7 @@ class UserRepository(BaseRepository):
                 .options(joinedload(User.driver_license))
                 .options(joinedload(User.user_role).joinedload(Role.permissions))
             )
-            user = result.scalar_one_or_none()
+            user = result.unique().scalar_one_or_none()
 
             if not user:
                 return None
@@ -109,7 +106,7 @@ class UserRepository(BaseRepository):
                 .options(joinedload(User.business_profile))
                 .options(joinedload(User.user_role).joinedload(Role.permissions))
             )
-            user: Optional[User] = result.scalar_one_or_none()
+            user: Optional[User] = result.unique().scalar_one_or_none()
 
             # If the user is not found, return None
             if not user:
@@ -217,11 +214,8 @@ class UserRepository(BaseRepository):
                 .limit(page_size)
             )
 
-            account_users = (
-                (await session.execute(query.options(joinedload(User.user_role))))
-                .scalars()
-                .all()
-            )
+            results = await session.execute(query.options(joinedload(User.user_role)))
+            account_users = results.unique().scalars().all()
 
             users_data = [
                 {
@@ -275,18 +269,13 @@ class UserRepository(BaseRepository):
             total_pages = (total_team_members + page_size - 1) // page_size
 
             # Get the invitations with filters, pagination, and sorting
-            users = (
-                (
-                    await session.execute(
-                        query.order_by(desc(self.model.created_at))
-                        .offset(offset)
-                        .limit(page_size)
-                        .options(joinedload(self.model.user_role))
-                    )
-                )
-                .scalars()
-                .all()
+            results = await session.execute(
+                query.order_by(desc(self.model.created_at))
+                .offset(offset)
+                .limit(page_size)
+                .options(joinedload(self.model.user_role))
             )
+            users = results.unique().scalars().all()
 
             # Prepare the invitation data
             users_data = [
@@ -439,19 +428,14 @@ class UserRepository(BaseRepository):
             total_pages = (total_records + page_size - 1) // page_size
 
             # Fetch users with pagination and eager loading
-            users = (
-                (
-                    await session.execute(
-                        query.order_by(desc(self.model.created_at))
-                        .offset(offset)
-                        .limit(page_size)
-                        .options(joinedload(self.model.business_profile))
-                        .options(joinedload(self.model.user_role))
-                    )
-                )
-                .scalars()
-                .all()
+            results = await session.execute(
+                query.order_by(desc(self.model.created_at))
+                .offset(offset)
+                .limit(page_size)
+                .options(joinedload(self.model.business_profile))
+                .options(joinedload(self.model.user_role))
             )
+            users = results.unique().scalars().all()
 
             # Prepare the user data for output
             users_data = [
@@ -519,7 +503,7 @@ class UserRepository(BaseRepository):
                 .options(joinedload(User.user_role))
             )
 
-            user = result.scalar_one_or_none()
+            user = result.unique().scalar_one_or_none()
 
             if not user:
                 return None
@@ -574,7 +558,11 @@ class UserRepository(BaseRepository):
                 CustomerRoles.ADMIN if not user.invite_status else user.user_role_uuid
             ),
             status=user.status,
-            verifiedAt=datetime.utcnow() if user.invite_status else None,
+            verifiedAt=(
+                f"{datetime.utcnow():%Y-%m-%d %H:%M:%S%z}"
+                if user.invite_status
+                else None
+            ),
         )
 
         session.add(db_user)

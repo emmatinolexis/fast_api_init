@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from typing import Callable, List, Optional
 from uuid import UUID
 
-from sqlalchemy import case, desc, func, or_
+from sqlalchemy import Date, and_, case, cast, desc, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -54,7 +54,7 @@ class AlertPolicyRepository(BaseRepository):
                 .options(joinedload(AlertPolicy.assets))
                 .options(joinedload(AlertPolicy.maintenance_alert_type))
             )
-            return alerts.scalars().all()
+            return alerts.unique().scalars().all()
 
     async def toggle_alert_status(self, alert_uuid):
         async with self.session_factory() as session:
@@ -174,7 +174,7 @@ class AlertPolicyRepository(BaseRepository):
                 .options(joinedload(self.model.alert_notification_types))
                 .options(joinedload(self.model.maintenance_alert_type))
             )
-            alerts = alerts.scalars().all()
+            alerts = alerts.unique().scalars().all()
 
             return {
                 "alerts": alerts,
@@ -256,7 +256,7 @@ class AlertPolicyRepository(BaseRepository):
                 .options(joinedload(self.model.maintenance_alert_type))
                 .options(joinedload(self.model.alert_recipients))
             )
-            alerts = alerts.scalars().all()
+            alerts = alerts.unique().scalars().all()
 
             formatted_alerts = []
             for alert in alerts:
@@ -394,7 +394,7 @@ class AlertPolicyRepository(BaseRepository):
                 )
                 .options(joinedload(AlertPolicyViolation.user).defer(User.password))
             )
-            alerts = alerts.scalars().all()
+            alerts = alerts.unique().scalars().all()
 
             return {
                 "alerts": alerts,
@@ -509,7 +509,7 @@ class AlertPolicyRepository(BaseRepository):
                 )
                 .options(joinedload(AlertPolicyViolation.user).defer(User.password))
             )
-            alerts = alerts.scalars().all()
+            alerts = alerts.unique().scalars().all()
 
             return {
                 "alerts": alerts,
@@ -531,7 +531,7 @@ class AlertPolicyRepository(BaseRepository):
                 joinedload(AlertPolicy.assets), joinedload(AlertPolicy.alert_recipients)
             )
         )
-        return result.scalars().all()
+        return result.unique().scalars().all()
 
     async def get_active_over_speeding_alert_policies(self, session):
         result = await session.execute(
@@ -545,7 +545,7 @@ class AlertPolicyRepository(BaseRepository):
                 joinedload(AlertPolicy.assets), joinedload(AlertPolicy.alert_recipients)
             )
         )
-        return result.scalars().all()
+        return result.unique().scalars().all()
 
     async def get_active_idling_alert_policies(self, session):
         result = await session.execute(
@@ -559,7 +559,7 @@ class AlertPolicyRepository(BaseRepository):
                 joinedload(AlertPolicy.assets), joinedload(AlertPolicy.alert_recipients)
             )
         )
-        return result.scalars().all()
+        return result.unique().scalars().all()
 
     async def get_active_maintenance_policies(self, session):
         result = await session.execute(
@@ -573,7 +573,7 @@ class AlertPolicyRepository(BaseRepository):
                 joinedload(AlertPolicy.assets), joinedload(AlertPolicy.alert_recipients)
             )
         )
-        return result.scalars().all()
+        return result.unique().scalars().all()
 
     def generate_geofence_points(self, alert_policy):
         geofence_violation_data = alert_policy.geofence_coordinate_data
@@ -1087,7 +1087,9 @@ class AlertPolicyRepository(BaseRepository):
                     ),  # Load related AlertPolicyType
                 )
             )
-            violations = violations.scalars().all()  # Fetch all matching violations
+            violations = (
+                violations.unique().scalars().all()
+            )  # Fetch all matching violations
 
             # Process the violations to extract individual events or coordinates
             processed_data = []
