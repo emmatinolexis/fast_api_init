@@ -6,6 +6,7 @@ from sqlalchemy import Numeric, String, cast, desc, func, or_
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
+from sqlalchemy.future import select
 
 from app.core.constants import FREE_PACKAGE, FREE_PACKAGE_ITEMS
 from app.core.settings import settings
@@ -58,29 +59,31 @@ class SubscriptionRepository(BaseRepository):
 
             if response.status == 200:
                 subscription = paystack_subscription["data"]
-
                 user_email = subscription["customer"]["email"]
 
+                # Use select() instead of session.query()
                 result = await session.execute(
-                    session.query(User).filter_by(email_address=user_email)
+                    select(User).filter_by(email_address=user_email)
                 )
-                user = result.scalar()
-                subscription["customer"]["first_name"] = user.first_name
-                subscription["customer"]["last_name"] = user.last_name
-                subscription["customer"]["phone"] = user.phone_number
-                subscription["customer"]["user_uuid"] = user.uuid
+                user = result.scalar_one_or_none()
+
+                if user:
+                    subscription["customer"]["first_name"] = user.first_name
+                    subscription["customer"]["last_name"] = user.last_name
+                    subscription["customer"]["phone"] = user.phone_number
+                    subscription["customer"]["user_uuid"] = user.uuid
 
                 plan_code = subscription["plan"]["plan_code"]
 
+                # Use select() instead of session.query()
                 result = await session.execute(
-                    session.query(PackageItemAssignment)
+                    select(PackageItemAssignment)
                     .filter(PackageItemAssignment.paystack_plan_code == plan_code)
                     .options(joinedload(PackageItemAssignment.package_item))
                 )
-                package_items = result.unique().scalars().all()
+                package_items = result.scalars().all()
 
                 subscription["package_items"] = package_items
-
                 return subscription
 
             return paystack_subscription

@@ -78,7 +78,7 @@ class AuthService(BaseService):
 
             if user_plan and user_plan.subscription_code:
                 paystack_subscription = (
-                    self.subscription_repository.get_paystack_subscription(
+                    await self.subscription_repository.get_paystack_subscription(
                         user_plan.subscription_code
                     )
                 )
