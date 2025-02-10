@@ -97,25 +97,6 @@ class UserRepository(BaseRepository):
             await session.refresh(user)
             return user
 
-    # async def get_user_by_uuid(self, user_uuid: str):
-    #     async with self.session_factory() as session:
-    #         # Query the user model with necessary joins
-    #         result = await session.execute(
-    #             select(self.model)
-    #             .filter(User.uuid == user_uuid)
-    #             .options(joinedload(User.business_profile))
-    #             .options(joinedload(User.user_role).joinedload(Role.permissions))
-    #         )
-    #         user: Optional[User] = result.unique().scalar_one_or_none()
-
-    #         # If the user is not found, return None
-    #         if not user:
-    #             return None
-
-    #         # Process and return user data if user exists
-    #         user_data = extract_user_data(user)
-
-    #         return user_data
     async def get_user_by_uuid(self, user_uuid: str):
         async with self.session_factory() as session:
             result = await session.execute(
@@ -123,53 +104,17 @@ class UserRepository(BaseRepository):
                 .filter(User.uuid == user_uuid)
                 .options(
                     selectinload(User.business_profile),
+                    selectinload(User.driver_license),
                     selectinload(User.user_role).selectinload(Role.permissions),
                 )
             )
             user: Optional[User] = result.scalars().unique().first()
 
-            # Ensure user exists before accessing attributes
+            # return user
             if not user:
-                return None  # Or raise an appropriate exception
-
-            license_data = None
-            if user.driver_license:
-                license_data = {
-                    "license_number": user.driver_license.license_number,
-                    "expiration_date": user.driver_license.expiration_date,
-                    "front_url": user.driver_license.front_url,
-                    "back_url": user.driver_license.back_url,
-                }
-
-            return {
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "location": user.location,
-                "address": user.address,
-                "phone_number": user.phone_number,
-                "email_address": user.email_address,
-                "uuid": user.uuid,
-                "verifiedAt": user.verifiedAt,
-                "account_type": user.account_type,
-                "onboarding_status": user.onboarding_status,
-                "business_profile": user.business_profile,
-                "avatar_url": user.avatar_url,
-                "user_role_uuid": user.user_role_uuid,
-                "role": user.role,
-                "user_role": user.user_role if user.role == RoleType.CUSTOMER else None,
-                "status": user.status,
-                "country": user.country,
-                "operator_type": user.operator_type if user.operator_type else None,
-                "license": license_data,
-                "installer_locations": (
-                    user.installer_locations
-                    if user.user_role_uuid == UUID(CustomerRoles.INSTALLER)
-                    else None
-                ),
-                "business_profile_uuid": (
-                    user.business_profile_uuid if user.business_profile_uuid else None
-                ),
-            }
+                return None
+            user_data = extract_user_data(user)
+            return user_data
 
     async def check_business_exists(self, name, email, phone):
         async with self.session_factory() as session:

@@ -359,15 +359,19 @@ async def get_peripheral_devices_by_user_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        if current_user.account_type == AccountType.INDIVIDUAL:
-            devices = await service.get_user_devices(
-                user_uuid=current_user.uuid, device_type=device_type
-            )
-        else:
-            devices = await service.get_business_devices(
-                business_profile_uuid=current_user.business_profile_uuid,
-                device_type=device_type,
-            )
+        devices = await service.get_business_devices(
+            business_profile_uuid=current_user.business_profile_uuid,
+            device_type=device_type,
+        )
+        # if current_user.account_type == AccountType.INDIVIDUAL:
+        #     devices = await service.get_user_devices(
+        #         user_uuid=current_user.uuid, device_type=device_type
+        #     )
+        # else:
+        #     devices = await service.get_business_devices(
+        #         business_profile_uuid=current_user.business_profile_uuid,
+        #         device_type=device_type,
+        #     )
 
         return send_data_with_info(info=messages.GET_SUCCESS + "devices", data=devices)
     except Exception as e:

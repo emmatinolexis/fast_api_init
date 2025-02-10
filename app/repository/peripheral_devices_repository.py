@@ -9,6 +9,7 @@ from app.repository.base_repository import BaseRepository
 from app.util.enums import PeripheralDeviceType
 from sqlalchemy.future import select
 from sqlalchemy import func
+from typing import Optional
 
 
 class PeripheralDeviceRepository(BaseRepository):
@@ -105,14 +106,6 @@ class PeripheralDeviceRepository(BaseRepository):
             result = await session.scalar(stmt)
             return result
 
-    # async def get_by_serial_number(self, serial_number: str):
-    #     async with self.session_factory() as session:
-    #         return await session.scalar(
-    #             session.query(self.model)
-    #             .filter(self.model.serial_number == serial_number)
-    #             .limit(1)
-    #         )
-
     async def get_by_serial_number(self, serial_number: str):
         async with self.session_factory() as session:
             stmt = (
@@ -152,33 +145,57 @@ class PeripheralDeviceRepository(BaseRepository):
             )
             return await session.scalars(base_query).all()
 
-    async def get_business_devices(self, business_uuid, device_type: str = None):
+    async def get_business_devices(
+        self, business_uuid: str, device_type: Optional[str] = None
+    ):
         async with self.session_factory() as session:
-            base_query = session.query(self.model).filter(
+            query = select(self.model).filter(
                 self.model.business_profile_uuid == business_uuid
             )
-            if device_type:
-                base_query = base_query.filter(self.model.device_type == device_type)
 
-            base_query = base_query.order_by(
+            if device_type:
+                query = query.filter(self.model.device_type == device_type)
+
+            query = query.order_by(
                 nulls_last(desc(self.model.installed_at)), desc(self.model.created_at)
             )
-            return await session.scalars(base_query).all()
 
-    async def get_building_devices(self, building_uuid, device_type: str = None):
+            result = await session.execute(query)
+            return result.scalars().all()
+
+    async def get_building_devices(
+        self, building_uuid: str, device_type: Optional[str] = None
+    ):
         async with self.session_factory() as session:
-            base_query = session.query(self.model).filter(
+            base_query = select(self.model).filter(
                 self.model.building_uuid == building_uuid
             )
+
             if device_type:
                 base_query = base_query.filter(self.model.device_type == device_type)
 
-            # Order by installed_at if it exists, otherwise order by created_at
+            # Order by installed_at if it exists, otherwise by created_at
             base_query = base_query.order_by(
                 nulls_last(desc(self.model.installed_at)), desc(self.model.created_at)
             )
 
-            return await session.scalars(base_query).all()
+            result = await session.execute(base_query)
+            return result.scalars().all()
+
+    # async def get_building_devices(self, building_uuid, device_type: str = None):
+    #     async with self.session_factory() as session:
+    #         base_query = session.query(self.model).filter(
+    #             self.model.building_uuid == building_uuid
+    #         )
+    #         if device_type:
+    #             base_query = base_query.filter(self.model.device_type == device_type)
+
+    #         # Order by installed_at if it exists, otherwise order by created_at
+    #         base_query = base_query.order_by(
+    #             nulls_last(desc(self.model.installed_at)), desc(self.model.created_at)
+    #         )
+
+    #         return await session.scalars(base_query).all()
 
     async def get_device_by_cylinder_uuid(self, cylinder_uuid):
         async with self.session_factory() as session:

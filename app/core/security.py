@@ -151,7 +151,7 @@ def decode_token(token: str) -> dict:
         return {}
 
 
-async def extract_user_data(user: User) -> Dict[str, str]:
+def extract_user_data(user: User) -> Dict[str, str]:
     # Decrypt the license number if the user has a license
     license_data = None
     if user.driver_license:

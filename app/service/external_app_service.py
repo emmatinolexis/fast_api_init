@@ -25,15 +25,19 @@ class ExternalAppService(BaseService):
 
     async def create_external_app(self, payload: ExternalAppPayload):
         try:
-            external_app = await self.external_app_repository.create_external_app(payload)
+            external_app = await self.external_app_repository.create_external_app(
+                payload
+            )
             return external_app
         except Exception as e:
             raise e
 
     async def get_app_service_by_secret_key(self, secret_key: str):
         try:
-            external_app = await self.external_app_repository.get_app_service_by_secret_key(
-                secret_key
+            external_app = (
+                await self.external_app_repository.get_app_service_by_secret_key(
+                    secret_key
+                )
             )
             return external_app
         except Exception as e:
@@ -44,13 +48,11 @@ class ExternalAppService(BaseService):
             external_app = await self.external_app_repository.get_app_service(payload)
             expiry_minutes = days_to_minutes(external_app.no_of_days_to_expire)
             if payload.requires_conf:
-                device_configuration = (
-                    await self.device_configuration_repository.get_configuration_by_type(
-                        DeviceConfigurationVersion.SG_GATEWAY_VI
-                    )
+                device_configuration = await self.device_configuration_repository.get_configuration_by_type(
+                    DeviceConfigurationVersion.SG_GATEWAY_VI
                 )
                 gateway_device = (
-                    self.peripheral_devices_repository.get_by_serial_number(
+                    await self.peripheral_devices_repository.get_by_serial_number(
                         payload.serial_number
                     )
                 )

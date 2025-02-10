@@ -13,7 +13,9 @@ class DeviceConfigurationService(BaseService):
         self.device_configuration_repository = device_configuration_repository
         super().__init__(device_configuration_repository)
 
-    async def create_gateway_configuration(self, payload: CreateGatewayDeviceConfiguration):
+    async def create_gateway_configuration(
+        self, payload: CreateGatewayDeviceConfiguration
+    ):
         try:
             data = CreateDeviceConfigurationInput(
                 configuration_version=payload.configuration_version,
@@ -40,7 +42,9 @@ class DeviceConfigurationService(BaseService):
             )
             if conf is None:
                 return await self.device_configuration_repository.create(data)
-            return await self.device_configuration_repository.update_by_uuid(conf.uuid, data)
+            return await self.device_configuration_repository.update_by_uuid(
+                conf.uuid, data
+            )
         except Exception as e:
             raise e
 
@@ -124,7 +128,9 @@ class DeviceConfigurationService(BaseService):
             )
             if conf is None:
                 return await self.device_configuration_repository.create(data)
-            return await self.device_configuration_repository.update_by_uuid(conf.uuid, data)
+            return await self.device_configuration_repository.update_by_uuid(
+                conf.uuid, data
+            )
         except Exception as e:
             raise e
 

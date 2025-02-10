@@ -33,28 +33,48 @@ class ExternalAppRepository(BaseRepository):
                 await session.rollback()
                 raise e
 
+    # async def get_app_service(
+    #     self, payload: ExternalAppGenerateTokenPayload
+    # ) -> ExternalApp:
+    #     async with self.session_factory() as session:
+    #         try:
+    #             query = (
+    #                 select(self.model)
+    #                 .filter(self.model.app_id == payload.app_id)
+    #                 .filter(self.model.secret_key == payload.secret_key)
+    #             )
+    #             result = await session.execute(query)
+    #             app = result.scalar_.one_or_none()
+
+    #             if not app:
+    #                 raise Exception("Invalid app_id or secret_key")
+    #             if app.status == ActiveStatus.INACTIVE:
+    #                 raise Exception(
+    #                     "Your access has been revoked, contact administrator"
+    #                 )
+    #             return app
+    #         except Exception as e:
+    #             raise e
+
     async def get_app_service(
         self, payload: ExternalAppGenerateTokenPayload
-    ) -> ExternalApp:
+    ) -> Optional[ExternalApp]:
         async with self.session_factory() as session:
-            try:
-                query = (
-                    select(self.model)
-                    .filter(self.model.app_id == payload.app_id)
-                    .filter(self.model.secret_key == payload.secret_key)
-                )
-                result = await session.execute(query)
-                app = result.scalar_.one_or_none()
+            query = (
+                select(self.model)
+                .filter(self.model.app_id == payload.app_id)
+                .filter(self.model.secret_key == payload.secret_key)
+            )
+            result = await session.execute(query)
+            app = result.scalar_one_or_none()  # Correct method
 
-                if not app:
-                    raise Exception("Invalid app_id or secret_key")
-                if app.status == ActiveStatus.INACTIVE:
-                    raise Exception(
-                        "Your access has been revoked, contact administrator"
-                    )
-                return app
-            except Exception as e:
-                raise e
+            if not app:
+                raise Exception("Invalid app_id or secret_key")
+
+            if app.status == ActiveStatus.INACTIVE:
+                raise Exception("Your access has been revoked, contact administrator")
+
+            return app
 
     async def get_app_service_by_secret_key(
         self, secret_key: str
@@ -63,6 +83,6 @@ class ExternalAppRepository(BaseRepository):
             try:
                 query = select(self.model).filter(self.model.secret_key == secret_key)
                 result = await session.execute(query)
-                return result.scalar_.one_or_none()
+                return result.scalar_one_or_none()
             except Exception as e:
                 raise e

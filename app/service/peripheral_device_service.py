@@ -294,7 +294,7 @@ class PeripheralDeviceService(BaseService):
             )
 
             return [
-                peripheral_device_transformer(
+                await peripheral_device_transformer(
                     device,
                     self.peripheral_device_repository,
                     self.device_node_config_repository,
@@ -357,11 +357,11 @@ class PeripheralDeviceService(BaseService):
             # Create default configurations if they don't exist
             if not config:
                 if device.device_type == DeviceType.PYROGUARD_NODE_DEVICE:
-                    config = self.device_node_config_repository.create(
+                    config = await self.device_node_config_repository.create(
                         DefaultPyroConfig(peripheral_device_uuid=str(device.uuid))
                     )
                 elif device.device_type == DeviceType.GAS_NODE_DEVICE:
-                    config = self.device_node_config_repository.create(
+                    config = await self.device_node_config_repository.create(
                         DefaultGasConfig(peripheral_device_uuid=str(device.uuid))
                     )
 
@@ -371,7 +371,7 @@ class PeripheralDeviceService(BaseService):
             )
 
             # Return the transformed device data
-            return peripheral_device_transformer(
+            return await peripheral_device_transformer(
                 device,
                 self.peripheral_device_repository,
                 self.device_node_config_repository,
@@ -402,7 +402,7 @@ class PeripheralDeviceService(BaseService):
     ):
         try:
             user = await self.user_repository.get_user_by_uuid(user_uuid)
-            return user
+
             device = await self.peripheral_device_repository.get_by_serial_number(
                 payload.serial_number
             )
@@ -416,7 +416,6 @@ class PeripheralDeviceService(BaseService):
                 raise BadRequestError(messages.INVALID_DEVICE_TYPE)
 
             user = await self.user_repository.get_user_by_uuid(user_uuid)
-            return user
 
             is_authorized = (
                 device.user_uuid == user.get("uuid")

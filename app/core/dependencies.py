@@ -115,7 +115,7 @@ def check_user_permission(
 
 
 @inject
-def get_current_app_service(
+async def get_current_app_service(
     token: str = Depends(JWTBearer(allowed_roles=[THIRD_PARTY_APP_ROLE])),
     service: ExternalAppService = Depends(Provide[Container.external_app_service]),
 ) -> ExternalApp:
@@ -124,7 +124,7 @@ def get_current_app_service(
     except Exception as e:
         log.error(e)
         raise AuthError(detail="Could not validate app keys")
-    current_app_service: ExternalApp = service.get_app_service_by_secret_key(
+    current_app_service: ExternalApp = await service.get_app_service_by_secret_key(
         token_data.secret_key
     )
     if not current_app_service:
