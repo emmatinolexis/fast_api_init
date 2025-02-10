@@ -17,6 +17,7 @@ from app.util.utils import (
     send_data,
     send_data_with_info,
     send_internal_server_error,
+    send_client_side_error,
 )
 
 router = APIRouter(
@@ -100,7 +101,7 @@ async def update_role_handler(
     try:
         role = await service.get_by_uuid(role_uuid)
         if role:
-            update_role = service.update_role(payload, role_uuid)
+            update_role = await service.update_role(payload, role_uuid)
             logging.info(f"Role updated: {update_role}")
             return send_data_with_info(update_role, messages.SUCCESS_MESSAGE)
         msg = "role not found"
@@ -121,7 +122,11 @@ async def get_role_handler(
 ):
     try:
         role = await service.get_role(role_uuid)
-        return send_data(role)
+        if role:
+            return send_data(role)
+        return send_client_side_error(
+            messages.GET_FAILED + "role", messages.GET_FAILED + "role"
+        )
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
