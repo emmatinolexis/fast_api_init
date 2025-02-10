@@ -23,13 +23,15 @@ log = get_logger()
 
 
 def get_current_user_with_permission(permission: str):
-    def dependency(
+    async def dependency(
         token: str = Depends(
             JWTBearer(allowed_roles=[ADMIN_USER_ROLE, CUSTOMER_USER_ROLE])
         ),
         service: UserService = Depends(Provide[Container.user_service]),
     ):
-        return get_user_permission(token=token, service=service, permission=permission)
+        return await get_user_permission(
+            token=token, service=service, permission=permission
+        )
 
     return dependency
 
@@ -66,7 +68,7 @@ async def get_current_user(
 
 
 @inject
-def get_user_permission(
+async def get_user_permission(
     token: str = Depends(
         JWTBearer(allowed_roles=[ADMIN_USER_ROLE, CUSTOMER_USER_ROLE])
     ),
@@ -79,7 +81,7 @@ def get_user_permission(
         log.error(e)
         raise AuthError(detail="Could not validate credentials")
 
-    current_user: User = service.get_user_by_email_address(token_data.username)
+    current_user: User = await service.get_user_by_email_address(token_data.username)
 
     if not current_user:
         raise AuthError(detail="User not found")

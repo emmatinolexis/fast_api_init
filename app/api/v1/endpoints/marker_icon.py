@@ -86,9 +86,7 @@ async def update_marker_icon_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.delete(
-    "/{uuid}", dependencies=[allow_admins_only], response_class=ORJSONResponse
-)
+@router.delete("/{uuid}", response_class=ORJSONResponse)
 @inject
 async def delete_marker_icon_handler(
     uuid: str,

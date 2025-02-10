@@ -151,7 +151,7 @@ def decode_token(token: str) -> dict:
         return {}
 
 
-def extract_user_data(user: User) -> Dict[str, str]:
+async def extract_user_data(user: User) -> Dict[str, str]:
     # Decrypt the license number if the user has a license
     license_data = None
     if user.driver_license:
@@ -182,12 +182,14 @@ def extract_user_data(user: User) -> Dict[str, str]:
         "country": user.country,
         "operator_type": user.operator_type if user.operator_type else None,
         "license": license_data,
-        "installer_locations": user.installer_locations
-        if user.user_role_uuid == UUID(CustomerRoles.INSTALLER)
-        else None,
-        "business_profile_uuid": user.business_profile_uuid
-        if user.business_profile_uuid
-        else None,
+        "installer_locations": (
+            user.installer_locations
+            if user.user_role_uuid == UUID(CustomerRoles.INSTALLER)
+            else None
+        ),
+        "business_profile_uuid": (
+            user.business_profile_uuid if user.business_profile_uuid else None
+        ),
     }
 
 

@@ -134,20 +134,20 @@ class PeripheralDeviceService(BaseService):
         except Exception as e:
             raise e
 
-    def create_default_config(
+    async def create_default_config(
         self, peripheral_device_uuid: str, device_type: PeripheralDeviceType
     ):
         if device_type == DeviceType.PYROGUARD_NODE_DEVICE:
             pyro_config = DefaultPyroConfig(
                 peripheral_device_uuid=str(peripheral_device_uuid)
             )
-            self.device_node_config_repository.create(pyro_config)
+            await self.device_node_config_repository.create(pyro_config)
 
         elif device_type == DeviceType.GAS_NODE_DEVICE:
             gas_config = DefaultGasConfig(
                 peripheral_device_uuid=str(peripheral_device_uuid)
             )
-            self.device_node_config_repository.create(gas_config)
+            await self.device_node_config_repository.create(gas_config)
 
     async def get_devices_by_serial_number(self, serial_number: str):
         try:
@@ -385,10 +385,9 @@ class PeripheralDeviceService(BaseService):
     async def get_device_by_peripheral_uuid(self, device_uuid: str):
         try:
             device = await self.peripheral_device_repository.read_by_uuid(device_uuid)
-
             if not device:
                 raise NotFoundError(messages.PERIPHERAL_DEVICE_NOT_FOUND + device_uuid)
-            return peripheral_device_transformer(
+            return await peripheral_device_transformer(
                 device,
                 self.peripheral_device_repository,
                 self.device_node_config_repository,
@@ -402,6 +401,8 @@ class PeripheralDeviceService(BaseService):
         self, user_uuid, payload: LinkGasCylinderToDevice
     ):
         try:
+            user = await self.user_repository.get_user_by_uuid(user_uuid)
+            return user
             device = await self.peripheral_device_repository.get_by_serial_number(
                 payload.serial_number
             )
@@ -415,6 +416,7 @@ class PeripheralDeviceService(BaseService):
                 raise BadRequestError(messages.INVALID_DEVICE_TYPE)
 
             user = await self.user_repository.get_user_by_uuid(user_uuid)
+            return user
 
             is_authorized = (
                 device.user_uuid == user.get("uuid")
@@ -464,8 +466,8 @@ class PeripheralDeviceService(BaseService):
             await self.gas_cylinder_repository.update_attr_by_uuid(
                 payload.gas_cylinder_uuid, "status", ActiveStatus.ACTIVE
             )
-
-            return peripheral_device_transformer(
+            return device
+            return await peripheral_device_transformer(
                 device,
                 self.peripheral_device_repository,
                 self.device_node_config_repository,

@@ -10,6 +10,7 @@ from app.model.package import Package
 from app.model.package_item_assignment import PackageItemAssignment
 from app.repository.base_repository import BaseRepository
 from app.schema.package_schema import PackageItemAssignmentPayload
+from sqlalchemy import select
 
 
 class PackageRepository(BaseRepository):
@@ -73,8 +74,9 @@ class PackageRepository(BaseRepository):
                         packages = []
                         if response.status == 200:
                             for plan in filtered_plans:
+
                                 result = await session.execute(
-                                    session.query(PackageItemAssignment)
+                                    select(PackageItemAssignment)
                                     .filter(
                                         PackageItemAssignment.paystack_plan_code
                                         == plan["plan_code"]
@@ -83,6 +85,7 @@ class PackageRepository(BaseRepository):
                                         joinedload(PackageItemAssignment.package_item)
                                     )
                                 )
+
                                 package_items = result.unique().scalars().all()
                                 package = {
                                     "package_plan_code": plan["plan_code"],

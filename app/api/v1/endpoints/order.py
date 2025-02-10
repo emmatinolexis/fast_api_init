@@ -67,7 +67,7 @@ async def get_all_orders_handler(
         )
         return send_data(orders)
     except Exception as e:
-        msg = messages.CREATE_FAILED + msg_prefix
+        msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
 
 

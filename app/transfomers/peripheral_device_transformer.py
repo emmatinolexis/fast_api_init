@@ -30,20 +30,18 @@ async def peripheral_device_transformer(
     device_event_repository: DeviceEventRepository,
     gas_cylinder_repo: GasCylinderRepository,
 ):
-    device = device_repo.read_by_uuid(device.uuid)
+    device = await device_repo.read_by_uuid(device.uuid)
 
     # Initialize device_config and gas_cylinder_data
     device_config = None
-    gas_cylinder_data = (
-        None  # Initialize to avoid the 'referenced before assignment' error
-    )
+    gas_cylinder_data = None
 
     # Retrieve and transform device configuration based on device type
     if device.device_type in [
         PeripheralDeviceType.PYROGUARD_NODE_DEVICE,
         PeripheralDeviceType.GAS_NODE_DEVICE,
     ]:
-        config = config_repo.get_device_node_config_by_device_uuid(device.uuid)
+        config = await config_repo.get_device_node_config_by_device_uuid(device.uuid)
         measurement = {}
 
         if config:
@@ -54,11 +52,13 @@ async def peripheral_device_transformer(
 
     # Fetch gas cylinder data only if the device type is GAS_NODE_DEVICE
     if device.device_type == PeripheralDeviceType.GAS_NODE_DEVICE:
-        cylinder = gas_cylinder_repo.read_by_uuid(device.gas_cylinder_uuid)
+        cylinder = await gas_cylinder_repo.read_by_uuid(device.gas_cylinder_uuid)
         if cylinder:
             gas_cylinder_data = {"name": cylinder.cylinder_name, "uuid": cylinder.uuid}
 
-    latest_event = await device_event_repository.get_device_latest_reading(device.node_id)
+    latest_event = await device_event_repository.get_device_latest_reading(
+        device.node_id
+    )
 
     if latest_event:
         if device.device_type == PeripheralDeviceType.PYROGUARD_NODE_DEVICE:
@@ -104,9 +104,9 @@ async def peripheral_device_transformer(
         "node_id": str(device.node_id) if device.node_id else None,
         "status": device.status.name if device.status else None,
         "user_uuid": str(device.user_uuid) if device.user_uuid else None,
-        "business_profile_uuid": str(device.business_profile_uuid)
-        if device.business_profile_uuid
-        else None,
+        "business_profile_uuid": (
+            str(device.business_profile_uuid) if device.business_profile_uuid else None
+        ),
         "building_uuid": str(device.building_uuid) if device.building_uuid else None,
         "location": device.location,
         "device_type": device.device_type.name if device.device_type else None,

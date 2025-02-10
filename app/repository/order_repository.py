@@ -7,6 +7,7 @@ from sqlalchemy import Date, cast
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
+from sqlalchemy.sql import func
 
 from app.model.inventory import Inventory
 from app.model.order import Order, OrderDeviceAssignment
@@ -57,9 +58,22 @@ class OrderRepository(BaseRepository):
                 await session.rollback()
                 raise e
 
+    # def _get_base_query(self):
+    #     return (
+    #         select(Order)
+    #         .options(
+    #             joinedload(Order.order_inventories)
+    #             .joinedload(OrderDeviceAssignment.inventory)
+    #             .joinedload(Inventory.images),
+    #             joinedload(Order.order_shipping_address),
+    #         )
+    #         .order_by(Order.created_at.desc())
+    #     )
+
     def _get_base_query(self):
         return (
             select(Order)
+            .distinct()  # Ensure unique orders
             .options(
                 joinedload(Order.order_inventories)
                 .joinedload(OrderDeviceAssignment.inventory)
@@ -117,7 +131,7 @@ class OrderRepository(BaseRepository):
             previous_start_date = current_start_date - delta
             previous_end_date = current_start_date - timedelta(seconds=1)
 
-            base_query = self._get_base_query(session)
+            base_query = self._get_base_query()
 
             query_current = self.apply_filters(
                 base_query, search_query, current_start_date, current_end_date, status
@@ -127,50 +141,47 @@ class OrderRepository(BaseRepository):
                 base_query, search_query, previous_start_date, previous_end_date, status
             )
 
-            total_orders_current = await session.scalar(select(query_current).count())
+            # Convert queries to subqueries
+            subquery_current = query_current.subquery()
+            subquery_previous = query_previous.subquery()
+
+            # Use subqueries for counting
+            total_orders_current = await session.scalar(
+                select(func.count()).select_from(subquery_current)
+            )
             fulfilled_orders_current = await session.scalar(
-                select(
-                    query_current.filter(
-                        Order.order_status == OrderStatus.DELIVERED
-                    ).count()
-                )
+                select(func.count())
+                .select_from(subquery_current)
+                .where(subquery_current.c.order_status == OrderStatus.DELIVERED)
             )
             ready_for_pickup_orders_current = await session.scalar(
-                select(
-                    query_current.filter(
-                        Order.order_status == OrderStatus.READY_FOR_PICKUP
-                    ).count()
-                )
+                select(func.count())
+                .select_from(subquery_current)
+                .where(subquery_current.c.order_status == OrderStatus.READY_FOR_PICKUP)
             )
             processing_orders_current = await session.scalar(
-                select(
-                    query_current.filter(
-                        Order.order_status == OrderStatus.PROCESSING
-                    ).count()
-                )
+                select(func.count())
+                .select_from(subquery_current)
+                .where(subquery_current.c.order_status == OrderStatus.PROCESSING)
             )
 
-            total_orders_previous = await session.scalar(select(query_previous).count())
+            total_orders_previous = await session.scalar(
+                select(func.count()).select_from(subquery_previous)
+            )
             fulfilled_orders_previous = await session.scalar(
-                select(
-                    query_previous.filter(
-                        Order.order_status == OrderStatus.DELIVERED
-                    ).count()
-                )
+                select(func.count())
+                .select_from(subquery_previous)
+                .where(subquery_previous.c.order_status == OrderStatus.DELIVERED)
             )
             ready_for_pickup_orders_previous = await session.scalar(
-                select(
-                    query_previous.filter(
-                        Order.order_status == OrderStatus.READY_FOR_PICKUP
-                    ).count()
-                )
+                select(func.count())
+                .select_from(subquery_previous)
+                .where(subquery_previous.c.order_status == OrderStatus.READY_FOR_PICKUP)
             )
             processing_orders_previous = await session.scalar(
-                select(
-                    query_previous.filter(
-                        Order.order_status == OrderStatus.PROCESSING
-                    ).count()
-                )
+                select(func.count())
+                .select_from(subquery_previous)
+                .where(subquery_previous.c.order_status == OrderStatus.PROCESSING)
             )
 
             total_orders_percentage_change = calculate_percentage_change(
@@ -187,10 +198,11 @@ class OrderRepository(BaseRepository):
             )
 
             offset = (page - 1) * page_size
+
             paginated_orders_result = await session.execute(
-                select(query_current).offset(offset).limit(page_size)
+                query_current.offset(offset).limit(page_size)
             )
-            paginated_orders = paginated_orders_result.scalars().all()
+            paginated_orders = paginated_orders_result.unique().scalars().all()
 
             return {
                 "orders": paginated_orders,
