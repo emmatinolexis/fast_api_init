@@ -16,6 +16,7 @@ from app.schema.report_schema import (
     SmartReportPayload,
     SmartReportSharePayload,
 )
+import datetime
 from app.service.asset_service import AssetService
 from app.service.device_events_service import DeviceEventService
 from app.service.gas_cylinder_event_service import GasCylinderEventService
@@ -59,7 +60,7 @@ async def generate_distance_traveled_report_handler(
         user = await user_service.get_user_by_uuid(user_uuid)
         if user:
             return send_data_with_info(
-                report_service.generate_distance_speed_report(
+                await report_service.generate_distance_speed_report(
                     business_uuid=user.get("business_profile").uuid,
                     start_date=start_date,
                     end_date=end_date,
@@ -91,6 +92,7 @@ async def generate_violation_reminders_report_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
+
         user = await user_service.get_user_by_uuid(user_uuid)
         if user:
             return send_data_with_info(
@@ -123,12 +125,22 @@ async def create_smart_report_handler(
 ):
     try:
         user = await user_service.get_user_by_uuid(str(smart_report_payload.user_uuid))
+        start_date = (
+            smart_report_payload.start_date.strftime("%Y-%m-%d")
+            if isinstance(smart_report_payload.start_date, datetime.date)
+            else str(smart_report_payload.start_date)
+        )
+        end_date = (
+            smart_report_payload.end_date.strftime("%Y-%m-%d")  # <-- Fixed this line
+            if isinstance(smart_report_payload.end_date, datetime.date)
+            else str(smart_report_payload.end_date)
+        )
 
         if user:
             smart_report_input = SmartReportInput(
                 title=smart_report_payload.title,
-                start_date=smart_report_payload.start_date,
-                end_date=smart_report_payload.end_date,
+                start_date=start_date,
+                end_date=end_date,
                 asset_group_uuids=smart_report_payload.asset_group,
                 asset_type_uuid=smart_report_payload.asset_type_uuid,
                 user_uuid=smart_report_payload.user_uuid,
@@ -145,7 +157,7 @@ async def create_smart_report_handler(
             return send_client_side_error(user_msg=msg, dev_msg=msg)
 
     except Exception as e:
-        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        msg = messages.CREATE_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
 
 
@@ -168,7 +180,7 @@ async def get_smart_report_by_user_handler(
     try:
         user = await user_service.get_user_by_uuid(str(user_uuid))
         if user:
-            reports = smart_report_service.get_reports(
+            reports = await smart_report_service.get_reports(
                 business_profile_uuid=user.get("business_profile").uuid,
                 query_parameter=query_parameter,
                 created_by=created_by,
@@ -210,7 +222,7 @@ async def get_gas_report(
             )
 
         return send_data_with_info(
-            service.generate_report_business(
+            await service.generate_report_business(
                 business_uuid=user.get("business_profile").uuid,
                 start_date=start_date,
                 end_date=end_date,
@@ -282,7 +294,7 @@ async def generate_smart_report_handler(
                 return send_info(msg)
 
     except Exception as e:
-        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        msg = messages.CREATE_FAILED + f"{msg_prefix}s"
         logging.info(e)
         return send_internal_server_error(user_msg=msg, error=e)
 

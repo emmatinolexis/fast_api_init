@@ -4,6 +4,7 @@ from typing import Callable, Dict, List
 from sqlalchemy import Date, and_, cast
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
+from sqlalchemy.future import select
 
 from app.core.constants import ALLOWED_EVENT_TYPES
 from app.model.asset import Asset
@@ -11,6 +12,7 @@ from app.model.device import Device
 from app.model.tracking_event import TrackingEvent
 from app.repository.base_repository import BaseRepository
 from app.util.utils import calculate_average_speed, get_status
+import asyncio
 
 
 class TrackingEventRepository(BaseRepository):
@@ -44,47 +46,46 @@ class TrackingEventRepository(BaseRepository):
     async def read_all_events_by_date_range(
         self, device_imei: str, date_from: str, date_to: str
     ):
-        # Parse the given date range
-        start_date = datetime.strptime(date_from, "%d/%m/%Y")
-        end_date = datetime.strptime(date_to, "%d/%m/%Y")
-
-        # Calculate the difference in days
-        date_diff = end_date - start_date
+        # Parse the given date range with proper format
+        start_date = datetime.strptime(date_from, "%d/%m/%Y").date()
+        end_date = datetime.strptime(date_to, "%d/%m/%Y").date()
 
         # Calculate the past date range
-        past_start_date = start_date - timedelta(days=date_diff.days + 1)
-        past_end_date = end_date - timedelta(days=date_diff.days + 1)
+        date_diff = (end_date - start_date).days
+        past_start_date = start_date - timedelta(days=date_diff + 1)
+        past_end_date = end_date - timedelta(days=date_diff + 1)
 
         async with self.session_factory() as session:
             # Query for the given date range
-            current_range_events = await session.execute(
-                session.query(self.model)
+            current_query = (
+                select(self.model)
                 .filter(
                     self.model.device_imei == device_imei,
-                    and_(
-                        cast(self.model.event_datetime, Date) >= start_date,
-                        cast(self.model.event_datetime, Date) <= end_date,
+                    cast(self.model.event_datetime, Date).between(start_date, end_date),
+                    self.model.event_type.in_(ALLOWED_EVENT_TYPES),
+                )
+                .order_by(self.model.event_datetime)
+            )
+
+            past_query = (
+                select(self.model)
+                .filter(
+                    self.model.device_imei == device_imei,
+                    cast(self.model.event_datetime, Date).between(
+                        past_start_date, past_end_date
                     ),
                     self.model.event_type.in_(ALLOWED_EVENT_TYPES),
                 )
                 .order_by(self.model.event_datetime)
             )
 
-            # Query for the past date range
-            past_range_events = await session.execute(
-                session.query(self.model)
-                .filter(
-                    self.model.device_imei == device_imei,
-                    and_(
-                        cast(self.model.event_datetime, Date) >= past_start_date,
-                        cast(self.model.event_datetime, Date) <= past_end_date,
-                    ),
-                    self.model.event_type.in_(ALLOWED_EVENT_TYPES),
-                )
-                .order_by(self.model.event_datetime)
+            # Execute queries asynchronously
+            current_range_events, past_range_events = await asyncio.gather(
+                session.execute(current_query),
+                session.execute(past_query),
             )
 
-            # Return results in a dictionary form
+            # Return results in dictionary format
             return {
                 "current_range_events": current_range_events.scalars().all(),
                 "past_range_events": past_range_events.scalars().all(),
@@ -94,22 +95,23 @@ class TrackingEventRepository(BaseRepository):
         self, device_imei: str, start_date: str, end_date: str
     ):
         async with self.session_factory() as session:
-            query = await session.execute(
-                session.query(self.model)
+            query = (
+                select(self.model)
                 .filter(
                     self.model.device_imei == device_imei,
                     and_(
                         cast(self.model.event_datetime, Date)
-                        >= datetime.strptime(start_date, "%d/%m/%Y"),
+                        >= datetime.strptime(start_date, "%d/%m/%Y").date(),
                         cast(self.model.event_datetime, Date)
-                        <= datetime.strptime(end_date, "%d/%m/%Y"),
+                        <= datetime.strptime(end_date, "%d/%m/%Y").date(),
                     ),
                     self.model.event_type.in_(ALLOWED_EVENT_TYPES),
                 )
                 .order_by(self.model.event_datetime)
             )
 
-            return query.scalars().all()
+            result = await session.execute(query)
+            return result.scalars().all()
 
     async def read_all_events_by_user(
         self, date: str, user_uuid: str = None, business_uuid: str = None

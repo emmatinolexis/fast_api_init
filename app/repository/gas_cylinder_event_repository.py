@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.gas_cylinders import GasCylinderEvent
 from app.repository.base_repository import BaseRepository
+from sqlalchemy.future import select
 
 
 class GasCylinderEventRepository(BaseRepository):

@@ -48,7 +48,7 @@ class SmartReportRepository(BaseRepository):
 
             # Get the total count of reports based on filters
             total_reports = await session.scalar(
-                select([func.count()]).select_from(query.subquery())
+                select(func.count()).select_from(query.subquery())
             )
 
             # Calculate total pages
