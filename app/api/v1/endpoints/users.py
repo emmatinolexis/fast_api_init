@@ -485,6 +485,10 @@ async def change_password_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
+        if str(current_user.uuid) != str(user_uuid):
+            return send_client_side_error(
+                user_msg=messages.UNAUTHORIZED_ACTION,
+            )
         user_to_update = await service.get_by_uuid(user_uuid)
 
         if user_to_update is None:
@@ -613,6 +617,11 @@ async def deactivate_account_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
+        if str(current_user.uuid) != str(uuid):
+            return send_client_side_error(
+                user_msg=messages.UNAUTHORIZED_ACTION,
+            )
+
         user = await service.deactivate_user_account(
             uuid, payload, current_user, request
         )

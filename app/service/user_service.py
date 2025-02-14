@@ -239,7 +239,6 @@ class UserService(BaseService):
     ):
         try:
             return await self.user_repository.change_password(user_uuid, new_password)
-
         except Exception as e:
             raise e
 

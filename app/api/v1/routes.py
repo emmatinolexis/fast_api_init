@@ -53,9 +53,6 @@ from app.api.v1.endpoints.report import router as report_router
 from app.api.v1.endpoints.rnd_images import router as rnd_image_router
 from app.api.v1.endpoints.subscription import router as subscription_router
 
-# from app.api.v1.endpoints.subscription_payment import (
-#     router as subscription_payment_router,
-# )
 from app.api.v1.endpoints.third_party_app import router as third_party_router
 from app.api.v1.endpoints.tracking import router as tracking_router
 from app.api.v1.endpoints.upload import router as upload_router
@@ -89,7 +86,6 @@ router_list = [
     tracking_router,
     subscription_router,
     payment_router,
-    # subscription_payment_router,
     order_router,
     external_app_router,
     permission_router,

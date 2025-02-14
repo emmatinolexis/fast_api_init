@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Callable, List
+from typing import Callable, List, Optional
 from uuid import UUID
 
 from pydantic import EmailStr
@@ -11,6 +11,7 @@ from app.model.invitation import Invitation
 from app.repository.base_repository import BaseRepository
 from app.schema.invitation_schema import InvitationPayload
 from app.util.enums import InvitationStatus, RoleType
+from sqlalchemy.future import select
 
 
 class TeamMemberInvitationRepository(BaseRepository):
@@ -21,25 +22,27 @@ class TeamMemberInvitationRepository(BaseRepository):
     async def create_invitation(self, payload: InvitationPayload):
         return await self.create(payload)
 
-    async def get_invitation_by_email(self, email: EmailStr) -> Invitation:
+    async def get_invitation_by_email(self, email: EmailStr) -> Optional[Invitation]:
+        """Asynchronously retrieves an invitation by email."""
         async with self.session_factory() as session:
-            return (
-                await session.query(self.model)
-                .filter(self.model.email == email)
-                .first()
+            result = await session.execute(
+                select(self.model).filter(self.model.email == email)
             )
+            return result.scalars().first()
 
     async def get_user_invitations(
         self,
         business_uuid: str,
         page: int = 1,
         page_size: int = 10,
-        search: str = None,
-        role_uuids: List[str] = None,
-        status: InvitationStatus = None,
+        search: Optional[str] = None,
+        role_uuids: Optional[List[str]] = None,
+        status: Optional[InvitationStatus] = None,
     ):
+        """Fetch user invitations with pagination and filtering asynchronously."""
         async with self.session_factory() as session:
-            query = session.query(self.model).filter(
+            # Start building the query
+            query = select(self.model).filter(
                 self.model.business_profile_uuid == business_uuid
             )
 
@@ -47,18 +50,18 @@ class TeamMemberInvitationRepository(BaseRepository):
             if search:
                 query = query.filter(self.model.email.ilike(f"%{search}%"))
             if role_uuids:
-                valid_role_uuids = []
-                for role_uuid in role_uuids:
-                    try:
-                        valid_role_uuids.append(UUID(role_uuid))
-                    except ValueError:
-                        continue
-                query = query.filter(self.model.role_uuid.in_(valid_role_uuids))
+                valid_role_uuids = [
+                    UUID(role_uuid) for role_uuid in role_uuids if role_uuid
+                ]
+                if valid_role_uuids:
+                    query = query.filter(self.model.role_uuid.in_(valid_role_uuids))
             if status:
                 query = query.filter(self.model.status == status)
 
-            # Get total count and calculate pagination
-            total_invitations = await session.scalar(query.with_entities(func.count()))
+            # Get total count for pagination
+            total_invitations = await session.scalar(
+                select(func.count()).select_from(query.subquery())
+            )
             total_pages = (total_invitations + page_size - 1) // page_size
             offset = (page - 1) * page_size
 
@@ -162,27 +165,27 @@ class TeamMemberInvitationRepository(BaseRepository):
             }
 
     async def update_expired_invitations(self):
+        """Asynchronously updates expired invitations to EXPIRED status."""
         async with self.session_factory() as session:
             # Get the current timestamp
             current_time = datetime.utcnow()
 
-            # Query to find all invitations that are past their expiration date and are still PENDING
-            expired_invitations = (
-                await session.query(self.model)
-                .filter(
+            # Query to find all expired invitations
+            result = await session.execute(
+                select(self.model).filter(
                     and_(
                         self.model.expired_at < current_time,
                         self.model.status == InvitationStatus.PENDING,
                     )
                 )
-                .all()
             )
+            expired_invitations = result.scalars().all()
 
-            # Update the status of each expired invitation to EXPIRED
+            # Update the status of each expired invitation
             for invitation in expired_invitations:
                 invitation.status = InvitationStatus.EXPIRED
 
-            # Commit the changes to the database
+            # Commit changes to the database
             await session.commit()
 
             return len(expired_invitations)

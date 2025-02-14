@@ -13,11 +13,11 @@ class ResetPassword(BaseService):
         except Exception as e:
             raise e
 
-    def update_password(
+    async def update_password(
         self, token: str, new_password: str, password_confirmation: str
     ):
         try:
-            return self.reset_password_repository.update_password(
+            return await self.reset_password_repository.update_password(
                 token, new_password, password_confirmation
             )
         except Exception as e:
