@@ -18,7 +18,7 @@ class PhoneOTPService(BaseService):
 
     async def create_phone_verification_token(self, user_id: str) -> str:
         await self.phone_otp_repository.delete_by_user_uuid(user_id)
-        return self.phone_otp_repository.create_token(user_id).token
+        return await self.phone_otp_repository.create_token(user_id)
 
     async def verify_token(self, token: str):
         user_token = await self.phone_otp_repository.get_token(token)

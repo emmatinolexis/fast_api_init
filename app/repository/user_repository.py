@@ -42,11 +42,16 @@ class UserRepository(BaseRepository):
         super().__init__(session_factory, User)
 
     async def update_user_by_uuid(self, uuid: str, user: UpdateUserPayload):
+        """Updates a user by UUID asynchronously."""
         async with self.session_factory() as session:
-            user_to_update = await session.get(User, uuid)
+            # Query user by UUID (since session.get() requires full primary key)
+            result = await session.execute(select(User).filter(User.uuid == uuid))
+            user_to_update = result.scalars().first()
+
             if user_to_update is None:
                 raise Exception("User not found")
 
+            # Update fields
             user_to_update.location = user.location
             user_to_update.address = user.address
             user_to_update.phone_number = user.phone_number
@@ -90,9 +95,20 @@ class UserRepository(BaseRepository):
             return user_data
 
     async def update_user_status(self, uuid: str):
+        """Toggle a user's status asynchronously."""
         async with self.session_factory() as session:
-            user = await session.get(self.model, uuid)
+            # Query the user using select + filter instead of session.get()
+            result = await session.execute(
+                select(self.model).filter(self.model.uuid == uuid)
+            )
+            user = result.scalars().first()
+
+            if user is None:
+                raise Exception("User not found")
+
+            # Toggle the status
             user.status = toggle_status(user.status)
+
             await session.commit()
             await session.refresh(user)
             return user
@@ -128,21 +144,21 @@ class UserRepository(BaseRepository):
             business_data = result.scalar_one_or_none()
             return business_data
 
-    async def change_password(
-        self,
-        user_uuid,
-        new_password: str,
-    ):
+    async def change_password(self, user_uuid: str, new_password: str):
+        """Changes a user's password asynchronously."""
         async with self.session_factory() as session:
+
             result = await session.execute(
                 select(self.model).filter(self.model.uuid == user_uuid)
             )
-            user = result.scalar_.one_or_none()
+            user = result.scalar_one_or_none()
 
             if not user:
-                return None
+                return None  # Return None if user is not found
 
+            # Hash and update the password
             user.password = hash_user_password(new_password)
+
             await session.commit()
             await session.refresh(user)
 
@@ -555,7 +571,7 @@ class UserRepository(BaseRepository):
             ),
             user_role_uuid=(
                 CustomerRoles.ADMIN if not user.invite_status else user.user_role_uuid
-            ),
+            ).value,
             status=user.status,
             verifiedAt=(
                 f"{datetime.utcnow():%Y-%m-%d %H:%M:%S%z}"
@@ -684,11 +700,18 @@ class UserRepository(BaseRepository):
             return user
 
     async def patch_user_by_uuid(self, uuid: str, user: UserProfileUdatePayload):
+        """Patch (partially update) a user profile by UUID asynchronously."""
         async with self.session_factory() as session:
-            user_to_update = await session.get(self.model, uuid)
+            # Query the user using filter instead of session.get()
+            result = await session.execute(
+                select(self.model).filter(self.model.uuid == uuid)
+            )
+            user_to_update = result.scalars().first()
+
             if user_to_update is None:
                 raise Exception("User not found")
 
+            # Apply updates only if values are provided
             if user.first_name is not None:
                 user_to_update.first_name = user.first_name
             if user.last_name is not None:
