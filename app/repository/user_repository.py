@@ -151,8 +151,7 @@ class UserRepository(BaseRepository):
             result = await session.execute(
                 select(self.model).filter(self.model.uuid == user_uuid)
             )
-            user = result.scalar_one_or_none()
-
+            user = result.scalars().first()
             if not user:
                 return None  # Return None if user is not found
 

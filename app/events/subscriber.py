@@ -56,6 +56,7 @@ class Subscriber:
         self.events.on(event, handler)
 
     def publish(self, event, data):
+        """Asynchronously publishes an event."""
         self.events.emit(event, data)
 
 

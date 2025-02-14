@@ -473,13 +473,15 @@ class UserService(BaseService):
             new_role = await self.role_repository.get_role(payload.user_role_uuid)
 
             if payload.user_role_uuid:
-                await subscriber.publish(
-                    RoleUpdated, RoleUpdated(role=new_role, user=user)
-                )
+                subscriber.publish(RoleUpdated, RoleUpdated(role=new_role, user=user))
                 await self.activity_log_repository.create(
                     ActivityLogSchema(
                         user_uuid=str(current_user.uuid),
-                        business_profile_uuid=str(current_user.business_profile_uuid),
+                        business_profile_uuid=(
+                            str(current_user.business_profile_uuid)
+                            if current_user.business_profile_uuid
+                            else None
+                        ),
                         activity_title=activity_log_constants.UPDATE_TEAM_MEMBER,
                         activity_class=ActivityLogClass.ADMIN,
                         activity_type=ActivityLogType.ROLE_UPDATE,
@@ -496,7 +498,11 @@ class UserService(BaseService):
                 await self.activity_log_repository.create(
                     ActivityLogSchema(
                         user_uuid=str(current_user.uuid),
-                        business_profile_uuid=str(current_user.business_profile_uuid),
+                        business_profile_uuid=(
+                            str(current_user.business_profile_uuid)
+                            if current_user.business_profile_uuid
+                            else None
+                        ),
                         activity_title=activity_log_constants.UPDATE_STATUS,
                         activity_class=ActivityLogClass.ADMIN,
                         activity_type=ActivityLogType.STATUS_UPDATE,
@@ -509,7 +515,6 @@ class UserService(BaseService):
                     )
                 )
         except Exception as e:
-            print(e)
             raise e
 
     async def get_user_stats(

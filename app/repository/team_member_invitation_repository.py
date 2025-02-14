@@ -95,47 +95,40 @@ class TeamMemberInvitationRepository(BaseRepository):
 
     async def get_admin_invitations(
         self,
-        page=1,
-        page_size=10,
-        email: str = None,
-        role_uuids: list[str] = None,
-        status=None,
+        page: int = 1,
+        page_size: int = 10,
+        email: Optional[str] = None,
+        role_uuids: Optional[List[str]] = None,
+        status: Optional[str] = None,
     ):
+        """Fetch admin invitations with pagination and filtering asynchronously."""
         async with self.session_factory() as session:
             offset = (page - 1) * page_size
 
-            # Build the query for invitations with optional filters
-            query = session.query(self.model).filter(
+            # Build the base query
+            query = select(self.model).filter(
                 self.model.invitation_type == RoleType.ADMIN
             )
 
-            # Add filters based on provided parameters
+            # Apply filters
             if email:
                 query = query.filter(self.model.email.ilike(f"%{email}%"))
-
             if status:
                 query = query.filter(self.model.status == InvitationStatus(status))
-
             if role_uuids:
-                valid_role_uuids = []
-                for role_uuid in role_uuids:
-                    try:
-                        valid_role_uuids.append(UUID(role_uuid))
-                    except ValueError:
-                        # Skip invalid UUIDs
-                        continue
+                valid_role_uuids = [
+                    UUID(role_uuid) for role_uuid in role_uuids if role_uuid
+                ]
                 if valid_role_uuids:
                     query = query.filter(self.model.role_uuid.in_(valid_role_uuids))
 
-            # Query to get the total count of invitations with filters
-            total_invitations = await query.with_entities(
-                func.count(self.model.id)
-            ).scalar()
-
-            # Calculate total pages
+            # Get the total count for pagination
+            total_invitations = await session.scalar(
+                select(func.count()).select_from(query.subquery())
+            )
             total_pages = (total_invitations + page_size - 1) // page_size
 
-            # Get the invitations with filters, pagination, and sorting
+            # Fetch invitations with pagination and eager loading
             result = await session.execute(
                 query.order_by(desc(self.model.created_at))
                 .offset(offset)
