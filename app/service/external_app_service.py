@@ -56,7 +56,7 @@ class ExternalAppService(BaseService):
                         payload.serial_number
                     )
                 )
-                # return device_configuration.configuration.get("upload_interval")
+
                 conf = {
                     "opconf": {
                         "upint": device_configuration.configuration.get(
