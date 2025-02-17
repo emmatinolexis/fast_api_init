@@ -126,11 +126,11 @@ class PeripheralDeviceRepository(BaseRepository):
     async def get_device_node_id(self, node_id: str):
         async with self.session_factory() as session:
             result = await session.scalars(
-                session.query(self.model)
+                select(self.model)
                 .filter(self.model.node_id == node_id)
                 .options(joinedload(self.model.building))
             )
-            return result.unique().first()
+            return result.first()
 
     async def get_user_devices(self, user_uuid, device_type: str = None):
         async with self.session_factory() as session:

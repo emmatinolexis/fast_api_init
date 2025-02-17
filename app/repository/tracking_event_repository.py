@@ -121,32 +121,78 @@ class TrackingEventRepository(BaseRepository):
             result = await session.execute(query)
             return result.scalars().all()
 
+    # async def read_all_events_by_user(
+    #     self, date: str, user_uuid: str = None, business_uuid: str = None
+    # ) -> Dict[str, List[TrackingEvent]]:
+    #     async with self.session_factory() as session:
+    #         events_by_device = {}
+    #         if user_uuid:
+    #             user_assets = await session.execute(
+    #                 session.query(Asset).filter(
+    #                     Asset.user_uuid == user_uuid, Asset.device_imei.isnot(None)
+    #                 )
+    #             )
+    #             user_assets = user_assets.scalars().all()
+
+    #         if business_uuid:
+    #             user_assets = await session.execute(
+    #                 session.query(Asset).filter(
+    #                     Asset.business_profile_uuid == business_uuid,
+    #                     Asset.device_imei.isnot(None),
+    #                 )
+    #             )
+    #             user_assets = user_assets.scalars().all()
+
+    #         for asset in user_assets:
+    #             device_imei = asset.device_imei
+    #             query = await session.execute(
+    #                 session.query(self.model)
+    #                 .filter(
+    #                     self.model.device_imei == device_imei,
+    #                     cast(self.model.event_datetime, Date)
+    #                     == datetime.strptime(date, "%d/%m/%Y"),
+    #                     self.model.event_type.in_(ALLOWED_EVENT_TYPES),
+    #                 )
+    #                 .options(
+    #                     joinedload(self.model.device).joinedload(Device.asset),
+    #                 )
+    #                 .order_by(self.model.event_datetime)
+    #             )
+    #             events_by_device[device_imei] = {
+    #                 "events": query.unique().scalars().all(),
+    #                 "asset": asset,
+    #             }
+
+    #         return events_by_device
+
     async def read_all_events_by_user(
         self, date: str, user_uuid: str = None, business_uuid: str = None
     ) -> Dict[str, List[TrackingEvent]]:
         async with self.session_factory() as session:
             events_by_device = {}
+            user_assets = []
+
             if user_uuid:
-                user_assets = await session.execute(
-                    session.query(Asset).filter(
+                result = await session.execute(
+                    select(Asset).filter(
                         Asset.user_uuid == user_uuid, Asset.device_imei.isnot(None)
                     )
                 )
-                user_assets = user_assets.scalars().all()
+                user_assets = result.scalars().all()
 
             if business_uuid:
-                user_assets = await session.execute(
-                    session.query(Asset).filter(
+                result = await session.execute(
+                    select(Asset).filter(
                         Asset.business_profile_uuid == business_uuid,
                         Asset.device_imei.isnot(None),
                     )
                 )
-                user_assets = user_assets.scalars().all()
+                user_assets = result.scalars().all()
 
             for asset in user_assets:
                 device_imei = asset.device_imei
-                query = await session.execute(
-                    session.query(self.model)
+                result = await session.execute(
+                    select(self.model)
                     .filter(
                         self.model.device_imei == device_imei,
                         cast(self.model.event_datetime, Date)
@@ -159,7 +205,7 @@ class TrackingEventRepository(BaseRepository):
                     .order_by(self.model.event_datetime)
                 )
                 events_by_device[device_imei] = {
-                    "events": query.unique().scalars().all(),
+                    "events": result.scalars().unique().all(),
                     "asset": asset,
                 }
 
@@ -169,8 +215,8 @@ class TrackingEventRepository(BaseRepository):
         self, device_imei: str, date: str
     ):
         async with self.session_factory() as session:
-            query = await session.execute(
-                session.query(self.model)
+            result = await session.execute(
+                select(self.model)
                 .filter(
                     self.model.device_imei == device_imei,
                     cast(self.model.event_datetime, Date)
@@ -179,11 +225,12 @@ class TrackingEventRepository(BaseRepository):
                 )
                 .order_by(self.model.event_datetime)
             )
-            query = query.scalars().all()
+            events = result.scalars().all()
 
         unique_entries = set()
         formatted_data = []
-        for entry in query:
+
+        for entry in events:
             if (entry.latitude, entry.longitude, entry.course) not in unique_entries:
                 formatted_data.append(
                     {
@@ -196,6 +243,7 @@ class TrackingEventRepository(BaseRepository):
                     }
                 )
                 unique_entries.add((entry.latitude, entry.longitude, entry.course))
+
         return formatted_data
 
     async def read_latest_tracking_event_by_device_imei(self, device_imei: str):
@@ -211,18 +259,16 @@ class TrackingEventRepository(BaseRepository):
         self, device_imei: str, date_from: datetime, date_to: datetime
     ):
         async with self.session_factory() as session:
-            query = await session.execute(
-                session.query(self.model)
-                .filter(self.model.device_imei == device_imei)
-                .filter(self.model.event_datetime >= date_from)
-                .filter(self.model.event_datetime <= date_to)
+            result = await session.execute(
+                select(self.model).filter(
+                    self.model.device_imei == device_imei,
+                    self.model.event_datetime >= date_from,
+                    self.model.event_datetime <= date_to,
+                )
             )
-
-            events = query.scalars().all()
-
+            events = result.scalars().all()
             if not events:
                 raise ValueError("No events found for the specified criteria.")
-
             event_data = [
                 {
                     "speed": event.speed,
@@ -233,14 +279,11 @@ class TrackingEventRepository(BaseRepository):
                 for event in events
                 if event.speed is not None
             ]
-
             speeds = [event["speed"] for event in event_data]
-
             if not speeds:
                 raise ValueError(
                     "No valid speed data available for the specified criteria."
                 )
-
             average_speed = calculate_average_speed(speeds)
             return event_data, average_speed
 

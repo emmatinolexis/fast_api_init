@@ -74,7 +74,7 @@ router = APIRouter(
 msg_prefix = "user"
 
 
-@router.get("/stats", response_class=ORJSONResponse)
+@router.get("/stats", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def get_user_stats(
     start_date: Optional[date] = Query(None),
@@ -111,7 +111,9 @@ async def get_user_stats(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/total_users", response_class=ORJSONResponse)
+@router.get(
+    "/total_users", dependencies=[allow_admins_only], response_class=ORJSONResponse
+)
 @inject
 async def get_total_users(
     start_date: Optional[date] = Query(None),
