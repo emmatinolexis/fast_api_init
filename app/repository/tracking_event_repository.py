@@ -5,6 +5,7 @@ from sqlalchemy import Date, and_, cast
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 from sqlalchemy.future import select
+from typing import Tuple
 
 from app.core.constants import ALLOWED_EVENT_TYPES
 from app.model.asset import Asset
@@ -13,6 +14,7 @@ from app.model.tracking_event import TrackingEvent
 from app.repository.base_repository import BaseRepository
 from app.util.utils import calculate_average_speed, get_status
 import asyncio
+from sqlalchemy.sql import func
 
 
 class TrackingEventRepository(BaseRepository):
@@ -21,27 +23,33 @@ class TrackingEventRepository(BaseRepository):
         super().__init__(session_factory, TrackingEvent)
 
     async def read_all_events_by_device_imei(self, device_imei: str, date: str):
+        """Asynchronously retrieves all events for a device IMEI on a given date."""
         async with self.session_factory() as session:
-            query = await session.execute(
-                session.query(self.model)
-                .filter(
+            date_obj = datetime.strptime(
+                date, "%d/%m/%Y"
+            ).date()  # ✅ Convert string to date
+
+            result = await session.execute(
+                select(self.model)
+                .where(
                     self.model.device_imei == device_imei,
-                    cast(self.model.event_datetime, Date)
-                    == datetime.strptime(date, "%d/%m/%Y"),
+                    cast(self.model.event_datetime, Date) == date_obj,
                     self.model.event_type.in_(ALLOWED_EVENT_TYPES),
                 )
                 .order_by(self.model.event_datetime)
             )
-            return query.scalars().all()
+
+            return result.scalars().all()
 
     async def get_event_by_device_imei(self, device_imei: str):
+        """Asynchronously retrieves an event by device IMEI."""
         async with self.session_factory() as session:
-            query = await session.execute(
-                session.query(self.model).filter(
+            result = await session.execute(
+                select(self.model).where(
                     self.model.device_imei.ilike(f"%{device_imei}%")
                 )
             )
-            return query.scalar()
+            return result.scalars().first()
 
     async def read_all_events_by_date_range(
         self, device_imei: str, date_from: str, date_to: str
@@ -249,40 +257,58 @@ class TrackingEventRepository(BaseRepository):
     async def get_events_for_all_imeis_on_date(
         self, date: str
     ) -> Dict[str, List[TrackingEvent]]:
+        """Asynchronously retrieves tracking events for all IMEIs on a given date."""
         async with self.session_factory() as session:
-            query = await session.execute(
-                session.query(self.model)
-                .filter(
-                    cast(self.model.event_datetime, Date)
-                    == datetime.strptime(date, "%d/%m/%Y"),
+            date_obj = datetime.strptime(
+                date, "%d/%m/%Y"
+            ).date()  # Convert string to date
+
+            result = await session.execute(
+                select(self.model)
+                .where(
+                    cast(self.model.event_datetime, Date) == date_obj,
                     self.model.event_type.in_(ALLOWED_EVENT_TYPES),
                 )
                 .order_by(self.model.event_datetime)
             )
 
             events_by_imei = {}
-            for event in query.scalars().all():
-                if event.device_imei not in events_by_imei:
-                    events_by_imei[event.device_imei] = []
-                events_by_imei[event.device_imei].append(event)
+            for event in result.scalars().all():
+                if not hasattr(event, "device_imei"):
+                    raise ValueError(
+                        f"Event {event} does not have device_imei attribute"
+                    )
+                events_by_imei.setdefault(event.device_imei, []).append(event)
 
             return events_by_imei
 
     async def get_inactive_assets_paginated(
         self, inactive_imeis: List[str], page: int, page_size: int
-    ):
+    ) -> Tuple[List[dict], int]:
+        """Asynchronously fetches inactive assets with pagination."""
         async with self.session_factory() as session:
+            offset = (page - 1) * page_size
+
+            # Build query with filters and joins
             query = (
-                session.query(Asset)
+                select(Asset)
                 .options(joinedload(Asset.device))
-                .filter(Asset.device_imei.in_(inactive_imeis))
+                .where(Asset.device_imei.in_(inactive_imeis))
             )
 
-            total_records = await session.execute(query.count())
+            # Get total count of records
+            total_records_result = await session.execute(
+                select(func.count()).select_from(query.subquery())
+            )
+            total_records = (
+                total_records_result.scalar()
+            )  # ✅ Correct way to get a single value
 
-            offset = (page - 1) * page_size
-            assets = await session.execute(query.offset(offset).limit(page_size))
+            # Fetch paginated results
+            result = await session.execute(query.offset(offset).limit(page_size))
+            assets = result.scalars().all()
 
+            # Prepare response data
             paginated_assets = [
                 {
                     "asset_name": asset.asset_name,
@@ -292,7 +318,7 @@ class TrackingEventRepository(BaseRepository):
                         asset.device.sim_phone_number if asset.device else None
                     ),
                 }
-                for asset in assets.scalars().all()
+                for asset in assets
             ]
 
-            return paginated_assets, total_records.unique().scalar()
+            return paginated_assets, total_records

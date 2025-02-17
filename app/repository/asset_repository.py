@@ -910,10 +910,12 @@ class AssetRepository(BaseRepository):
             return assets.scalars().all()
 
     async def get_all_device_imeis(self):
+        """Asynchronously retrieves all distinct device IMEIs from the Asset table."""
         async with self.session_factory() as session:
-            query = await session.execute(
-                session.query(Asset.device_imei)
-                .filter(Asset.device_imei.isnot(None))
+            result = await session.execute(
+                select(Asset.device_imei)
+                .where(Asset.device_imei.isnot(None))
                 .distinct()
             )
-            return [imei[0] for imei in query.all()]
+
+            return [imei for (imei) in result.scalars().all()]
