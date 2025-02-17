@@ -1112,6 +1112,7 @@ def resolve_data_from_request(request: Request):
 #
 #     return certificate_info
 
+
 def extract_certificate_info(cert_data):
     certificate_info = {}
 
@@ -1126,27 +1127,43 @@ def extract_certificate_info(cert_data):
 
     # Extract issuer
     issuer_info = cert_data.get(CertificateKey.ISSUER, [])
-    issuer_components = [
-        item[CertificateIndex.ISSUER_ITEM_INDEX][CertificateIndex.ISSUER_NAME_INDEX]
-        for item in issuer_info
-    ] if issuer_info else []
-    certificate_info[CertificateKey.ISSUER] = ", ".join(issuer_components) if issuer_components else "Unknown"
+    issuer_components = (
+        [
+            item[CertificateIndex.ISSUER_ITEM_INDEX][CertificateIndex.ISSUER_NAME_INDEX]
+            for item in issuer_info
+        ]
+        if issuer_info
+        else []
+    )
+    certificate_info[CertificateKey.ISSUER] = (
+        ", ".join(issuer_components) if issuer_components else "Unknown"
+    )
 
     # Extract version
-    certificate_info[CertificateKey.VERSION] = cert_data.get(CertificateKey.VERSION, "Unknown")
+    certificate_info[CertificateKey.VERSION] = cert_data.get(
+        CertificateKey.VERSION, "Unknown"
+    )
 
     # Extract serial number
-    certificate_info[CertificateKey.SERIAL_NUMBER] = cert_data.get(CertificateKey.SERIAL_NUMBER, "Unknown")
+    certificate_info[CertificateKey.SERIAL_NUMBER] = cert_data.get(
+        CertificateKey.SERIAL_NUMBER, "Unknown"
+    )
 
     # Extract validity period
-    certificate_info[CertificateKey.NOT_BEFORE] = cert_data.get(CertificateKey.NOT_BEFORE, "Unknown")
-    certificate_info[CertificateKey.NOT_AFTER] = cert_data.get(CertificateKey.NOT_AFTER, "Unknown")
+    certificate_info[CertificateKey.NOT_BEFORE] = cert_data.get(
+        CertificateKey.NOT_BEFORE, "Unknown"
+    )
+    certificate_info[CertificateKey.NOT_AFTER] = cert_data.get(
+        CertificateKey.NOT_AFTER, "Unknown"
+    )
 
     # Extract subject alternative names
     san_data = cert_data.get(CertificateKey.SUBJECT_ALT_NAME, [])
-    certificate_info[CertificateKey.SUBJECT_ALT_NAME] = [
-        alt_name[CertificateIndex.ALT_NAME_VALUE_INDEX] for alt_name in san_data
-    ] if san_data else "None"
+    certificate_info[CertificateKey.SUBJECT_ALT_NAME] = (
+        [alt_name[CertificateIndex.ALT_NAME_VALUE_INDEX] for alt_name in san_data]
+        if san_data
+        else "None"
+    )
 
     # Extract OCSP URL
     ocsp_data = cert_data.get(CertificateKey.OCSP, [])
@@ -1157,11 +1174,12 @@ def extract_certificate_info(cert_data):
     # Extract CA Issuers URL
     ca_issuers_data = cert_data.get(CertificateKey.CA_ISSUERS, [])
     certificate_info[CertificateKey.CA_ISSUERS] = (
-        ca_issuers_data[CertificateIndex.CA_ISSUERS_URL_INDEX] if ca_issuers_data else "None"
+        ca_issuers_data[CertificateIndex.CA_ISSUERS_URL_INDEX]
+        if ca_issuers_data
+        else "None"
     )
 
     return certificate_info
-
 
 
 def generate_serial_numbers(

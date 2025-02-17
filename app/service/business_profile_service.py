@@ -87,6 +87,8 @@ class BusinessProfileService(BaseService):
                 search_parameter, start_date, end_date, page, page_size, status
             )
 
+            return businesses_result
+
             total_subscriptions = businesses_result.get("total_subscriptions", 0)
             total_active_subscriptions = businesses_result.get(
                 "total_active_subscriptions", 0

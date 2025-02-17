@@ -12,7 +12,7 @@ from app.schema.third_party_app_schema import (
 )
 from app.service.third_party_app_service import ThirdPartyAppService
 from app.service.third_party_app_user_service import ThirdPartyAppUserService
-from app.util.utils import send_data, send_internal_server_error
+from app.util.utils import send_data, send_internal_server_error, allow_admins_only
 
 router = APIRouter(
     prefix="/third_party_app",
@@ -21,7 +21,7 @@ router = APIRouter(
 msg_prefix = "third_party_app"
 
 
-@router.get("/", response_class=ORJSONResponse)
+@router.get("/", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def get_all_third_party_apps_handler(
     service: ThirdPartyAppService = Depends(Provide[Container.third_party_app_service]),
@@ -34,7 +34,7 @@ async def get_all_third_party_apps_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.post("/", response_class=ORJSONResponse)
+@router.post("/", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def create_third_party_app_handler(
     payload: ThirdPartyAppPayload,
@@ -49,7 +49,9 @@ async def create_third_party_app_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.patch("/{app_uuid}", response_class=ORJSONResponse)
+@router.patch(
+    "/{app_uuid}", dependencies=[allow_admins_only], response_class=ORJSONResponse
+)
 @inject
 async def update_third_party_app_handler(
     app_uuid: str,
@@ -65,7 +67,7 @@ async def update_third_party_app_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/users", response_class=ORJSONResponse)
+@router.get("/users", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def get_all_third_party_apps_users_handler(
     service: ThirdPartyAppUserService = Depends(
@@ -80,7 +82,7 @@ async def get_all_third_party_apps_users_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.post("/users", response_class=ORJSONResponse)
+@router.post("/users", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def create_third_party_app_user_handler(
     payload: ThirdPartyAppUserPayload,
@@ -97,7 +99,11 @@ async def create_third_party_app_user_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.patch("/users/{app_user_uuid}", response_class=ORJSONResponse)
+@router.patch(
+    "/users/{app_user_uuid}",
+    dependencies=[allow_admins_only],
+    response_class=ORJSONResponse,
+)
 @inject
 async def update_third_party_app_user_handler(
     app_user_uuid: str,

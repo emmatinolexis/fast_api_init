@@ -197,8 +197,12 @@ async def get_route_replay_tracking_details_handler(
 @inject
 async def get_over_speeding_stats_handler(
     asset_uuid: str,
-    date_from: datetime,
-    date_to: datetime,
+    date_from: datetime = Query(
+        description="Filter by date in 2025-02-15 00:34:56.789123 format, default is the current date",
+    ),
+    date_to: datetime = Query(
+        description="Filter by date in 2025-02-15 00:34:56.789123 format, default is the current date",
+    ),
     tracking_service: TrackingEventService = Depends(
         Provide[Container.tracking_event_service]
     ),

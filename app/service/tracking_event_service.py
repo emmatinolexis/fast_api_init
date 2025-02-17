@@ -330,6 +330,7 @@ class TrackingEventService(BaseService):
     async def get_devices_without_events_today(self):
         try:
             current_date = datetime.now().strftime("%d/%m/%Y")
+
             all_imeis = await self.asset_service.get_all_device_imeis()
 
             events_by_imei = (
@@ -337,8 +338,12 @@ class TrackingEventService(BaseService):
                     current_date
                 )
             )
+
+            # Ensure IMEIs are valid strings
+            all_imeis = [str(imei) for imei in all_imeis]
+
             devices_without_events = [
-                imei for imei in all_imeis if imei not in events_by_imei
+                imei for imei in all_imeis if str(imei) not in events_by_imei
             ]
 
             return devices_without_events
@@ -347,12 +352,15 @@ class TrackingEventService(BaseService):
 
     async def get_inactive_assets(self, page: int = 1, page_size: int = 10):
         try:
+
             inactive_imeis = await self.get_devices_without_events_today()
+
             paginated_assets, total_records = (
                 await self.tracking_event_repository.get_inactive_assets_paginated(
                     inactive_imeis, page, page_size
                 )
             )
+
             total_pages = ceil(total_records / page_size) if page_size else 1
 
             return {

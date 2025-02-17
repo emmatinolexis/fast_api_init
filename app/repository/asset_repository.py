@@ -1,9 +1,10 @@
 from datetime import datetime
 from typing import Any, Callable, Dict, List, Tuple
 
-from sqlalchemy import Date, and_, cast, desc, label, or_
+from sqlalchemy import Date, and_, cast, desc, label, or_, DateTime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
+from sqlalchemy.future import select
 
 from app.core.settings import get_settings
 from app.model.alert_policy import AlertPolicy
@@ -102,6 +103,30 @@ class AssetRepository(BaseRepository):
                     )
 
             return []
+
+    async def read_all_assets_by_uuid_no_pagination(
+        self,
+        user_uuid: str = None,
+        business_uuid: str = None,
+        asset_uuid: str = None,
+        asset_type_uuid: str = None,
+    ):
+        async with self.session_factory() as session:
+            query = select(self.model)
+
+            if asset_uuid:
+                query = query.filter(self.model.uuid == asset_uuid)
+            elif user_uuid:
+                query = query.filter(self.model.user_uuid == user_uuid)
+                if asset_type_uuid:
+                    query = query.filter(self.model.asset_type_uuid == asset_type_uuid)
+            elif business_uuid:
+                query = query.filter(self.model.business_profile_uuid == business_uuid)
+                if asset_type_uuid:
+                    query = query.filter(self.model.asset_type_uuid == asset_type_uuid)
+
+            result = await session.execute(query)
+            return result.scalars().all()
 
     async def read_all_assets_by_uuid(
         self,
@@ -600,68 +625,80 @@ class AssetRepository(BaseRepository):
     async def get_over_speeding_violations(
         self,
         asset_uuid: str,
-        alert_policy_type_uuid: str,
+        alert_policy_type_uuid: str,  # This might be an enum, ensure it's converted
         start_date: str,
         end_date: str,
     ):
         async with self.session_factory() as session:
-            violations = await session.execute(
-                session.query(AlertPolicyViolation)
+            query = (
+                select(AlertPolicyViolation)
                 .join(
                     AlertPolicy,
                     AlertPolicyViolation.alert_policy_uuid == AlertPolicy.uuid,
                 )
                 .filter(
                     AlertPolicyViolation.asset_uuid == asset_uuid,
-                    AlertPolicy.alert_policy_type_uuid == alert_policy_type_uuid,
+                    AlertPolicy.alert_policy_type_uuid
+                    == alert_policy_type_uuid.value,  # Ensure it's a string
                     and_(
                         cast(AlertPolicyViolation.created_at, Date)
-                        >= datetime.strptime(start_date, "%d/%m/%Y"),
+                        >= datetime.strptime(start_date, "%d/%m/%Y").date(),
                         cast(AlertPolicyViolation.created_at, Date)
-                        <= datetime.strptime(end_date, "%d/%m/%Y"),
+                        <= datetime.strptime(end_date, "%d/%m/%Y").date(),
                     ),
                 )
             )
-            return violations.scalars().all()
+
+            result = await session.execute(query)
+            return result.scalars().all()
 
     async def get_violations_by_alert_type(
         self,
         alert_policy_type_uuid: str,
-        start_date,
-        end_date,
+        start_date: str,
+        end_date: str,
         user_uuid: str = None,
         business_uuid: str = None,
         asset_uuid: str = None,
         asset_type_uuid: str = None,
     ):
         async with self.session_factory() as session:
-            base_query = session.query(AlertPolicyViolation).join(
-                AlertPolicy, AlertPolicyViolation.alert_policy_uuid == AlertPolicy.uuid
+            # Convert dates to datetime objects with timezone
+            start_dt = datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S.%f %z")
+            end_dt = datetime.strptime(end_date, "%Y-%m-%d %H:%M:%S.%f %z")
+            base_query = (
+                select(AlertPolicyViolation)
+                .join(
+                    AlertPolicy,
+                    AlertPolicyViolation.alert_policy_uuid == AlertPolicy.uuid,
+                )
+                .filter(
+                    AlertPolicy.alert_policy_type_uuid == alert_policy_type_uuid.value,
+                    and_(
+                        AlertPolicyViolation.created_at >= start_dt,
+                        AlertPolicyViolation.created_at <= end_dt,
+                    ),
+                )
             )
-            filters = [
-                AlertPolicy.alert_policy_type_uuid == alert_policy_type_uuid,
-                and_(
-                    cast(AlertPolicyViolation.created_at, Date) >= start_date,
-                    cast(AlertPolicyViolation.created_at, Date) <= end_date,
-                ),
-            ]
 
             if user_uuid:
-                filters.append(AlertPolicyViolation.user_uuid == user_uuid)
+                base_query = base_query.filter(
+                    AlertPolicyViolation.user_uuid == user_uuid
+                )
             if business_uuid:
-                filters.append(
+                base_query = base_query.filter(
                     AlertPolicyViolation.business_profile_uuid == business_uuid
                 )
             if asset_uuid:
-                filters.append(AlertPolicyViolation.asset_uuid == asset_uuid)
+                base_query = base_query.filter(
+                    AlertPolicyViolation.asset_uuid == asset_uuid
+                )
             if asset_type_uuid:
                 base_query = base_query.join(
                     Asset, AlertPolicyViolation.asset_uuid == Asset.uuid
-                )
-                filters.append(Asset.asset_type_uuid == asset_type_uuid)
-
-            violations = await session.execute(base_query.filter(and_(*filters)))
-            return violations.scalars().all()
+                ).filter(Asset.asset_type_uuid == asset_type_uuid)
+            result = await session.execute(base_query)
+            return result.scalars().all()
 
     async def get_violations_by_asset(
         self,
@@ -669,7 +706,7 @@ class AssetRepository(BaseRepository):
         start_date: str,
         end_date: str,
     ):
-        async with self.session_factory() as session:
+        async with self.session_factory() as session:  # type: AsyncSession
             date_from_obj = datetime.strptime(
                 start_date, get_settings().DATE_FORMAT_YEAR
             ).date()
@@ -677,26 +714,29 @@ class AssetRepository(BaseRepository):
                 end_date, get_settings().DATE_FORMAT_YEAR
             ).date()
 
-            # Build the base query
-            base_query = session.query(AlertPolicyViolation).options(
-                joinedload(AlertPolicyViolation.alert_policy).joinedload(
-                    AlertPolicy.alert_policy_type
-                ),
-                joinedload(AlertPolicyViolation.asset).joinedload(Asset.equipment),
+            # Define the query using `select()`
+            stmt = (
+                select(AlertPolicyViolation)
+                .options(
+                    joinedload(AlertPolicyViolation.alert_policy).joinedload(
+                        AlertPolicy.alert_policy_type
+                    ),
+                    joinedload(AlertPolicyViolation.asset).joinedload(Asset.equipment),
+                )
+                .where(
+                    AlertPolicyViolation.asset_uuid == asset_uuid,
+                    and_(
+                        cast(AlertPolicyViolation.created_at, date) >= date_from_obj,
+                        cast(AlertPolicyViolation.created_at, date) <= date_to_obj,
+                    ),
+                )
             )
 
-            # Define the filters
-            filters = [
-                AlertPolicyViolation.asset_uuid == asset_uuid,
-                and_(
-                    cast(AlertPolicyViolation.created_at, Date) >= date_from_obj,
-                    cast(AlertPolicyViolation.created_at, Date) <= date_to_obj,
-                ),
-            ]
+            # Execute the query asynchronously
+            result = await session.execute(stmt)
 
-            # Apply the filters and execute the query
-            violations = await session.execute(base_query.filter(and_(*filters)))
-            return violations.unique().scalars().all()
+            # Return the results as a list
+            return result.scalars().all()
 
     async def get_asset_with_relationships(
         self, asset_uuid: str, date_from: str, date_to: str
@@ -712,19 +752,22 @@ class AssetRepository(BaseRepository):
             raise ValueError("Date format should be dd/mm/yyyy") from e
 
         async with self.session_factory() as session:
-            asset = await session.execute(
-                session.query(self.model)
+            # Fetch asset with relationships
+            stmt = (
+                select(self.model)
                 .filter_by(uuid=asset_uuid)
                 .options(
-                    joinedload(self.model.asset_type), joinedload(self.model.equipment)
+                    joinedload(self.model.asset_type),
+                    joinedload(self.model.equipment),
                 )
             )
-            asset = asset.unique().scalar()
+            result = await session.execute(stmt)
+            asset = result.unique().scalar()
 
             if asset and asset.device_imei:
                 # Get device's tracking events within the specified date range
-                last_tracking_events = await session.execute(
-                    session.query(
+                tracking_stmt = (
+                    select(
                         label("latitude", TrackingEvent.latitude),
                         label("longitude", TrackingEvent.longitude),
                         TrackingEvent.speed,
@@ -742,7 +785,9 @@ class AssetRepository(BaseRepository):
                     )
                     .order_by(desc(TrackingEvent.event_datetime))
                 )
-                last_tracking_events = last_tracking_events.all()
+
+                tracking_result = await session.execute(tracking_stmt)
+                last_tracking_events = tracking_result.all()
 
                 # Ensure last_tracking_events is a list of dictionaries
                 asset.tracking_events = [
@@ -772,35 +817,39 @@ class AssetRepository(BaseRepository):
         asset_type_uuid: str = None,
     ):
         async with self.session_factory() as session:
-            base_query = session.query(MaintenanceAlert).join(
-                AlertPolicy, MaintenanceAlert.alert_policy_uuid == AlertPolicy.uuid
+            base_query = (
+                select(MaintenanceAlert)
+                .join(
+                    AlertPolicy, MaintenanceAlert.alert_policy_uuid == AlertPolicy.uuid
+                )
+                .filter(
+                    AlertPolicy.alert_policy_type_uuid == alert_policy_type_uuid.value,
+                    AlertPolicy.maintenance_alert_type_uuid
+                    == maintenance_type_uuid.value,
+                    cast(MaintenanceAlert.created_at, Date)
+                    >= datetime.strptime(start_date, "%d/%m/%Y"),
+                    cast(MaintenanceAlert.created_at, Date)
+                    <= datetime.strptime(end_date, "%d/%m/%Y"),
+                )
             )
 
-            filters = [
-                AlertPolicy.alert_policy_type_uuid == alert_policy_type_uuid,
-                AlertPolicy.maintenance_alert_type_uuid == maintenance_type_uuid,
-                cast(MaintenanceAlert.created_at, Date)
-                >= datetime.strptime(start_date, "%d/%m/%Y"),
-                cast(MaintenanceAlert.created_at, Date)
-                <= datetime.strptime(end_date, "%d/%m/%Y"),
-            ]
-
             if user_uuid:
-                filters.append(AlertPolicyViolation.user_uuid == user_uuid)
+                base_query = base_query.filter(MaintenanceAlert.user_uuid == user_uuid)
             if business_uuid:
-                filters.append(
-                    AlertPolicyViolation.business_profile_uuid == business_uuid
+                base_query = base_query.filter(
+                    MaintenanceAlert.business_profile_uuid == business_uuid
                 )
             if asset_uuid:
-                filters.append(MaintenanceAlert.asset_uuid == asset_uuid)
+                base_query = base_query.filter(
+                    MaintenanceAlert.asset_uuid == asset_uuid
+                )
             if asset_type_uuid:
                 base_query = base_query.join(
                     Asset, MaintenanceAlert.asset_uuid == Asset.uuid
-                )
-                filters.append(Asset.asset_type_uuid == asset_type_uuid)
+                ).filter(Asset.asset_type_uuid == asset_type_uuid)
 
-            violations = await session.execute(base_query.filter(and_(*filters)))
-            return violations.scalars().all()
+            result = await session.execute(base_query)
+            return result.scalars().all()
 
     async def get_maintenance_by_asset(
         self, asset_uuid: str, start_date: str, end_date: str
@@ -861,10 +910,12 @@ class AssetRepository(BaseRepository):
             return assets.scalars().all()
 
     async def get_all_device_imeis(self):
+        """Asynchronously retrieves all distinct device IMEIs from the Asset table."""
         async with self.session_factory() as session:
-            query = await session.execute(
-                session.query(Asset.device_imei)
-                .filter(Asset.device_imei.isnot(None))
+            result = await session.execute(
+                select(Asset.device_imei)
+                .where(Asset.device_imei.isnot(None))
                 .distinct()
             )
-            return [imei[0] for imei in query.all()]
+
+            return [imei for (imei) in result.scalars().all()]

@@ -69,7 +69,7 @@ class SubscriptionService(BaseService):
                     "uuid": sub.uuid,
                     "customer": {
                         "first_name": sub.user.first_name,
-                        "last_name": sub.user.first_name,
+                        "last_name": sub.user.last_name,
                     },
                     "plan": {"name": sub.plan.get("name", "N/A")},
                     "status": sub.status,

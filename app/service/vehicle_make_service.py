@@ -77,6 +77,6 @@ class VehicleMakeService(BaseService):
                         )
                         await self.vehicle_model_repository.create(model_data)
 
-            return True
+            return created_make
         except Exception as e:
             raise e

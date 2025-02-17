@@ -74,7 +74,7 @@ router = APIRouter(
 msg_prefix = "user"
 
 
-@router.get("/stats", response_class=ORJSONResponse)
+@router.get("/stats", dependencies=[allow_admins_only], response_class=ORJSONResponse)
 @inject
 async def get_user_stats(
     start_date: Optional[date] = Query(None),
@@ -111,7 +111,9 @@ async def get_user_stats(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.get("/total_users", response_class=ORJSONResponse)
+@router.get(
+    "/total_users", dependencies=[allow_admins_only], response_class=ORJSONResponse
+)
 @inject
 async def get_total_users(
     start_date: Optional[date] = Query(None),
@@ -258,10 +260,12 @@ async def update_phone_handler(
             user_msg=messages.USER_NOT_FOUND + current_user.uuid,
         )
 
-    user_with_phone_number = service.get_user_by_phone_number(payload.phone_number)
+    user_with_phone_number = await service.get_user_by_phone_number(
+        payload.phone_number
+    )
 
     # check if the given phone number is already associated with another user
-    if user_with_phone_number and not (user_with_phone_number.uuid == user.uuid):
+    if user_with_phone_number and not (user_with_phone_number.get("uuid") == user.uuid):
         return send_client_side_error(
             user_msg=messages.PHONE_NUMBER_EXISTS + payload.phone_number
         )
@@ -272,12 +276,12 @@ async def update_phone_handler(
         await send_otp_email(
             recipient_name=user.first_name,
             email=user.email_address,
-            otp=token,
+            otp=token.token,
         )
         msg = "Phone number update pending verification"
         return send_info(f"{msg}")
     except Exception as e:
-        msg = messages.CREATE_FAILED + f"token for user {current_user.uuid}"
+        msg = messages.UPDATE_FAILED + f"for user {current_user.email_address}"
         return send_internal_server_error(user_msg=msg, error=str(e))
 
 
@@ -291,6 +295,7 @@ async def update_user(
 ):
     try:
         user = await service.get_by_uuid(uuid)
+
         if user is None:
             return send_client_side_error(
                 user_msg=messages.USER_NOT_FOUND_MSG,
@@ -310,7 +315,7 @@ async def update_user(
     except UnAuthorizedError as e:
         return send_client_side_error(user_msg=e.detail)
     except Exception as e:
-        msg = messages.GET_FAILED + msg_prefix
+        msg = messages.UPDATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
 
 
@@ -482,7 +487,12 @@ async def change_password_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
+        if str(current_user.uuid) != str(user_uuid):
+            return send_client_side_error(
+                user_msg=messages.UNAUTHORIZED_ACTION,
+            )
         user_to_update = await service.get_by_uuid(user_uuid)
+
         if user_to_update is None:
             return send_client_side_error(
                 user_msg=messages.USER_NOT_FOUND,
@@ -609,6 +619,11 @@ async def deactivate_account_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
+        if str(current_user.uuid) != str(uuid):
+            return send_client_side_error(
+                user_msg=messages.UNAUTHORIZED_ACTION,
+            )
+
         user = await service.deactivate_user_account(
             uuid, payload, current_user, request
         )

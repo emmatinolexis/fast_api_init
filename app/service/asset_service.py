@@ -52,9 +52,9 @@ from app.util.utils import (
     calculate_time_traveled,
     calculate_total_fuel_used,
     calculate_total_idle_time_and_movement,
-    convert_date_format_to_iso,
     get_distance_travelled_by_coordinates,
     get_status,
+    convert_date_format_to_iso,
 )
 
 
@@ -600,7 +600,7 @@ class AssetService(BaseService):
 
             # Fetch assets based on provided parameters
             if business_uuid or user_uuid or asset_uuid or asset_type_uuid:
-                assets = self.get_assets(
+                assets = await self.get_assets(
                     business_uuid=business_uuid,
                     user_uuid=user_uuid,
                     asset_uuid=asset_uuid,
@@ -610,7 +610,7 @@ class AssetService(BaseService):
             for asset in assets:
                 if asset.device_imei:
                     # Get asset points for today in tracking events table
-                    asset_events = self.tracking_event_repository.read_all_events_by_device_imei_date_range(
+                    asset_events = await self.tracking_event_repository.read_all_events_by_device_imei_date_range(
                         asset.device_imei, start_date, end_date
                     )
 

@@ -405,5 +405,5 @@ class ActivityLogType(str, Enum):
 
 
 class AssetType(str, Enum):
-    CAR = "car"
-    MOTORBIKE = "motorbike"
+    CAR = "CAR"
+    MOTORBIKE = "MOTORBIKE"

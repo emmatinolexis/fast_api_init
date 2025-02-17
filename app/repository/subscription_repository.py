@@ -136,8 +136,8 @@ class SubscriptionRepository(BaseRepository):
         offset_value = (page - 1) * per_page
 
         async with self.session_factory() as session:
-            query = (
-                session.query(
+            stmt = (
+                select(
                     UserSubscription,
                     func.count().over().label("total_subscriptions"),
                     func.coalesce(
@@ -164,21 +164,21 @@ class SubscriptionRepository(BaseRepository):
                 .offset(offset_value)
             )
 
-            result = await session.execute(query)
-            results = result.unique().scalars().all()
+            result = await session.execute(stmt)
+            rows = result.all()
 
-            if results:
-                total_subscriptions = results[0].total_subscriptions
-                total_amount = results[0].total_amount
+            if rows:
+                total_subscriptions = rows[0][1]  # Second element in tuple
+                total_amount = rows[0][2]  # Third element in tuple
             else:
                 total_subscriptions = 0
                 total_amount = 0
 
-            subscriptions = [row[0] for row in results]
+            subscriptions = [row[0] for row in rows]  # First element (UserSubscription)
 
             total_pages = (total_subscriptions + per_page - 1) // per_page
 
-            result = {
+            return {
                 "subscriptions": subscriptions,
                 "page": page,
                 "page_size": per_page,
@@ -186,8 +186,6 @@ class SubscriptionRepository(BaseRepository):
                 "total_pages": total_pages,
                 "total_amount": total_amount,
             }
-
-            return result
 
     async def read_all_subscriptions(
         self, page=1, page_size=10

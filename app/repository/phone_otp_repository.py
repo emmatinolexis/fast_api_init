@@ -7,6 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.model.phone_otp_token import PhoneOtpToken
 from app.repository.base_repository import BaseRepository
 from app.util.utils import generate_unique_token
+from sqlalchemy.future import select
+from typing import Optional
 
 
 class PhoneOtpTokenRepository(BaseRepository):
@@ -15,13 +17,14 @@ class PhoneOtpTokenRepository(BaseRepository):
         super().__init__(session_factory, PhoneOtpToken)
 
     async def generate_token(self) -> str:
+        """Generates a unique token asynchronously."""
         async with self.session_factory() as session:
             while True:
                 token = generate_unique_token(size=3)
                 result = await session.execute(
-                    session.query(self.model).filter(self.model.token == token)
+                    select(self.model).filter(self.model.token == token)
                 )
-                if not result.scalars().first():
+                if not result.scalars().first():  # If token does not exist, return it
                     return token
 
     async def create_token(self, user_uuid: str) -> PhoneOtpToken:
@@ -44,29 +47,34 @@ class PhoneOtpTokenRepository(BaseRepository):
                 raise e
             return query
 
-    async def get_token(self, token: str) -> PhoneOtpToken:
+    async def get_token(self, token: str) -> Optional[PhoneOtpToken]:
         async with self.session_factory() as session:
             result = await session.execute(
-                session.query(self.model).filter(self.model.token == token)
+                select(self.model).filter(self.model.token == token)
             )
             return result.scalars().first()
 
     async def delete_by_user_uuid(self, user_id: str):
         async with self.session_factory() as session:
-            result = await session.execute(
-                session.query(self.model).filter(self.model.user_uuid == user_id)
-            )
-            tokens = result.scalars().all()
-
-            if not tokens:
-                return None
             try:
+                # Fetch tokens asynchronously
+                result = await session.execute(
+                    select(self.model).filter(self.model.user_uuid == user_id)
+                )
+                tokens = result.scalars().all()
+
+                if not tokens:
+                    return None  # No records found, return None
+
+                # Delete all tokens asynchronously
                 for token in tokens:
                     await session.delete(token)
-                await session.commit()
+
+                await session.commit()  # Commit transaction
+
             except IntegrityError as e:
-                await session.rollback()
+                await session.rollback()  # Rollback in case of integrity error
                 raise e
             except Exception as e:
-                await session.rollback()
+                await session.rollback()  # Rollback for any other exception
                 raise e
