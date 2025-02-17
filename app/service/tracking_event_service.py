@@ -352,13 +352,13 @@ class TrackingEventService(BaseService):
 
     async def get_inactive_assets(self, page: int = 1, page_size: int = 10):
         try:
-
             inactive_imeis = await self.get_devices_without_events_today()
 
-            paginated_assets, total_records = (
-                await self.tracking_event_repository.get_inactive_assets_paginated(
-                    inactive_imeis, page, page_size
-                )
+            (
+                paginated_assets,
+                total_records,
+            ) = await self.tracking_event_repository.get_inactive_assets_paginated(
+                inactive_imeis, page, page_size
             )
 
             total_pages = ceil(total_records / page_size) if page_size else 1

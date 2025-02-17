@@ -14,10 +14,10 @@ from app.service.role_service import RoleService
 from app.util.enums import PermissionType, RoleType
 from app.util.utils import (
     allow_admins_only,
+    send_client_side_error,
     send_data,
     send_data_with_info,
     send_internal_server_error,
-    send_client_side_error,
 )
 
 router = APIRouter(

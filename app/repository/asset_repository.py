@@ -1,10 +1,10 @@
 from datetime import datetime
 from typing import Any, Callable, Dict, List, Tuple
 
-from sqlalchemy import Date, and_, cast, desc, label, or_, DateTime
+from sqlalchemy import Date, DateTime, and_, cast, desc, label, or_
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
 from sqlalchemy.future import select
+from sqlalchemy.orm import joinedload
 
 from app.core.settings import get_settings
 from app.model.alert_policy import AlertPolicy

@@ -18,7 +18,9 @@ class DeviceService(BaseService):
 
     async def get_devices_by_business_uuid(self, business_uuid: str):
         try:
-            devices = await self.device_repository.get_devices_by_business_uuid(business_uuid)
+            devices = await self.device_repository.get_devices_by_business_uuid(
+                business_uuid
+            )
             # return devices
             device_data = []
             for device in devices:
@@ -39,7 +41,9 @@ class DeviceService(BaseService):
 
     async def get_user_data_by_device_uuid(self, device_imei: str):
         try:
-            device = await self.device_repository.get_user_data_by_device_uuid(device_imei)
+            device = await self.device_repository.get_user_data_by_device_uuid(
+                device_imei
+            )
             return device
         except Exception as e:
             raise e

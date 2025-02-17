@@ -1,3 +1,4 @@
+import datetime
 import json
 import logging
 
@@ -16,7 +17,6 @@ from app.schema.report_schema import (
     SmartReportPayload,
     SmartReportSharePayload,
 )
-import datetime
 from app.service.asset_service import AssetService
 from app.service.device_events_service import DeviceEventService
 from app.service.gas_cylinder_event_service import GasCylinderEventService
@@ -92,7 +92,6 @@ async def generate_violation_reminders_report_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-
         user = await user_service.get_user_by_uuid(user_uuid)
         if user:
             return send_data_with_info(

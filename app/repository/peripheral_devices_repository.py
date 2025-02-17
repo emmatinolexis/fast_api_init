@@ -1,15 +1,13 @@
-from typing import Callable
+from typing import Callable, Optional
 
-from sqlalchemy import String, asc, cast, desc, nulls_last
+from sqlalchemy import String, asc, cast, desc, func, nulls_last
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
 
 from app.model.peripheral_devices import PeripheralDevice
 from app.repository.base_repository import BaseRepository
 from app.util.enums import PeripheralDeviceType
-from sqlalchemy.future import select
-from sqlalchemy import func
-from typing import Optional
 
 
 class PeripheralDeviceRepository(BaseRepository):

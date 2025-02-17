@@ -17,7 +17,10 @@ class EquipmentTypeService(BaseService):
 
     async def create_equipment_type(self, payload: EquipmentTypePayload):
         try:
-            if await self.equipment_repository.read_by_uuid(payload.equipment_uuid) is None:
+            if (
+                await self.equipment_repository.read_by_uuid(payload.equipment_uuid)
+                is None
+            ):
                 raise NotFoundError(detail=payload.equipment_uuid)
             equipment_type = await self.equipment_type_repository.create(payload)
             return equipment_type
@@ -41,10 +44,8 @@ class EquipmentTypeService(BaseService):
 
     async def get_equipment_type_by_equipment_uuid(self, equipment_uuid: str) -> None:
         try:
-            equipment_types = (
-                await self.equipment_type_repository.get_equipment_types_by_equipment_uuid(
-                    equipment_uuid
-                )
+            equipment_types = await self.equipment_type_repository.get_equipment_types_by_equipment_uuid(
+                equipment_uuid
             )
             if equipment_types:
                 return equipment_types

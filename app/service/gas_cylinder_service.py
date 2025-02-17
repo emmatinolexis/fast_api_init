@@ -80,10 +80,8 @@ class GasCylinderService(BaseService):
                     )
 
                 # Check if there is already a cylinder associated with this gas device
-                cylinder_with_given_gas_device = (
-                    await self.gas_cylinder_repository.get_cylinder_by_device_serial_number(
-                        payload.gas_device_serial_number
-                    )
+                cylinder_with_given_gas_device = await self.gas_cylinder_repository.get_cylinder_by_device_serial_number(
+                    payload.gas_device_serial_number
                 )
 
                 # If a cylinder is associated with the device, dissociate the device from it
@@ -129,14 +127,18 @@ class GasCylinderService(BaseService):
         cylinder_uuid: str = None,
     ):
         try:
-            return await self.gas_cylinder_repository.get_gas_cylinder_by_uuid(cylinder_uuid)
+            return await self.gas_cylinder_repository.get_gas_cylinder_by_uuid(
+                cylinder_uuid
+            )
         except Exception as e:
             raise e
 
     async def get_cylinder_by_device_serial(self, serial_number: str):
         try:
-            return await self.gas_cylinder_repository.get_cylinder_by_device_serial_number(
-                serial_number
+            return (
+                await self.gas_cylinder_repository.get_cylinder_by_device_serial_number(
+                    serial_number
+                )
             )
         except Exception as e:
             raise e

@@ -1,14 +1,13 @@
 from datetime import datetime, timedelta
-from typing import Callable
+from typing import Callable, Optional
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 
 from app.model.phone_otp_token import PhoneOtpToken
 from app.repository.base_repository import BaseRepository
 from app.util.utils import generate_unique_token
-from sqlalchemy.future import select
-from typing import Optional
 
 
 class PhoneOtpTokenRepository(BaseRepository):

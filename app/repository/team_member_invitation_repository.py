@@ -5,13 +5,13 @@ from uuid import UUID
 from pydantic import EmailStr
 from sqlalchemy import and_, desc, func
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
 
 from app.model.invitation import Invitation
 from app.repository.base_repository import BaseRepository
 from app.schema.invitation_schema import InvitationPayload
 from app.util.enums import InvitationStatus, RoleType
-from sqlalchemy.future import select
 
 
 class TeamMemberInvitationRepository(BaseRepository):

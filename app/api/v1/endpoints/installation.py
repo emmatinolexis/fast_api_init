@@ -196,7 +196,9 @@ async def configure_device_handler(
             device_imei=payload.device_imei, sim_phone_number=payload.sim_phone_number
         )
 
-        asset_assignment = await asset_service.assign_device_imei(asset.uuid, data_to_assign)
+        asset_assignment = await asset_service.assign_device_imei(
+            asset.uuid, data_to_assign
+        )
 
         if asset_assignment:
             await service.update_installation_status(

@@ -2,15 +2,15 @@ import uuid
 from datetime import datetime
 from typing import Callable, List, Optional
 
+from sqlalchemy import cast
+from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
-from sqlalchemy import cast
 
 from app.model.vehicle_models import AssetType, VehicleMake
 from app.repository.base_repository import BaseRepository
 from app.schema.asset_schema import VehicleMakeInput
-from sqlalchemy.dialects.postgresql import ENUM
 
 
 class VehicleMakeRepository(BaseRepository):

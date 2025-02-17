@@ -23,7 +23,9 @@ class InventoryService(BaseService):
 
     async def get_inventory_by_uuid(self, inventory_uuid: UUID):
         try:
-            inventory = await self.inventory_repository.get_inventory_by_uuid(inventory_uuid)
+            inventory = await self.inventory_repository.get_inventory_by_uuid(
+                inventory_uuid
+            )
             if not inventory:
                 raise NotFoundError(detail=inventory)
             return inventory
@@ -51,9 +53,13 @@ class InventoryService(BaseService):
         except Exception as e:
             raise e
 
-    async def update_inventory(self, inventory_uuid: UUID, payload: InventoryUpdatePayload):
+    async def update_inventory(
+        self, inventory_uuid: UUID, payload: InventoryUpdatePayload
+    ):
         try:
-            inventory = await self.inventory_repository.get_inventory_by_uuid(inventory_uuid)
+            inventory = await self.inventory_repository.get_inventory_by_uuid(
+                inventory_uuid
+            )
             if not inventory:
                 raise NotFoundError(f"Inventory with UUID {inventory_uuid} not found.")
 

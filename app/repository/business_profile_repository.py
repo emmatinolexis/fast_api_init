@@ -3,6 +3,7 @@ from typing import Callable, Optional
 
 from sqlalchemy import and_, case, func
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
 
 from app.core.logger import get_logger
@@ -12,7 +13,6 @@ from app.model.user_subscription import UserSubscription
 from app.repository.base_repository import BaseRepository
 from app.util.enums import ActiveStatus, SubscriptionStatus
 from app.util.utils import parse_date
-from sqlalchemy.future import select
 
 
 class BusinessProfileRepository(BaseRepository):
@@ -31,9 +31,10 @@ class BusinessProfileRepository(BaseRepository):
     ):
         async with self.session_factory() as session:  # Async session context
             start_date_obj, end_date_obj = self._parse_dates(start_date, end_date)
-            previous_start_date_obj, previous_end_date_obj = (
-                self._get_previous_date_range(start_date_obj, end_date_obj)
-            )
+            (
+                previous_start_date_obj,
+                previous_end_date_obj,
+            ) = self._get_previous_date_range(start_date_obj, end_date_obj)
 
             # Query businesses with necessary relationships
             current_query = select(self.model).options(

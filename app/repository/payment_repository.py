@@ -5,6 +5,7 @@ from typing import Callable, Optional
 from dateutil.relativedelta import relativedelta
 from sqlalchemy import Float, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
 
 from app.model.payment import Payment
@@ -12,7 +13,6 @@ from app.model.user import User
 from app.repository.base_repository import BaseRepository
 from app.util.enums import PaymentStatus
 from app.util.utils import calculate_percentage_change, parse_date
-from sqlalchemy.future import select
 
 
 class PaymentRepository(BaseRepository):

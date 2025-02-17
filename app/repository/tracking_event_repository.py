@@ -1,11 +1,12 @@
+import asyncio
 from datetime import datetime, timedelta
-from typing import Callable, Dict, List
+from typing import Callable, Dict, List, Tuple
 
 from sqlalchemy import Date, and_, cast
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
 from sqlalchemy.future import select
-from typing import Tuple
+from sqlalchemy.orm import joinedload
+from sqlalchemy.sql import func
 
 from app.core.constants import ALLOWED_EVENT_TYPES
 from app.model.asset import Asset
@@ -13,8 +14,6 @@ from app.model.device import Device
 from app.model.tracking_event import TrackingEvent
 from app.repository.base_repository import BaseRepository
 from app.util.utils import calculate_average_speed, get_status
-import asyncio
-from sqlalchemy.sql import func
 
 
 class TrackingEventRepository(BaseRepository):

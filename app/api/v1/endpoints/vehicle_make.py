@@ -9,10 +9,7 @@ from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_user
 from app.model.user import User
-from app.schema.asset_schema import (
-    AssetType,
-    VehicleMakePayload,
-)
+from app.schema.asset_schema import AssetType, VehicleMakePayload
 from app.service.vehicle_make_service import VehicleMakeService
 from app.util.utils import (
     allow_admins_only,

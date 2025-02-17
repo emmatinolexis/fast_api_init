@@ -52,9 +52,9 @@ from app.util.utils import (
     calculate_time_traveled,
     calculate_total_fuel_used,
     calculate_total_idle_time_and_movement,
+    convert_date_format_to_iso,
     get_distance_travelled_by_coordinates,
     get_status,
-    convert_date_format_to_iso,
 )
 
 

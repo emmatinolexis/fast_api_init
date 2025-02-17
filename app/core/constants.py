@@ -366,7 +366,10 @@ PERMISSIONS = {
     ],
     "device_installation": [
         {"permission_name": "view_device_installation", "permission_type": "admin"},
-        {"permission_name": "view_detail_device_installation", "permission_type": "admin"},
+        {
+            "permission_name": "view_detail_device_installation",
+            "permission_type": "admin",
+        },
         {"permission_name": "update_device_installation", "permission_type": "admin"},
         {"permission_name": "create_device_installation", "permission_type": "admin"},
         {"permission_name": "manage_installation", "permission_type": "admin"},

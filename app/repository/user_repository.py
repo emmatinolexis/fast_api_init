@@ -147,7 +147,6 @@ class UserRepository(BaseRepository):
     async def change_password(self, user_uuid: str, new_password: str):
         """Changes a user's password asynchronously."""
         async with self.session_factory() as session:
-
             result = await session.execute(
                 select(self.model).filter(self.model.uuid == user_uuid)
             )

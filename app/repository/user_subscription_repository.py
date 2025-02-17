@@ -75,7 +75,6 @@ class UserSubscriptionRepository(BaseRepository):
 
                 # create subscription if paystack event type subscription.create
                 elif event_type == "subscription.create":
-
                     await self.update_all_business_subscriptions_(
                         session, payload["data"]["customer"]["business_profile_uuid"]
                     )

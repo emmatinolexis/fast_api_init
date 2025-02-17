@@ -1,7 +1,7 @@
 from typing import Callable
 
 import aiohttp
-from sqlalchemy import exc
+from sqlalchemy import exc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -10,7 +10,6 @@ from app.model.package import Package
 from app.model.package_item_assignment import PackageItemAssignment
 from app.repository.base_repository import BaseRepository
 from app.schema.package_schema import PackageItemAssignmentPayload
-from sqlalchemy import select
 
 
 class PackageRepository(BaseRepository):
@@ -74,7 +73,6 @@ class PackageRepository(BaseRepository):
                         packages = []
                         if response.status == 200:
                             for plan in filtered_plans:
-
                                 result = await session.execute(
                                     select(PackageItemAssignment)
                                     .filter(

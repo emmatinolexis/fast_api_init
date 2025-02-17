@@ -2,13 +2,13 @@ from datetime import datetime, timedelta
 from typing import Callable
 
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 
 from app.core.security import generate_reset_token, hash_user_password
 from app.core.settings import setting
 from app.model.password_reset import PasswordReset
 from app.model.user import User
 from app.repository.base_repository import BaseRepository
-from sqlalchemy.future import select
 
 
 class PasswordResetRepository(BaseRepository):

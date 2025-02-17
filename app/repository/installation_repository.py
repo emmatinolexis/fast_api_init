@@ -164,9 +164,9 @@ class InstallationRepository(BaseRepository):
             current_overdue_count = len(overdue_count_result.scalars().all())
 
             # Query the previous date range if both dates are provided
-            previous_completed_count = previous_pending_installation_count = (
-                previous_overdue_count
-            ) = previous_total_count = 0
+            previous_completed_count = (
+                previous_pending_installation_count
+            ) = previous_overdue_count = previous_total_count = 0
 
             if previous_start_date and previous_end_date:
                 previous_filters = [

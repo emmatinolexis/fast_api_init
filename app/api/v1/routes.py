@@ -52,7 +52,6 @@ from app.api.v1.endpoints.permission import router as permission_router
 from app.api.v1.endpoints.report import router as report_router
 from app.api.v1.endpoints.rnd_images import router as rnd_image_router
 from app.api.v1.endpoints.subscription import router as subscription_router
-
 from app.api.v1.endpoints.third_party_app import router as third_party_router
 from app.api.v1.endpoints.tracking import router as tracking_router
 from app.api.v1.endpoints.upload import router as upload_router

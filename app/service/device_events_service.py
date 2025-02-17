@@ -18,16 +18,19 @@ class DeviceEventService(BaseService):
 
     async def get_devices_latest_reading(self, node_id: str):
         try:
-            devices = await self.device_event_repository.get_device_latest_reading(node_id)
+            devices = await self.device_event_repository.get_device_latest_reading(
+                node_id
+            )
             return devices
         except Exception as e:
             raise e
-        
 
     async def generate_report_single_cylinder(
         self, cylinder_uuid: str, start_date: str, end_date: str
     ):
-        cylinder = await self.device_event_repository.read_gas_cylinder_by_uuid(cylinder_uuid)
+        cylinder = await self.device_event_repository.read_gas_cylinder_by_uuid(
+            cylinder_uuid
+        )
 
         if not cylinder:
             raise NotFoundError(detail=cylinder)

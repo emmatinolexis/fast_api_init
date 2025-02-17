@@ -58,7 +58,9 @@ class InvitationService(BaseService):
             page, page_size, email, role_uuids, status
         )
 
-    async def update_invitation_expiry(self, invitation_uuid: str, expiry_date: datetime):
+    async def update_invitation_expiry(
+        self, invitation_uuid: str, expiry_date: datetime
+    ):
         return await self.invitation_repository.update_attr_by_uuid(
             invitation_uuid, "expired_at", expiry_date
         )
@@ -88,7 +90,6 @@ class InvitationService(BaseService):
             raise e
         except Exception as e:
             raise e
-        
 
     async def update_expired_invitations(self):
         return await self.invitation_repository.update_expired_invitations()

@@ -800,9 +800,9 @@ class SmartReportService(BaseService):
             current_date = start_date_dt.replace(day=1)
             while current_date <= end_date_dt:
                 month_key = current_date.strftime("%B")
-                fuel_usage_report[month_key] = (
-                    0.0  # Ensure the initial value is a float
-                )
+                fuel_usage_report[
+                    month_key
+                ] = 0.0  # Ensure the initial value is a float
                 # Move to the next month
                 next_month = current_date.month % 12 + 1
                 next_year = current_date.year + (current_date.month // 12)
@@ -1126,9 +1126,11 @@ class SmartReportService(BaseService):
             report_date = convert_iso_datetime_format(report.get("created_at"))
 
             # Retrieve user and business details
-            user, business_uuid, business_name = (
-                await self.get_user_and_business_details(user_uuid, report)
-            )
+            (
+                user,
+                business_uuid,
+                business_name,
+            ) = await self.get_user_and_business_details(user_uuid, report)
 
             # Retrieve assets
             assets = await self.get_assets(asset_uuids, start_date, end_date)

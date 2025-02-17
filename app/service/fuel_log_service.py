@@ -42,10 +42,8 @@ class FuelLogService(BaseService):
         if not driver:
             raise NotFoundError(detail=messages.DRIVER_NOT_FOUND + user_uuid)
 
-        asset_assignment = (
-            await self.asset_operator_assignment_repository.get_assignment_by_operator_uuid(
-                user_uuid
-            )
+        asset_assignment = await self.asset_operator_assignment_repository.get_assignment_by_operator_uuid(
+            user_uuid
         )
         if not asset_assignment:
             raise NotFoundError(
@@ -84,8 +82,10 @@ class FuelLogService(BaseService):
 
                 for item in data:
                     driver_email = item.get("driver_email")
-                    driver_details = await self.user_repository.get_user_by_email_address(
-                        driver_email
+                    driver_details = (
+                        await self.user_repository.get_user_by_email_address(
+                            driver_email
+                        )
                     )
                     if not driver_details:
                         raise NotFoundError(
@@ -100,7 +100,9 @@ class FuelLogService(BaseService):
                             detail=messages.DRIVER_NOT_ASSIGNED.format(driver_email)
                         )
 
-                    asset = await self.asset_repository.read_by_uuid(drivers_asset.asset_uuid)
+                    asset = await self.asset_repository.read_by_uuid(
+                        drivers_asset.asset_uuid
+                    )
 
                     log_payload = FleetManagerFuelLog(
                         amount=item.get("amount"),

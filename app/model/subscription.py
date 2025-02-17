@@ -5,7 +5,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from app.model.base_model import BaseModel
-from app.util.enums import SubscriptionStatus, SubscriptionPeriod, SubscriptionTypes
+from app.util.enums import SubscriptionPeriod, SubscriptionStatus, SubscriptionTypes
 
 
 class Subscription(BaseModel):

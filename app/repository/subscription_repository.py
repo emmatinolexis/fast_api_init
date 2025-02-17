@@ -5,8 +5,8 @@ import aiohttp
 from sqlalchemy import Numeric, String, cast, desc, func, or_
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
 from sqlalchemy.future import select
+from sqlalchemy.orm import joinedload
 
 from app.core.constants import FREE_PACKAGE, FREE_PACKAGE_ITEMS
 from app.core.settings import settings
