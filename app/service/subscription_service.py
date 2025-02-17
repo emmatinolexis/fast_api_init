@@ -86,7 +86,7 @@ class SubscriptionService(BaseService):
                 "page_size": result["page_size"],
                 "total": result["total"],
                 "total_pages": result["total_pages"],
-                "total_amount": result["total_amount"],
+                "total_amount": result["total_amount"] / 100,
             }
 
         except Exception as e:
