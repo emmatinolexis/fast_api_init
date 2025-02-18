@@ -356,6 +356,27 @@ class AssetService(BaseService):
         except Exception as e:
             raise e
 
+    async def get_building_veassets_by_business_uuid(
+        self,
+        business_uuid: str,
+        asset_type_uuid: str = None,
+        page=1,
+        page_size=10,
+        search: str = None,
+        status: str = None,
+    ):
+        try:
+            return await self.asset_repository.read_all_assets_by_uuid(
+                business_uuid=business_uuid,
+                page_size=page_size,
+                page=page,
+                asset_type_uuid=asset_type_uuid,
+                search_query=search,
+                status=status,
+            )
+        except Exception as e:
+            raise e
+
     async def get_assets_by_business_uuid(
         self,
         business_uuid: str,
@@ -373,6 +394,23 @@ class AssetService(BaseService):
                 asset_type_uuid=asset_type_uuid,
                 search_query=search,
                 status=status,
+            )
+        except Exception as e:
+            raise e
+
+    async def get_vehicle_building_assets_by_business_uuid(
+        self,
+        business_uuid: str,
+        page=1,
+        page_size=10,
+        search: str = None,
+    ):
+        try:
+            return await self.asset_repository.read_vehicle_building_assets_by_business_uuid(
+                business_uuid=business_uuid,
+                page_size=page_size,
+                page=page,
+                search_query=search,
             )
         except Exception as e:
             raise e
