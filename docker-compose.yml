@@ -30,6 +30,21 @@ services:
     depends_on:
       - database
 
+  consumer:
+    build:
+      context: .
+      dockerfile: Dockerfile-consumer
+    command: uvicorn app.consumer:app --reload --workers 1 --host 0.0.0.0 --port 8001
+    volumes:
+      - ./:/mvtracking
+    ports:
+      - 8002:8002
+    restart: on-failure
+    env_file:
+      - .env
+    depends_on:
+      - database
+
   database:
     image: postgres:12.1-alpine
     volumes:

@@ -15,10 +15,10 @@ class DefaultDeviceGatewayConfigurationService(BaseService):
         )
         super().__init__(default_device_gateway_configuration_repository)
 
-    def create_gateway_configuration(
+    async def create_gateway_configuration(
         self, default_device_configuration: DefaultDeviceConfiguration
     ):
         data = default_device_configuration.model_dump()
-        return self.default_device_gateway_configuration_repository.create_gateway_configuration(
+        return await self.default_device_gateway_configuration_repository.create_gateway_configuration(
             data
         )

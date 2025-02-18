@@ -30,7 +30,7 @@ async def create_order_handler(
     service: OrderService = Depends(Provide[Container.order_service]),
 ):
     try:
-        order = service.create_order(payload)
+        order = await service.create_order(payload)
         logging.info(f"Order created: {order}")
         return send_data(order)
     except Exception as e:
@@ -57,7 +57,7 @@ async def get_all_orders_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        orders = service.get_all_orders(
+        orders = await service.get_all_orders(
             page=page,
             page_size=page_size,
             search_query=search_query,
@@ -67,7 +67,7 @@ async def get_all_orders_handler(
         )
         return send_data(orders)
     except Exception as e:
-        msg = messages.CREATE_FAILED + msg_prefix
+        msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
 
 
@@ -79,10 +79,12 @@ async def get_order_by_uuid(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        order = service.get_order_by_uuid(uuid)
+        order = await service.get_order_by_uuid(uuid)
         return send_data(order)
     except NotFoundError as e:
-        return send_client_side_error(user_msg=messages.GET_FAILED + "order")
+        return send_client_side_error(
+            user_msg=messages.GET_FAILED + "order", dev_msg=str(e)
+        )
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
@@ -96,7 +98,7 @@ async def update_status_to_ready_for_pick_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        order = service.update_order_status_to_ready(order_uuid)
+        order = await service.update_order_status_to_ready(order_uuid)
         logging.info(f"Role status updated: {order}")
         return order
     except Exception as e:
@@ -113,7 +115,7 @@ async def rtd_update_status_handler(
     current_user: User = Depends(get_current_app_service),
 ):
     try:
-        order = service.update_order_status(order_uuid, order_status)
+        order = await service.update_order_status(order_uuid, order_status)
         logging.info(f"Role status updated: {order}")
         return send_data(order)
     except Exception as e:

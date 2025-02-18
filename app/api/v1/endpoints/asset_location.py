@@ -30,7 +30,7 @@ async def get_asset_location_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.get_list())
+        return send_data(await service.get_list())
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -44,7 +44,7 @@ async def create_asset_location_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        asset_location = service.create_asset_location(payload)
+        asset_location = await service.create_asset_location(payload)
         return send_data(asset_location)
     except NotFoundError as e:
         return send_client_side_error(user_msg=messages.ASSET_NOT_FOUND + str(e.detail))
@@ -62,7 +62,7 @@ async def update_asset_location_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        asset_location = service.update_asset_location(uuid, payload)
+        asset_location = await service.update_asset_location(uuid, payload)
         if asset_location is None:
             return send_client_side_error(
                 user_msg=messages.ASSET_LOCATION_NOT_FOUND + uuid
@@ -83,7 +83,7 @@ async def delete_asset_location_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        service.remove_by_uuid(uuid)
+        await service.remove_by_uuid(uuid)
         return send_info(messages.DELETE_SUCCESS + msg_prefix)
     except NotFoundError as e:
         return send_client_side_error(

@@ -1,9 +1,9 @@
-from contextlib import AbstractContextManager
 from datetime import datetime
 from typing import Callable
 
-from sqlalchemy import and_
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import and_, select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from app.model.installation import Installation
 from app.model.order import Order, OrderDeviceAssignment
@@ -15,22 +15,21 @@ from app.util.utils import calculate_percentage_change, parse_date
 
 
 class InstallationRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, Installation)
 
-    def get_installers(self):
-        with self.session_factory() as session:
-            return (
-                session.query(User)
-                .filter(User.user_role_uuid == CustomerRoles.INSTALLER)
-                .all()
+    async def get_installers(self):
+        async with self.session_factory() as session:
+            result = await session.execute(
+                select(User).filter(User.user_role_uuid == CustomerRoles.INSTALLER)
             )
+            return result.scalars().all()
 
-    def get_installation(self, installation_uuid: str):
-        with self.session_factory() as session:
-            return (
-                session.query(self.model)
+    async def get_installation(self, installation_uuid: str):
+        async with self.session_factory() as session:
+            result = await session.execute(
+                select(self.model)
                 .filter(self.model.uuid == installation_uuid)
                 .options(
                     joinedload(Installation.order)
@@ -41,13 +40,13 @@ class InstallationRepository(BaseRepository):
                     ),
                     joinedload(Installation.installer),
                 )
-                .first()
             )
+            return result.unique().scalars().first()
 
-    def get_installation_by_order_uuid(self, order_uuid: str):
-        with self.session_factory() as session:
-            return (
-                session.query(self.model)
+    async def get_installation_by_order_uuid(self, order_uuid: str):
+        async with self.session_factory() as session:
+            result = await session.execute(
+                select(self.model)
                 .filter(self.model.order_uuid == order_uuid)
                 .options(
                     joinedload(Installation.order).joinedload(
@@ -55,38 +54,38 @@ class InstallationRepository(BaseRepository):
                     ),
                     joinedload(Installation.installer),
                 )
-                .first()
             )
+            return result.unique().scalars().first()
 
-    def assign_installer_to_installation(self, payload: AssignInstallerPayload):
-        with self.session_factory() as session:
-            installation = (
-                session.query(self.model)
-                .filter(self.model.uuid == payload.installation_uuid)
-                .first()
+    async def assign_installer_to_installation(self, payload: AssignInstallerPayload):
+        async with self.session_factory() as session:
+            result = await session.execute(
+                select(self.model).filter(self.model.uuid == payload.installation_uuid)
             )
-            installation.installer_uuid = payload.installer_uuid
-            installation.assigned_at = datetime.now()
-            session.commit()
-            session.refresh(installation)
+            installation = result.scalars().first()
+            if installation:
+                installation.installer_uuid = payload.installer_uuid
+                installation.assigned_at = datetime.now()
+                await session.commit()
+                await session.refresh(installation)
             return installation
 
-    def update_installation_status(
+    async def update_installation_status(
         self, installation_uuid: str, status: InstallationStatus
     ):
-        with self.session_factory() as session:
-            installation = (
-                session.query(self.model)
-                .filter(self.model.uuid == installation_uuid)
-                .first()
+        async with self.session_factory() as session:
+            result = await session.execute(
+                select(self.model).filter(self.model.uuid == installation_uuid)
             )
-            installation.status = status
-            installation.installed_at = datetime.now()
-            session.commit()
-            session.refresh(installation)
+            installation = result.scalars().first()
+            if installation:
+                installation.status = status
+                installation.installed_at = datetime.now()
+                await session.commit()
+                await session.refresh(installation)
             return installation
 
-    def get_installations(
+    async def get_installations(
         self,
         page: int = 1,
         per_page: int = 10,
@@ -95,9 +94,9 @@ class InstallationRepository(BaseRepository):
         start_date: str = None,
         end_date: str = None,
     ):
-        with self.session_factory() as session:
+        async with self.session_factory() as session:
             # Build the base query with joinedload
-            query = session.query(Installation).options(
+            base_query = select(Installation).options(
                 joinedload(Installation.order)
                 .joinedload(Order.order_inventories)
                 .joinedload(OrderDeviceAssignment.inventory),
@@ -105,21 +104,27 @@ class InstallationRepository(BaseRepository):
                 joinedload(Installation.installer),
             )
 
+            filters = []
+
             # Filter by installer_uuid if provided
             if installer_uuid:
-                query = query.filter(Installation.installer_uuid == installer_uuid)
+                filters.append(Installation.installer_uuid == installer_uuid)
 
             # Filter by status if provided
             if status:
-                query = query.filter(Installation.status == status)
+                filters.append(Installation.status == status)
 
             # Convert start_date and end_date to datetime objects if provided
             if start_date:
                 start_date = datetime.strptime(parse_date(start_date), "%Y-%m-%d")
-                query = query.filter(Installation.created_at >= start_date)
+                filters.append(Installation.created_at >= start_date)
             if end_date:
                 end_date = datetime.strptime(parse_date(end_date), "%Y-%m-%d")
-                query = query.filter(Installation.created_at <= end_date)
+                filters.append(Installation.created_at <= end_date)
+
+            # Apply filters to the query
+            if filters:
+                base_query = base_query.filter(and_(*filters))
 
             # Calculate the previous date range
             if start_date and end_date:
@@ -129,61 +134,85 @@ class InstallationRepository(BaseRepository):
             else:
                 previous_start_date = previous_end_date = None
 
-            # Count the completed, pending installation, and overdue installations
+            # Execute the base query to get total records
+            total_records_result = await session.execute(base_query)
+            total_records = len(total_records_result.unique().scalars().all())
 
-            current_completed_count = query.filter(
+            # Count the completed, pending, and overdue installations
+            completed_query = base_query.filter(
                 Installation.status == InstallationStatus.COMPLETED
-            ).count()
-            current_pending_installation_count = query.filter(
-                Installation.status == InstallationStatus.PENDING_INSTALLATION
-            ).count()
-            current_overdue_count = (
-                query.join(Order)
-                .filter(
-                    and_(
-                        Installation.status != InstallationStatus.COMPLETED,
-                        Order.date_of_installation < datetime.utcnow(),
-                    )
-                )
-                .count()
             )
+            pending_query = base_query.filter(
+                Installation.status == InstallationStatus.PENDING_INSTALLATION
+            )
+            overdue_query = base_query.join(Order).filter(
+                and_(
+                    Installation.status != InstallationStatus.COMPLETED,
+                    Order.date_of_installation < datetime.utcnow(),
+                )
+            )
+
+            completed_count_result = await session.execute(completed_query)
+            current_completed_count = len(completed_count_result.scalars().all())
+
+            pending_count_result = await session.execute(pending_query)
+            current_pending_installation_count = len(
+                pending_count_result.unique().scalars().all()
+            )
+
+            overdue_count_result = await session.execute(overdue_query)
+            current_overdue_count = len(overdue_count_result.scalars().all())
 
             # Query the previous date range if both dates are provided
             previous_completed_count = (
                 previous_pending_installation_count
             ) = previous_overdue_count = previous_total_count = 0
+
             if previous_start_date and previous_end_date:
-                previous_query = (
-                    session.query(Installation)
-                    .join(Order)
-                    .filter(
+                previous_filters = [
+                    Installation.created_at >= previous_start_date,
+                    Installation.created_at <= previous_end_date,
+                ]
+                previous_query = select(Installation).filter(and_(*previous_filters))
+
+                previous_total_result = await session.execute(previous_query)
+                previous_total_count = len(previous_total_result.scalars().all())
+
+                previous_completed_result = await session.execute(
+                    previous_query.filter(
+                        Installation.status == InstallationStatus.COMPLETED
+                    )
+                )
+                previous_completed_count = len(
+                    previous_completed_result.scalars().all()
+                )
+
+                previous_pending_result = await session.execute(
+                    previous_query.filter(
+                        Installation.status == InstallationStatus.PENDING_INSTALLATION
+                    )
+                )
+                previous_pending_installation_count = len(
+                    previous_pending_result.scalars().all()
+                )
+
+                previous_overdue_result = await session.execute(
+                    previous_query.filter(
                         and_(
-                            Installation.created_at >= previous_start_date,
-                            Installation.created_at <= previous_end_date,
+                            Installation.status != InstallationStatus.COMPLETED,
+                            Order.date_of_installation < datetime.utcnow(),
                         )
                     )
                 )
-                previous_total_count = previous_query.count()
-                previous_completed_count = previous_query.filter(
-                    Installation.status == InstallationStatus.COMPLETED
-                ).count()
-                previous_pending_installation_count = previous_query.filter(
-                    Installation.status == InstallationStatus.PENDING_INSTALLATION
-                ).count()
-                previous_overdue_count = previous_query.filter(
-                    and_(
-                        Installation.status != InstallationStatus.COMPLETED,
-                        Order.date_of_installation < datetime.utcnow(),
-                    )
-                ).count()
+                previous_overdue_count = len(previous_overdue_result.scalars().all())
 
-            # Get total number of records for pagination metadata
-            total_records = query.count()
+            # Calculate pagination metadata
             total_pages = (total_records + per_page - 1) // per_page
+            paginated_query = base_query.limit(per_page).offset((page - 1) * per_page)
 
-            # Apply pagination
-            paginated_query = query.limit(per_page).offset((page - 1) * per_page)
-            installations = paginated_query.all()
+            # Execute paginated query
+            paginated_result = await session.execute(paginated_query)
+            installations = paginated_result.scalars().all()
 
             # Prepare results
             return {
@@ -221,19 +250,22 @@ class InstallationRepository(BaseRepository):
                 },
             }
 
-    def create_installation(self, installation_payload: InstallationPayload):
-        with self.session_factory() as session:
+    async def create_installation(self, installation_payload: InstallationPayload):
+        async with self.session_factory() as session:  # Use async session
             try:
+                # Create the installation record
                 installation = Installation(
                     order_uuid=installation_payload.order_uuid,
                 )
                 session.add(installation)
 
-                order = (
-                    session.query(Order)
-                    .filter_by(uuid=installation_payload.order_uuid)
-                    .first()
+                # Fetch the related order
+                order_query = await session.execute(
+                    select(Order).filter_by(uuid=installation_payload.order_uuid)
                 )
+                order = order_query.scalars().first()
+
+                # Update order details if found
                 if order:
                     order.date_of_installation = (
                         installation_payload.date_of_installation
@@ -242,9 +274,11 @@ class InstallationRepository(BaseRepository):
                         installation_payload.time_of_installation
                     )
 
-                session.commit()
-                session.refresh(installation)
+                # Commit transaction
+                await session.commit()
+                await session.refresh(installation)
+
                 return installation
             except Exception as e:
-                session.rollback()
+                await session.rollback()
                 raise e

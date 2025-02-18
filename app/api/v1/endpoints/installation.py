@@ -39,7 +39,7 @@ async def get_installers_handler(
     ),
 ):
     try:
-        installers = service.fetch_all_installers(installation_uuid)
+        installers = await service.fetch_all_installers(installation_uuid)
         return send_data(installers)
     except Exception as e:
         return send_internal_server_error(
@@ -57,11 +57,11 @@ async def create_installation_handler(
     ),
 ):
     try:
-        installation = service.get_installation_by_order_uuid(payload.order_uuid)
+        installation = await service.get_installation_by_order_uuid(payload.order_uuid)
         if installation:
             return send_client_side_error(messages.INSTALLATION_CREATED_MSG)
 
-        installation = service.create_installation(payload)
+        installation = await service.create_installation(payload)
         return send_data(installation)
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
@@ -76,11 +76,11 @@ async def assign_installer_handler(
     current_user: User = Depends(get_current_user_with_permission("assign_installer")),
 ):
     try:
-        installation = service.get_installation(payload.installation_uuid)
+        installation = await service.get_installation(payload.installation_uuid)
         if not installation:
             return send_client_side_error(messages.INSTALLATION_NOT_FOUND_MSG)
 
-        installation_to_update = service.assign_installer_to_installation(payload)
+        installation_to_update = await service.assign_installer_to_installation(payload)
 
         return send_data_with_info(installation_to_update, messages.SUCCESS_MESSAGE)
     except Exception as e:
@@ -109,7 +109,7 @@ async def get_installations_handler(
     ),
 ):
     try:
-        installations = service.fetch_installations(
+        installations = await service.fetch_installations(
             page,
             page_size,
             status=status,
@@ -145,7 +145,7 @@ async def get_installer_installations_handler(
     ),
 ):
     try:
-        installations = service.fetch_installations(
+        installations = await service.fetch_installations(
             page, page_size, installer_uuid, status, start_date, end_date
         )
         return send_data(installations)
@@ -165,7 +165,7 @@ async def get_installation_handler(
     ),
 ):
     try:
-        installation = service.get_installation(installation_uuid)
+        installation = await service.get_installation(installation_uuid)
         if not installation:
             send_client_side_error(messages.INSTALLATION_NOT_FOUND_MSG)
         return send_data(installation)
@@ -186,7 +186,7 @@ async def configure_device_handler(
     ),
 ):
     try:
-        asset = asset_service.get_assets_by_license_no(payload.asset_license_no)
+        asset = await asset_service.get_assets_by_license_no(payload.asset_license_no)
 
         if asset is None:
             msg = f"Asset not found with license no {payload.asset_license_no}"
@@ -196,10 +196,12 @@ async def configure_device_handler(
             device_imei=payload.device_imei, sim_phone_number=payload.sim_phone_number
         )
 
-        asset_assignment = asset_service.assign_device_imei(asset.uuid, data_to_assign)
+        asset_assignment = await asset_service.assign_device_imei(
+            asset.uuid, data_to_assign
+        )
 
         if asset_assignment:
-            service.update_installation_status(
+            await service.update_installation_status(
                 payload.installation_uuid, InstallationStatus.COMPLETED
             )
 

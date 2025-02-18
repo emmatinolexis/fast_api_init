@@ -41,7 +41,7 @@ async def get_all_payments_handler(
 ):
     try:
         return send_data(
-            service.get_payments(
+            await service.get_payments(
                 search_parameter, start_date, end_date, page, page_size, status
             )
         )

@@ -33,7 +33,7 @@ async def get_all_inventory_handler(
     service: InventoryService = Depends(Provide[Container.inventory_service]),
 ):
     try:
-        inventories = service.get_all_inventory(
+        inventories = await service.get_all_inventory(
             page=page, page_size=page_size, search_query=search_query
         )
         return send_data(inventories)
@@ -49,10 +49,12 @@ async def get_inventory_by_uuid(
     service: InventoryService = Depends(Provide[Container.inventory_service]),
 ):
     try:
-        inventory = service.get_inventory_by_uuid(uuid)
+        inventory = await service.get_inventory_by_uuid(uuid)
         return send_data(inventory)
     except NotFoundError as e:
-        return send_client_side_error(user_msg=messages.GET_FAILED + "inventory")
+        return send_client_side_error(
+            user_msg=messages.GET_FAILED + "inventory", dev_msg=str(e)
+        )
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -66,7 +68,7 @@ async def create_device_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        devices = service.create_inventory(payload)
+        devices = await service.create_inventory(payload)
         return send_data(devices)
     except NotFoundError as e:
         return send_client_side_error(
@@ -86,7 +88,7 @@ async def update_inventory_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        updated_inventory = service.update_inventory(inventory_uuid, payload)
+        updated_inventory = await service.update_inventory(inventory_uuid, payload)
         return send_data(updated_inventory)
     except NotFoundError as e:
         return send_client_side_error(

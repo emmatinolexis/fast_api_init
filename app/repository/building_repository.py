@@ -1,8 +1,9 @@
-from contextlib import AbstractContextManager
 from typing import Any, Callable, Dict, Optional
 
-from sqlalchemy import desc, or_
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import desc
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from sqlalchemy.orm import joinedload
 
 from app.model.buildings import Building
 from app.model.gas_cylinders import GasCylinder
@@ -13,17 +14,17 @@ from app.util.utils import calculate_gas_level_percentage
 
 
 class BuildingRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, Building)
 
-    def read_building_by_uuid(
+    async def read_building_by_uuid(
         self,
         building_uuid: str = None,
     ) -> Dict[str, Any]:
-        with self.session_factory() as session:
-            building = (
-                session.query(self.model)
+        async with self.session_factory() as session:
+            building = await session.execute(
+                select(self.model)
                 .filter(self.model.uuid == building_uuid)
                 .options(
                     joinedload(self.model.gas_cylinders).joinedload(
@@ -36,8 +37,8 @@ class BuildingRepository(BaseRepository):
                         GasCylinder.cylinder_type
                     ),
                 )
-                .first()
             )
+            building = building.unique().scalars().first()
 
             cylinders = []
 
@@ -70,7 +71,7 @@ class BuildingRepository(BaseRepository):
 
             return building_data
 
-    def read_all_building(
+    async def read_all_building(
         self,
         user_uuid: str = None,
         business_uuid: str = None,
@@ -78,9 +79,9 @@ class BuildingRepository(BaseRepository):
         page_size: int = 10,
         search: Optional[str] = None,
     ) -> Dict[str, Any]:
-        with self.session_factory() as session:
+        async with self.session_factory() as session:
             offset = (page - 1) * page_size
-            base_query = self._build_base_query(session, user_uuid, business_uuid)
+            base_query = await self._build_base_query(session, user_uuid, business_uuid)
 
             if search:
                 search_pattern = f"%{search}%"
@@ -97,7 +98,8 @@ class BuildingRepository(BaseRepository):
                 .limit(page_size)
             )
 
-            assets = self._load_related_models(paginated_query).all()
+            results = await session.execute(self._load_related_models(paginated_query))
+            assets = results.unique().scalars().all()
             buildings = self._build_building_assets(assets)
 
             return {
@@ -108,10 +110,10 @@ class BuildingRepository(BaseRepository):
                 "page_size": page_size,
             }
 
-    def _build_base_query(
+    async def _build_base_query(
         self, session, user_uuid: str = None, business_uuid: str = None
     ):
-        base_query = session.query(self.model)
+        base_query = select(self.model)
 
         if user_uuid:
             base_query = base_query.filter(self.model.user_uuid == user_uuid)
@@ -222,39 +224,33 @@ class BuildingRepository(BaseRepository):
             "created_at": asset.created_at,
         }
 
-    def read_all_assets_by_uuid_no_pagination(
+    async def read_all_assets_by_uuid_no_pagination(
         self,
         user_uuid: str = None,
         business_uuid: str = None,
         asset_uuid: str = None,
     ):
-        with self.session_factory() as session:
+        async with self.session_factory() as session:
             if user_uuid is not None:
                 if asset_uuid:
-                    return (
-                        session.query(self.model)
-                        .filter(self.model.uuid == asset_uuid)
-                        .all()
-                    )
+                    query = select(self.model).filter(self.model.uuid == asset_uuid)
+                    result = await session.execute(query)
+                    return result.scalars().all()
                 else:
-                    return (
-                        session.query(self.model)
-                        .filter(self.model.user_uuid == user_uuid)
-                        .all()
-                    )
+                    query = select(self.model).filter(self.model.user_uuid == user_uuid)
+                    result = await session.execute(query)
+                    return result.scalars().all()
 
             if business_uuid is not None:
                 if asset_uuid:
-                    return (
-                        session.query(self.model)
-                        .filter(self.model.uuid == asset_uuid)
-                        .all()
-                    )
+                    query = select(self.model).filter(self.model.uuid == asset_uuid)
+                    result = await session.execute(query)
+                    return result.scalars().all()
                 else:
-                    return (
-                        session.query(self.model)
-                        .filter(self.model.business_profile_uuid == business_uuid)
-                        .all()
+                    query = select(self.model).filter(
+                        self.model.business_profile_uuid == business_uuid
                     )
+                    result = await session.execute(query)
+                    return result.scalars().all()
 
             return []

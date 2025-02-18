@@ -38,7 +38,7 @@ async def check_drivers_license_expiry(
     service: DriverLicenseService = Depends(Provide[Container.driver_license_service]),
 ):
     try:
-        licenses = service.get_all_licenses()
+        licenses = await service.get_all_licenses()
 
         for license in licenses:
             if license.expires_soon():
@@ -62,7 +62,7 @@ async def get_all_drivers_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.get_list())
+        return send_data(await service.get_list())
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -76,7 +76,7 @@ async def create_driver_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        existing_driver = service.get_driver_by_phone_number(payload.phone_number)
+        existing_driver = await service.get_driver_by_phone_number(payload.phone_number)
         if existing_driver:
             msg = f"Driver already exists with phone number {payload.phone_number}"
             return send_internal_server_error(user_msg=msg, error=msg)
@@ -96,7 +96,7 @@ async def update_driver_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        driver = service.update_driver(uuid, payload)
+        driver = await service.update_driver(uuid, payload)
         if driver is None:
             return send_client_side_error(user_msg=messages.DRIVER_NOT_FOUND + uuid)
         return send_data(driver)
@@ -115,7 +115,7 @@ async def unassign_driver_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        service.unassign_driver(driver_uuid)
+        await service.unassign_driver(driver_uuid)
         return send_info(messages.DRIVER_UNASSIGNED_SUCCESS)
     except BadRequestError as e:
         return send_client_side_error(user_msg=e.detail)
@@ -132,7 +132,7 @@ async def get_driver_by_uuid_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        driver = user_service.get_driver_by_uuid(uuid)
+        driver = await user_service.get_driver_by_uuid(uuid)
         return send_data(driver)
     except NotFoundError as e:
         return send_client_side_error(e.detail)
@@ -153,7 +153,7 @@ async def get_drivers_by_user_uuid_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        driver = service.get_drivers_by_user_uuid(user_uuid, page, page_size)
+        driver = await service.get_drivers_by_user_uuid(user_uuid, page, page_size)
         if driver is None:
             return send_client_side_error(
                 user_msg=messages.DRIVER_NOT_FOUND + user_uuid
@@ -184,7 +184,7 @@ async def get_drivers_by_business_uuid_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        drivers = user_service.get_drivers_by_business_uuid(
+        drivers = await user_service.get_drivers_by_business_uuid(
             business_uuid, role_uuid, page, page_size, operator_type, status, search
         )
         if drivers is None:
@@ -205,7 +205,7 @@ async def delete_driver_by_uuid_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        service.remove_by_uuid(uuid)
+        await service.remove_by_uuid(uuid)
         return send_info(messages.DELETE_SUCCESS + msg_prefix)
     except NotFoundError as e:
         return send_client_side_error(
@@ -227,7 +227,7 @@ async def change_rider_asset_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        response = service.assign_operator_to_asset(
+        response = await service.assign_operator_to_asset(
             asset_uuid,
             operator_uuid,
             current_user.uuid,

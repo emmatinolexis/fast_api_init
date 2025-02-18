@@ -32,7 +32,7 @@ async def bulk_upload_fire_devices(
 ):
     try:
         serial_numbers = load_fire_device_serial_number_from_file(file_url=file_url)
-        message = service.load_fire_devices(serial_numbers, current_user)
+        message = await service.load_fire_devices(serial_numbers, current_user)
         return send_info(message)
     except ValueError as e:
         return send_client_side_error(user_msg=str(e), dev_msg=str(e))
@@ -52,7 +52,7 @@ async def add_fire_device(
     ),
 ):
     try:
-        message = service.add_fire_device_to_building(
+        message = await service.add_fire_device_to_building(
             building_uuid, payload, current_user
         )
         return send_info(message)

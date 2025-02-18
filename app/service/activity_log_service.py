@@ -21,7 +21,7 @@ class ActivityLogService(BaseService):
         self.activity_log_repository = activity_log_repository
         super().__init__(activity_log_repository)
 
-    def all_activity_logs(
+    async def all_activity_logs(
         self,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
@@ -30,7 +30,7 @@ class ActivityLogService(BaseService):
         activity_types: List[str] = None,
         search_string: str = None,
     ):
-        logs = self.activity_log_repository.all_activity_logs(
+        logs = await self.activity_log_repository.all_activity_logs(
             start_date, end_date, page, page_size, activity_types, search_string
         )
         return [
@@ -38,7 +38,7 @@ class ActivityLogService(BaseService):
             for log in logs
         ]
 
-    def business_activity_logs(
+    async def business_activity_logs(
         self,
         business_id: str,
         start_date: Optional[str] = None,
@@ -48,7 +48,7 @@ class ActivityLogService(BaseService):
         activity_types: List[str] = None,
         search_string: str = None,
     ):
-        logs = self.activity_log_repository.business_activity_logs(
+        logs = await self.activity_log_repository.business_activity_logs(
             business_id,
             start_date,
             end_date,
@@ -62,7 +62,7 @@ class ActivityLogService(BaseService):
             for log in logs
         ]
 
-    def admin_activity_logs(
+    async def admin_activity_logs(
         self,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
@@ -71,7 +71,7 @@ class ActivityLogService(BaseService):
         activity_types: List[str] = None,
         search_string: str = None,
     ):
-        logs = self.activity_log_repository.admin_activity_logs(
+        logs = await self.activity_log_repository.admin_activity_logs(
             start_date, end_date, page, page_size, activity_types, search_string
         )
         return [
@@ -79,18 +79,18 @@ class ActivityLogService(BaseService):
             for log in logs
         ]
 
-    def count_activity_logs(
+    async def count_activity_logs(
         self,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
         activity_types: List[str] = None,
         search_string: str = None,
     ) -> int:
-        return self.activity_log_repository.count_activity_logs(
+        return await self.activity_log_repository.count_activity_logs(
             start_date, end_date, activity_types, search_string
         )
 
-    def count_business_activity_logs(
+    async def count_business_activity_logs(
         self,
         business_id: str,
         start_date: Optional[str] = None,
@@ -98,23 +98,23 @@ class ActivityLogService(BaseService):
         activity_types: List[str] = None,
         search_string: str = None,
     ) -> int:
-        return self.activity_log_repository.count_business_activity_logs(
+        return await self.activity_log_repository.count_business_activity_logs(
             business_id, start_date, end_date, activity_types, search_string
         )
 
-    def count_admin_activity_logs(
+    async def count_admin_activity_logs(
         self,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
         activity_types: List[str] = None,
         search_string: str = None,
     ) -> int:
-        return self.activity_log_repository.count_admin_activity_logs(
+        return await self.activity_log_repository.count_admin_activity_logs(
             start_date, end_date, activity_types, search_string
         )
 
-    def get_activity_log(self, log_uuid: str):
-        log = self.activity_log_repository.read_by_uuid(log_uuid)
+    async def get_activity_log(self, log_uuid: str):
+        log = await self.activity_log_repository.read_by_uuid(log_uuid)
 
         if log is None:
             raise NotFoundError(messages.ACTIVITY_LOG_NOT_FOUND)

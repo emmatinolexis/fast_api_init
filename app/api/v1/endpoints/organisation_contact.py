@@ -32,7 +32,7 @@ async def get_all_contacts_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.get_list())
+        return send_data(await service.get_list())
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -48,7 +48,7 @@ async def create_contact_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        contact = service.create_organisation_contact(payload)
+        contact = await service.create_organisation_contact(payload)
         return send_data(contact)
     except NotFoundError as e:
         return send_client_side_error(user_msg=messages.USER_NOT_FOUND + str(e.detail))
@@ -68,7 +68,7 @@ async def update_contact_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        contact = service.update_organisation_contact(uuid, payload)
+        contact = await service.update_organisation_contact(uuid, payload)
         if contact is None:
             return send_client_side_error(
                 user_msg=messages.ORGANISATION_CONTACT_NOT_FOUND + uuid
@@ -91,7 +91,7 @@ async def get_contact_by_uuid_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        contact = service.get_by_uuid(uuid)
+        contact = await service.get_by_uuid(uuid)
         if contact is None:
             return send_client_side_error(
                 user_msg=messages.ORGANISATION_CONTACT_NOT_FOUND + uuid
@@ -112,7 +112,7 @@ async def delete_contact_by_uuid_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        service.remove_by_uuid(uuid)
+        await service.remove_by_uuid(uuid)
         return send_info(messages.DELETE_SUCCESS + msg_prefix)
     except NotFoundError as e:
         return send_client_side_error(

@@ -1,7 +1,8 @@
-from contextlib import AbstractContextManager
 from typing import Callable
 
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from sqlalchemy.orm import joinedload
 
 from app.model.role import Role
 from app.repository.base_repository import BaseRepository
@@ -9,54 +10,47 @@ from app.schema.permission_schema import RolePayload
 
 
 class RoleRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, Role)
 
-    def get_all_roles(self, role_type: str = None):
-        with self.session_factory() as session:
+    async def get_all_roles(self, role_type: str = None):
+        async with self.session_factory() as session:
+            query = select(self.model).options(joinedload(self.model.permissions))
             if role_type:
-                return (
-                    session.query(self.model)
-                    .filter_by(role_type=role_type)
-                    .options(joinedload(self.model.permissions))
-                    .all()
-                )
-            return (
-                session.query(self.model)
-                .options(joinedload(self.model.permissions))
-                .all()
-            )
+                query = query.filter_by(role_type=role_type)
+            result = await session.execute(query)
+            return result.unique().scalars().all()
 
-    def create_role(self, payload: RolePayload):
-        with self.session_factory() as session:
+    async def create_role(self, payload: RolePayload):
+        async with self.session_factory() as session:
             role_data = self.model(
                 role_name=payload.role_name,
                 role_type=payload.role_type,
             )
             session.add(role_data)
-            session.commit()
-            session.refresh(role_data)
+            await session.commit()
+            await session.refresh(role_data)
             return role_data
 
-    def update_role(self, payload: RolePayload, role_uuid: str):
-        with self.session_factory() as session:
-            role = session.query(self.model).filter_by(uuid=role_uuid).first()
+    async def update_role(self, payload: RolePayload, role_uuid: str):
+        async with self.session_factory() as session:
+            result = await session.execute(select(self.model).filter_by(uuid=role_uuid))
+            role = result.scalar_one()
             role.role_name = payload.role_name
             role.role_type = payload.role_type
-            session.commit()
-            session.refresh(role)
+            await session.commit()
+            await session.refresh(role)
             return role
 
-    def get_role(self, role_uuid: str):
-        with self.session_factory() as session:
+    async def get_role(self, role_uuid: str):
+        async with self.session_factory() as session:
             try:
-                role = (
-                    session.query(self.model)
+                result = await session.execute(
+                    select(self.model)
                     .filter_by(uuid=role_uuid)
                     .options(joinedload(self.model.permissions))
-                    .first()
                 )
-                return role
+                return result.unique().scalar_one_or_none()
             except Exception as e:
                 raise e

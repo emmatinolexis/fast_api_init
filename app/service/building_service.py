@@ -39,7 +39,7 @@ class BuildingService(BaseService):
         self.peripheral_device_repository = peripheral_device_repository
         super().__init__(building_repository)
 
-    def create_building(self, payload: BuildingInput):
+    async def create_building(self, payload: BuildingInput):
         try:
             # Handle building creation
             if payload.building:
@@ -52,11 +52,11 @@ class BuildingService(BaseService):
                     user_uuid=payload.building.user_uuid,
                     business_profile_uuid=payload.building.business_profile_uuid,
                 )
-                building = self.building_repository.create(building_data)
+                building = await self.building_repository.create(building_data)
                 building_uuid = building.uuid
             elif payload.building_uuid:
                 building_uuid = payload.building_uuid
-                building = self.building_repository.read_by_uuid(building_uuid)
+                building = await self.building_repository.read_by_uuid(building_uuid)
                 if not building:
                     raise ValueError(f"No building found with UUID: {building_uuid}")
             else:
@@ -75,7 +75,7 @@ class BuildingService(BaseService):
                     user_uuid=building.user_uuid,
                     business_profile_uuid=building.business_profile_uuid,
                 )
-                self.gas_cylinder_repository.create(cylinder_data)
+                await self.gas_cylinder_repository.create(cylinder_data)
 
             # Conditionally create fire device if required
             if payload.create_fire_device and payload.fire_device:
@@ -91,10 +91,10 @@ class BuildingService(BaseService):
                     fire_device_data.serial_number
                 )
                 if device:
-                    self.gas_device_repository.update_by_uuid(
+                    await self.gas_device_repository.update_by_uuid(
                         device.uuid, fire_device_data
                     )
-                    self.gas_device_repository.update_attr_by_uuid(
+                    await self.gas_device_repository.update_attr_by_uuid(
                         device.uuid, "status", DeviceStatus.ASSIGNED
                     )
 
@@ -103,10 +103,10 @@ class BuildingService(BaseService):
         except Exception as e:
             # Rollback building creation if necessary
             if payload.building and "building" in locals():
-                self.building_repository.delete_by_uuid(building.uuid)
+                await self.building_repository.delete_by_uuid(building.uuid)
             raise e
 
-    def get_all_buildings(
+    async def get_all_buildings(
         self,
         user_uuid: str = None,
         business_uuid: str = None,
@@ -115,7 +115,7 @@ class BuildingService(BaseService):
         search: Optional[str] = None,
     ):
         try:
-            report = self.building_repository.read_all_building(
+            report = await self.building_repository.read_all_building(
                 user_uuid=user_uuid,
                 business_uuid=business_uuid,
                 page=page,
@@ -126,17 +126,17 @@ class BuildingService(BaseService):
         except Exception as e:
             raise e
 
-    def get_building_by_uuid(
+    async def get_building_by_uuid(
         self,
         building_uuid: str = None,
     ):
         try:
-            report = self.building_repository.read_building_by_uuid(building_uuid)
+            report = await self.building_repository.read_building_by_uuid(building_uuid)
             return report
         except Exception as e:
             raise e
 
-    def get_building_cylinder_assets(
+    async def get_building_cylinder_assets(
         self,
         building_uuid: str,
         cylinder_status: Optional[str] = None,
@@ -144,8 +144,10 @@ class BuildingService(BaseService):
         page: int = 1,
     ):
         try:
-            cylinders = self.gas_cylinder_repository.get_gas_cylinder_by_building_uuid(
-                building_uuid=building_uuid, cylinder_status=cylinder_status
+            cylinders = (
+                await self.gas_cylinder_repository.get_gas_cylinder_by_building_uuid(
+                    building_uuid=building_uuid, cylinder_status=cylinder_status
+                )
             )
 
             total = len(cylinders)
@@ -164,29 +166,31 @@ class BuildingService(BaseService):
         except Exception as e:
             raise e
 
-    def update_building(self, building_uuid: str, payload: UpdateBuildingPayload):
+    async def update_building(self, building_uuid: str, payload: UpdateBuildingPayload):
         try:
-            building = self.building_repository.read_by_uuid(building_uuid)
+            building = await self.building_repository.read_by_uuid(building_uuid)
             if not building:
                 raise NotFoundError(messages.BUILDING_NOT_FOUND + building_uuid)
 
-            building = self.building_repository.update_by_uuid(building_uuid, payload)
+            building = await self.building_repository.update_by_uuid(
+                building_uuid, payload
+            )
             return building_transformer(building)
         except Exception as e:
             raise e
 
-    def create_building_with_peripheral_device(
+    async def create_building_with_peripheral_device(
         self, user_uuid: str, payload: CreateBuildingWithDevice
     ):
         try:
-            user = self.user_repository.get_user_by_uuid(user_uuid)
+            user = await self.user_repository.get_user_by_uuid(user_uuid)
             if not user:
                 raise NotFoundError(messages.USER_NOT_FOUND + user_uuid)
 
             business_profile_uuid = user.get("business_profile").uuid
 
             if payload.device:
-                device = self.peripheral_device_repository.get_by_serial_number(
+                device = await self.peripheral_device_repository.get_by_serial_number(
                     payload.device.serial_number
                 )
                 if not device:
@@ -222,7 +226,7 @@ class BuildingService(BaseService):
                     status=ActiveStatus.ACTIVE,
                 )
 
-                building = self.building_repository.create(building_data)
+                building = await self.building_repository.create(building_data)
 
                 if payload.device:
                     # Update device with building information
@@ -232,7 +236,7 @@ class BuildingService(BaseService):
                         business_profile_uuid=str(business_profile_uuid),
                         user_uuid=str(user_uuid),
                     )
-                    self.peripheral_device_repository.update_by_uuid(
+                    await self.peripheral_device_repository.update_by_uuid(
                         device.uuid, device_update
                     )
 
@@ -243,5 +247,5 @@ class BuildingService(BaseService):
         except Exception as e:
             # If building was created but device assignment failed, delete the building
             if "building" in locals():
-                self.building_repository.delete_by_uuid(building.uuid)
+                await self.building_repository.delete_by_uuid(building.uuid)
             raise e

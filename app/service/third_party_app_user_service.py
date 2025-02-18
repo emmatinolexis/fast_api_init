@@ -7,9 +7,9 @@ class ThirdPartyAppUserService(BaseService):
         self.third_party_app_user_repository = third_party_app_user_repository
         super().__init__(third_party_app_user_repository)
 
-    def get_app_users(self):
+    async def get_app_users(self):
         try:
-            devices = self.third_party_app_user_repository.get_app_users()
+            devices = await self.third_party_app_user_repository.get_app_users()
             return devices
         except Exception as e:
             raise e

@@ -31,7 +31,7 @@ async def get_all_marker_icons_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.get_list())
+        return send_data(await service.get_list())
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -45,7 +45,7 @@ async def get_all_marker_icons_by_asset_type_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.get_list_by_uuid(asset_type_uuid))
+        return send_data(await service.get_list_by_uuid(asset_type_uuid))
     except Exception as e:
         msg = f"{messages.GET_FAILED} {msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -59,7 +59,7 @@ async def create_marker_icon_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        marker_icon = service.add(payload)
+        marker_icon = await service.add(payload)
         return send_data(marker_icon)
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
@@ -75,7 +75,7 @@ async def update_marker_icon_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        marker_icon = service.patch_by_uuid(uuid, payload)
+        marker_icon = await service.patch_by_uuid(uuid, payload)
         if marker_icon is None:
             return send_client_side_error(
                 user_msg=messages.MARKER_ICON_NOT_FOUND + uuid
@@ -86,9 +86,7 @@ async def update_marker_icon_handler(
         return send_internal_server_error(user_msg=msg, error=e)
 
 
-@router.delete(
-    "/{uuid}", dependencies=[allow_admins_only], response_class=ORJSONResponse
-)
+@router.delete("/{uuid}", response_class=ORJSONResponse)
 @inject
 async def delete_marker_icon_handler(
     uuid: str,
@@ -96,7 +94,7 @@ async def delete_marker_icon_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        service.remove_by_uuid(uuid)
+        await service.remove_by_uuid(uuid)
         return send_info(messages.DELETE_SUCCESS + msg_prefix)
     except NotFoundError as e:
         return send_client_side_error(

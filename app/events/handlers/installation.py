@@ -6,10 +6,7 @@ from app.model.installation import Installation
 from app.model.order import Order, OrderShippingAddress
 from app.model.user import User
 from app.repository.admin_notification_repository import AdminNotificationRepository
-from app.schema.notification_schema import (
-    CreateAdminNotification,
-    CreateNotificationSchema,
-)
+from app.schema.notification_schema import CreateAdminNotification
 from app.util.enums import NotificationType
 
 db = Database(settings.DATABASE_URI)

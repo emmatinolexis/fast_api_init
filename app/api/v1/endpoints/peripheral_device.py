@@ -26,7 +26,7 @@ from app.service.device_alert_notification_service import DeviceAlertNotificatio
 from app.service.device_configuration_service import DeviceConfigurationService
 from app.service.gas_cylinder_service import GasCylinderService
 from app.service.peripheral_device_service import PeripheralDeviceService
-from app.util.enums import AccountType, DeviceConfigurationVersion, DeviceType
+from app.util.enums import DeviceConfigurationVersion, DeviceType
 from app.util.utils import (
     send_client_side_error,
     send_data,
@@ -62,7 +62,7 @@ async def get_all_peripheral_devices_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        devices = service.get_list(
+        devices = await service.get_list(
             page=page, page_size=page_size, device_type=device_type, search=search
         )
         return send_data(devices)
@@ -81,7 +81,7 @@ async def get_peripheral_device_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        device = service.get_device_by_peripheral_uuid(peripheral_device_uuid)
+        device = await service.get_device_by_peripheral_uuid(peripheral_device_uuid)
         return send_data_with_info(data=device, info=messages.GET_SUCCESS + "device")
     except NotFoundError as e:
         return send_client_side_error(user_msg=e.detail)
@@ -100,7 +100,7 @@ async def link_gas_cylinder_to_peripheral_device(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        response = service.link_gas_cylinder_to_peripheral_device(
+        response = await service.link_gas_cylinder_to_peripheral_device(
             current_user.uuid,
             payload,
         )
@@ -125,7 +125,7 @@ async def create_peripheral_devices_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        service.create_peripheral_device(payload)
+        await service.create_peripheral_device(payload)
         return send_info("Peripheral devices created successfully")
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
@@ -142,7 +142,7 @@ async def create_gateway_configuration_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        service.create_gateway_configuration(payload)
+        await service.create_gateway_configuration(payload)
         return send_info("Gateway Configuration created successfully")
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
@@ -159,7 +159,7 @@ async def create_node_configuration_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        service.create_node_configuration(payload)
+        await service.create_node_configuration(payload)
         return send_info("Node Configuration created successfully")
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
@@ -175,7 +175,7 @@ async def get_all_device_configurations_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.get_list())
+        return send_data(await service.get_list())
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -197,14 +197,15 @@ async def get_device_configurations_handler(
     current_user: User = Depends(get_current_app_service),
 ):
     try:
-        peripheral_device = peripheral_device_service.get_devices_by_serial_number(
-            payload.serial_number
+        peripheral_device = (
+            await peripheral_device_service.get_devices_by_serial_number(
+                payload.serial_number
+            )
         )
-        # return peripheral_device
         if not peripheral_device:
             return send_client_side_error("Device not found")
 
-        configuration = service.get_device_configuration(payload.device_type)
+        configuration = await service.get_device_configuration(payload.device_type)
 
         if not configuration:
             return send_client_side_error("Configuration not found")
@@ -216,9 +217,11 @@ async def get_device_configurations_handler(
                     "devconf": {
                         "nodeid": peripheral_device.node_id,
                         "desc": configuration.configuration.get("description"),
-                        "devloc": ""
-                        if not peripheral_device.location
-                        else peripheral_device.location,
+                        "devloc": (
+                            ""
+                            if not peripheral_device.location
+                            else peripheral_device.location
+                        ),
                         "mcu": configuration.configuration.get("microprocessor_unit"),
                         "sensors": str(
                             ", ".join(configuration.configuration.get("sensors"))
@@ -275,7 +278,7 @@ async def get_device_configurations_handler(
             return send_data(configuration_data)
 
         if payload.device_type == DeviceConfigurationVersion.SG_GGAURGEPRO_VI:
-            gas_cylinder = gas_cylinder_service.get_cylinder_by_device_serial(
+            gas_cylinder = await gas_cylinder_service.get_cylinder_by_device_serial(
                 payload.serial_number
             )
 
@@ -292,9 +295,11 @@ async def get_device_configurations_handler(
                         "desc": configuration.configuration.get("description"),
                         "full_weight": gas_cylinder.cylinder_type.full_weight,
                         "empty_weight": gas_cylinder.cylinder_type.empty_weight,
-                        "devloc": ""
-                        if not peripheral_device.location
-                        else peripheral_device.location,
+                        "devloc": (
+                            ""
+                            if not peripheral_device.location
+                            else peripheral_device.location
+                        ),
                         "mcu": configuration.configuration.get("microprocessor_unit"),
                         "sensors": str(
                             ", ".join(configuration.configuration.get("sensors"))
@@ -332,7 +337,7 @@ async def update_peripheral_device_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        response = service.update_peripheral_device(
+        response = await service.update_peripheral_device(
             current_user.uuid, payload, building_uuid
         )
         return send_info(response)
@@ -354,15 +359,19 @@ async def get_peripheral_devices_by_user_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        if current_user.account_type == AccountType.INDIVIDUAL:
-            devices = service.get_user_devices(
-                user_uuid=current_user.uuid, device_type=device_type
-            )
-        else:
-            devices = service.get_business_devices(
-                business_profile_uuid=current_user.business_profile_uuid,
-                device_type=device_type,
-            )
+        devices = await service.get_business_devices(
+            business_profile_uuid=current_user.business_profile_uuid,
+            device_type=device_type,
+        )
+        # if current_user.account_type == AccountType.INDIVIDUAL:
+        #     devices = await service.get_user_devices(
+        #         user_uuid=current_user.uuid, device_type=device_type
+        #     )
+        # else:
+        #     devices = await service.get_business_devices(
+        #         business_profile_uuid=current_user.business_profile_uuid,
+        #         device_type=device_type,
+        #     )
 
         return send_data_with_info(info=messages.GET_SUCCESS + "devices", data=devices)
     except Exception as e:
@@ -381,7 +390,7 @@ async def get_peripheral_devices_by_building_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        devices = service.get_building_devices(building_uuid, device_type)
+        devices = await service.get_building_devices(building_uuid, device_type)
         return send_data_with_info(info=messages.GET_SUCCESS + "devices", data=devices)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
@@ -399,7 +408,7 @@ async def update_device_threshold_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        data = service.update_device_threshold(
+        data = await service.update_device_threshold(
             device_serial_number, payload, current_user.uuid
         )
         return send_data_with_info(
@@ -423,7 +432,7 @@ async def set_peripheral_device_to_default_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        data = service.set_device_configuration_to_default(peripheral_device_uuid)
+        data = await service.set_device_configuration_to_default(peripheral_device_uuid)
         return send_data_with_info(data, messages.SUCCESS_MESSAGE)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
@@ -442,7 +451,7 @@ async def update_sent_alert_status(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        device = peripheral_service.get_device_by_peripheral_uuid(
+        device = await peripheral_service.get_device_by_peripheral_uuid(
             peripheral_device_uuid
         )
 
@@ -452,7 +461,7 @@ async def update_sent_alert_status(
                 messages.PERIPHERAL_DEVICE_NOT_FOUND_MSG,
             )
 
-        device_config = peripheral_service.get_device_conf_by_peripheral_uuid(
+        device_config = await peripheral_service.get_device_conf_by_peripheral_uuid(
             peripheral_device_uuid
         )
 
@@ -461,7 +470,7 @@ async def update_sent_alert_status(
                 messages.DEVICE_CONFIG_NOT_FOUND, messages.DEVICE_CONFIG_NOT_FOUND
             )
 
-        device_update = peripheral_service.toggle_send_alert_status(
+        device_update = await peripheral_service.toggle_send_alert_status(
             peripheral_device_uuid
         )
         return send_data_with_info(device_update, messages.SUCCESS_MESSAGE)
@@ -486,7 +495,7 @@ async def create_device_alert_recipients_handler(
             data = DeviceAlertRecipientInput(
                 node_id=payload.node_id, user_uuid=user_uuid
             )
-            service.add(data)
+            await service.add(data)
         return send_data_with_info(info=messages.SUCCESS_MESSAGE, data=payload)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
@@ -501,7 +510,7 @@ async def create_building_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        building = service.create_building_with_peripheral_device(
+        building = await service.create_building_with_peripheral_device(
             current_user.uuid, payload
         )
         return send_data_with_info(info=messages.SUCCESS_MESSAGE, data=building)
@@ -522,7 +531,7 @@ async def get_device_config_by_serial_number(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        config = service.device_config_by_serial_number(serial_number)
+        config = await service.device_config_by_serial_number(serial_number)
         return send_data_with_info(
             info=messages.GET_SUCCESS + "device config", data=config
         )

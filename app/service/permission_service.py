@@ -11,9 +11,9 @@ class PermissionService(BaseService):
         self.permission_repository = permission_repository
         super().__init__(permission_repository)
 
-    def synchronize_permissions(self):
+    async def synchronize_permissions(self):
         # Get all existing permissions from the database
-        existing_permissions = self.permission_repository.get_list()
+        existing_permissions = await self.permission_repository.get_list()
 
         for model, permissions in PERMISSIONS.items():
             for permission in permissions:
@@ -33,7 +33,7 @@ class PermissionService(BaseService):
                 if existing_permission:
                     # Update the permission_type if it's None
                     if existing_permission.permission_type is None:
-                        self.permission_repository.update_attr_by_uuid(
+                        await self.permission_repository.update_attr_by_uuid(
                             existing_permission.uuid, "permission_type", permission_type
                         )
                 else:
@@ -44,13 +44,13 @@ class PermissionService(BaseService):
                         permission_type=permission_type,
                     )
                     # Save it to the database
-                    self.permission_repository.create(permission_obj)
+                    await self.permission_repository.create(permission_obj)
 
-        return self.permission_repository.get_list()
+        return await self.permission_repository.get_list()
 
-    def get_permissions(self, permission_type: PermissionType):
+    async def get_permissions(self, permission_type: PermissionType):
         try:
-            data = self.permission_repository.get_all_permissions(permission_type)
+            data = await self.permission_repository.get_all_permissions(permission_type)
 
             permissions = {}
 

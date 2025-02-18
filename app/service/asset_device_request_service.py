@@ -15,13 +15,15 @@ class AssetDeviceRequestService(BaseService):
         self.asset_repository = asset_repository
         super().__init__(asset_device_request_repository)
 
-    def create_asset_device_request(self, user_uuid: str, payload: AssetDeviceRequest):
+    async def create_asset_device_request(
+        self, user_uuid: str, payload: AssetDeviceRequest
+    ):
         assets_to_include_in_request = []
 
-        existing_requests = self.get_asset_device_requests_by_user_uuid(user_uuid)
+        existing_requests = await self.get_asset_device_requests_by_user_uuid(user_uuid)
 
         for asset_uuid in payload.asset_uuids:
-            asset_exists = self.asset_repository.read_by_uuid(str(asset_uuid))
+            asset_exists = await self.asset_repository.read_by_uuid(str(asset_uuid))
 
             # check if the request already exists for the selected asset
             asset_exists_in_a_previous_request = any(
@@ -46,17 +48,17 @@ class AssetDeviceRequestService(BaseService):
                 asset_uuids=payload.asset_uuids,
                 metrics=payload.metrics,
             )
-            return self.asset_device_request_repository.create_asset_device_request(
-                payload
+            return (
+                await self.asset_device_request_repository.create_asset_device_request(
+                    payload
+                )
             )
         except Exception:
             raise Exception(messages.CREATE_FAILED + " device request")
 
-    def get_asset_device_requests_by_user_uuid(self, user_uuid: str):
-        requests = (
-            self.asset_device_request_repository.get_asset_device_requests_by_user_uuid(
-                user_uuid
-            )
+    async def get_asset_device_requests_by_user_uuid(self, user_uuid: str):
+        requests = await self.asset_device_request_repository.get_asset_device_requests_by_user_uuid(
+            user_uuid
         )
 
         transformed_requests = []
@@ -94,15 +96,19 @@ class AssetDeviceRequestService(BaseService):
 
         return transformed_requests
 
-    def update_status(self, request_uuid: str):
+    async def update_status(self, request_uuid: str):
         try:
-            request = self.asset_device_request_repository.update_status(request_uuid)
+            request = await self.asset_device_request_repository.update_status(
+                request_uuid
+            )
             return request
         except Exception as e:
             return Exception(e)
 
-    def get_asset_device_requests(self):
-        requests = self.asset_device_request_repository.get_asset_device_requests()
+    async def get_asset_device_requests(self):
+        requests = (
+            await self.asset_device_request_repository.get_asset_device_requests()
+        )
 
         transformed_requests = []
 

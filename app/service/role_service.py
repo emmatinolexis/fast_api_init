@@ -1,3 +1,5 @@
+# The RoleService class in the provided Python code handles operations related to roles, permissions,
+# and role-permission assignments.
 from app.repository.role_permission_assignment_repository import (
     RolePermissionAssignmentRepository,
 )
@@ -19,10 +21,10 @@ class RoleService(BaseService):
         )
         super().__init__(role_repository)
 
-    def get_all_roles(self, role_type: str = None):
+    async def get_all_roles(self, role_type: str = None):
         try:
             roles_data = []
-            roles = self.role_repository.get_all_roles(role_type)
+            roles = await self.role_repository.get_all_roles(role_type)
             for role in roles:
                 permissions = {}
 
@@ -53,17 +55,17 @@ class RoleService(BaseService):
         except Exception as e:
             raise e
 
-    def get_role(self, role_uuid: str):
+    async def get_role(self, role_uuid: str):
         try:
-            role = self.role_repository.get_role(role_uuid)
+            role = await self.role_repository.get_role(role_uuid)
             return role
         except Exception as e:
             raise e
 
-    def create_role_permission(self, payload: RolePayload):
+    async def create_role_permission(self, payload: RolePayload):
         try:
             # Create the role
-            role = self.role_repository.create_role(payload)
+            role = await self.role_repository.create_role(payload)
             # Check if the role was successfully created
             if role:
                 # Iterate over the permissions in the payload
@@ -74,7 +76,7 @@ class RoleService(BaseService):
                         "permission_uuid": permission_uuid,
                     }
                     # Create the permission assignment
-                    self.role_permission_assignment_repository.create_role_permission(
+                    await self.role_permission_assignment_repository.create_role_permission(
                         permission_assignment_data
                     )
 
@@ -83,13 +85,13 @@ class RoleService(BaseService):
             # Log or handle the exception as needed
             raise e
 
-    def update_role(self, payload: RolePayload, role_uuid: str):
+    async def update_role(self, payload: RolePayload, role_uuid: str):
         try:
             # update role
-            role = self.role_repository.update_role(payload, role_uuid)
+            role = await self.role_repository.update_role(payload, role_uuid)
             if role:
                 # delete current permissions to this role
-                self.role_permission_assignment_repository.delete_role_permission(
+                await self.role_permission_assignment_repository.delete_role_permission(
                     role_uuid
                 )
 
@@ -101,7 +103,7 @@ class RoleService(BaseService):
                         "permission_uuid": permission_uuid,
                     }
                     # Create the permission assignment
-                    self.role_permission_assignment_repository.create_role_permission(
+                    await self.role_permission_assignment_repository.create_role_permission(
                         permission_assignment_data
                     )
 

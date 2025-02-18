@@ -403,7 +403,7 @@ class ActivityLogType(str, Enum):
     STATUS_UPDATE = "STATUS_UPDATE"
     CREATE_ASSET = "CREATE_ASSET"
 
+
 class AssetType(str, Enum):
-    CAR = "car"
-    MOTORBIKE = "motorbike"
-    
+    CAR = "CAR"
+    MOTORBIKE = "MOTORBIKE"

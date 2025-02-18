@@ -1,7 +1,6 @@
-from contextlib import AbstractContextManager
 from typing import Callable
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.order import OrderShippingAddress
 from app.repository.base_repository import BaseRepository
@@ -9,12 +8,12 @@ from app.schema.order_schema import OrderPayload
 
 
 class OrderShippingAddressRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, OrderShippingAddress)
 
-    def create_order_address(self, order_payload: OrderPayload, order_uuid: str):
-        with self.session_factory() as session:
+    async def create_order_address(self, order_payload: OrderPayload, order_uuid: str):
+        async with self.session_factory() as session:
             try:
                 address = OrderShippingAddress(
                     country=order_payload.shipping_address.country,
@@ -32,9 +31,9 @@ class OrderShippingAddressRepository(BaseRepository):
                     city=order_payload.shipping_address.city,
                 )
                 session.add(address)
-                session.commit()
-                session.refresh(address)
+                await session.commit()
+                await session.refresh(address)
                 return address
             except Exception as e:
-                session.rollback()
+                await session.rollback()
                 raise e

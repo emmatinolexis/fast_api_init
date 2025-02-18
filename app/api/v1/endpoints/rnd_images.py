@@ -1,5 +1,5 @@
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from fastapi.responses import ORJSONResponse
 
 from app.core.container import Container
@@ -45,26 +45,3 @@ async def list_rnd_images(
         return send_data_with_info({"images": urls}, "Images fetched successfully")
     except Exception as e:
         return send_internal_server_error(user_msg="Failed to fetch images", error=e)
-
-
-# @router.post("/upload_chunk", response_class=ORJSONResponse)
-# @inject
-# async def upload_rnd_image_chunk(
-#     image_chunk_request: RNDImageChunkUploadRequest,
-#     image_service: RNDImageService = Depends(Provide[Container.rnd_image_service]),
-# ):
-#     try:
-#         image_id = image_chunk_request.id
-#         chunk_index = image_chunk_request.index
-#         chunk_base64 = image_chunk_request.chunk
-
-#         url = await image_service.upload_image_chunk(image_id, chunk_index, chunk_base64)
-
-#         if url:
-#             return send_data_with_info({"url": url}, "Image uploaded successfully")
-#         else:
-#             return send_data_with_info({}, "Chunk uploaded successfully")
-#     except ValueError as e:
-#         return send_client_side_error(user_msg=str(e), dev_msg=str(e))
-#     except Exception as e:
-#         return send_internal_server_error(user_msg="Failed to upload image chunk", error=e)

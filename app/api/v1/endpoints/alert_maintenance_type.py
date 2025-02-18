@@ -33,7 +33,7 @@ async def get_alert_maintenance_types_handler(
     ),
 ):
     try:
-        return send_data(service.get_list())
+        return send_data(await service.get_list())
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -51,7 +51,7 @@ async def create_alert_maintenance_type_handler(
     ),
 ):
     try:
-        alert_maintenance_type = service.add(payload)
+        alert_maintenance_type = await service.add(payload)
         return send_data(alert_maintenance_type)
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
@@ -71,7 +71,7 @@ async def update_alert_maintenance_type_handler(
     ),
 ):
     try:
-        alert_maintenance_type = service.patch_by_uuid(uuid, payload)
+        alert_maintenance_type = await service.patch_by_uuid(uuid, payload)
         if alert_maintenance_type is None:
             return send_client_side_error(
                 user_msg=messages.ALERT_MAINTENANCE_TYPE_NOT_FOUND + uuid
@@ -80,26 +80,3 @@ async def update_alert_maintenance_type_handler(
     except Exception as e:
         msg = messages.UPDATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
-
-
-# @router.delete(
-#     "/{uuid}", dependencies=[allow_admins_only], response_class=ORJSONResponse
-# )
-# @inject
-# async def delete_alert_maintenance_type_by_uuid_handler(
-#     uuid: str,
-#     service: AlertMaintenanceTypeService = Depends(
-#         Provide[Container.alert_maintenance_type_service]
-#     ),
-#     current_user: User = Depends(get_current_user),
-# ):
-#     try:
-#         service.remove_by_uuid(uuid)
-#         return send_info(messages.DELETE_SUCCESS + msg_prefix)
-#     except NotFoundError as e:
-#         return send_client_side_error(
-#             user_msg=messages.ALERT_MAINTENANCE_TYPE_NOT_FOUND + str(e.detail)
-#         )
-#     except Exception as e:
-#         msg = messages.DELETE_FAILED + msg_prefix
-#         return send_internal_server_error(user_msg=msg, error=e)

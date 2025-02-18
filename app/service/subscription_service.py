@@ -1,4 +1,4 @@
-import requests
+import aiohttp
 from fastapi import BackgroundTasks
 
 from app.core.settings import settings
@@ -12,61 +12,56 @@ class SubscriptionService(BaseService):
         self.subscription_repository = subscription_repository
         super().__init__(subscription_repository)
 
-    def get_all_subscriptions(self, page=1, page_size=10):
+    async def get_all_subscriptions(self, page=1, page_size=10):
         try:
             return self.subscription_repository.read_all_subscriptions(page, page_size)
         except Exception as e:
             raise e
 
-    def toggle_subscription_status(self, subscription_code):
+    async def toggle_subscription_status(self, subscription_code):
         try:
-            # Retrieve subscription details
-            paystack_subscription = requests.get(
-                settings.PAYSTACK_SUBSCRIPTION_URL + f"/{subscription_code}",
-                headers=settings.PAYSTACK_HEADERS,
-            )
-
-            paystack_subscription.raise_for_status()  # Raise an error for non-200 responses
-
-            subscription = paystack_subscription.json()
-            subscription_status = subscription["data"]["status"]
-            update_data = {
-                "code": subscription_code,
-                "token": subscription["data"]["email_token"],
-            }
-            # Toggle subscription status
-            if subscription_status == "active":
-                updated_subscription = requests.post(
-                    settings.PAYSTACK_SUBSCRIPTION_URL + "/disable",
+            async with aiohttp.ClientSession() as session:
+                # Retrieve subscription details
+                async with session.get(
+                    settings.PAYSTACK_SUBSCRIPTION_URL + f"/{subscription_code}",
                     headers=settings.PAYSTACK_HEADERS,
-                    json=update_data,
-                )
+                ) as response:
+                    response.raise_for_status()
+                    subscription = await response.json()
 
-            else:
-                updated_subscription = requests.post(
-                    settings.PAYSTACK_SUBSCRIPTION_URL + "/enable",
-                    headers=settings.PAYSTACK_HEADERS,
-                    json=update_data,
-                )
+                subscription_status = subscription["data"]["status"]
+                update_data = {
+                    "code": subscription_code,
+                    "token": subscription["data"]["email_token"],
+                }
 
-            return updated_subscription.json()
+                # Toggle subscription status
+                if subscription_status == "active":
+                    async with session.post(
+                        settings.PAYSTACK_SUBSCRIPTION_URL + "/disable",
+                        headers=settings.PAYSTACK_HEADERS,
+                        json=update_data,
+                    ) as updated_response:
+                        updated_response.raise_for_status()
+                        return await updated_response.json()
+                else:
+                    async with session.post(
+                        settings.PAYSTACK_SUBSCRIPTION_URL + "/enable",
+                        headers=settings.PAYSTACK_HEADERS,
+                        json=update_data,
+                    ) as updated_response:
+                        updated_response.raise_for_status()
+                        return await updated_response.json()
 
         except Exception as e:
             raise e
 
-    # def get_all_paystack_subscriptions(self, page, page_size):
-    #     try:
-    #
-    #         return self.subscription_repository.read_all_paystack_subscriptions(
-    #             page, page_size
-    #         )
-    #     except Exception as e:
-    #         raise e
-
-    def get_all_paystack_subscriptions(self, page, page_size):
+    async def get_all_paystack_subscriptions(self, page, page_size):
         try:
             # Fetch subscription data
-            result = self.subscription_repository.read_all_paystack_subscriptions(page, page_size)
+            result = await self.subscription_repository.read_all_paystack_subscriptions(
+                page, page_size
+            )
 
             # Extract relevant fields from each subscription
             subscriptions_data = [
@@ -74,11 +69,9 @@ class SubscriptionService(BaseService):
                     "uuid": sub.uuid,
                     "customer": {
                         "first_name": sub.user.first_name,
-                        "last_name": sub.user.first_name,
+                        "last_name": sub.user.last_name,
                     },
-                    "plan": {
-                            "name": sub.plan.get("name", "N/A")
-                    },
+                    "plan": {"name": sub.plan.get("name", "N/A")},
                     "status": sub.status,
                     "amount": sub.plan.get("amount", 0),
                     "createdAt": sub.created_at,
@@ -93,57 +86,61 @@ class SubscriptionService(BaseService):
                 "page_size": result["page_size"],
                 "total": result["total"],
                 "total_pages": result["total_pages"],
-                "total_amount": result["total_amount"],
+                "total_amount": result["total_amount"] / 100,
             }
 
         except Exception as e:
             raise e
 
-
-    def get_paystack_subscription(self, subscription_code):
+    async def get_paystack_subscription(self, subscription_code):
         try:
-            return self.subscription_repository.get_paystack_subscription(
+            return await self.subscription_repository.get_paystack_subscription(
                 subscription_code
             )
         except Exception as e:
             raise e
 
-    def get_paystack_payments(self):
+    async def get_paystack_payments(self):
         try:
-            paystack_payments = requests.get(
-                settings.PAYSTACK_PAYMENT_URL, headers=settings.PAYSTACK_HEADERS
-            )
-
-            paystack_payments.raise_for_status()  # Raise an error for non-200 responses
-
-            payments = paystack_payments.json()["data"]
-            return payments
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    settings.PAYSTACK_PAYMENT_URL, headers=settings.PAYSTACK_HEADERS
+                ) as response:
+                    response.raise_for_status()  # Raise an error for non-200 responses
+                    payments = await response.json()
+                    return payments["data"]
         except Exception as e:
             raise e
 
-    def get_subscription_by_business_uuid(self, business_profile_uuid: str, plan: str):
+    async def get_subscription_by_business_uuid(
+        self, business_profile_uuid: str, plan: str
+    ):
         try:
-            return self.subscription_repository.get_subscription_by_business_uuid(
+            return await self.subscription_repository.get_subscription_by_business_uuid(
                 business_profile_uuid, plan
             )
         except Exception as e:
             raise e
 
-    def get_paystack_subscription_by_email(self, email):
+    async def get_paystack_subscription_by_email(self, email):
         try:
-            return self.subscription_repository.get_paystack_subscription_by_email(
-                email
+            return (
+                await self.subscription_repository.get_paystack_subscription_by_email(
+                    email
+                )
             )
         except Exception as e:
             raise e
 
-    def subscriptions_upgrade(self, background_tasks: BackgroundTasks):
+    async def subscriptions_upgrade(self, background_tasks: BackgroundTasks):
         return background_tasks.add_task(
-            self.subscription_repository.subscriptions_today()
+            await self.subscription_repository.subscriptions_today()
         )
 
-    def create_paystack_subscription(self, payload: PaystackSubscriptionPayload):
+    async def create_paystack_subscription(self, payload: PaystackSubscriptionPayload):
         try:
-            return self.subscription_repository.create_paystack_subscription(payload)
+            return await self.subscription_repository.create_paystack_subscription(
+                payload
+            )
         except Exception as e:
             raise e

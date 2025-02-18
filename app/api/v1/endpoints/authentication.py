@@ -1,5 +1,3 @@
-import logging
-
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import ORJSONResponse
@@ -31,7 +29,7 @@ async def decode_access_token(
     service: AuthService = Depends(Provide[Container.auth_service]),
 ):
     try:
-        return send_data(service.decode_access_token(token_data))
+        return send_data(await service.decode_access_token(token_data))
     except Exception as e:
         return send_internal_server_error(user_msg="Could not decode token", error=e)
 
@@ -61,7 +59,7 @@ async def verify_token(
     service: AuthService = Depends(Provide[Container.auth_service]),
 ):
     try:
-        return send_data(service.verify_token(token_data))
+        return send_data(await service.verify_token(token_data))
     except Exception as e:
         return send_internal_server_error(user_msg="Could not verify token", error=e)
 
@@ -73,9 +71,9 @@ async def verify_user_email(
     service: AuthService = Depends(Provide[Container.auth_service]),
 ):
     try:
-        token_detail = service.verify_user_email(user)
+        token_detail = await service.verify_user_email(user)
         # save generated token into db
-        user, token = service.user_repository.create_verification_token(
+        user, token = await service.user_repository.create_verification_token(
             user_verify=user, verification_token=token_detail
         )
         log.info("User email verified", extra={"email_address": user.email_address})
@@ -110,7 +108,7 @@ async def login(
     service: AuthService = Depends(Provide[Container.auth_service]),
 ):
     try:
-        return send_data(service.login(user, request))
+        return send_data(await service.login(user, request))
     except AuthError as e:
         return send_internal_server_error(user_msg=str(e.detail), error=e)
     except Exception as e:

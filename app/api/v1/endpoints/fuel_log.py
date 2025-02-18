@@ -37,7 +37,7 @@ async def create_fuel_log_handler_for_individual(
     ),
 ):
     try:
-        user = user_service.get_user_by_uuid(user_uuid)
+        user = await user_service.get_user_by_uuid(user_uuid)
 
         if not user:
             return send_client_side_error(
@@ -46,7 +46,7 @@ async def create_fuel_log_handler_for_individual(
 
         business_profile_uuid = str(user.get("business_profile").uuid)
 
-        data = service.create_individual_fuel_log(
+        data = await service.create_individual_fuel_log(
             payload, user_uuid, business_profile_uuid
         )
 
@@ -72,19 +72,21 @@ async def create_bulk_fuel_logs_handler(
     ),
 ):
     try:
-        user = user_service.get_user_by_uuid(user_uuid)
+        user = await user_service.get_user_by_uuid(user_uuid)
 
         if not user:
             return send_client_side_error(
                 user_msg=messages.USER_NOT_FOUND, status_code=404
             )
 
-        service.create_bulk_fuel_logs(
+        await service.create_bulk_fuel_logs(
             user_uuid,
             csv_url,
-            str(user.get("business_profile").uuid)
-            if user.get("business_profile").uuid
-            else None,
+            (
+                str(user.get("business_profile").uuid)
+                if user.get("business_profile").uuid
+                else None
+            ),
         )
 
         return send_info(messages.CSV_LOAD_SUCCESS)
@@ -109,19 +111,21 @@ async def create_fuel_log_handler_for_fleet_manager(
     ),
 ):
     try:
-        user = user_service.get_user_by_uuid(user_uuid)
+        user = await user_service.get_user_by_uuid(user_uuid)
 
         if not user:
             return send_client_side_error(
                 user_msg=messages.USER_NOT_FOUND, status_code=404
             )
 
-        data = service.create_fleet_manager_single_fuel_log(
+        data = await service.create_fleet_manager_single_fuel_log(
             payload,
             user_uuid,
-            str(user.get("business_profile").uuid)
-            if user.get("business_profile").uuid
-            else None,
+            (
+                str(user.get("business_profile").uuid)
+                if user.get("business_profile").uuid
+                else None
+            ),
         )
 
         return send_data_with_info(data, messages.CREATE_SUCCESS + "fuel log")
@@ -150,14 +154,14 @@ async def get_fuel_logs_handler(
     ),
 ):
     try:
-        user = user_service.get_user_by_uuid(user_uuid)
+        user = await user_service.get_user_by_uuid(user_uuid)
 
         if not user:
             return send_client_side_error(
                 user_msg=messages.USER_NOT_FOUND, status_code=404
             )
 
-        data = service.get_fuel_logs_by_business_uuid(
+        data = await service.get_fuel_logs_by_business_uuid(
             str(user.get("business_profile").uuid),
             page,
             page_size,
@@ -178,7 +182,7 @@ async def get_fuel_logs_handler(
 
 @router.patch("/receipt/{fuel_log_uuid}", response_class=ORJSONResponse)
 @inject
-def upload_fuel_log_receipt_handler(
+async def upload_fuel_log_receipt_handler(
     fuel_log_uuid: str,
     payload: UpdateFuelLog,
     service: FuelLogService = Depends(Provide[Container.fuel_log_service]),
@@ -187,7 +191,7 @@ def upload_fuel_log_receipt_handler(
     ),
 ):
     try:
-        log_entry = service.get_by_uuid(fuel_log_uuid)
+        log_entry = await service.get_by_uuid(fuel_log_uuid)
         if not log_entry:
             user_msg = messages.FUEL_LOG_NOT_FOUND + fuel_log_uuid
             return send_client_side_error(
@@ -201,7 +205,7 @@ def upload_fuel_log_receipt_handler(
                 status_code=401,
             )
 
-        data = service.update_fuel_log_receipt(fuel_log_uuid, payload)
+        data = await service.update_fuel_log_receipt(fuel_log_uuid, payload)
 
         return send_data_with_info(data, messages.UPDATE_SUCCESS + "fuel log")
     except NotFoundError as e:
@@ -215,7 +219,7 @@ def upload_fuel_log_receipt_handler(
 
 @router.get("/receipt/{fuel_log_uuid}", response_class=ORJSONResponse)
 @inject
-def get_fuel_log_receipt_handler(
+async def get_fuel_log_receipt_handler(
     fuel_log_uuid: str,
     service: FuelLogService = Depends(Provide[Container.fuel_log_service]),
     current_user: User = Depends(
@@ -223,7 +227,7 @@ def get_fuel_log_receipt_handler(
     ),
 ):
     try:
-        log_entry = service.get_by_uuid(fuel_log_uuid)
+        log_entry = await service.get_by_uuid(fuel_log_uuid)
         if not log_entry:
             user_msg = messages.FUEL_LOG_NOT_FOUND + fuel_log_uuid
             return send_client_side_error(
@@ -237,7 +241,7 @@ def get_fuel_log_receipt_handler(
                 status_code=401,
             )
 
-        data = service.get_receipt_by_uuid(fuel_log_uuid)
+        data = await service.get_receipt_by_uuid(fuel_log_uuid)
 
         return send_data_with_info(data, messages.GET_SUCCESS + "fuel log")
     except NotFoundError as e:

@@ -11,12 +11,10 @@ class DeviceAlertNotificationService(BaseService):
         self.device_alert_notification_repository = device_alert_notification_repository
         super().__init__(device_alert_notification_repository)
 
-    def get_recipients_by_node_id(self, node_id: str):
+    async def get_recipients_by_node_id(self, node_id: str):
         try:
-            devices = (
-                self.device_alert_notification_repository.get_recipients_by_node_id(
-                    node_id
-                )
+            devices = await self.device_alert_notification_repository.get_recipients_by_node_id(
+                node_id
             )
             return devices
         except Exception as e:

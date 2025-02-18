@@ -21,39 +21,45 @@ class InventoryService(BaseService):
         self.device_image_repository = device_image_repository
         super().__init__(inventory_repository)
 
-    def get_inventory_by_uuid(self, inventory_uuid: UUID):
+    async def get_inventory_by_uuid(self, inventory_uuid: UUID):
         try:
-            inventory = self.inventory_repository.get_inventory_by_uuid(inventory_uuid)
+            inventory = await self.inventory_repository.get_inventory_by_uuid(
+                inventory_uuid
+            )
             if not inventory:
                 raise NotFoundError(detail=inventory)
             return inventory
         except Exception as e:
             raise e
 
-    def create_inventory(self, device_payload: InventoryPayload):
+    async def create_inventory(self, device_payload: InventoryPayload):
         try:
-            inventory = self.inventory_repository.create_inventory(device_payload)
-            self.device_repository.create_devices(inventory)
+            inventory = await self.inventory_repository.create_inventory(device_payload)
+            await self.device_repository.create_devices(inventory)
             for image in device_payload.images:
-                self.device_image_repository.create_image(
+                await self.device_image_repository.create_image(
                     inventory_uuid=inventory.uuid, image=image
                 )
             return inventory
         except Exception as e:
             raise e
 
-    def get_all_inventory(self, page=1, page_size=10, search_query=None):
+    async def get_all_inventory(self, page=1, page_size=10, search_query=None):
         try:
-            inventories = self.inventory_repository.get_all_inventory(
+            inventories = await self.inventory_repository.get_all_inventory(
                 page=page, page_size=page_size, search_query=search_query
             )
             return inventories
         except Exception as e:
             raise e
 
-    def update_inventory(self, inventory_uuid: UUID, payload: InventoryUpdatePayload):
+    async def update_inventory(
+        self, inventory_uuid: UUID, payload: InventoryUpdatePayload
+    ):
         try:
-            inventory = self.inventory_repository.get_inventory_by_uuid(inventory_uuid)
+            inventory = await self.inventory_repository.get_inventory_by_uuid(
+                inventory_uuid
+            )
             if not inventory:
                 raise NotFoundError(f"Inventory with UUID {inventory_uuid} not found.")
 
@@ -70,11 +76,11 @@ class InventoryService(BaseService):
             if payload.description:
                 inventory.description = payload.description
             if payload.image:
-                self.device_image_repository.update_images(
+                await self.device_image_repository.update_images(
                     inventory_uuid=inventory.uuid, new_image=payload.image
                 )
 
-            self.inventory_repository.save_inventory(inventory)
+            await self.inventory_repository.save_inventory(inventory)
             return inventory
         except Exception as e:
             raise e

@@ -1,5 +1,4 @@
 from sqlalchemy import Column, DateTime, Integer, LargeBinary, String, func
-from sqlalchemy.ext.declarative import declarative_base
 
 from app.model.base_model import BaseModel
 

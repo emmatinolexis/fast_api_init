@@ -51,9 +51,9 @@ class AuthService(BaseService):
         self.activity_log_respository = activity_log_repository
         super().__init__(user_repository)
 
-    def login(self, login_info: UserLogin, request: Request):
+    async def login(self, login_info: UserLogin, request: Request):
         try:
-            db_user = self.user_repository.get_user_by_email_address(
+            db_user = await self.user_repository.get_user_by_email_address(
                 login_info.email_address
             )
             log.info("User found", extra={"user": db_user})
@@ -72,13 +72,13 @@ class AuthService(BaseService):
 
             user = extract_user_data(db_user)
 
-            user_plan = self.user_subscription_repository.get_user_subscription(
+            user_plan = await self.user_subscription_repository.get_user_subscription(
                 user.get("email_address")
             )
 
             if user_plan and user_plan.subscription_code:
                 paystack_subscription = (
-                    self.subscription_repository.get_paystack_subscription(
+                    await self.subscription_repository.get_paystack_subscription(
                         user_plan.subscription_code
                     )
                 )
@@ -108,9 +108,11 @@ class AuthService(BaseService):
                 user["package"] = user_package
                 schema = ActivityLogSchema(
                     user_uuid=str(user.get("uuid")),
-                    business_profile_uuid=str(user.get("business_profile_uuid"))
-                    if user.get("business_profile_uuid")
-                    else None,
+                    business_profile_uuid=(
+                        str(user.get("business_profile_uuid"))
+                        if user.get("business_profile_uuid")
+                        else None
+                    ),
                     activity_class=ActivityLogClass.USER,
                     activity_type=ActivityLogType.SIGN_IN,
                     activity_title=activity_log_constants.SIGN_IN,
@@ -119,13 +121,15 @@ class AuthService(BaseService):
                     ),
                     ip_address=request.client.host,
                 )
-                self.activity_log_respository.create(schema)
+                await self.activity_log_respository.create(schema)
             if user.get("role") == RoleType.ADMIN:
                 schema = ActivityLogSchema(
                     user_uuid=str(user.get("uuid")),
-                    business_profile_uuid=str(user.get("business_profile_uuid"))
-                    if user.get("business_profile_uuid")
-                    else None,
+                    business_profile_uuid=(
+                        str(user.get("business_profile_uuid"))
+                        if user.get("business_profile_uuid")
+                        else None
+                    ),
                     activity_class=ActivityLogClass.ADMIN,
                     activity_type=ActivityLogType.SIGN_IN,
                     activity_title=activity_log_constants.SIGN_IN,
@@ -134,7 +138,7 @@ class AuthService(BaseService):
                     ),
                     ip_address=request.client.host,
                 )
-                self.activity_log_respository.create(schema)
+                await self.activity_log_respository.create(schema)
             login_result = {
                 "access_token": access_token,
                 "expiration": expiration_datetime,
@@ -145,7 +149,7 @@ class AuthService(BaseService):
         except Exception as e:
             raise e
 
-    def decode_access_token(self, token_data: VerifyToken):
+    async def decode_access_token(self, token_data: VerifyToken):
         try:
             payload = jwt.decode(
                 token_data.Token,
@@ -162,14 +166,16 @@ class AuthService(BaseService):
         except Exception as e:
             raise e
 
-        user = self.user_repository.get_user_by_email_address(email)
+        user = await self.user_repository.get_user_by_email_address(email)
         if not user:
             raise NotFoundError(detail="User not found")
 
         return extract_user_data(user)
 
-    def verify_token(self, token_data: VerifyToken):
-        user_token = self.email_verification_repository.get_by_token(token_data.Token)
+    async def verify_token(self, token_data: VerifyToken):
+        user_token = await self.email_verification_repository.get_by_token(
+            token_data.Token
+        )
         if user_token:
             current_datetime = datetime.now()
             date_format = "%Y-%m-%d %H:%M:%S.%f"
@@ -178,7 +184,9 @@ class AuthService(BaseService):
 
             # check if token has expired
             if expiry_date > current_date:
-                user_data = self.user_repository.read_by_uuid(user_token.user_uuid)
+                user_data = await self.user_repository.read_by_uuid(
+                    user_token.user_uuid
+                )
 
                 if not user_data:
                     raise NotFoundError(detail="User not found")
@@ -189,13 +197,13 @@ class AuthService(BaseService):
                     log.info("Access token generated successfully")
 
                     # update user table verifiedAt to current date
-                    self.user_repository.update_attr(
+                    await self.user_repository.update_attr(
                         user_token.user.id, "verifiedAt", datetime.now()
                     )
                     log.info("User verifiedAt updated successfully")
 
                     # delete user token from token table
-                    self.email_verification_repository.delete_by_verification_token(
+                    await self.email_verification_repository.delete_by_verification_token(
                         token_data.Token
                     )
                     log.info("User token deleted successfully")
@@ -210,7 +218,7 @@ class AuthService(BaseService):
                     }
             else:
                 # delete expired verification token
-                self.email_verification_repository.delete_by_verification_token(
+                await self.email_verification_repository.delete_by_verification_token(
                     token_data.Token
                 )
 
@@ -218,15 +226,17 @@ class AuthService(BaseService):
         else:
             raise NotFoundError(detail="Verification token not found")
 
-    def verify_user_email(self, user: UserEmailVerification):
+    async def verify_user_email(self, user: UserEmailVerification):
         try:
             # check if user already verified
-            db_user = self.user_repository.read_by_uuid(user.uuid)
+            db_user = await self.user_repository.read_by_uuid(user.uuid)
             if db_user:
                 if db_user.verifiedAt is None:
                     # check if token already generated
                     verified_user = (
-                        self.email_verification_repository.read_by_user_uuid(user.uuid)
+                        await self.email_verification_repository.read_by_user_uuid(
+                            user.uuid
+                        )
                     )
                     if verified_user:
                         log.info(
@@ -234,7 +244,7 @@ class AuthService(BaseService):
                             extra={"user": verified_user.user_uuid},
                         )
                         # Delete old verification token
-                        self.email_verification_repository.delete_by_user_uuid(
+                        await self.email_verification_repository.delete_by_user_uuid(
                             user.uuid
                         )
 

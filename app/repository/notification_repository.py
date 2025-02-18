@@ -1,61 +1,57 @@
-from contextlib import AbstractContextManager
 from typing import Callable, List, Optional
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 
 from app.model.notification import Notification
 from app.repository.base_repository import BaseRepository
 
 
 class NotificationRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, Notification)
 
-    def get_user_notifications(
+    async def get_user_notifications(
         self, user_uuid: str, is_read: Optional[bool] = None
     ) -> List[Notification]:
-        with self.session_factory() as session:
-            query = session.query(self.model).filter(self.model.user_id == user_uuid)
+        async with self.session_factory() as session:
+            query = select(self.model).where(self.model.user_id == user_uuid)
 
             # Apply the `is_read` filter if it is provided
             if is_read is not None:
-                query = query.filter(self.model.is_read == is_read)
+                query = query.where(self.model.is_read == is_read)
 
             # Order by read status (unread first) and then by creation date descending
             query = query.order_by(
                 self.model.is_read.asc(), self.model.created_at.desc()
             )
 
-            # Execute the query and retrieve the results
-            notifications = query.all()
+            # Execute the query asynchronously
+            result = await session.execute(query)
+            notifications = result.scalars().all()
 
             return notifications
 
-    def read_notification(self, notification_uuid: str) -> Notification:
-        with self.session_factory() as session:
-            notification = (
-                session.query(self.model)
-                .filter(self.model.uuid == str(notification_uuid))
-                .first()
-            )
+    async def read_notification(self, notification_uuid: str) -> Notification:
+        async with self.session_factory() as session:  # Async session
+            notification = await session.get(self.model, notification_uuid)
             if notification:
                 notification.is_read = True
-                session.commit()
+                await session.commit()
             return notification
 
-    def clear_all_notifications(self, user_uuid: str):
-        with self.session_factory() as session:
-            notifications = session.query(self.model).filter(
-                self.model.user_id == user_uuid
+    async def clear_all_notifications(self, user_uuid: str):
+        async with self.session_factory() as session:  # Async session
+            result = await session.execute(
+                select(self.model).where(self.model.user_id == user_uuid)
             )
+            notifications = result.scalars().all()
 
             # Mark each unread notification as read
             for notification in notifications:
                 if not notification.is_read:
                     notification.is_read = True
 
-            # Commit changes to save updates
-            session.commit()
-
+            await session.commit()
             return notifications

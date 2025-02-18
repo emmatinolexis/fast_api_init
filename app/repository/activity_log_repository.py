@@ -1,9 +1,9 @@
-from contextlib import AbstractContextManager
 from datetime import datetime
 from typing import Callable, List, Optional
 
-from sqlalchemy import and_
-from sqlalchemy.orm import Session, aliased
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from sqlalchemy.orm import aliased
 
 from app.model.activity_log import ActivityLog
 from app.model.user import User
@@ -12,11 +12,11 @@ from app.util.enums import ActivityLogClass
 
 
 class ActivityLogRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, ActivityLog)
 
-    def all_activity_logs(
+    async def all_activity_logs(
         self,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
@@ -25,8 +25,8 @@ class ActivityLogRepository(BaseRepository):
         activity_types: List[str] = None,
         search_string: Optional[str] = None,
     ):
-        with self.session_factory() as session:
-            query = session.query(ActivityLog).order_by(ActivityLog.created_at.desc())
+        async with self.session_factory() as session:
+            query = select(ActivityLog).order_by(ActivityLog.created_at.desc())
 
             if search_string:
                 user_aliased = aliased(User)
@@ -49,9 +49,10 @@ class ActivityLogRepository(BaseRepository):
 
             offset = (page - 1) * page_size
             query = query.offset(offset).limit(page_size)
-            return query.all()
+            result = await session.execute(query)
+            return result.scalars().all()
 
-    def business_activity_logs(
+    async def business_activity_logs(
         self,
         business_id: str,
         start_date: Optional[str] = None,
@@ -61,9 +62,9 @@ class ActivityLogRepository(BaseRepository):
         activity_types: List[str] = None,
         search_string: Optional[str] = None,
     ):
-        with self.session_factory() as session:
+        async with self.session_factory() as session:
             query = (
-                session.query(ActivityLog)
+                select(ActivityLog)
                 .filter(ActivityLog.business_profile_uuid == business_id)
                 .order_by(ActivityLog.created_at.desc())
             )
@@ -89,10 +90,10 @@ class ActivityLogRepository(BaseRepository):
 
             offset = (page - 1) * page_size
             query = query.offset(offset).limit(page_size)
+            result = await session.execute(query)
+            return result.scalars().all()
 
-            return query.all()
-
-    def admin_activity_logs(
+    async def admin_activity_logs(
         self,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
@@ -101,9 +102,9 @@ class ActivityLogRepository(BaseRepository):
         activity_types: List[str] = None,
         search_string: str = None,
     ):
-        with self.session_factory() as session:
+        async with self.session_factory() as session:
             query = (
-                session.query(ActivityLog)
+                select(ActivityLog)
                 .filter(ActivityLog.activity_class == ActivityLogClass.ADMIN)
                 .order_by(ActivityLog.created_at.desc())
             )
@@ -129,18 +130,18 @@ class ActivityLogRepository(BaseRepository):
 
             offset = (page - 1) * page_size
             query = query.offset(offset).limit(page_size)
+            result = await session.execute(query)
+            return result.scalars().all()
 
-            return query.all()
-
-    def count_activity_logs(
+    async def count_activity_logs(
         self,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
         activity_types: List[str] = None,
         search_string: str = None,
     ) -> int:
-        with self.session_factory() as session:
-            query = session.query(ActivityLog)
+        async with self.session_factory() as session:
+            query = select(ActivityLog)
 
             if search_string:
                 user_aliased = aliased(User)
@@ -161,9 +162,10 @@ class ActivityLogRepository(BaseRepository):
                 end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
                 query = query.filter(ActivityLog.created_at <= end_date_obj)
 
-            return query.count()
+            result = await session.execute(query)
+            return result.scalars().count()
 
-    def count_business_activity_logs(
+    async def count_business_activity_logs(
         self,
         business_id: str,
         start_date: Optional[str] = None,
@@ -171,8 +173,8 @@ class ActivityLogRepository(BaseRepository):
         activity_types: List[str] = None,
         search_string: str = None,
     ) -> int:
-        with self.session_factory() as session:
-            query = session.query(ActivityLog).filter(
+        async with self.session_factory() as session:
+            query = select(ActivityLog).filter(
                 ActivityLog.business_profile_uuid == business_id
             )
 
@@ -193,17 +195,19 @@ class ActivityLogRepository(BaseRepository):
             if end_date:
                 end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
                 query = query.filter(ActivityLog.created_at <= end_date_obj)
-            return query.count()
 
-    def count_admin_activity_logs(
+            result = await session.execute(query)
+            return result.scalars().count()
+
+    async def count_admin_activity_logs(
         self,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
         activity_types: List[str] = None,
         search_string: str = None,
     ) -> int:
-        with self.session_factory() as session:
-            query = session.query(ActivityLog).filter(
+        async with self.session_factory() as session:
+            query = select(ActivityLog).filter(
                 ActivityLog.activity_class == ActivityLogClass.ADMIN
             )
 
@@ -227,4 +231,5 @@ class ActivityLogRepository(BaseRepository):
                 end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
                 query = query.filter(ActivityLog.created_at <= end_date_obj)
 
-            return query.count()
+            result = await session.execute(query)
+            return result.scalars().count()

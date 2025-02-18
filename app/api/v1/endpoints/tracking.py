@@ -3,16 +3,14 @@ import socket
 import ssl
 from datetime import datetime
 
+from cryptography import x509
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
-from cryptography import x509
-from cryptography.hazmat.backends import default_backend
 
 from app.core import messages
 from app.core.container import Container
 from app.core.dependencies import get_current_app_service, get_current_user
-from app.core.settings import get_settings
 from app.model.user import User
 from app.schema.tracking_device_schema import (
     DeviceReportPayload,
@@ -27,7 +25,6 @@ from app.service.user_service import UserService
 from app.util.email import EmailPurpose, send_device_alert_email
 from app.util.sms import send_sms
 from app.util.utils import (
-    extract_certificate_info,
     send_client_side_error,
     send_data,
     send_info,
@@ -45,13 +42,17 @@ msg_prefix = "device events"
 @inject
 async def check_inactive_devices(
     page: int = Query(1, ge=1, description="Page number, default is 1"),
-    page_size: int = Query(10, ge=1, le=1000, description="Number of items per page, default is 10"),
+    page_size: int = Query(
+        10, ge=1, le=1000, description="Number of items per page, default is 10"
+    ),
     tracking_service: TrackingEventService = Depends(
         Provide[Container.tracking_event_service]
     ),
 ):
     try:
-        paginated_inactive_assets = tracking_service.get_inactive_assets(page=page, page_size=page_size)
+        paginated_inactive_assets = await tracking_service.get_inactive_assets(
+            page=page, page_size=page_size
+        )
         return send_data(paginated_inactive_assets)
     except Exception as e:
         return send_internal_server_error(
@@ -66,7 +67,7 @@ async def check_imei_exists(
     service: TrackingEventService = Depends(Provide[Container.tracking_event_service]),
 ):
     try:
-        response = service.get_tracking_device_events(device_imei=device_imei)
+        response = await service.get_tracking_device_events(device_imei=device_imei)
         return send_data(response)
     except Exception as e:
         return send_internal_server_error(
@@ -83,7 +84,7 @@ async def get_last_tracking_details_handler(
     date: str = None,
 ):
     try:
-        events = service.get_events_by_device_imei(device_imei, date)
+        events = await service.get_events_by_device_imei(device_imei, date)
         if events is None:
             return send_client_side_error(user_msg=messages.NO_DATA)
         return send_data(events)
@@ -128,63 +129,6 @@ async def get_ssl_certificate():
     except Exception as e:
         return ORJSONResponse(content={"error": str(e)}, status_code=500)
 
-# @router.get("/ssl_certificate", response_class=ORJSONResponse)
-# @inject
-# async def get_ssl_certificate():
-#     try:
-#         # Set the hostname
-#         hostname = "mvitracking-uat.sageinfrastructure.net"
-#         if get_settings().ENV == "production":
-#             hostname = "mvitracking.live.sageinfrastructure.net"
-#
-#         # Establish a connection to the server
-#         context = ssl.create_default_context()
-#         context.verify_mode = ssl.CERT_REQUIRED
-#         context.load_default_certs()
-#
-#         with socket.create_connection((hostname, 443)) as sock:
-#             with context.wrap_socket(sock, server_hostname=hostname) as ssock:
-#                 # Get the full certificate chain
-#                 cert_chain = ssock.getpeercert(True)  # Get raw DER cert
-#                 certs = ssl.DER_cert_to_PEM_cert(cert_chain).split("-----END CERTIFICATE-----\n")
-#
-#                 # Extract root certificate (last in the chain)
-#                 root_cert = certs[-2] + "-----END CERTIFICATE-----\n" if len(certs) > 1 else certs[0]
-#
-#         return root_cert
-#
-#     except Exception as e:
-#         msg = f"{messages.GET_FAILED} SSL certificate"
-#         logging.info(msg)
-#         return send_internal_server_error(user_msg=msg, error=e)
-
-# @router.get("/ssl_certificate", response_class=ORJSONResponse)
-# @inject
-# async def get_ssl_certificate():
-#     try:
-#         # Set the hostname
-#         hostname = "mvitracking-uat.sageinfrastructure.net"
-#         if get_settings().ENV == "production":
-#             hostname = "mvitracking.live.sageinfrastructure.net"
-#
-#         # Establish a connection to the server
-#         context = ssl.create_default_context()
-#         with socket.create_connection((hostname, 443)) as sock:
-#             with context.wrap_socket(sock, server_hostname=hostname) as ssock:
-#                 # Get the certificate
-#                 cert = ssock.getpeercert()
-#                 extracted_info = extract_certificate_info(cert)
-#                 key = ssl.get_server_certificate((hostname, 443))
-#                 extracted_info["key"] = key
-#
-#         # Return the certificate information
-#         return extracted_info
-#
-#     except Exception as e:
-#         msg = f"{messages.GET_FAILED} SSL certificate"
-#         logging.info(msg)
-#         return send_internal_server_error(user_msg=msg, error=e)
-
 
 @router.get("/{user_uuid}", response_class=ORJSONResponse)
 @inject
@@ -195,7 +139,7 @@ async def get_tracking_details_by_user_handler(
     date: str = None,
 ):
     try:
-        events = service.get_events_by_user(date=date, user_uuid=user_uuid)
+        events = await service.get_events_by_user(date=date, user_uuid=user_uuid)
         if events is None:
             return send_client_side_error(user_msg=messages.NO_DATA)
         return send_data(events)
@@ -220,7 +164,7 @@ async def get_tracking_details_by_business_handler(
     ),
 ):
     try:
-        events = service.get_events_by_user(
+        events = await service.get_events_by_user(
             date=date, business_uuid=business_uuid, page=page, page_size=page_size
         )
         if events is None:
@@ -240,7 +184,7 @@ async def get_route_replay_tracking_details_handler(
     date: str = None,
 ):
     try:
-        events = service.get_route_replay_events_by_device_imei(device_imei, date)
+        events = await service.get_route_replay_events_by_device_imei(device_imei, date)
         if events is None:
             return send_client_side_error(user_msg=messages.NO_DATA)
         return send_data(events)
@@ -253,8 +197,12 @@ async def get_route_replay_tracking_details_handler(
 @inject
 async def get_over_speeding_stats_handler(
     asset_uuid: str,
-    date_from: datetime,
-    date_to: datetime,
+    date_from: datetime = Query(
+        description="Filter by date in 2025-02-15 00:34:56.789123 format, default is the current date",
+    ),
+    date_to: datetime = Query(
+        description="Filter by date in 2025-02-15 00:34:56.789123 format, default is the current date",
+    ),
     tracking_service: TrackingEventService = Depends(
         Provide[Container.tracking_event_service]
     ),
@@ -262,7 +210,7 @@ async def get_over_speeding_stats_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        asset = asset_service.get_by_uuid(asset_uuid)
+        asset = await asset_service.get_by_uuid(asset_uuid)
 
         if asset is None:
             msg = f"{messages.ASSET_NOT_FOUND}{asset_uuid}"
@@ -270,7 +218,7 @@ async def get_over_speeding_stats_handler(
         if asset.device_imei is None:
             msg = "Asset not linked to a device"
             return send_client_side_error(msg)
-        speeding_data = tracking_service.get_asset_average_speed(
+        speeding_data = await tracking_service.get_asset_average_speed(
             asset.device_imei, date_from, date_to
         )
         return send_data(speeding_data)
@@ -322,7 +270,7 @@ async def create_device_events(
 
         # check if payload.has_alert is true and send email and sms
         if device_event_payload.has_alert:
-            peripheral_device = peripheral_device_service.get_device_by_node_id(
+            peripheral_device = await peripheral_device_service.get_device_by_node_id(
                 device_event_payload.node_id
             )
 
@@ -339,7 +287,7 @@ async def create_device_events(
             alert_title = device_event_payload.alert_type
 
             if peripheral_device.business_profile_uuid:
-                recipients = user_service.get_account_users(
+                recipients = await user_service.get_account_users(
                     peripheral_device.business_profile_uuid
                 )
 
@@ -361,7 +309,9 @@ async def create_device_events(
                             EmailPurpose.DEVICE_ALERTS,
                         )
             else:
-                recipient = user_service.get_user_by_uuid(peripheral_device.user_uuid)
+                recipient = await user_service.get_user_by_uuid(
+                    peripheral_device.user_uuid
+                )
 
                 if not recipient:
                     send_client_side_error(
@@ -372,7 +322,6 @@ async def create_device_events(
                 await send_sms(recipient.get("phone_number"), alert_message)
 
         msg = "device event saved"
-        logging.info(msg)
         return send_info(msg)
 
     except Exception as e:

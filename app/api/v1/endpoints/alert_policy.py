@@ -48,7 +48,7 @@ async def get_alert_policies_handler(
     current_user: User = Depends(get_current_user_with_permission("view_policy")),
 ):
     try:
-        return send_data(service.get_all_alert_policies(page, page_size))
+        return send_data(await service.get_all_alert_policies(page, page_size))
     except Exception as e:
         msg = messages.GET_FAILED + "alert policies"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -85,7 +85,7 @@ async def get_alert_policies_by_user_handler(
 ):
     try:
         return send_data(
-            service.get_all_alert_policies_by_user(
+            await service.get_all_alert_policies_by_user(
                 user_uuid,
                 page,
                 page_size,
@@ -132,7 +132,7 @@ async def get_alert_policies_by_business_handler(
 ):
     try:
         return send_data(
-            service.get_all_alert_policies_by_business(
+            await service.get_all_alert_policies_by_business(
                 business_uuid,
                 page,
                 page_size,
@@ -180,7 +180,7 @@ async def get_alert_violations_by_user_handler(
     ),
 ):
     try:
-        alerts = service.get_all_alert_violations_by_user(
+        alerts = await service.get_all_alert_violations_by_user(
             user_uuid=user_uuid,
             page=page,
             page_size=page_size,
@@ -229,7 +229,7 @@ async def get_alert_violations_by_business_handler(
 ):
     try:
         return send_data(
-            service.get_all_alert_violations_by_business(
+            await service.get_all_alert_violations_by_business(
                 business_uuid,
                 page,
                 page_size,
@@ -253,7 +253,7 @@ async def create_alert_policy_handler(
     current_user: User = Depends(get_current_user_with_permission("create_policy")),
 ):
     try:
-        alert_policy = service.create_alert_policy(
+        alert_policy = await service.create_alert_policy(
             payload, current_user.uuid, current_user.business_profile_uuid
         )
         logging.info(f"Created alert policy: {alert_policy}")
@@ -273,7 +273,7 @@ async def create_geofence_alert_policy_handler(
     current_user: User = Depends(get_current_user_with_permission("create_policy")),
 ):
     try:
-        alert_policy = service.create_geofence_alert_policy(
+        alert_policy = await service.create_geofence_alert_policy(
             payload, str(current_user.uuid), str(current_user.business_profile_uuid)
         )
         logging.info(f"Created alert policy: {alert_policy}")
@@ -294,7 +294,9 @@ async def update_geofence_alert_policy_handler(
     current_user: User = Depends(get_current_user_with_permission("update_policy")),
 ):
     try:
-        alert_policy = service.update_geofence_alert_policy(payload, geofence_uuid)
+        alert_policy = await service.update_geofence_alert_policy(
+            payload, geofence_uuid
+        )
         return send_data(alert_policy)
     except NotFoundError as e:
         return send_client_side_error(user_msg=str(e))
@@ -309,7 +311,7 @@ async def check_geofence_violation_handler(
     service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
 ):
     try:
-        response_data = service.check_geofence_violation()
+        response_data = await service.check_geofence_violation()
 
         violations = response_data.get("violations", [])
 
@@ -350,7 +352,7 @@ async def check_over_speeding_violation_handler(
     service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
 ):
     try:
-        response_data = service.check_over_speeding_violation()
+        response_data = await service.check_over_speeding_violation()
 
         violations = response_data.get("violations", [])
 
@@ -388,7 +390,7 @@ async def check_idling_violation_handler(
     service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
 ):
     try:
-        response_data = service.check_idling_violation()
+        response_data = await service.check_idling_violation()
 
         violations = response_data.get("violations", [])
 
@@ -426,7 +428,7 @@ async def check_maintenance_handler(
     service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
 ):
     try:
-        response_data = service.check_maintenance()
+        response_data = await service.check_maintenance()
 
         violations = response_data.get("violations", [])
 
@@ -463,7 +465,7 @@ async def toggle_alert_status_handler(
     current_user: User = Depends(get_current_user_with_permission("update_policy")),
 ):
     try:
-        return send_data(service.toggle_alert_status(alert_uuid))
+        return send_data(await service.toggle_alert_status(alert_uuid))
     except Exception as e:
         msg = messages.GET_FAILED + "alert policies"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -481,7 +483,9 @@ async def toggle_alert_violations_status_handler(
     ),
 ):
     try:
-        return send_data(service.toggle_alert_violation_status(alert_violation_uuid))
+        return send_data(
+            await service.toggle_alert_violation_status(alert_violation_uuid)
+        )
     except Exception as e:
         msg = messages.GET_FAILED + "alert policies"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -496,7 +500,7 @@ async def update_alert_policy_handler(
     current_user: User = Depends(get_current_user_with_permission("update_policy")),
 ):
     try:
-        data = service.update_alert_policy(alert_uuid, payload)
+        data = await service.update_alert_policy(alert_uuid, payload)
         return send_data_with_info(
             data=data, info=messages.UPDATE_SUCCESS + "alert policy"
         )
@@ -505,35 +509,6 @@ async def update_alert_policy_handler(
     except Exception as e:
         msg = messages.UPDATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
-
-
-# @router.delete("/{alert_uuid}", response_class=ORJSONResponse)
-# @inject
-# async def delete_alert_policy_handler(
-#     alert_uuid: str,
-#     service: AlertPolicyService = Depends(Provide[Container.alert_policy_service]),
-#     user_service: UserService = Depends(Provide[Container.user_service]),
-#     current_user: User = Depends(get_current_user_with_permission("update_policy")),
-# ):
-#     try:
-#         user = user_service.get_user_by_uuid(current_user.uuid)
-#
-#         if user.get("account_type") == AccountType.INDIVIDUAL:
-#             service.delete_alert_policy(
-#                 alert_policy_uuid=alert_uuid, user_uuid=current_user.uuid
-#             )
-#         if user.get("account_type") == AccountType.BUSINESS:
-#             service.delete_alert_policy(
-#                 alert_policy_uuid=alert_uuid,
-#                 business_profile_uuid=current_user.business_profile_uuid,
-#             )
-#
-#         return send_info(messages.DELETE_SUCCESS + "alert policy")
-#     except (NotFoundError, UnAuthorizedError) as e:
-#         return send_client_side_error(user_msg=e.detail, status_code=e.status_codes)
-#     except Exception as e:
-#         msg = messages.DELETE_FAILED + msg_prefix
-#         return send_internal_server_error(user_msg=msg, error=e)
 
 
 @router.patch("/{maintenance_alert_uuid}/toggle_status", response_class=ORJSONResponse)
@@ -545,7 +520,9 @@ async def toggle_maintenance_alert(
     current_user: User = Depends(get_current_user_with_permission("update_policy")),
 ):
     try:
-        updated_alert = service.toggle_maintenance_status(maintenance_alert_uuid, date)
+        updated_alert = await service.toggle_maintenance_status(
+            maintenance_alert_uuid, date
+        )
         return updated_alert
     except Exception as e:
         msg = messages.MAINTENANCE_UPDATED_FAILED
@@ -560,7 +537,7 @@ async def get_alert_reminders(
     current_user: User = Depends(get_current_user_with_permission("view_policy")),
 ):
     try:
-        reminders = service.get_all_alert_reminders(user_uuid)
+        reminders = await service.get_all_alert_reminders(user_uuid)
         return send_data(reminders)
     except Exception as e:
         msg = messages.ALERT_REMINDERS_NOT_FOUND + user_uuid

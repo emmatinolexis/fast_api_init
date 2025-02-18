@@ -1,11 +1,13 @@
-from contextlib import AbstractContextManager
 from datetime import datetime, timedelta
 from typing import Callable, Optional
 from uuid import UUID
 
 from dateutil.relativedelta import relativedelta
 from sqlalchemy import Date, cast
-from sqlalchemy.orm import Session, joinedload, selectinload
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from sqlalchemy.orm import joinedload
+from sqlalchemy.sql import func
 
 from app.model.inventory import Inventory
 from app.model.order import Order, OrderDeviceAssignment
@@ -16,15 +18,15 @@ from app.util.utils import calculate_percentage_change, parse_date
 
 
 class OrderRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, OrderRepository)
 
-    def get_order_by_uuid(self, order_uuid: UUID):
-        with self.session_factory() as session:
+    async def get_order_by_uuid(self, order_uuid: UUID):
+        async with self.session_factory() as session:
             try:
-                order = (
-                    session.query(Order)
+                result = await session.execute(
+                    select(Order)
                     .options(
                         joinedload(Order.order_inventories)
                         .joinedload(OrderDeviceAssignment.inventory)
@@ -32,15 +34,15 @@ class OrderRepository(BaseRepository):
                         joinedload(Order.order_shipping_address),
                     )
                     .filter(Order.uuid == order_uuid)
-                    .first()
                 )
+                order = result.unique().scalars().first()
                 return order
             except Exception as e:
-                session.rollback()
+                await session.rollback()
                 raise e
 
-    def create_order(self, order_payload: OrderPayload):
-        with self.session_factory() as session:
+    async def create_order(self, order_payload: OrderPayload):
+        async with self.session_factory() as session:
             try:
                 order_data = Order(
                     payment_reference_id=order_payload.payment_reference,
@@ -49,16 +51,29 @@ class OrderRepository(BaseRepository):
                     installation_request=order_payload.installation_request,
                 )
                 session.add(order_data)
-                session.commit()
-                session.refresh(order_data)
+                await session.commit()
+                await session.refresh(order_data)
                 return order_data
             except Exception as e:
-                session.rollback()
+                await session.rollback()
                 raise e
 
-    def _get_base_query(self, session: Session):
+    # def _get_base_query(self):
+    #     return (
+    #         select(Order)
+    #         .options(
+    #             joinedload(Order.order_inventories)
+    #             .joinedload(OrderDeviceAssignment.inventory)
+    #             .joinedload(Inventory.images),
+    #             joinedload(Order.order_shipping_address),
+    #         )
+    #         .order_by(Order.created_at.desc())
+    #     )
+
+    def _get_base_query(self):
         return (
-            session.query(Order)
+            select(Order)
+            .distinct()  # Ensure unique orders
             .options(
                 joinedload(Order.order_inventories)
                 .joinedload(OrderDeviceAssignment.inventory)
@@ -68,7 +83,7 @@ class OrderRepository(BaseRepository):
             .order_by(Order.created_at.desc())
         )
 
-    def get_all_orders(
+    async def get_all_orders(
         self,
         page=1,
         page_size=10,
@@ -77,7 +92,7 @@ class OrderRepository(BaseRepository):
         end_date=None,
         status=None,
     ):
-        with self.session_factory() as session:
+        async with self.session_factory() as session:
             if start_date and end_date:
                 try:
                     parsed_start_str = parse_date(start_date)
@@ -116,7 +131,7 @@ class OrderRepository(BaseRepository):
             previous_start_date = current_start_date - delta
             previous_end_date = current_start_date - timedelta(seconds=1)
 
-            base_query = self._get_base_query(session)
+            base_query = self._get_base_query()
 
             query_current = self.apply_filters(
                 base_query, search_query, current_start_date, current_end_date, status
@@ -126,27 +141,48 @@ class OrderRepository(BaseRepository):
                 base_query, search_query, previous_start_date, previous_end_date, status
             )
 
-            total_orders_current = query_current.count()
-            fulfilled_orders_current = query_current.filter(
-                Order.order_status == OrderStatus.DELIVERED
-            ).count()
-            ready_for_pickup_orders_current = query_current.filter(
-                Order.order_status == OrderStatus.READY_FOR_PICKUP
-            ).count()
-            processing_orders_current = query_current.filter(
-                Order.order_status == OrderStatus.PROCESSING
-            ).count()
+            # Convert queries to subqueries
+            subquery_current = query_current.subquery()
+            subquery_previous = query_previous.subquery()
 
-            total_orders_previous = query_previous.count()
-            fulfilled_orders_previous = query_previous.filter(
-                Order.order_status == OrderStatus.DELIVERED
-            ).count()
-            ready_for_pickup_orders_previous = query_previous.filter(
-                Order.order_status == OrderStatus.READY_FOR_PICKUP
-            ).count()
-            processing_orders_previous = query_previous.filter(
-                Order.order_status == OrderStatus.PROCESSING
-            ).count()
+            # Use subqueries for counting
+            total_orders_current = await session.scalar(
+                select(func.count()).select_from(subquery_current)
+            )
+            fulfilled_orders_current = await session.scalar(
+                select(func.count())
+                .select_from(subquery_current)
+                .where(subquery_current.c.order_status == OrderStatus.DELIVERED)
+            )
+            ready_for_pickup_orders_current = await session.scalar(
+                select(func.count())
+                .select_from(subquery_current)
+                .where(subquery_current.c.order_status == OrderStatus.READY_FOR_PICKUP)
+            )
+            processing_orders_current = await session.scalar(
+                select(func.count())
+                .select_from(subquery_current)
+                .where(subquery_current.c.order_status == OrderStatus.PROCESSING)
+            )
+
+            total_orders_previous = await session.scalar(
+                select(func.count()).select_from(subquery_previous)
+            )
+            fulfilled_orders_previous = await session.scalar(
+                select(func.count())
+                .select_from(subquery_previous)
+                .where(subquery_previous.c.order_status == OrderStatus.DELIVERED)
+            )
+            ready_for_pickup_orders_previous = await session.scalar(
+                select(func.count())
+                .select_from(subquery_previous)
+                .where(subquery_previous.c.order_status == OrderStatus.READY_FOR_PICKUP)
+            )
+            processing_orders_previous = await session.scalar(
+                select(func.count())
+                .select_from(subquery_previous)
+                .where(subquery_previous.c.order_status == OrderStatus.PROCESSING)
+            )
 
             total_orders_percentage_change = calculate_percentage_change(
                 total_orders_current, total_orders_previous
@@ -162,7 +198,11 @@ class OrderRepository(BaseRepository):
             )
 
             offset = (page - 1) * page_size
-            paginated_orders = query_current.offset(offset).limit(page_size).all()
+
+            paginated_orders_result = await session.execute(
+                query_current.offset(offset).limit(page_size)
+            )
+            paginated_orders = paginated_orders_result.unique().scalars().all()
 
             return {
                 "orders": paginated_orders,
@@ -205,22 +245,22 @@ class OrderRepository(BaseRepository):
 
         return query
 
-    def update_order_status(self, order_uuid: str, status: str):
-        with self.session_factory() as session:
+    async def update_order_status(self, order_uuid: str, status: str):
+        async with self.session_factory() as session:
             try:
-                order_to_update = (
-                    session.query(Order).filter_by(uuid=order_uuid).first()
+                order_to_update = await session.scalar(
+                    select(Order).filter_by(uuid=order_uuid)
                 )
 
                 if not order_to_update:
                     raise Exception("Order not found")
 
                 order_to_update.order_status = status
-                session.commit()
-                session.refresh(order_to_update)
+                await session.commit()
+                await session.refresh(order_to_update)
 
-                order = (
-                    session.query(Order)
+                result = await session.execute(
+                    select(Order)
                     .filter_by(uuid=order_uuid)
                     .options(
                         joinedload(Order.order_inventories)
@@ -228,10 +268,11 @@ class OrderRepository(BaseRepository):
                         .joinedload(Inventory.images),
                         joinedload(Order.order_shipping_address),
                     )
-                    .first()
                 )
 
+                order = result.unique().scalars().first()
                 return order
+
             except Exception as e:
-                session.rollback()
+                await session.rollback()
                 raise e

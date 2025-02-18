@@ -20,19 +20,19 @@ class GasDeviceService(BaseService):
         self.gas_device_repository = gas_device_repository
         super().__init__(gas_device_repository)
 
-    def get_device_by_uuid(self, uuid: str):
-        return self.gas_device_repository.read_by_uuid(uuid)
+    async def get_device_by_uuid(self, uuid: str):
+        return await self.gas_device_repository.read_by_uuid(uuid)
 
-    def get_gas_device_by_serial_no(self, device_serial_no: str):
+    async def get_gas_device_by_serial_no(self, device_serial_no: str):
         try:
-            device = self.gas_device_repository.get_device_by_serial_no(
+            device = await self.gas_device_repository.get_device_by_serial_no(
                 device_serial_no
             )
             return device
         except Exception as e:
             raise e
 
-    def load_csv(self, serial_numbers: List[str], user):
+    async def load_csv(self, serial_numbers: List[str], user):
         try:
             for serial_number in serial_numbers:
                 schema = UploadGasDeviceCSV(
@@ -40,19 +40,19 @@ class GasDeviceService(BaseService):
                     user_uuid=user.uuid,
                     device_type=DeviceType.GAS_DEVICE,
                 )
-                self.gas_device_repository.create(schema)
+                await self.gas_device_repository.create(schema)
 
             return "Gas Devices uploaded successfully"
         except Exception as e:
             raise e
 
-    def load_fire_devices(self, serial_numbers: List[str], user):
+    async def load_fire_devices(self, serial_numbers: List[str], user):
         try:
             with self.gas_device_repository.session_factory() as session:
                 # Start a transaction
                 for serial_number in serial_numbers:
                     existing_device = (
-                        self.gas_device_repository.get_device_by_serial_no(
+                        await self.gas_device_repository.get_device_by_serial_no(
                             str(serial_number)
                         )
                     )
@@ -67,7 +67,7 @@ class GasDeviceService(BaseService):
                         serial_number=str(serial_number),
                         device_type=DeviceType.FIRE_DETECTOR,  # Explicitly set enum value
                     )
-                    self.gas_device_repository.create(schema)
+                    await self.gas_device_repository.create(schema)
 
                 # Commit the transaction only after all devices are processed successfully
                 session.commit()
@@ -82,7 +82,7 @@ class GasDeviceService(BaseService):
             session.rollback()
             raise e
 
-    def get_all_devices(
+    async def get_all_devices(
         self,
         serial_number: str = None,
         device_type: DeviceType = None,
@@ -90,7 +90,7 @@ class GasDeviceService(BaseService):
         limit: int = 10,
     ):
         try:
-            devices = self.gas_device_repository.get_all_devices(
+            devices = await self.gas_device_repository.get_all_devices(
                 serial_number=serial_number, device_type=device_type
             )
 
@@ -110,27 +110,27 @@ class GasDeviceService(BaseService):
         except Exception as e:
             raise e
 
-    def create_device(
+    async def create_device(
         self,
         payload: CreateGasDevice,
         user_uuid: str = None,
         business_profile_uuid: str = None,
     ):
         try:
-            existing_device = self.gas_device_repository.get_device_by_serial_no(
+            existing_device = await self.gas_device_repository.get_device_by_serial_no(
                 payload.serial_number
             )
             if existing_device:
                 if existing_device.device_type != payload.device_type:
                     raise BadRequestError(messages.DEVICE_TYPE_MISMATCH)
 
-                self.gas_device_repository.update_attr_by_uuid(
+                await self.gas_device_repository.update_attr_by_uuid(
                     existing_device.uuid, "user_uuid", user_uuid
                 )
-                self.gas_device_repository.update_attr_by_uuid(
+                await self.gas_device_repository.update_attr_by_uuid(
                     existing_device.uuid, "business_profile_uuid", business_profile_uuid
                 )
-                self.gas_device_repository.update_attr_by_uuid(
+                await self.gas_device_repository.update_attr_by_uuid(
                     existing_device.uuid, "building_uuid", payload.building_uuid
                 )
 
@@ -142,32 +142,32 @@ class GasDeviceService(BaseService):
         except Exception as e:
             raise e
 
-    def get_user_devices(self, user_uuid: str):
+    async def get_user_devices(self, user_uuid: str):
         try:
-            devices = self.gas_device_repository.get_user_devices(user_uuid)
+            devices = await self.gas_device_repository.get_user_devices(user_uuid)
             return [gas_device_transformer(device) for device in devices]
         except Exception as e:
             raise e
 
-    def get_business_devices(self, business_profile_uuid: str):
+    async def get_business_devices(self, business_profile_uuid: str):
         try:
-            devices = self.gas_device_repository.get_business_devices(
+            devices = await self.gas_device_repository.get_business_devices(
                 business_profile_uuid
             )
             return [gas_device_transformer(device) for device in devices]
         except Exception as e:
             raise e
 
-    def get_building_devices(self, building_uuid: str, device_type: str = None):
+    async def get_building_devices(self, building_uuid: str, device_type: str = None):
         try:
-            devices = self.gas_device_repository.get_building_devices(
+            devices = await self.gas_device_repository.get_building_devices(
                 building_uuid, device_type
             )
             return [gas_device_transformer(device) for device in devices]
         except Exception as e:
             raise e
 
-    def add_fire_device_to_building(
+    async def add_fire_device_to_building(
         self, building_uuid: str, payload: CreateFireDevice, user: User
     ):
         try:
@@ -176,13 +176,13 @@ class GasDeviceService(BaseService):
                 location=payload.location,
                 building_uuid=building_uuid,
                 user_uuid=str(user.uuid),
-                business_profile_uuid=str(user.business_profile.uuid)
-                if user.business_profile
-                else None,
+                business_profile_uuid=(
+                    str(user.business_profile.uuid) if user.business_profile else None
+                ),
                 device_type=DeviceType.FIRE_DETECTOR,
             )
 
-            existing_device = self.gas_device_repository.get_device_by_serial_no(
+            existing_device = await self.gas_device_repository.get_device_by_serial_no(
                 payload.serial_number
             )
 
@@ -192,7 +192,7 @@ class GasDeviceService(BaseService):
             if existing_device.device_type != payload.device_type:
                 raise BadRequestError(messages.DEVICE_TYPE_MISMATCH)
 
-            existing_device = self.gas_device_repository.update_by_uuid(
+            existing_device = await self.gas_device_repository.update_by_uuid(
                 existing_device.uuid, schema
             )
             return gas_device_transformer(existing_device)

@@ -5,7 +5,6 @@ from fastapi import Request
 from app.core import activity_log_constants, messages
 from app.core.constants import FREE_PACKAGE, FREE_PACKAGE_ITEMS
 from app.core.exceptions import BadRequestError, NotFoundError, UnAuthorizedError
-from app.model.asset import Asset
 from app.repository.activity_log_repository import ActivityLogRepository
 from app.repository.asset_repository import AssetRepository
 from app.repository.asset_type_repository import AssetTypeRepository
@@ -149,9 +148,9 @@ class AssetService(BaseService):
         except Exception as e:
             raise e
 
-    def create_third_party_asset(self, asset: ThirdPartyAssetPayload):
+    async def create_third_party_asset(self, asset: ThirdPartyAssetPayload):
         try:
-            self.asset_repository.read_by_vin_serial_number_license_no(
+            await self.asset_repository.read_by_vin_serial_number_license_no(
                 vehicle_license_no=asset.vehicle_license_no, vin=asset.vin
             )
 
@@ -241,9 +240,11 @@ class AssetService(BaseService):
                 "You have reached the maximum number of assets you can create. Please subscribe for a higher package."
             )
 
-    def check_existing_asset(self, asset):
-        existing_asset = self.asset_repository.read_by_vin_serial_number_license_no(
-            asset.vin, asset.serial_number, asset.vehicle_license_no
+    async def check_existing_asset(self, asset):
+        existing_asset = (
+            await self.asset_repository.read_by_vin_serial_number_license_no(
+                asset.vin, asset.serial_number, asset.vehicle_license_no
+            )
         )
         if existing_asset:
             raise Exception(
@@ -265,13 +266,13 @@ class AssetService(BaseService):
                 detail=messages.EQUIPMENT_NOT_FOUND + str(asset.equipment_uuid)
             )
 
-    def create_asset_with_driver(self, asset):
+    async def create_asset_with_driver(self, asset):
         if self.user_repository.read_by_uuid(asset.driver_uuid) is None:
             raise NotFoundError(
                 detail=messages.DRIVER_NOT_FOUND + str(asset.driver_uuid)
             )
 
-        created_asset = self.asset_repository.create(AssetInput(**asset.dict()))
+        created_asset = await self.asset_repository.create(AssetInput(**asset.dict()))
 
         self.asset_operator_assignment_service.assign_operator_to_asset(
             str(created_asset.uuid),
@@ -299,7 +300,7 @@ class AssetService(BaseService):
         }
         return created_asset_data
 
-    def create_asset_with_vehicle_owner(self, asset):
+    async def create_asset_with_vehicle_owner(self, asset):
         vehicle_owner_data = VehicleOwnerInput(
             first_name=asset.first_name,
             last_name=asset.last_name,
@@ -323,7 +324,7 @@ class AssetService(BaseService):
                 vehicle_owner_uuid=created_vehicle_owner.uuid,
             )
 
-            created_asset = self.asset_repository.create(asset_data)
+            created_asset = await self.asset_repository.create(asset_data)
 
             created_asset_data = {
                 "usage_type": created_asset.usage_type,
@@ -338,15 +339,15 @@ class AssetService(BaseService):
             }
             return created_asset_data
 
-    def create_asset_without_driver(self, asset):
-        created_asset = self.asset_repository.create(AssetInput(**asset.dict()))
+    async def create_asset_without_driver(self, asset):
+        created_asset = await self.asset_repository.create(AssetInput(**asset.dict()))
         return created_asset
 
-    def get_assets_by_user_uuid(
+    async def get_assets_by_user_uuid(
         self, user_uuid: str, asset_type_uuid: str = None, page=1, page_size=10
     ):
         try:
-            return self.asset_repository.read_all_assets_by_uuid(
+            return await self.asset_repository.read_all_assets_by_uuid(
                 user_uuid=user_uuid,
                 page_size=page_size,
                 page=page,
@@ -355,7 +356,7 @@ class AssetService(BaseService):
         except Exception as e:
             raise e
 
-    def get_assets_by_business_uuid(
+    async def get_assets_by_business_uuid(
         self,
         business_uuid: str,
         asset_type_uuid: str = None,
@@ -365,18 +366,18 @@ class AssetService(BaseService):
         status: str = None,
     ):
         try:
-            return self.asset_repository.read_all_assets_by_uuid(
+            return await self.asset_repository.read_all_assets_by_uuid(
                 business_uuid=business_uuid,
                 page_size=page_size,
                 page=page,
                 asset_type_uuid=asset_type_uuid,
                 search_query=search,
-                status=status
+                status=status,
             )
         except Exception as e:
             raise e
 
-    def read_assigned_assets(
+    async def read_assigned_assets(
         self,
         operator_uuid: str,
         business_uuid: str,
@@ -386,7 +387,7 @@ class AssetService(BaseService):
         search: str = None,
     ):
         try:
-            return self.asset_repository.read_assigned_assets_by_uuid(
+            return await self.asset_repository.read_assigned_assets_by_uuid(
                 operator_uuid=operator_uuid,
                 business_uuid=business_uuid,
                 page_size=page_size,
@@ -397,50 +398,54 @@ class AssetService(BaseService):
         except Exception as e:
             raise e
 
-    def get_assets_by_user_uuid_no_pagination(self, user_uuid: str):
+    async def get_assets_by_user_uuid_no_pagination(self, user_uuid: str):
         try:
-            return self.asset_repository.read_all_assets_by_uuid_no_pagination(
+            return await self.asset_repository.read_all_assets_by_uuid_no_pagination(
                 user_uuid=user_uuid
             )
         except Exception as e:
             raise e
 
-    def get_assets_by_business_uuid_no_pagination(self, business_uuid: str):
+    async def get_assets_by_business_uuid_no_pagination(self, business_uuid: str):
         try:
-            return self.asset_repository.read_all_assets_by_uuid_no_pagination(
+            return await self.asset_repository.read_all_assets_by_uuid_no_pagination(
                 business_uuid=business_uuid
             )
         except Exception as e:
             raise e
 
-    def get_third_stolen_assets(
+    async def get_third_stolen_assets(
         self, asset_type_uuid: str = None, page=1, page_size=10
     ):
         try:
-            return self.asset_repository.read_all_stolen_assets(
+            return await self.asset_repository.read_all_stolen_assets(
                 asset_type_uuid, page, page_size
             )
         except Exception as e:
             raise e
 
-    def get_third_party_assets(self, asset_type_uuid: str = None, page=1, page_size=10):
+    async def get_third_party_assets(
+        self, asset_type_uuid: str = None, page=1, page_size=10
+    ):
         try:
-            return self.asset_repository.read_all_third_party_assets(
+            return await self.asset_repository.read_all_third_party_assets(
                 asset_type_uuid, page, page_size
             )
         except Exception as e:
             raise e
 
-    def assign_device_imei(self, uuid: str, payload: AssignDeviceInputPayload):
+    async def assign_device_imei(self, uuid: str, payload: AssignDeviceInputPayload):
         try:
-            asset = self.asset_repository.assign_device_imei(uuid, payload)
+            asset = await self.asset_repository.assign_device_imei(uuid, payload)
             return asset
         except Exception as e:
             raise e
 
-    def get_assets_by_license_no(self, vehicle_license_no: str):
+    async def get_assets_by_license_no(self, vehicle_license_no: str):
         try:
-            return self.asset_repository.get_asset_by_license_no(vehicle_license_no)
+            return await self.asset_repository.get_asset_by_license_no(
+                vehicle_license_no
+            )
         except Exception as e:
             raise e
 
@@ -458,18 +463,18 @@ class AssetService(BaseService):
         except Exception as e:
             raise e
 
-    def update_asset_stolen_status_to_true(self, asset_uuid: str):
+    async def update_asset_stolen_status_to_true(self, asset_uuid: str):
         try:
-            report = self.asset_repository.update_asset_stolen_status_to_true(
+            report = await self.asset_repository.update_asset_stolen_status_to_true(
                 asset_uuid
             )
             return report
         except Exception as e:
             raise e
 
-    def update_asset_stolen_status_to_false(self, asset_uuid: str):
+    async def update_asset_stolen_status_to_false(self, asset_uuid: str):
         try:
-            report = self.asset_repository.update_asset_stolen_status_to_false(
+            report = await self.asset_repository.update_asset_stolen_status_to_false(
                 asset_uuid
             )
             return report
@@ -528,12 +533,14 @@ class AssetService(BaseService):
         except Exception as e:
             raise e
 
-    def shutdown_engine(self, asset_uuid: uuid):
+    async def shutdown_engine(self, asset_uuid: uuid):
         try:
-            asset = self.get_by_uuid(asset_uuid)
+            asset = await self.get_by_uuid(asset_uuid)
             if asset.device_imei:
-                asset_device = self.device_repository.get_device_for_engine_shutdown(
-                    asset.device_imei
+                asset_device = (
+                    await self.device_repository.get_device_for_engine_shutdown(
+                        asset.device_imei
+                    )
                 )
                 return asset_device
             else:
@@ -543,7 +550,7 @@ class AssetService(BaseService):
         except Exception as e:
             raise e
 
-    def generate_gas_cylinder_report(
+    async def generate_gas_cylinder_report(
         self,
         start_date: str,
         end_date: str,
@@ -559,14 +566,14 @@ class AssetService(BaseService):
 
             # Fetch assets based on provided parameters
             if business_uuid or user_uuid or cylinder_uuid:
-                gas_cylinders = self.get_gas_cylinders(
+                gas_cylinders = await self.get_gas_cylinders(
                     business_uuid, user_uuid, cylinder_uuid
                 )
 
             for cylinder in gas_cylinders:
                 if cylinder.gas_device_serial_number:
                     # Get asset points for today in tracking events table
-                    cylinder_events = self.gas_cylinder_event_repository.read_all_gas_events_by_date_range(
+                    cylinder_events = await self.gas_cylinder_event_repository.read_all_gas_events_by_date_range(
                         cylinder.gas_device_serial_number, start_date, end_date
                     )
                     return cylinder_events
@@ -576,7 +583,7 @@ class AssetService(BaseService):
         except Exception as e:
             raise e
 
-    def generate_distance_speed_report(
+    async def generate_distance_speed_report(
         self,
         start_date: str,
         end_date: str,
@@ -593,7 +600,7 @@ class AssetService(BaseService):
 
             # Fetch assets based on provided parameters
             if business_uuid or user_uuid or asset_uuid or asset_type_uuid:
-                assets = self.get_assets(
+                assets = await self.get_assets(
                     business_uuid=business_uuid,
                     user_uuid=user_uuid,
                     asset_uuid=asset_uuid,
@@ -603,12 +610,12 @@ class AssetService(BaseService):
             for asset in assets:
                 if asset.device_imei:
                     # Get asset points for today in tracking events table
-                    asset_events = self.tracking_event_repository.read_all_events_by_device_imei_date_range(
+                    asset_events = await self.tracking_event_repository.read_all_events_by_device_imei_date_range(
                         asset.device_imei, start_date, end_date
                     )
 
                     speed_violations = (
-                        self.asset_repository.get_over_speeding_violations(
+                        await self.asset_repository.get_over_speeding_violations(
                             asset.uuid,
                             GeofenceTypeUuid.OVER_SPEEDING_ALERT_POLICY,
                             start_date,
@@ -674,65 +681,87 @@ class AssetService(BaseService):
         except Exception as e:
             raise e
 
-    def get_assets(
+    async def get_assets(
         self, business_uuid=None, user_uuid=None, asset_uuid=None, asset_type_uuid=None
     ):
         assets = []
 
         if business_uuid:
             if asset_type_uuid:
-                assets = self.asset_repository.read_all_assets_by_uuid_no_pagination(
-                    business_uuid=business_uuid, asset_type_uuid=asset_type_uuid
+                assets = (
+                    await self.asset_repository.read_all_assets_by_uuid_no_pagination(
+                        business_uuid=business_uuid, asset_type_uuid=asset_type_uuid
+                    )
                 )
             elif asset_uuid:
-                assets = self.asset_repository.read_all_assets_by_uuid_no_pagination(
-                    asset_uuid=asset_uuid, business_uuid=business_uuid
+                assets = (
+                    await self.asset_repository.read_all_assets_by_uuid_no_pagination(
+                        asset_uuid=asset_uuid, business_uuid=business_uuid
+                    )
                 )
             else:
-                assets = self.asset_repository.read_all_assets_by_uuid_no_pagination(
-                    business_uuid=business_uuid
+                assets = (
+                    await self.asset_repository.read_all_assets_by_uuid_no_pagination(
+                        business_uuid=business_uuid
+                    )
                 )
         elif user_uuid:
             if asset_type_uuid:
-                assets = self.asset_repository.read_all_assets_by_uuid_no_pagination(
-                    user_uuid=user_uuid, asset_type_uuid=asset_type_uuid
+                assets = (
+                    await self.asset_repository.read_all_assets_by_uuid_no_pagination(
+                        user_uuid=user_uuid, asset_type_uuid=asset_type_uuid
+                    )
                 )
             elif asset_uuid:
-                assets = self.asset_repository.read_all_assets_by_uuid_no_pagination(
-                    asset_uuid=asset_uuid, user_uuid=user_uuid
+                assets = (
+                    await self.asset_repository.read_all_assets_by_uuid_no_pagination(
+                        asset_uuid=asset_uuid, user_uuid=user_uuid
+                    )
                 )
             else:
-                assets = self.asset_repository.read_all_assets_by_uuid_no_pagination(
-                    user_uuid=user_uuid
+                assets = (
+                    await self.asset_repository.read_all_assets_by_uuid_no_pagination(
+                        user_uuid=user_uuid
+                    )
                 )
 
         return assets
 
-    def get_gas_cylinders(self, business_uuid=None, user_uuid=None, cylinder_uuid=None):
+    async def get_gas_cylinders(
+        self, business_uuid=None, user_uuid=None, cylinder_uuid=None
+    ):
         assets = []
 
         if business_uuid:
             if cylinder_uuid:
-                assets = self.gas_cylinder_repository.read_all_cylinders_no_pagination(
-                    cylinder_uuid=cylinder_uuid, business_uuid=business_uuid
+                assets = (
+                    await self.gas_cylinder_repository.read_all_cylinders_no_pagination(
+                        cylinder_uuid=cylinder_uuid, business_uuid=business_uuid
+                    )
                 )
             else:
-                assets = self.gas_cylinder_repository.read_all_cylinders_no_pagination(
-                    business_uuid=business_uuid
+                assets = (
+                    await self.gas_cylinder_repository.read_all_cylinders_no_pagination(
+                        business_uuid=business_uuid
+                    )
                 )
         elif user_uuid:
             if cylinder_uuid:
-                assets = self.gas_cylinder_repository.read_all_cylinders_no_pagination(
-                    cylinder_uuid=cylinder_uuid, user_uuid=user_uuid
+                assets = (
+                    await self.gas_cylinder_repository.read_all_cylinders_no_pagination(
+                        cylinder_uuid=cylinder_uuid, user_uuid=user_uuid
+                    )
                 )
             else:
-                assets = self.gas_cylinder_repository.read_all_cylinders_no_pagination(
-                    user_uuid=user_uuid
+                assets = (
+                    await self.gas_cylinder_repository.read_all_cylinders_no_pagination(
+                        user_uuid=user_uuid
+                    )
                 )
 
         return assets
 
-    def get_violations_reminders(
+    async def get_violations_reminders(
         self,
         start_date,
         end_date,
@@ -743,7 +772,7 @@ class AssetService(BaseService):
     ):
         if business_uuid:
             return {
-                "geofence_violations": self.asset_repository.get_violations_by_alert_type(
+                "geofence_violations": await self.asset_repository.get_violations_by_alert_type(
                     GeofenceTypeUuid.GEOFENCE_ALERT_POLICY,
                     convert_date_format_to_iso(start_date),
                     convert_date_format_to_iso(end_date),
@@ -751,7 +780,7 @@ class AssetService(BaseService):
                     asset_uuid=asset_uuid,
                     asset_type_uuid=asset_type_uuid,
                 ),
-                "over_speeding_violations": self.asset_repository.get_violations_by_alert_type(
+                "over_speeding_violations": await self.asset_repository.get_violations_by_alert_type(
                     GeofenceTypeUuid.OVER_SPEEDING_ALERT_POLICY,
                     convert_date_format_to_iso(start_date),
                     convert_date_format_to_iso(end_date),
@@ -759,7 +788,7 @@ class AssetService(BaseService):
                     asset_uuid=asset_uuid,
                     asset_type_uuid=asset_type_uuid,
                 ),
-                "idling_violations": self.asset_repository.get_violations_by_alert_type(
+                "idling_violations": await self.asset_repository.get_violations_by_alert_type(
                     GeofenceTypeUuid.IDLING_ALERT_POLICY,
                     convert_date_format_to_iso(start_date),
                     convert_date_format_to_iso(end_date),
@@ -767,7 +796,7 @@ class AssetService(BaseService):
                     asset_uuid=asset_uuid,
                     asset_type_uuid=asset_type_uuid,
                 ),
-                "break_inspection": self.asset_repository.get_maintenance_by_alert_type(
+                "break_inspection": await self.asset_repository.get_maintenance_by_alert_type(
                     GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
                     AlertPolicy.BRAKE_INSPECTION,
                     start_date,
@@ -776,7 +805,7 @@ class AssetService(BaseService):
                     asset_uuid=asset_uuid,
                     asset_type_uuid=asset_type_uuid,
                 ),
-                "oil_change": self.asset_repository.get_maintenance_by_alert_type(
+                "oil_change": await self.asset_repository.get_maintenance_by_alert_type(
                     GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
                     AlertPolicy.OIL_CHANGE,
                     start_date,
@@ -785,7 +814,7 @@ class AssetService(BaseService):
                     asset_uuid=asset_uuid,
                     asset_type_uuid=asset_type_uuid,
                 ),
-                "tire_rotation": self.asset_repository.get_maintenance_by_alert_type(
+                "tire_rotation": await self.asset_repository.get_maintenance_by_alert_type(
                     GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
                     AlertPolicy.TIRE_ROTATION,
                     start_date,
@@ -794,7 +823,7 @@ class AssetService(BaseService):
                     asset_uuid=asset_uuid,
                     asset_type_uuid=asset_type_uuid,
                 ),
-                "general_servicing": self.asset_repository.get_maintenance_by_alert_type(
+                "general_servicing": await self.asset_repository.get_maintenance_by_alert_type(
                     GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
                     AlertPolicy.GENERAL_SERVICING,
                     start_date,
@@ -803,7 +832,7 @@ class AssetService(BaseService):
                     asset_uuid=asset_uuid,
                     asset_type_uuid=asset_type_uuid,
                 ),
-                "others": self.asset_repository.get_maintenance_by_alert_type(
+                "others": await self.asset_repository.get_maintenance_by_alert_type(
                     GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
                     AlertPolicy.OTHER,
                     start_date,
@@ -815,7 +844,7 @@ class AssetService(BaseService):
             }
         elif user_uuid:
             return {
-                "geofence_violations": self.asset_repository.get_violations_by_alert_type(
+                "geofence_violations": await self.asset_repository.get_violations_by_alert_type(
                     GeofenceTypeUuid.GEOFENCE_ALERT_POLICY,
                     convert_date_format_to_iso(start_date),
                     convert_date_format_to_iso(end_date),
@@ -823,7 +852,7 @@ class AssetService(BaseService):
                     asset_uuid=asset_uuid,
                     asset_type_uuid=asset_type_uuid,
                 ),
-                "over_speeding_violations": self.asset_repository.get_violations_by_alert_type(
+                "over_speeding_violations": await self.asset_repository.get_violations_by_alert_type(
                     GeofenceTypeUuid.OVER_SPEEDING_ALERT_POLICY,
                     convert_date_format_to_iso(start_date),
                     convert_date_format_to_iso(end_date),
@@ -831,13 +860,13 @@ class AssetService(BaseService):
                     asset_uuid=asset_uuid,
                     asset_type_uuid=asset_type_uuid,
                 ),
-                "idling_violations": self.asset_repository.get_violations_by_alert_type(
+                "idling_violations": await self.asset_repository.get_violations_by_alert_type(
                     GeofenceTypeUuid.IDLING_ALERT_POLICY,
                     convert_date_format_to_iso(start_date),
                     convert_date_format_to_iso(end_date),
                     user_uuid=user_uuid,
                 ),
-                "break_inspection": self.asset_repository.get_maintenance_by_alert_type(
+                "break_inspection": await self.asset_repository.get_maintenance_by_alert_type(
                     GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
                     AlertPolicy.BRAKE_INSPECTION,
                     start_date,
@@ -846,7 +875,7 @@ class AssetService(BaseService):
                     asset_uuid=asset_uuid,
                     asset_type_uuid=asset_type_uuid,
                 ),
-                "oil_change": self.asset_repository.get_maintenance_by_alert_type(
+                "oil_change": await self.asset_repository.get_maintenance_by_alert_type(
                     GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
                     AlertPolicy.OIL_CHANGE,
                     start_date,
@@ -855,7 +884,7 @@ class AssetService(BaseService):
                     asset_uuid=asset_uuid,
                     asset_type_uuid=asset_type_uuid,
                 ),
-                "tire_rotation": self.asset_repository.get_maintenance_by_alert_type(
+                "tire_rotation": await self.asset_repository.get_maintenance_by_alert_type(
                     GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
                     AlertPolicy.TIRE_ROTATION,
                     start_date,
@@ -864,7 +893,7 @@ class AssetService(BaseService):
                     asset_uuid=asset_uuid,
                     asset_type_uuid=asset_type_uuid,
                 ),
-                "general_servicing": self.asset_repository.get_maintenance_by_alert_type(
+                "general_servicing": await self.asset_repository.get_maintenance_by_alert_type(
                     GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
                     AlertPolicy.GENERAL_SERVICING,
                     start_date,
@@ -873,7 +902,7 @@ class AssetService(BaseService):
                     asset_uuid=asset_uuid,
                     asset_type_uuid=asset_type_uuid,
                 ),
-                "others": self.asset_repository.get_maintenance_by_alert_type(
+                "others": await self.asset_repository.get_maintenance_by_alert_type(
                     GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
                     AlertPolicy.OTHER,
                     start_date,
@@ -886,7 +915,7 @@ class AssetService(BaseService):
         else:
             return {}
 
-    def calculate_total_distance(self, assets, start_date, end_date):
+    async def calculate_total_distance(self, assets, start_date, end_date):
         total_distance_traveled_current_range = 0
         total_distance_traveled_past_range = 0
         fuel_level_current_range = 0
@@ -896,7 +925,7 @@ class AssetService(BaseService):
             if asset.device_imei:
                 # Get asset points for the specified date range
                 asset_events = (
-                    self.tracking_event_repository.read_all_events_by_date_range(
+                    await self.tracking_event_repository.read_all_events_by_date_range(
                         asset.device_imei, start_date, end_date
                     )
                 )
@@ -947,7 +976,7 @@ class AssetService(BaseService):
             fuel_level_past_range,
         )
 
-    def generate_violation_reminder_report(
+    async def generate_violation_reminder_report(
         self,
         start_date: str,
         end_date: str,
@@ -958,7 +987,7 @@ class AssetService(BaseService):
     ):
         try:
             # Fetch violations reminders based on provided parameters
-            violations = self.get_violations_reminders(
+            violations = await self.get_violations_reminders(
                 start_date,
                 end_date,
                 business_uuid,
@@ -973,7 +1002,7 @@ class AssetService(BaseService):
             assets = []
 
             if business_uuid or user_uuid or asset_uuid or asset_type_uuid:
-                assets = self.get_assets(
+                assets = await self.get_assets(
                     business_uuid=business_uuid,
                     user_uuid=user_uuid,
                     asset_uuid=asset_uuid,
@@ -986,7 +1015,7 @@ class AssetService(BaseService):
                 total_distance_traveled_past_range,
                 fuel_level_current_range,
                 fuel_level_past_range,
-            ) = self.calculate_total_distance(assets, start_date, end_date)
+            ) = await self.calculate_total_distance(assets, start_date, end_date)
 
             if fuel_level_current_range == 0:
                 fuel_efficiency_current_range = 0
@@ -1030,7 +1059,7 @@ class AssetService(BaseService):
         except Exception as e:
             raise e
 
-    def edit_asset(
+    async def edit_asset(
         self,
         asset_uuid: str,
         payload: PatchAssetPayload,
@@ -1038,7 +1067,7 @@ class AssetService(BaseService):
         business_uuid: str = None,
     ):
         try:
-            asset = self.asset_repository.read_by_uuid(asset_uuid)
+            asset = await self.asset_repository.read_by_uuid(asset_uuid)
             if not asset:
                 raise NotFoundError(detail=messages.ASSET_NOT_FOUND + str(asset_uuid))
 
@@ -1050,21 +1079,23 @@ class AssetService(BaseService):
                 print(type(asset.business_profile_uuid))
                 raise UnAuthorizedError(messages.ACTION_NOT_ALLOWED)
 
-            update_asset = self.asset_repository.update_by_uuid(asset_uuid, payload)
+            update_asset = await self.asset_repository.update_by_uuid(
+                asset_uuid, payload
+            )
 
             return asset_transformer(update_asset)
 
         except Exception as e:
             raise e
 
-    def get_assets_by_imeis(self, imeis):
+    async def get_assets_by_imeis(self, imeis):
         try:
-            return self.asset_repository.get_assets_by_imeis(imeis)
+            return await self.asset_repository.get_assets_by_imeis(imeis)
         except Exception as e:
             raise e
 
-    def get_all_device_imeis(self):
+    async def get_all_device_imeis(self):
         try:
-            return self.asset_repository.get_all_device_imeis()
+            return await self.asset_repository.get_all_device_imeis()
         except Exception as e:
             raise e

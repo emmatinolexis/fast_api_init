@@ -1,48 +1,60 @@
-from contextlib import AbstractContextManager
-from typing import Callable, Optional, List
-
-from sqlalchemy.orm import Session, joinedload
-
-from app.model.vehicle_models import VehicleMake, AssetType
-from app.repository.base_repository import BaseRepository
-
-from datetime import datetime
 import uuid
+from datetime import datetime
+from typing import Callable, List, Optional
+
+from sqlalchemy.dialects.postgresql import ENUM
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from sqlalchemy.orm import joinedload
+
+from app.model.vehicle_models import VehicleMake
+from app.repository.base_repository import BaseRepository
 from app.schema.asset_schema import VehicleMakeInput
 
+
 class VehicleMakeRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, VehicleMake)
-    
-    def create(self, make_input: VehicleMakeInput) -> VehicleMake:
-        with self.session_factory() as session:
+
+    async def create(self, make_input: VehicleMakeInput) -> VehicleMake:
+        async with self.session_factory() as session:
             new_make = self.model(
                 uuid=uuid.uuid4(),
                 name=make_input.name,
-                asset_type=make_input.asset_type,  
+                asset_type=make_input.asset_type.upper(),
                 created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow()
+                updated_at=datetime.utcnow(),
             )
-            session.add(new_make)
-            session.commit()
-            session.refresh(new_make)
-            return new_make
 
-    def get_vehicle_makes(self, asset_type: Optional[AssetType] = None) -> List[VehicleMake]:
-        with self.session_factory() as session:
-            query = session.query(self.model)
+        session.add(new_make)
+        await session.commit()
+        await session.refresh(new_make)
+        return new_make
+
+    async def get_vehicle_makes(self, asset_type=None) -> List[VehicleMake]:
+        async with self.session_factory() as session:
+            query = select(self.model)
             if asset_type:
-                query = query.filter_by(asset_type=asset_type)
-            makes = query.all()
+                query = query.filter(self.model.asset_type == asset_type.upper())
+            result = await session.execute(query)
+            makes = result.scalars().all()
             return makes
 
-    def get_vehicle_make_by_uuid(self, make_uuid) -> Optional[VehicleMake]:
-        with self.session_factory() as session:
-            make = session.query(self.model).options(joinedload(self.model.models)).filter_by(uuid=make_uuid).first()
+    async def get_vehicle_make_by_uuid(self, make_uuid) -> Optional[VehicleMake]:
+        async with self.session_factory() as session:
+            query = (
+                select(self.model)
+                .options(joinedload(self.model.models))
+                .filter_by(uuid=make_uuid)
+            )
+            result = await session.execute(query)
+            make = result.unique().scalars().first()
             return make
 
-    def get_vehicle_make_name(self, name: str) -> Optional[VehicleMake]:
-        with self.session_factory() as session:
-            make = session.query(self.model).filter_by(name=name).first()
+    async def get_vehicle_make_name(self, name: str) -> Optional[VehicleMake]:
+        async with self.session_factory() as session:
+            query = select(self.model).filter_by(name=name)
+            result = await session.execute(query)
+            make = result.scalars().first()
             return make

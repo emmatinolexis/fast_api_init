@@ -1,24 +1,23 @@
-import uuid
-from contextlib import AbstractContextManager
 from typing import Callable
 from uuid import UUID
 
-from sqlalchemy import or_
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from app.model.inventory import Inventory
 from app.repository.base_repository import BaseRepository
 
 
 class InventoryRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, Inventory)
 
-    def create_inventory(self, inventory):
-        with self.session_factory() as session:
+    async def create_inventory(self, inventory):
+        async with self.session_factory() as session:
             try:
-                inventory_data = Inventory(
+                inventory_data = self.model(
                     device_name=inventory.device_name,
                     device_type=inventory.device_type,
                     quantity=inventory.quantity,
@@ -28,43 +27,49 @@ class InventoryRepository(BaseRepository):
                     publish_on_site_status=inventory.publish_on_site_status,
                 )
                 session.add(inventory_data)
-                session.commit()
-                session.refresh(inventory_data)
+                await session.commit()
+                await session.refresh(inventory_data)
                 return inventory_data
             except Exception as e:
-                session.rollback()
+                await session.rollback()
                 raise e
 
-    def get_all_inventory(self, page=1, page_size=10, search_query=None):
-        with self.session_factory() as session:
+    async def get_all_inventory(self, page=1, page_size=10, search_query=None):
+        async with self.session_factory() as session:
             try:
                 offset = (page - 1) * page_size
 
-                base_query = session.query(self.model).options(
-                    joinedload(Inventory.manufacturer), joinedload(Inventory.images)
+                # Base query with joinedload
+                base_query = select(self.model).options(
+                    joinedload(self.model.manufacturer), joinedload(self.model.images)
                 )
 
+                # Apply search filter if present
                 if search_query:
-                    device_name_filter = Inventory.device_name.ilike(
-                        f"%{search_query}%"
-                    )
-
                     base_query = base_query.filter(
-                        or_(
-                            device_name_filter,
-                        )
+                        self.model.device_name.ilike(f"%{search_query}%")
                     )
 
-                total_inventories = base_query.count()
-                paginated_query = base_query.offset(offset).limit(page_size)
-                inventories = paginated_query.all()
+                # Fetch total count
+                total_result = await session.execute(select(self.model))
+                total_inventories = len(total_result.scalars().all())
 
-                total_in_stock = (
-                    session.query(self.model).filter(self.model.quantity > 0).count()
+                # Paginate results
+                paginated_result = await session.execute(
+                    base_query.offset(offset).limit(page_size)
                 )
-                total_out_of_stock = (
-                    session.query(self.model).filter(self.model.quantity == 0).count()
+                inventories = paginated_result.unique().scalars().all()
+
+                # Count total in-stock and out-of-stock inventories
+                in_stock_result = await session.execute(
+                    select(self.model).filter(self.model.quantity > 0)
                 )
+                total_in_stock = len(in_stock_result.scalars().all())
+
+                out_of_stock_result = await session.execute(
+                    select(self.model).filter(self.model.quantity == 0)
+                )
+                total_out_of_stock = len(out_of_stock_result.scalars().all())
 
                 return {
                     "inventories": inventories,
@@ -76,43 +81,47 @@ class InventoryRepository(BaseRepository):
                     "total_out_of_stock": total_out_of_stock,
                 }
             except Exception as e:
-                session.rollback()
+                await session.rollback()
                 raise e
 
-    def reduce_inventory_no(self, inventory_uuid: uuid, quantity: int):
-        with self.session_factory() as session:
+    async def reduce_inventory_no(self, inventory_uuid: UUID, quantity: int):
+        async with self.session_factory() as session:
             try:
-                inventory = (
-                    session.query(self.model)
-                    .filter(self.model.uuid == inventory_uuid)
-                    .first()
+                inventory_query = await session.execute(
+                    select(self.model).filter(self.model.uuid == inventory_uuid)
                 )
-                inventory.quantity = inventory.quantity - quantity
-                session.commit()
-                session.refresh(inventory)
+                inventory = inventory_query.scalars().first()
+
+                if not inventory:
+                    raise ValueError("Inventory not found")
+
+                inventory.quantity -= quantity
+
+                await session.commit()
+                await session.refresh(inventory)
                 return inventory
             except Exception as e:
-                session.rollback()
+                await session.rollback()
                 raise e
 
-    def get_inventory_by_uuid(self, inventory_uuid: UUID):
-        with self.session_factory() as session:
-            return (
-                session.query(self.model)
+    async def get_inventory_by_uuid(self, inventory_uuid: UUID):
+        async with self.session_factory() as session:
+            inventory_query = await session.execute(
+                select(self.model)
                 .options(
-                    joinedload(Inventory.manufacturer), joinedload(Inventory.images)
+                    joinedload(self.model.manufacturer), joinedload(self.model.images)
                 )
                 .filter(self.model.uuid == inventory_uuid)
-                .first()
             )
+            return inventory_query.unique().scalars().first()
 
-    def save_inventory(self, inventory):
-        with self.session_factory() as session:
+    async def save_inventory(self, inventory):
+        async with self.session_factory() as session:
             try:
                 session.add(inventory)
-                session.commit()
-                session.refresh(inventory)
+                await session.commit()
+                await session.refresh(inventory)
                 return inventory
             except Exception as e:
-                session.rollback()
+                await session.rollback()
                 raise e

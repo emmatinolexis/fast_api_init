@@ -1,8 +1,8 @@
-from contextlib import AbstractContextManager
 from typing import Callable
 
 from sqlalchemy import asc
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 
 from app.model.asset_type import AssetType
 from app.repository.base_repository import BaseRepository
@@ -10,19 +10,20 @@ from app.util.enums import ActiveStatus
 
 
 class AssetTypeRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, AssetType)
 
-    def get_asset_types(self, status: str = None):
-        with self.session_factory() as session:
-            query = session.query(self.model)
+    async def get_asset_types(self, status: str = None):
+        async with self.session_factory() as session:
+            query = select(self.model)
 
             if status:
-                query = query.filter(self.model.status == ActiveStatus(status))
+                query = query.where(self.model.status == ActiveStatus(status))
 
             # Order by created_at in descending order
             query = query.order_by(asc(self.model.created_at))
 
-            asset_types = query.all()
+            result = await session.execute(query)
+            asset_types = result.scalars().all()
             return asset_types

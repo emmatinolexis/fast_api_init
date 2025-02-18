@@ -1,11 +1,12 @@
-from contextlib import AbstractContextManager
 from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Callable, Optional
 
 from dateutil.relativedelta import relativedelta
 from sqlalchemy import Float, func, or_
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from sqlalchemy.orm import joinedload
 
 from app.model.payment import Payment
 from app.model.user import User
@@ -15,11 +16,11 @@ from app.util.utils import calculate_percentage_change, parse_date
 
 
 class PaymentRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, Payment)
 
-    def get_all_payments(
+    async def get_all_payments(
         self,
         search_parameter: str = None,
         start_date: str = None,
@@ -28,7 +29,7 @@ class PaymentRepository(BaseRepository):
         page_size: int = 10,
         status=None,
     ):
-        with self.session_factory() as session:
+        async with self.session_factory() as session:
             current_start_date, current_end_date = self.determine_current_period(
                 start_date, end_date
             )
@@ -37,9 +38,9 @@ class PaymentRepository(BaseRepository):
                 current_start_date, current_end_date
             )
 
-            query_current = session.query(self.model).options(
-                joinedload(self.model.user)
-            )
+            query_current = select(self.model).options(joinedload(self.model.user))
+
+            # Apply filters
             query_current = self.apply_filters(
                 query_current,
                 search_parameter,
@@ -48,18 +49,21 @@ class PaymentRepository(BaseRepository):
                 status,
             )
 
-            total_records = query_current.count()
+            total_records = await session.scalar(
+                select(func.count()).select_from(query_current.subquery())
+            )
             total_pages = (total_records + page_size - 1) // page_size
 
             paginated_query = query_current.limit(page_size).offset(
                 (page - 1) * page_size
             )
-            payments = paginated_query.all()
+            result = await session.execute(paginated_query)
+            payments = result.scalars().all()
 
-            metrics_current = self.calculate_metrics(
+            metrics_current = await self.calculate_metrics(
                 session, search_parameter, status, current_start_date, current_end_date
             )
-            metrics_previous = self.calculate_metrics(
+            metrics_previous = await self.calculate_metrics(
                 session,
                 search_parameter,
                 status,
@@ -85,7 +89,7 @@ class PaymentRepository(BaseRepository):
                 "total_pages": total_pages,
                 "successful_payments": metrics_current["count_success"],
                 "failed_payments": metrics_current["count_failed"],
-                "total_payment_amount": metrics_current["sum"],
+                "total_payment_amount": metrics_current["sum"] / 100,
                 "total_payment_amount_percentage_change": sum_percentage_change,
                 "successful_payments_percentage_change": success_percentage_change,
                 "failed_payments_percentage_change": failed_percentage_change,
@@ -129,73 +133,64 @@ class PaymentRepository(BaseRepository):
         previous_end_date = current_start - timedelta(days=1)
         return previous_start_date, previous_end_date
 
-    def calculate_metrics(
+    async def calculate_metrics(
         self,
-        session: Session,
+        session: AsyncSession,
         search_parameter: Optional[str],
         status: Optional[str],
         start_date: datetime,
         end_date: datetime,
     ):
-        sum_query = session.query(func.sum(self.model.amount.cast(Float))).filter(
+        filters = [
             self.model.created_at >= start_date,
             self.model.created_at <= end_date,
-        )
+        ]
+
         if search_parameter:
-            sum_query = sum_query.filter(
+            filters.append(
                 or_(
                     self.model.user.has(User.first_name.ilike(f"%{search_parameter}%")),
                     self.model.user.has(User.last_name.ilike(f"%{search_parameter}%")),
                 )
             )
+
         if status:
-            sum_query = sum_query.filter(self.model.status == PaymentStatus(status))
-        total_sum = Decimal(sum_query.scalar() or "0.00")
+            filters.append(self.model.status == PaymentStatus(status))
 
-        count_success = session.query(func.count(self.model.uuid)).filter(
-            self.model.status == PaymentStatus.SUCCESS,
-            self.model.created_at >= start_date,
-            self.model.created_at <= end_date,
-        )
-        if search_parameter:
-            count_success = count_success.filter(
-                or_(
-                    self.model.user.has(User.first_name.ilike(f"%{search_parameter}%")),
-                    self.model.user.has(User.last_name.ilike(f"%{search_parameter}%")),
-                )
-            )
-        count_success = count_success.scalar()
+        sum_query = select(func.sum(self.model.amount.cast(Float))).where(*filters)
+        total_sum_result = await session.execute(sum_query)
+        total_sum = Decimal(total_sum_result.scalar() or "0.00")
 
-        count_failed = session.query(func.count(self.model.uuid)).filter(
-            self.model.status == PaymentStatus.FAILED,
-            self.model.created_at >= start_date,
-            self.model.created_at <= end_date,
+        count_success_query = select(func.count(self.model.uuid)).where(
+            self.model.status == PaymentStatus.SUCCESS, *filters
         )
-        if search_parameter:
-            count_failed = count_failed.filter(
-                or_(
-                    self.model.user.has(User.first_name.ilike(f"%{search_parameter}%")),
-                    self.model.user.has(User.last_name.ilike(f"%{search_parameter}%")),
-                )
-            )
-        count_failed = count_failed.scalar()
+        count_success_result = await session.execute(count_success_query)
+        count_success = count_success_result.scalar()
+
+        count_failed_query = select(func.count(self.model.uuid)).where(
+            self.model.status == PaymentStatus.FAILED, *filters
+        )
+        count_failed_result = await session.execute(count_failed_query)
+        count_failed = count_failed_result.scalar()
 
         return {
             "sum": total_sum,
-            "count_success": count_success,
-            "count_failed": count_failed,
+            "count_success": count_success or 0,
+            "count_failed": count_failed or 0,
         }
 
     def apply_filters(
         self,
         query,
-        search_parameter,
+        search_parameter: Optional[str] = None,
         start_date_obj: Optional[datetime] = None,
         end_date_obj: Optional[datetime] = None,
         status: Optional[PaymentStatus] = None,
     ):
+        filters = []
+
         if search_parameter:
-            query = query.filter(
+            filters.append(
                 or_(
                     self.model.user.has(User.first_name.ilike(f"%{search_parameter}%")),
                     self.model.user.has(User.last_name.ilike(f"%{search_parameter}%")),
@@ -203,12 +198,40 @@ class PaymentRepository(BaseRepository):
             )
 
         if start_date_obj:
-            query = query.filter(self.model.created_at >= start_date_obj)
+            filters.append(self.model.created_at >= start_date_obj)
 
         if end_date_obj:
-            query = query.filter(self.model.created_at <= end_date_obj)
+            filters.append(self.model.created_at <= end_date_obj)
 
         if status:
-            query = query.filter(self.model.status == PaymentStatus(status))
+            filters.append(self.model.status == PaymentStatus(status))
 
-        return query
+        # ✅ Apply filters using `.where()` instead of `.filter()`
+        return query.where(*filters)
+
+    # def apply_filters(
+    #     self,
+    #     query,
+    #     search_parameter,
+    #     start_date_obj: Optional[datetime] = None,
+    #     end_date_obj: Optional[datetime] = None,
+    #     status: Optional[PaymentStatus] = None,
+    # ):
+    #     if search_parameter:
+    #         query = query.filter(
+    #             or_(
+    #                 self.model.user.has(User.first_name.ilike(f"%{search_parameter}%")),
+    #                 self.model.user.has(User.last_name.ilike(f"%{search_parameter}%")),
+    #             )
+    #         )
+
+    #     if start_date_obj:
+    #         query = query.filter(self.model.created_at >= start_date_obj)
+
+    #     if end_date_obj:
+    #         query = query.filter(self.model.created_at <= end_date_obj)
+
+    #     if status:
+    #         query = query.filter(self.model.status == PaymentStatus(status))
+
+    #     return query

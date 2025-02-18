@@ -232,20 +232,23 @@ class VehicleModelPayload(BaseModel):
 
 class VehicleMakeInput(BaseModel):
     name: str
-    asset_type: AssetType 
+    asset_type: AssetType
 
 
 class VehicleModelInput(BaseModel):
     name: str
     vehicle_make_uuid: UUID
 
+
 class VehicleMake(BaseModel):
     title: str
     asset_type: AssetType
     models: List[VehicleModelPayload]
 
+
 class VehicleMakePayload(BaseModel):
     vehicle_makes: List[VehicleMake]
+
 
 class VehicleMakeResponse(BaseModel):
     uuid: UUID
@@ -254,11 +257,13 @@ class VehicleMakeResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class VehicleModelResponse(BaseModel):
     uuid: UUID
     name: str
 
     model_config = ConfigDict(from_attributes=True)
+
 
 class AssetLocationFetch(BaseModel):
     asset_uuid: UUID

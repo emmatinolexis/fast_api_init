@@ -28,7 +28,7 @@ async def get_all_external_app_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return send_data(service.get_list())
+        return send_data(await service.get_list())
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -42,7 +42,7 @@ async def create_app_service_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        app = service.create_external_app(payload)
+        app = await service.create_external_app(payload)
         return send_data(app)
     except NotFoundError as e:
         return send_client_side_error(
@@ -60,7 +60,7 @@ async def generate_app_service_token(
     service: ExternalAppService = Depends(Provide[Container.external_app_service]),
 ):
     try:
-        token = service.generate_token(payload)
+        token = await service.generate_token(payload)
         return send_data(token)
     except NotFoundError as e:
         return send_client_side_error(

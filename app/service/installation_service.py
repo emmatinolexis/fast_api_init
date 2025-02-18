@@ -1,6 +1,7 @@
-import requests
+import aiohttp
 
 from app.core.constants import cities
+from app.core.logger import get_logger
 from app.core.settings import settings
 from app.events.installation import InstallationCreated
 from app.events.subscriber import subscriber
@@ -24,31 +25,35 @@ class InstallationService:
         self.installation_repository = installation_repository
         self.user_repository = user_repository
 
-    def create_installation(self, installation_payload: InstallationPayload):
+    async def create_installation(self, installation_payload: InstallationPayload):
         try:
-            return self.installation_repository.create_installation(
+            return await self.installation_repository.create_installation(
                 installation_payload
             )
         except Exception as e:
             raise e
 
-    def get_installation_by_order_uuid(self, order_uuid: str):
+    async def get_installation_by_order_uuid(self, order_uuid: str):
         try:
-            return self.installation_repository.get_installation_by_order_uuid(
+            return await self.installation_repository.get_installation_by_order_uuid(
                 order_uuid
             )
         except Exception as e:
             raise e
 
-    def assign_installer_to_installation(self, payload: AssignInstallerPayload):
+    async def assign_installer_to_installation(self, payload: AssignInstallerPayload):
         try:
-            installer = self.user_repository.read_by_uuid(uuid=payload.installer_uuid)
-            installation = self.installation_repository.get_installation(
+            installer = await self.user_repository.read_by_uuid(
+                uuid=payload.installer_uuid
+            )
+            installation = await self.installation_repository.get_installation(
                 payload.installation_uuid
             )
 
-            assignment = self.installation_repository.assign_installer_to_installation(
-                payload
+            assignment = (
+                await self.installation_repository.assign_installer_to_installation(
+                    payload
+                )
             )
             subscriber.publish(
                 InstallationCreated,
@@ -58,41 +63,46 @@ class InstallationService:
         except Exception as e:
             raise e
 
-    def update_installation_status(
+    async def update_installation_status(
         self, installation_uuid: str, status: InstallationStatus
     ):
         try:
-            return self.installation_repository.update_installation_status(
+            return await self.installation_repository.update_installation_status(
                 installation_uuid, status
             )
         except Exception as e:
             raise e
 
-    def get_towns(self):
+    async def get_towns(self):
         try:
             town_data = []
             for city in cities:
                 query = f"towns in {city.get('name')} Ghana in all"
-                response = requests.get(
-                    settings.GOOGLE_MAP_URL,
-                    params={"query": query, "key": settings.GOOGLE_MAP_API_KEY},
-                )
-                if response.status_code == 200:
-                    data = response.json()
-                    towns = [result["name"] for result in data.get("results", [])]
-                    town_data.extend(towns)  # Append towns to town_data list
-                else:
-                    print(
-                        f"Failed to retrieve data for {city.get('name')}. Status code: {response.status_code}"
-                    )
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(
+                        settings.GOOGLE_MAP_URL,
+                        params={"query": query, "key": settings.GOOGLE_MAP_API_KEY},
+                    ) as response:
+                        if response.status == 200:
+                            data = await response.json()
+                            towns = [
+                                result["name"] for result in data.get("results", [])
+                            ]
+                            town_data.extend(towns)  # Append towns to town_data list
+                        else:
+                            get_logger().error(
+                                f"Failed to retrieve data for {city.get('name')}. Status code: {response.status}"
+                            )
 
             return town_data
         except Exception as e:
             raise e
 
-    def get_installation(self, installation_uuid: str):
+    async def get_installation(self, installation_uuid: str):
         try:
-            data = self.installation_repository.get_installation(installation_uuid)
+            data = await self.installation_repository.get_installation(
+                installation_uuid
+            )
             if data is None:
                 return None
             order = data.order
@@ -100,42 +110,50 @@ class InstallationService:
             installation = InstallationResponse(
                 installation_uuid=str(data.uuid),
                 status=data.status,
-                installer_name=f"{data.installer.first_name} {data.installer.last_name}"
-                if data.installer
-                else None,
-                installer_image_url=data.installer.avatar_url
-                if data.installer
-                else None,
+                installer_name=(
+                    f"{data.installer.first_name} {data.installer.last_name}"
+                    if data.installer
+                    else None
+                ),
+                installer_image_url=(
+                    data.installer.avatar_url if data.installer else None
+                ),
                 installer_phone=data.installer.phone_number if data.installer else None,
-                first_name=order_shipping_address.first_name
-                if order_shipping_address
-                else None,
-                last_name=order_shipping_address.last_name
-                if order_shipping_address
-                else None,
-                location=order_shipping_address.address
-                if order_shipping_address
-                else None,
+                first_name=(
+                    order_shipping_address.first_name
+                    if order_shipping_address
+                    else None
+                ),
+                last_name=(
+                    order_shipping_address.last_name if order_shipping_address else None
+                ),
+                location=(
+                    order_shipping_address.address if order_shipping_address else None
+                ),
                 date_of_installation=order.date_of_installation if order else None,
                 time_of_installation=order.time_of_installation if order else None,
-                devices=[
-                    {
-                        "device_uuid": inventory.inventory.uuid,
-                        "device_name": inventory.inventory.device_name,
-                    }
-                    for inventory in order.order_inventories
-                ]
-                if order and order.order_inventories
-                else [],
+                devices=(
+                    [
+                        {
+                            "device_uuid": inventory.inventory.uuid,
+                            "device_name": inventory.inventory.device_name,
+                        }
+                        for inventory in order.order_inventories
+                    ]
+                    if order and order.order_inventories
+                    else []
+                ),
             )
             return installation
         except Exception as e:
             raise e
 
-    def fetch_all_installers(self, installer_uuid):
+    async def fetch_all_installers(self, installer_uuid):
         try:
-            installers = self.installation_repository.get_installers()
-            installation = self.installation_repository.get_installation(installer_uuid)
+            installers = await self.installation_repository.get_installers()
+            installation = await self.installation_repository.get_installation(
+                installer_uuid
+            )
             installation_location = (
                 installation.order.order_shipping_address.address.get("address_name")
             )
@@ -148,9 +166,11 @@ class InstallationService:
                         "first_name": installer.first_name,
                         "last_name": installer.last_name,
                         "avatar_url": installer.avatar_url,
-                        "installer_locations": installer.installer_locations
-                        if installer.installer_locations
-                        else None,
+                        "installer_locations": (
+                            installer.installer_locations
+                            if installer.installer_locations
+                            else None
+                        ),
                     }
                 )
                 for installer in installers
@@ -169,7 +189,7 @@ class InstallationService:
         except Exception as e:
             raise e
 
-    def fetch_installations(
+    async def fetch_installations(
         self,
         page,
         page_size,
@@ -180,7 +200,7 @@ class InstallationService:
         search_parameter: str = None,
     ):
         try:
-            installations = self.installation_repository.get_installations(
+            installations = await self.installation_repository.get_installations(
                 page, page_size, installer_uuid, status, start_date, end_date
             )
 
@@ -191,35 +211,49 @@ class InstallationService:
                 installation_response = InstallationResponse(
                     installation_uuid=str(installation.uuid),
                     status=installation.status,
-                    installer_name=f"{installation.installer.first_name} {installation.installer.last_name}"
-                    if installation.installer
-                    else None,
-                    installer_image_url=installation.installer.avatar_url
-                    if installation.installer
-                    else None,
-                    installer_phone=installation.installer.phone_number
-                    if installation.installer
-                    else None,
-                    first_name=order_shipping_address.first_name
-                    if order_shipping_address
-                    else None,
-                    last_name=order_shipping_address.last_name
-                    if order_shipping_address
-                    else None,
-                    location=order_shipping_address.address
-                    if order_shipping_address
-                    else None,
+                    installer_name=(
+                        f"{installation.installer.first_name} {installation.installer.last_name}"
+                        if installation.installer
+                        else None
+                    ),
+                    installer_image_url=(
+                        installation.installer.avatar_url
+                        if installation.installer
+                        else None
+                    ),
+                    installer_phone=(
+                        installation.installer.phone_number
+                        if installation.installer
+                        else None
+                    ),
+                    first_name=(
+                        order_shipping_address.first_name
+                        if order_shipping_address
+                        else None
+                    ),
+                    last_name=(
+                        order_shipping_address.last_name
+                        if order_shipping_address
+                        else None
+                    ),
+                    location=(
+                        order_shipping_address.address
+                        if order_shipping_address
+                        else None
+                    ),
                     date_of_installation=order.date_of_installation if order else None,
                     time_of_installation=order.time_of_installation if order else None,
-                    devices=[
-                        {
-                            "device_uuid": inventory.inventory.uuid,
-                            "device_name": inventory.inventory.device_name,
-                        }
-                        for inventory in order.order_inventories
-                    ]
-                    if order and order.order_inventories
-                    else [],
+                    devices=(
+                        [
+                            {
+                                "device_uuid": inventory.inventory.uuid,
+                                "device_name": inventory.inventory.device_name,
+                            }
+                            for inventory in order.order_inventories
+                        ]
+                        if order and order.order_inventories
+                        else []
+                    ),
                 )
                 # Apply search filter to installation_response if search_parameter is provided
                 if search_parameter:

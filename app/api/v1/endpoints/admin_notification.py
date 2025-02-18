@@ -31,7 +31,7 @@ async def get_notifications(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        notifications = service.get_admin_notifications(
+        notifications = await service.get_admin_notifications(
             current_user.uuid, current_user.user_role.role_name.strip()
         )
         return send_data(notifications)
@@ -51,7 +51,7 @@ async def clear_notifications(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        response = service.clear_notifications(str(current_user.uuid))
+        response = await service.clear_notifications(str(current_user.uuid))
         return send_info(response)
     except UnAuthorizedError as e:
         return send_client_side_error(user_msg=e.detail)
@@ -70,7 +70,7 @@ async def read_notification(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        notification = service.read_notification(notification_uuid, current_user.uuid)
+        await service.read_notification(notification_uuid, current_user.uuid)
         return send_info(messages.UPDATE_SUCCESS + msg_prefix)
     except UnAuthorizedError as e:
         return send_client_side_error(user_msg=e.detail)

@@ -1,7 +1,7 @@
-from contextlib import AbstractContextManager
 from typing import Callable
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 
 from app.model.alert_policy_asset_assignment import AlertPolicyAssetAssignment
 from app.model.asset import Asset
@@ -9,32 +9,35 @@ from app.repository.base_repository import BaseRepository
 
 
 class AlertPolicyAssetAssignmentRepository(BaseRepository):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, AlertPolicyAssetAssignment)
 
-    def read_all_by_uuid(self, uuid):
-        with self.session_factory() as session:
-            return (
-                session.query(Asset)
+    async def read_all_by_uuid(self, uuid):
+        async with self.session_factory() as session:
+            result = await session.execute(
+                select(Asset)
                 .join(self.model, Asset.uuid == self.model.asset_uuid)
-                .filter_by(alert_policy_uuid=uuid)
-                .all()
+                .filter(self.model.alert_policy_uuid == uuid)
             )
+            return result.scalars().all()
 
-    def read_all_by_alert_policy_uuid(self, alert_policy_uuid):
-        with self.session_factory() as session:
-            return (
-                session.query(Asset)
+    async def read_all_by_alert_policy_uuid(self, alert_policy_uuid):
+        async with self.session_factory() as session:
+            result = await session.execute(
+                select(Asset)
                 .join(self.model, Asset.uuid == self.model.asset_uuid)
-                .filter_by(alert_policy_uuid=alert_policy_uuid)
-                .all()
+                .filter(self.model.alert_policy_uuid == alert_policy_uuid)
             )
+            return result.scalars().all()
 
-    def delete_by_asset(self, alert_policy_uuid, asset_uuid):
-        with self.session_factory() as session:
-            session.query(self.model).filter_by(
-                alert_policy_uuid=alert_policy_uuid, asset_uuid=asset_uuid
-            ).delete()
-            session.commit()
+    async def delete_by_asset(self, alert_policy_uuid, asset_uuid):
+        async with self.session_factory() as session:
+            await session.execute(
+                self.model.__table__.delete().where(
+                    self.model.alert_policy_uuid == alert_policy_uuid,
+                    self.model.asset_uuid == asset_uuid,
+                )
+            )
+            await session.commit()
             return True

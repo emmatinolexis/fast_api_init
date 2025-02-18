@@ -1,4 +1,4 @@
-import httpx
+import aiohttp
 
 from app.core.logger import get_logger
 from app.util.enums import EmailPurpose
@@ -19,17 +19,19 @@ class EchoParrot:
     async def echo_sms(self, message, recipient):
         url = f"http://{self.host}/api/v1/sms/"
         log.info(f"Sending SMS to {recipient} via Echo Parrot {url}")
-        response = httpx.post(
-            url,
-            json={
-                "message": message,
-                "recipient": recipient,
-                "sender_id": self.sender_id,
-                "sender_app": self.sender_app,
-            },
-            headers={"Content-Type": "application/json"},
-        )
-        return response.json()
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                url,
+                json={
+                    "message": message,
+                    "recipient": recipient,
+                    "sender_id": self.sender_id,
+                    "sender_app": self.sender_app,
+                },
+                headers={"Content-Type": "application/json"},
+            ) as response:
+                response_data = await response.json()
+                return response_data
 
     async def echo_email(
         self, recipient_email, email_purpose: EmailPurpose, email_body
@@ -45,9 +47,9 @@ class EchoParrot:
             "sender_app": self.sender_app,
         }
         log.info(f"Email data: {data}")
-        response = httpx.post(
-            url,
-            json=data,
-            headers={"Content-Type": "application/json"},
-        )
-        return response.json()
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                url, json=data, headers={"Content-Type": "application/json"}
+            ) as response:
+                response_data = await response.json()
+                return response_data

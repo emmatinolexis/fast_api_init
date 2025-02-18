@@ -64,7 +64,7 @@ async def get_asset_handler(
     current_user: User = Depends(get_current_user_with_permission("view_asset")),
 ):
     try:
-        return send_data(service.get_list())
+        return send_data(await service.get_list())
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -90,7 +90,7 @@ async def get_asset_by_user_uuid_handler(
                 403,
             )
 
-        assets = service.get_assets_by_user_uuid(
+        assets = await service.get_assets_by_user_uuid(
             user_uuid=user_uuid,
             asset_type_uuid=asset_type_uuid,
             page=page,
@@ -136,13 +136,13 @@ async def get_asset_by_business_uuid_handler(
                 page_size=page_size,
             )
         else:
-            assets = service.get_assets_by_business_uuid(
+            assets = await service.get_assets_by_business_uuid(
                 business_uuid=business_uuid,
                 asset_type_uuid=asset_type_uuid,
                 page=page,
                 page_size=page_size,
                 search=search,
-                status=status
+                status=status,
             )
         return send_data(assets)
 
@@ -160,7 +160,7 @@ async def create_asset_handler(
     current_user: User = Depends(get_current_user_with_permission("create_asset")),
 ):
     try:
-        asset = service.create_asset(payload, request)
+        asset = await service.create_asset(payload, request)
         logging.info(f"Created asset {asset}")
         ASSET_CREATION_TOTAL.labels(success="true").inc()
         return send_data(asset)
@@ -183,11 +183,11 @@ async def patch_asset_handler(
 ):
     try:
         if current_user.account_type == AccountType.INDIVIDUAL:
-            data = service.edit_asset(
+            data = await service.edit_asset(
                 asset_uuid=uuid, payload=payload, user_uuid=current_user.uuid
             )
         if current_user.account_type == AccountType.BUSINESS:
-            data = service.edit_asset(
+            data = await service.edit_asset(
                 asset_uuid=uuid,
                 payload=payload,
                 business_uuid=current_user.business_profile.uuid,
@@ -215,7 +215,7 @@ async def get_stolen_assets_handler(
     current_user: User = Depends(get_current_user_with_permission("view_stolen_asset")),
 ):
     try:
-        assets = service.get_third_stolen_assets(asset_type_uuid, page, page_size)
+        assets = await service.get_third_stolen_assets(asset_type_uuid, page, page_size)
 
         return send_data(assets)
 
@@ -240,7 +240,7 @@ async def get_third_party_assets_handler(
     current_user: User = Depends(get_current_user_with_permission("view_stolen_asset")),
 ):
     try:
-        assets = service.get_third_party_assets(asset_type_uuid, page, page_size)
+        assets = await service.get_third_party_assets(asset_type_uuid, page, page_size)
 
         return send_data(assets)
 
@@ -259,7 +259,7 @@ async def create_third_party_asset_handler(
     ),
 ):
     try:
-        asset = service.create_third_party_asset(payload)
+        asset = await service.create_third_party_asset(payload)
         logging.info(f"Third party asset created: {asset}")
         return send_data(asset)
     except NotFoundError as e:
@@ -278,30 +278,13 @@ async def update_asset_handler(
     current_user: User = Depends(get_current_user_with_permission("update_asset")),
 ):
     try:
-        asset = service.patch_by_uuid(uuid, payload)
+        asset = await service.patch_by_uuid(uuid, payload)
         if asset is None:
             return send_client_side_error(user_msg=messages.ASSET_NOT_FOUND + uuid)
         return send_data(asset)
     except Exception as e:
         msg = messages.UPDATE_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
-
-
-# @router.delete("/{uuid}", response_class=ORJSONResponse)
-# @inject
-# async def delete_asset_handler(
-#     uuid: str,
-#     service: AssetService = Depends(Provide[Container.asset_service]),
-#     current_user: User = Depends(get_current_user_with_permission("delete_asset")),
-# ):
-#     try:
-#         service.remove_by_uuid(uuid)
-#         return send_info(messages.DELETE_SUCCESS + msg_prefix)
-#     except NotFoundError as e:
-#         return send_client_side_error(user_msg=messages.ASSET_NOT_FOUND + str(e.detail))
-#     except Exception as e:
-#         msg = messages.DELETE_FAILED + msg_prefix
-#         return send_internal_server_error(user_msg=msg, error=e)
 
 
 @router.post(
@@ -317,7 +300,7 @@ async def assign_device_to_asset(
     ),
 ):
     try:
-        asset = service.assign_device_imei(asset_uuid, payload)
+        asset = await service.assign_device_imei(asset_uuid, payload)
         return send_data(asset)
     except Exception as e:
         msg = messages.UPDATE_FAILED + msg_prefix
@@ -335,14 +318,14 @@ async def get_device_analytics(
     ),
 ):
     try:
-        asset = asset_service.get_by_uuid(asset_uuid)
+        asset = await asset_service.get_by_uuid(asset_uuid)
 
         if asset is None:
             return send_client_side_error(
                 user_msg=messages.ASSET_NOT_FOUND + asset_uuid
             )
 
-        data = service.get_device_analytics(
+        data = await service.get_device_analytics(
             asset.device_imei, datetime.now().strftime("%d/%m/%Y")
         )
 
@@ -368,7 +351,7 @@ async def request_asset_device(
     ),
 ):
     try:
-        request_service.create_asset_device_request(
+        await request_service.create_asset_device_request(
             user_uuid=user_uuid, payload=payload
         )
 
@@ -390,7 +373,9 @@ async def get_asset_device_requests_by_user(
     ),
 ):
     try:
-        requests = request_service.get_asset_device_requests_by_user_uuid(user_uuid)
+        requests = await request_service.get_asset_device_requests_by_user_uuid(
+            user_uuid
+        )
 
         return send_data(requests)
     except Exception as e:
@@ -409,7 +394,7 @@ async def get_asset_device_requests(
     ),
 ):
     try:
-        requests = request_service.get_asset_device_requests()
+        requests = await request_service.get_asset_device_requests()
         return send_data(requests)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix} device requests"
@@ -432,7 +417,7 @@ async def update_status_request(
     ),
 ):
     try:
-        request_service.update_status(request_uuid)
+        await request_service.update_status(request_uuid)
         msg = "Status Updated successfully"
         return send_info(msg)
     except Exception as e:
@@ -450,7 +435,7 @@ async def shutdown_engine_request_handler(
     ),
 ):
     try:
-        request = asset_service.shutdown_engine(shutdown_payload.asset_uuid)
+        request = await asset_service.shutdown_engine(shutdown_payload.asset_uuid)
         if request.manufacturer.shutdown_on_command and request.sim_phone_number:
             shutdown_message = (
                 f"{ENGINE_SHUTDOWN_USERNAME} "
@@ -511,7 +496,7 @@ async def on_engine_request_handler(
     ),
 ):
     try:
-        request = asset_service.shutdown_engine(engine_on_payload.asset_uuid)
+        request = await asset_service.shutdown_engine(engine_on_payload.asset_uuid)
         if request.manufacturer.shutdown_on_command and request.sim_phone_number:
             engine_on_message = (
                 f"{ENGINE_SHUTDOWN_USERNAME} "
@@ -547,7 +532,7 @@ async def get_last_immobilizer_action(
     ),
 ):
     try:
-        action = asset_service.get_last_immobilizer_action(asset_uuid)
+        action = await asset_service.get_last_immobilizer_action(asset_uuid)
         return send_data(action)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix} device requests"
@@ -581,7 +566,7 @@ async def get_all_incidence_handler(
     ),
 ):
     try:
-        incidences = asset_service.get_all_theft_incidence(
+        incidences = await asset_service.get_all_theft_incidence(
             page=page,
             page_size=page_size,
             search_query=search_query,
@@ -609,7 +594,7 @@ async def mark_incident_as_resolved_handler(
     ),
 ):
     try:
-        incident = asset_service.mark_as_resolved(incident_uuid)
+        incident = await asset_service.mark_as_resolved(incident_uuid)
         asset_service.update_asset_stolen_status_to_false(incident.asset_uuid)
         msg = "Successfully marked as resolved"
         return send_info(msg)
@@ -628,7 +613,7 @@ async def get_incident_reports_handler(
     ),
 ):
     try:
-        reports = asset_service.get_incident_reports(incident_uuid)
+        reports = await asset_service.get_incident_reports(incident_uuid)
         return send_data(reports)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix} theft incidence"
@@ -645,7 +630,7 @@ async def create_theft_report_handler(
     current_user: User = Depends(get_current_user_with_permission("create_incident")),
 ):
     try:
-        reports = theft_report_service.add(payload)
+        reports = await theft_report_service.add(payload)
         return send_data(reports)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix} theft report"
@@ -664,7 +649,7 @@ async def create_building_handler(
 ):
     try:
         if payload.create_building_without_cylinder:
-            building = building_service.add(payload.building)
+            building = await building_service.add(payload.building)
             return send_data(building)
 
         # validate gas device serial_no
@@ -673,7 +658,7 @@ async def create_building_handler(
             if payload.gas_cylinder
             else payload.fire_device.serial_number
         )
-        gas_device = gas_device_service.get_gas_device_by_serial_no(gas_serial_no)
+        gas_device = await gas_device_service.get_gas_device_by_serial_no(gas_serial_no)
 
         if not gas_device:
             msg = f"{messages.GAS_DEVICE_NOT_FOUND} {gas_serial_no}"
@@ -703,12 +688,12 @@ async def get_building_asset_handler(
     current_user: User = Depends(get_current_user_with_permission("view_asset")),
 ):
     try:
-        user = user_service.get_user_by_uuid(user_uuid)
+        user = await user_service.get_user_by_uuid(user_uuid)
         if not user:
             msg = f"{messages.USER_NOT_FOUND} {user_uuid}"
             return send_internal_server_error(user_msg=msg, error=msg)
 
-        buildings = building_service.get_all_buildings(
+        buildings = await building_service.get_all_buildings(
             business_uuid=user.get("business_profile").uuid,
             page=page,
             page_size=page_size,
@@ -729,7 +714,7 @@ async def get_building_by_uuid_handler(
     current_user: User = Depends(get_current_user_with_permission("view_asset")),
 ):
     try:
-        building = building_service.get_building_by_uuid(building_uuid)
+        building = await building_service.get_building_by_uuid(building_uuid)
         return send_data(building)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix} theft report"
@@ -751,12 +736,12 @@ async def get_building_cylinder_assets_handler(
     ),
 ):
     try:
-        building = building_service.get_by_uuid(building_uuid)
+        building = await building_service.get_by_uuid(building_uuid)
         if not building:
             msg = f"{messages.BUILDING_NOT_FOUND} {building_uuid}"
             return send_internal_server_error(user_msg=msg, error=msg)
 
-        cylinders = building_service.get_building_cylinder_assets(
+        cylinders = await building_service.get_building_cylinder_assets(
             building_uuid=building_uuid,
             cylinder_status=cylinder_status,
             page_size=page_size,
@@ -777,7 +762,7 @@ async def patch_building_handler(
     current_user: User = Depends(get_current_user_with_permission("update_asset")),
 ):
     try:
-        data = building_service.update_building(building_uuid, payload)
+        data = await building_service.update_building(building_uuid, payload)
         return send_data_with_info(data, messages.UPDATE_SUCCESS + "Building")
     except Exception as e:
         msg = messages.UPDATE_FAILED + msg_prefix

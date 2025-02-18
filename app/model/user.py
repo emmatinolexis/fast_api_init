@@ -33,7 +33,7 @@ class User(BaseModel):
     currency = Column(String(length=50), nullable=True, index=True)
     status = Column(Enum(ActiveStatus), default=ActiveStatus.ACTIVE, nullable=False)
     deactivation_reason = Column(String(length=250), nullable=True)
-    installer_locations = Column(JSON, nullable=True, index=True)
+    installer_locations = Column(JSON, nullable=True)
     avatar_url = Column(String(length=200), nullable=True)
     phone_verified_at = Column(DateTime, nullable=True)
     role = Column(

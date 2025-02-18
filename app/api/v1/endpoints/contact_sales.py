@@ -24,7 +24,7 @@ async def create_contact_sales_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        contact_sale = service.create_contact_sale(payload)
+        contact_sale = await service.create_contact_sale(payload)
         return send_data(contact_sale)
     except Exception as e:
         msg = messages.CREATE_FAILED + " contact sale"

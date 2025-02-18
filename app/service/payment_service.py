@@ -1,5 +1,3 @@
-from decimal import Decimal
-
 from app.repository.payment_repository import PaymentRepository
 from app.service.base_service import BaseService
 
@@ -9,7 +7,7 @@ class PaymentService(BaseService):
         self.payment_repository = payment_repository
         super().__init__(payment_repository)
 
-    def get_payments(
+    async def get_payments(
         self,
         search_parameter: str = None,
         start_date: str = None,
@@ -19,7 +17,7 @@ class PaymentService(BaseService):
         status=None,
     ):
         try:
-            payments = self.payment_repository.get_all_payments(
+            payments = await self.payment_repository.get_all_payments(
                 search_parameter, start_date, end_date, page, page_size, status
             )
             payments_data = []
