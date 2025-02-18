@@ -127,7 +127,7 @@ async def get_asset_by_business_uuid_handler(
             )
 
         if current_user.user_role.role_name == "Operator":
-            assets = service.read_assigned_assets(
+            assets = await service.read_assigned_assets(
                 operator_uuid=str(current_user.uuid),
                 business_uuid=business_uuid,
                 asset_type_uuid=asset_type_uuid,
@@ -144,6 +144,38 @@ async def get_asset_by_business_uuid_handler(
                 search=search,
                 status=status,
             )
+        return send_data(assets)
+
+    except Exception as e:
+        msg = messages.GET_FAILED + f"{msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/business/all_assets/{business_uuid}", response_class=ORJSONResponse)
+@inject
+async def get_vehicle_building_asset_by_business_uuid_handler(
+    business_uuid: str,
+    search: str = Query(None, description="Search by asset name"),
+    page: int = Query(1, ge=1, description="Page number, default is set to 1"),
+    page_size: int = Query(
+        10, ge=1, le=1000, description="Items per page, default is 10"
+    ),
+    service: AssetService = Depends(Provide[Container.asset_service]),
+    current_user: User = Depends(get_current_user_with_permission("view_asset")),
+):
+    try:
+        if str(business_uuid) != str(current_user.business_profile.uuid):
+            return send_client_side_error(
+                messages.ASSET_FETCH_NOT_AUTHORIZED,
+                messages.ASSET_FETCH_NOT_AUTHORIZED,
+                403,
+            )
+        assets = await service.get_vehicle_building_assets_by_business_uuid(
+            business_uuid=business_uuid,
+            page=page,
+            page_size=page_size,
+            search=search,
+        )
         return send_data(assets)
 
     except Exception as e:

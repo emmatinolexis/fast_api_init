@@ -5,6 +5,7 @@ from sqlalchemy import Date, and_, cast, desc, label, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
+from sqlalchemy.sql import func
 
 from app.core.settings import get_settings
 from app.model.alert_policy import AlertPolicy
@@ -21,6 +22,7 @@ from app.repository.base_repository import BaseRepository
 from app.schema.asset_schema import AssignDeviceInputPayload
 from app.util.enums import AssetCreators, AssetStatus
 from app.util.utils import get_status
+from app.model.buildings import Building
 
 
 class AssetRepository(BaseRepository):
@@ -57,18 +59,17 @@ class AssetRepository(BaseRepository):
         user_uuid: str = None,
         business_uuid: str = None,
         asset_type_uuid: str = None,
-        page=1,
-        page_size=10,
+        page: int = 1,
+        page_size: int = 10,
         search_query: str = None,
         status: str = None,
     ) -> Dict[str, Any]:
         async with self.session_factory() as session:
-            # Calculate the offset based on the page and per_page values
             offset = (page - 1) * page_size
 
-            # Start with a base query, apply joins here before limit and offset
+            # Base query with necessary joins
             base_query = (
-                session.query(self.model)
+                select(self.model)
                 .join(
                     AssetOperatorAssignment,
                     AssetOperatorAssignment.asset_uuid == self.model.uuid,
@@ -81,16 +82,16 @@ class AssetRepository(BaseRepository):
                 )
             )
 
-            # Apply filters first before limit and offset
-            if user_uuid is not None:
+            # Apply filters
+            if user_uuid:
                 base_query = base_query.filter(self.model.user_uuid == user_uuid)
 
-            if business_uuid is not None:
+            if business_uuid:
                 base_query = base_query.filter(
                     self.model.business_profile_uuid == business_uuid
                 )
 
-            if asset_type_uuid is not None:
+            if asset_type_uuid:
                 base_query = base_query.filter(
                     self.model.asset_type_uuid == asset_type_uuid
                 )
@@ -101,29 +102,27 @@ class AssetRepository(BaseRepository):
                         self.model.asset_name.ilike(f"%{search_query}%"),
                         self.model.vehicle_license_no.ilike(f"%{search_query}%"),
                         self.model.vin.ilike(f"%{search_query}%"),
-                        User.first_name.ilike(
-                            f"%{search_query}%"
-                        ),  # Search by operator's first name
+                        User.first_name.ilike(f"%{search_query}%"),
                         User.last_name.ilike(f"%{search_query}%"),
                     )
                 )
 
-            # Query to get the total count of assets
-            total_assets = await session.execute(base_query.count())
-            total_assets = total_assets.scalar()
+            # Get total assets count
+            total_assets_stmt = select(func.count(self.model.uuid)).select_from(
+                base_query.subquery()
+            )
+            total_assets_result = await session.execute(total_assets_stmt)
+            total_assets = total_assets_result.scalar()
 
             # Calculate total pages
             total_pages = (total_assets + page_size - 1) // page_size
 
-            # Apply ordering and pagination after filtering
+            # Apply ordering, pagination, and relationships loading
             paginated_query = (
                 base_query.order_by(desc(self.model.created_at))
                 .offset(offset)
                 .limit(page_size)
-            )
-
-            assets = await session.execute(
-                paginated_query.options(joinedload(self.model.asset_type))
+                .options(joinedload(self.model.asset_type))
                 .options(
                     joinedload(self.model.device)
                     .joinedload(Device.inventory)
@@ -131,26 +130,28 @@ class AssetRepository(BaseRepository):
                 )
                 .options(joinedload(self.model.equipment))
             )
-            assets = assets.unique().scalars().all()
+
+            result = await session.execute(paginated_query)
+            assets = result.unique().scalars().all()
 
             # Process assets (including operator info and tracking event)
             processed_assets = await self.process_assets(session, assets)
-            asset_data = []
 
-            if status:
-                for asset in processed_assets:
-                    if asset.device_imei:
-                        if asset.last_tracking_event.get("status") == status:
-                            asset_data.append(asset)
-            else:
-                asset_data = processed_assets
+            # Filter by status if provided
+            asset_data = [
+                asset
+                for asset in processed_assets
+                if not status
+                or (
+                    asset.device_imei
+                    and asset.last_tracking_event.get("status") == status
+                )
+            ]
 
-            # Get asset status counts (moving, idle, stopped)
-            (
-                moving_asset_count,
-                idle_asset_count,
-                stopped_asset_count,
-            ) = self.get_asset_status_counts(asset_data)
+            # Get asset status counts
+            moving_asset_count, idle_asset_count, stopped_asset_count = (
+                self.get_asset_status_counts(asset_data)
+            )
 
             return {
                 "assets": asset_data,
@@ -161,6 +162,99 @@ class AssetRepository(BaseRepository):
                 "moving_assets": moving_asset_count,
                 "idle_assets": idle_asset_count,
                 "stopped_assets": stopped_asset_count,
+            }
+
+    async def read_vehicle_building_assets_by_business_uuid(
+        self,
+        business_uuid: str,
+        page: int = 1,
+        page_size: int = 10,
+        search_query: str = None,
+    ) -> Dict[str, Any]:
+        async with self.session_factory() as session:
+            all_asset_data = []
+
+            # Fetch vehicle assets
+            vehicle_stmt = select(self.model).filter(
+                self.model.business_profile_uuid == business_uuid
+            )
+            vehicle_result = await session.execute(vehicle_stmt)
+            vehicle_assets = vehicle_result.unique().scalars().all()
+
+            # Fetch building assets
+            building_stmt = select(Building).filter(
+                Building.business_profile_uuid == business_uuid
+            )
+            building_result = await session.execute(building_stmt)
+            building_assets = building_result.unique().scalars().all()
+
+            # Process vehicle assets
+            processed_vehicle_assets = await self.process_assets(
+                session, vehicle_assets
+            )
+
+            # return processed_vehicle_assets[0].last_tracking_event
+            # Prepare asset data
+            # for vehicle_asset in processed_vehicle_assets:
+            #     if vehicle_asset.last_tracking_event:
+            #         all_asset_data.append(
+            #             {
+            #                 "asset_name": vehicle_asset.asset_name,
+            #                 "marker_icon_color": vehicle_asset.marker_color,
+            #                 "last_tracking_event": {
+            #                     "lng": vehicle_asset.last_tracking_event["lng"],
+            #                     "lat": vehicle_asset.last_tracking_event["lat"],
+            #                 },
+            #             }
+            #         )
+            for vehicle_asset in processed_vehicle_assets:
+                last_tracking_event = getattr(
+                    vehicle_asset, "last_tracking_event", None
+                )  # Safely get attribute
+
+                if last_tracking_event:  # Only process if tracking data exists
+                    all_asset_data.append(
+                        {
+                            "asset_name": vehicle_asset.asset_name,
+                            "marker_icon_color": vehicle_asset.marker_color,
+                            "last_tracking_event": {
+                                "lng": last_tracking_event.get("lng", None),
+                                "lat": last_tracking_event.get("lat", None),
+                            },
+                        }
+                    )
+
+            for building_asset in building_assets:
+                all_asset_data.append(
+                    {
+                        "asset_name": building_asset.building_name,
+                        "marker_icon_color": None,
+                        "last_tracking_event": {
+                            "lng": building_asset.longitude,
+                            "lat": building_asset.latitude,
+                        },
+                    }
+                )
+
+            # Apply search filter if provided
+            if search_query:
+                all_asset_data = [
+                    asset
+                    for asset in all_asset_data
+                    if search_query.lower() in asset["asset_name"].lower()
+                ]
+
+            # Pagination logic
+            total_assets = len(all_asset_data)
+            total_pages = (total_assets + page_size - 1) // page_size
+            paginated_assets = all_asset_data[(page - 1) * page_size : page * page_size]
+
+            return {
+                "assets": paginated_assets,
+                "total_assets": total_assets,
+                "total_pages": total_pages,
+                "current_page": page,
+                "page_size": page_size,
             }
 
     async def read_assigned_assets_by_uuid(
@@ -175,8 +269,9 @@ class AssetRepository(BaseRepository):
         async with self.session_factory() as session:
             offset = (page - 1) * page_size
 
+            # Base query with joins
             base_query = (
-                session.query(self.model)
+                select(self.model)
                 .join(
                     AssetOperatorAssignment,
                     AssetOperatorAssignment.asset_uuid == self.model.uuid,
@@ -184,12 +279,13 @@ class AssetRepository(BaseRepository):
                 .filter(AssetOperatorAssignment.operator_uuid == operator_uuid)
             )
 
-            if business_uuid is not None:
+            # Apply filters
+            if business_uuid:
                 base_query = base_query.filter(
                     self.model.business_profile_uuid == business_uuid
                 )
 
-            if asset_type_uuid is not None:
+            if asset_type_uuid:
                 base_query = base_query.filter(
                     self.model.asset_type_uuid == asset_type_uuid
                 )
@@ -200,37 +296,39 @@ class AssetRepository(BaseRepository):
                         self.model.asset_name.ilike(f"%{search_query}%"),
                         self.model.vehicle_license_no.ilike(f"%{search_query}%"),
                         self.model.vin.ilike(f"%{search_query}%"),
-                        User.first_name.ilike(
-                            f"%{search_query}%"
-                        ),  # Search by operator's first name
+                        User.first_name.ilike(f"%{search_query}%"),
                         User.last_name.ilike(f"%{search_query}%"),
                     )
                 )
 
-            total_assets = await session.execute(base_query.count())
-            total_assets = total_assets.scalar()
+            # Get total assets count
+            total_assets_stmt = select(func.count()).select_from(base_query.subquery())
+            total_assets_result = await session.execute(total_assets_stmt)
+            total_assets = total_assets_result.scalar()
+
+            # Calculate total pages
             total_pages = (total_assets + page_size - 1) // page_size
 
+            # Apply ordering, pagination, and relationships loading
             paginated_query = (
                 base_query.order_by(desc(self.model.created_at))
                 .offset(offset)
                 .limit(page_size)
-            )
-
-            assets = await session.execute(
-                paginated_query.options(joinedload(self.model.asset_type))
+                .options(joinedload(self.model.asset_type))
                 .options(joinedload(self.model.device).joinedload(Device.inventory))
                 .options(joinedload(self.model.equipment))
             )
-            assets = assets.unique().scalars().all()
 
+            result = await session.execute(paginated_query)
+            assets = result.scalars().all()
+
+            # Process assets (including operator info and tracking event)
             processed_assets = await self.process_assets(session, assets)
 
-            (
-                moving_asset_count,
-                idle_asset_count,
-                stopped_asset_count,
-            ) = self.get_asset_status_counts(assets)
+            # Get asset status counts
+            moving_asset_count, idle_asset_count, stopped_asset_count = (
+                self.get_asset_status_counts(processed_assets)
+            )
 
             return {
                 "assets": processed_assets,
@@ -270,8 +368,8 @@ class AssetRepository(BaseRepository):
             # Check if asset has device IMEI
             if asset.device_imei:
                 # Get device's last known location
-                last_tracking_event = await session.execute(
-                    session.query(
+                result = await session.execute(
+                    select(
                         label("lat", TrackingEvent.latitude),
                         label("lng", TrackingEvent.longitude),
                         TrackingEvent.speed,
@@ -284,11 +382,11 @@ class AssetRepository(BaseRepository):
                     .order_by(desc(TrackingEvent.event_datetime))
                     .limit(1)
                 )
-                last_tracking_event = last_tracking_event.first()
+                last_tracking_event = result.first()
 
                 if last_tracking_event:
                     # Construct a dictionary with the retrieved fields
-                    last_tracking_event_dict = {
+                    asset.last_tracking_event = {
                         "lat": last_tracking_event.lat,
                         "lng": last_tracking_event.lng,
                         "speed": last_tracking_event.speed,
@@ -298,28 +396,26 @@ class AssetRepository(BaseRepository):
                         "status": get_status(last_tracking_event.event_type),
                         "fuel_level": last_tracking_event.fuel_level,
                     }
-                    # Add last_tracking_event_dict to asset dictionary
-                    asset.last_tracking_event = last_tracking_event_dict
+                else:
+                    asset.last_tracking_event = None
 
             # Fetch the assigned operator from AssetOperatorAssignment
-            operator_assignment = await session.execute(
-                session.query(AssetOperatorAssignment)
+            result = await session.execute(
+                select(AssetOperatorAssignment.operator_uuid)
                 .filter(AssetOperatorAssignment.asset_uuid == asset.uuid)
                 .limit(1)
             )
-            operator_assignment = operator_assignment.first()
+            operator_assignment = result.scalar()
 
             if operator_assignment:
                 # Fetch the operator (user) details
-                operator = await session.execute(
-                    session.query(User)
-                    .filter(User.uuid == operator_assignment.operator_uuid)
-                    .limit(1)
+                result = await session.execute(
+                    select(User).filter(User.uuid == operator_assignment).limit(1)
                 )
-                operator = operator.first()
+                operator = result.scalars().first()
 
                 if operator:
-                    operator_data = {
+                    asset.operator = {
                         "uuid": operator.uuid,
                         "first_name": operator.first_name,
                         "last_name": operator.last_name,
@@ -328,8 +424,6 @@ class AssetRepository(BaseRepository):
                         "operator_type": operator.operator_type,
                         "phone_number": operator.phone_number,
                     }
-                    # Add operator_data to asset dictionary
-                    asset.operator = operator_data
                 else:
                     asset.operator = None
             else:
