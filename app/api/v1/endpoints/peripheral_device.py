@@ -26,7 +26,7 @@ from app.service.device_alert_notification_service import DeviceAlertNotificatio
 from app.service.device_configuration_service import DeviceConfigurationService
 from app.service.gas_cylinder_service import GasCylinderService
 from app.service.peripheral_device_service import PeripheralDeviceService
-from app.util.enums import AccountType, DeviceConfigurationVersion, DeviceType
+from app.util.enums import DeviceConfigurationVersion, DeviceType
 from app.util.utils import (
     send_client_side_error,
     send_data,

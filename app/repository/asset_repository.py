@@ -1,7 +1,7 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Callable, Dict, List, Tuple
 
-from sqlalchemy import Date, DateTime, and_, cast, desc, label, or_
+from sqlalchemy import Date, and_, cast, desc, label, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
@@ -27,82 +27,6 @@ class AssetRepository(BaseRepository):
     def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
         super().__init__(session_factory, Asset)
-
-    async def read_all_assets_by_uuid_no_pagination(
-        self,
-        user_uuid: str = None,
-        business_uuid: str = None,
-        asset_uuid: str = None,
-        asset_type_uuid: str = None,
-    ):
-        async with self.session_factory() as session:
-            if user_uuid is not None:
-                if asset_uuid:
-                    return (
-                        await session.execute(
-                            session.query(self.model).filter(
-                                self.model.uuid == asset_uuid
-                            )
-                        )
-                        .scalars()
-                        .all()
-                    )
-                elif asset_type_uuid:
-                    return (
-                        await session.execute(
-                            session.query(self.model).filter(
-                                self.model.user_uuid == user_uuid,
-                                self.model.asset_type_uuid == asset_type_uuid,
-                            )
-                        )
-                        .scalars()
-                        .all()
-                    )
-                else:
-                    return (
-                        await session.execute(
-                            session.query(self.model).filter(
-                                self.model.user_uuid == user_uuid
-                            )
-                        )
-                        .scalars()
-                        .all()
-                    )
-
-            if business_uuid is not None:
-                if asset_uuid:
-                    return (
-                        await session.execute(
-                            session.query(self.model).filter(
-                                self.model.uuid == asset_uuid
-                            )
-                        )
-                        .scalars()
-                        .all()
-                    )
-                elif asset_type_uuid:
-                    return (
-                        await session.execute(
-                            session.query(self.model).filter(
-                                self.model.business_profile_uuid == business_uuid,
-                                self.model.asset_type_uuid == asset_type_uuid,
-                            )
-                        )
-                        .scalars()
-                        .all()
-                    )
-                else:
-                    return (
-                        await session.execute(
-                            session.query(self.model).filter(
-                                self.model.business_profile_uuid == business_uuid
-                            )
-                        )
-                        .scalars()
-                        .all()
-                    )
-
-            return []
 
     async def read_all_assets_by_uuid_no_pagination(
         self,

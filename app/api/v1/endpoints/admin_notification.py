@@ -70,9 +70,7 @@ async def read_notification(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        notification = await service.read_notification(
-            notification_uuid, current_user.uuid
-        )
+        await service.read_notification(notification_uuid, current_user.uuid)
         return send_info(messages.UPDATE_SUCCESS + msg_prefix)
     except UnAuthorizedError as e:
         return send_client_side_error(user_msg=e.detail)

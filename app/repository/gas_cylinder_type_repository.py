@@ -1,11 +1,12 @@
 from typing import Callable, Optional
 
-from sqlalchemy import String, cast
+from sqlalchemy import String, cast, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.gas_cylinders import CylinderTypes
 from app.repository.base_repository import BaseRepository
 from app.util.enums import ActiveStatus
+from sqlalchemy.future import select
 
 
 class GasCylinderTypeRepository(BaseRepository):

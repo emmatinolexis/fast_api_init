@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.exceptions import NotFoundError
 from app.model.gateway_configuration import GatewayConfiguration
 from app.repository.base_repository import BaseRepository
+from sqlalchemy.future import select
 
 
 class GatewayConfigurationRepository(BaseRepository):

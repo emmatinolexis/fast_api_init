@@ -102,58 +102,6 @@ class OnboardingService(BaseService):
         except Exception as e:
             raise e
 
-    def create_business_onboarding(self, onboarding: BusinessOnboardingPayload):
-        try:
-            if self.user_repository.read_by_uuid(onboarding.user_uuid) is None:
-                raise NotFoundError(
-                    detail=messages.USER_NOT_FOUND + str(onboarding.user_uuid)
-                )
-
-            for item in onboarding.features_uuid:
-                if self.feature_repository.read_by_uuid(item) is None:
-                    raise NotFoundError(detail=messages.FEATURE_NOT_FOUND + str(item))
-
-            for item in onboarding.asset_types_uuid:
-                if self.asset_type_repository.read_by_uuid(item) is None:
-                    raise NotFoundError(detail=messages.ASSET_NOT_FOUND + str(item))
-
-            # create onboarding
-            onboarding_item = OnboardingBusinessInput(
-                number_of_assets=onboarding.number_of_assets,
-                user_uuid=onboarding.user_uuid,
-                onboarding_type=AccountType.BUSINESS,
-            )
-
-            create_onboarding = self.onboarding_repository.create(onboarding_item)
-
-            # assign features to onboarding
-            for item in onboarding.features_uuid:
-                feature = {
-                    "onboarding_uuid": create_onboarding.uuid,
-                    "feature_uuid": item,
-                }
-                self.onboading_feature_assignment_repository.create(
-                    OnboardingFeatureAssignment(**feature)
-                )
-
-            # assign asset_type to onboarding
-            for item in onboarding.asset_types_uuid:
-                asset_type = {
-                    "onboarding_uuid": create_onboarding.uuid,
-                    "asset_type_uuid": item,
-                }
-                self.onboarding_asset_type_assignment_repository.create(
-                    OnboardingAssetTypeAssignment(**asset_type)
-                )
-
-            # update user onboarding status
-            self.user_repository.update_user_onboard_status(onboarding.user_uuid)
-
-            return create_onboarding
-
-        except Exception as e:
-            raise e
-
     async def create_business_onboarding(self, onboarding: BusinessOnboardingPayload):
         try:
             if await self.user_repository.read_by_uuid(onboarding.user_uuid) is None:

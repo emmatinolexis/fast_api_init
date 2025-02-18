@@ -52,7 +52,9 @@ async def get_inventory_by_uuid(
         inventory = await service.get_inventory_by_uuid(uuid)
         return send_data(inventory)
     except NotFoundError as e:
-        return send_client_side_error(user_msg=messages.GET_FAILED + "inventory")
+        return send_client_side_error(
+            user_msg=messages.GET_FAILED + "inventory", dev_msg=str(e)
+        )
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)

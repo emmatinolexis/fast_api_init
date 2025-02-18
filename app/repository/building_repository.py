@@ -99,7 +99,7 @@ class BuildingRepository(BaseRepository):
             )
 
             results = await session.execute(self._load_related_models(paginated_query))
-            assets = assets.unique().scalars().all()
+            assets = results.unique().scalars().all()
             buildings = self._build_building_assets(assets)
 
             return {

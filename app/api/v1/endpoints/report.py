@@ -405,7 +405,9 @@ async def get_cylinder_report(
     except ValueError as e:
         return send_client_side_error(user_msg=str(e), dev_msg=str(e))
     except NotFoundError as e:
-        return send_client_side_error(user_msg=messages.GET_FAILED + "cylinder report")
+        return send_client_side_error(
+            user_msg=messages.GET_FAILED + "cylinder report", dev_msg=str(e)
+        )
     except Exception as e:
         return send_internal_server_error(
             user_msg="Failed to get cylinder report", error=e

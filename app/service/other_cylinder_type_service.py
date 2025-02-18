@@ -4,7 +4,6 @@ from app.repository.other_cylinder_types_repository import OtherCylinderTypeRepo
 from app.repository.user_repository import UserRepository
 from app.schema.gas_cylinder_schema import CreateOtherCylinderType
 from app.service.base_service import BaseService
-from app.util.enums import AccountType
 
 
 class OtherCylinderTypeService(BaseService):

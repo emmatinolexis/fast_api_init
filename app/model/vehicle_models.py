@@ -1,13 +1,11 @@
 import uuid
 
 from sqlalchemy import Column
-from sqlalchemy import Enum as SQLAEnum
+
 from sqlalchemy import ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-
 from app.model.base_model import BaseModel
-from app.util.enums import AssetType
 
 
 class VehicleMake(BaseModel):

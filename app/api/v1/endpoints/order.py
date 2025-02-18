@@ -82,7 +82,9 @@ async def get_order_by_uuid(
         order = await service.get_order_by_uuid(uuid)
         return send_data(order)
     except NotFoundError as e:
-        return send_client_side_error(user_msg=messages.GET_FAILED + "order")
+        return send_client_side_error(
+            user_msg=messages.GET_FAILED + "order", dev_msg=str(e)
+        )
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
