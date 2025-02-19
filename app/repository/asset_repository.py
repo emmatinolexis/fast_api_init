@@ -176,14 +176,23 @@ class AssetRepository(BaseRepository):
         page: int = 1,
         page_size: int = 10,
         search_query: str = None,
+        status: str = None,
     ) -> Dict[str, Any]:
         async with self.session_factory() as session:
             all_asset_data = []
 
             # Fetch vehicle assets
-            vehicle_stmt = select(self.model).filter(
-                self.model.business_profile_uuid == business_uuid
+            vehicle_stmt = (
+                select(self.model)
+                .join(
+                    AssetOperatorAssignment,
+                    AssetOperatorAssignment.asset_uuid == self.model.uuid,
+                    isouter=True,
+                )
+                .options(joinedload(self.model.asset_type))
+                .filter(self.model.business_profile_uuid == business_uuid)
             )
+
             vehicle_result = await session.execute(vehicle_stmt)
             vehicle_assets = vehicle_result.unique().scalars().all()
 
@@ -199,37 +208,63 @@ class AssetRepository(BaseRepository):
                 session, vehicle_assets
             )
 
-            # return processed_vehicle_assets[0].last_tracking_event
             for vehicle_asset in processed_vehicle_assets:
                 last_tracking_event = getattr(
                     vehicle_asset, "last_tracking_event", None
-                )  # Safely get attribute
+                )
 
-                if last_tracking_event:  # Only process if tracking data exists
-                    all_asset_data.append(
-                        {
-                            "asset_name": vehicle_asset.asset_name,
-                            "marker_icon_color": vehicle_asset.marker_color,
-                            "last_tracking_event": {
-                                "lng": last_tracking_event.get("lng", None),
-                                "lat": last_tracking_event.get("lat", None),
-                            },
-                        }
-                    )
+                all_asset_data.append(
+                    {
+                        "uuid": vehicle_asset.uuid,
+                        "asset_name": vehicle_asset.asset_name,
+                        "marker_icon_color": vehicle_asset.marker_color,
+                        "status": (
+                            last_tracking_event.get("status")
+                            if last_tracking_event
+                            else "unknown"
+                        ),
+                        "last_tracking_event": {
+                            "lng": (
+                                last_tracking_event.get("lng", None)
+                                if last_tracking_event
+                                else None
+                            ),
+                            "lat": (
+                                last_tracking_event.get("lat", None)
+                                if last_tracking_event
+                                else None
+                            ),
+                        },
+                        "operator": vehicle_asset.operator,
+                        "asset_type": vehicle_asset.asset_type,
+                    }
+                )
 
             for building_asset in building_assets:
                 all_asset_data.append(
                     {
+                        "uuid": building_asset.uuid,
                         "asset_name": building_asset.building_name,
                         "marker_icon_color": None,
+                        "status": getattr(
+                            building_asset, "status", "unknown"
+                        ),  # Handle missing status
                         "last_tracking_event": {
                             "lng": building_asset.longitude,
                             "lat": building_asset.latitude,
                         },
+                        "operator": None,
+                        "asset_type": "building",
                     }
                 )
 
-            # Apply search filter if provided
+            # Apply status filter
+            if status:
+                all_asset_data = [
+                    asset for asset in all_asset_data if asset["status"] == status
+                ]
+
+            # Apply search filter
             if search_query:
                 all_asset_data = [
                     asset

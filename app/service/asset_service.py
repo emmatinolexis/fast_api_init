@@ -404,6 +404,7 @@ class AssetService(BaseService):
         page=1,
         page_size=10,
         search: str = None,
+        status: str = None,
     ):
         try:
             return await self.asset_repository.read_vehicle_building_assets_by_business_uuid(
@@ -411,6 +412,7 @@ class AssetService(BaseService):
                 page_size=page_size,
                 page=page,
                 search_query=search,
+                status=status,
             )
         except Exception as e:
             raise e
