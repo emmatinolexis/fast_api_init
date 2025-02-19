@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import func
+from sqlalchemy import distinct
 
 from app.core.settings import get_settings
 from app.model.alert_policy import AlertPolicy
@@ -106,11 +107,16 @@ class AssetRepository(BaseRepository):
                         User.last_name.ilike(f"%{search_query}%"),
                     )
                 )
+            # Ensure only one DISTINCT is applied
+            distinct_assets_query = base_query.with_only_columns(
+                self.model.uuid
+            ).distinct()
 
-            # Get total assets count
-            total_assets_stmt = select(func.count(self.model.uuid)).select_from(
-                base_query.subquery()
+            # Now, correctly count the distinct assets
+            total_assets_stmt = select(func.count()).select_from(
+                distinct_assets_query.subquery()
             )
+
             total_assets_result = await session.execute(total_assets_stmt)
             total_assets = total_assets_result.scalar()
 
@@ -194,19 +200,6 @@ class AssetRepository(BaseRepository):
             )
 
             # return processed_vehicle_assets[0].last_tracking_event
-            # Prepare asset data
-            # for vehicle_asset in processed_vehicle_assets:
-            #     if vehicle_asset.last_tracking_event:
-            #         all_asset_data.append(
-            #             {
-            #                 "asset_name": vehicle_asset.asset_name,
-            #                 "marker_icon_color": vehicle_asset.marker_color,
-            #                 "last_tracking_event": {
-            #                     "lng": vehicle_asset.last_tracking_event["lng"],
-            #                     "lat": vehicle_asset.last_tracking_event["lat"],
-            #                 },
-            #             }
-            #         )
             for vehicle_asset in processed_vehicle_assets:
                 last_tracking_event = getattr(
                     vehicle_asset, "last_tracking_event", None
@@ -256,6 +249,29 @@ class AssetRepository(BaseRepository):
                 "current_page": page,
                 "page_size": page_size,
             }
+
+    def get_asset_status_counts(self, assets: List[Any]) -> Tuple[int, int, int]:
+        moving_asset_count = 0
+        idle_asset_count = 0
+        stopped_asset_count = 0
+
+        for asset in assets:
+            if hasattr(asset, "last_tracking_event") and asset.last_tracking_event:
+                tracking_event = asset.last_tracking_event
+                event_type = str(tracking_event.get("event_type", "unknown"))
+
+                status = get_status(event_type)
+
+                if status == "moving":
+                    moving_asset_count += 1
+                elif status == "idle":
+                    idle_asset_count += 1
+                else:
+                    stopped_asset_count += 1  # Count unknown statuses as stopped
+            else:
+                stopped_asset_count += 1  # No tracking event, count as stopped
+
+        return moving_asset_count, idle_asset_count, stopped_asset_count
 
     async def read_assigned_assets_by_uuid(
         self,
