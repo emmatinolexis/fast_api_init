@@ -156,7 +156,7 @@ async def get_asset_by_business_uuid_handler(
 async def get_vehicle_building_asset_by_business_uuid_handler(
     business_uuid: str,
     search: str = Query(None, description="Search by asset name"),
-    asset_type_uuid: str = Query(None, description="Search by asset type"),
+    asset_type_uuid: str = Query(None, description="Search by asset type uuid"),
     status: str = Query(None, description="Search by asset status"),
     service: AssetService = Depends(Provide[Container.asset_service]),
     current_user: User = Depends(get_current_user_with_permission("view_asset")),
