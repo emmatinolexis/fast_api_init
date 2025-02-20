@@ -247,7 +247,7 @@ class AlertPolicyService(BaseService):
                 status=ActiveStatus.ACTIVE,
             )
             created_policy = await self.add(alert_policy_data)
-            self.assign_alert_recipients(
+            await self.assign_alert_recipients(
                 alert_policy.alert_recipients, created_policy.uuid
             )
             await self.assign_alert_types(alert_policy.alert_types, created_policy.uuid)
@@ -290,14 +290,14 @@ class AlertPolicyService(BaseService):
 
             # update geofence_alert_notifications types
             if alert_policy.alert_types:
-                self.remove_existing_alert_notification_types(alert_policy_uuid)
+                await self.remove_existing_alert_notification_types(alert_policy_uuid)
                 await self.assign_alert_types(
                     alert_policy.alert_types, alert_policy_uuid
                 )
 
             # update geofence alert recipients
             if alert_policy.alert_recipients:
-                self.remove_existing_alert_recipients(alert_policy_uuid)
+                await self.remove_existing_alert_recipients(alert_policy_uuid)
                 await self.assign_alert_recipients(
                     alert_policy.alert_recipients, alert_policy_uuid
                 )
@@ -528,7 +528,7 @@ class AlertPolicyService(BaseService):
                         "alert_policy_uuid": alert_policy_uuid,
                         "asset_uuid": asset,
                     }
-                    self.alert_policy_asset_assignment_repository.create(
+                    await self.alert_policy_asset_assignment_repository.create(
                         AlertPolicyAssetAssignment(**alert_assets_data)
                     )
 
@@ -559,7 +559,7 @@ class AlertPolicyService(BaseService):
             await self._update_alert_recipients(
                 alert_policy_uuid, payload.alert_recipients
             )
-            self._update_alert_notification_types(
+            await self._update_alert_notification_types(
                 alert_policy_uuid, payload.alert_notification_types
             )
             await self._update_alert_assets(alert_policy_uuid, payload.alert_assets)
