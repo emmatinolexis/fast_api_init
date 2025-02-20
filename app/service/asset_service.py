@@ -101,23 +101,23 @@ class AssetService(BaseService):
 
         super().__init__(asset_repository)
 
-    def create_asset(self, asset: AssetPayload, request: Request):
+    async def create_asset(self, asset: AssetPayload, request: Request):
         try:
-            user = self.get_user(asset.user_uuid)
+            user = await self.get_user(asset.user_uuid)
 
             email_address = user.get("email_address")
 
-            user_subscription = self.get_user_subscription(email_address)
+            user_subscription = await self.get_user_subscription(email_address)
 
             number_of_assets = self.get_filtered_package_item(user_subscription)
 
             if user.get("account_type") == AccountType.INDIVIDUAL:
-                self.check_asset_creation_limit(
+                await self.check_asset_creation_limit(
                     user_uuid=user.get("uuid"), number_of_assets=number_of_assets
                 )
 
             if user.get("account_type") == AccountType.BUSINESS:
-                self.check_asset_creation_limit(
+                await self.check_asset_creation_limit(
                     business_uuid=user.get("business_profile").uuid,
                     number_of_assets=number_of_assets,
                 )
@@ -125,11 +125,11 @@ class AssetService(BaseService):
             self.check_existing_asset(asset)
 
             if asset.add_driver:
-                created_asset = self.create_asset_with_driver(asset)
+                created_asset = await self.create_asset_with_driver(asset)
             else:
-                created_asset = self.create_asset_without_driver(asset)
+                created_asset = await self.create_asset_without_driver(asset)
 
-            self.activity_log_repository.create(
+            await self.activity_log_repository.create(
                 ActivityLogSchema(
                     activity_title=activity_log_constants.CREATE_ASSET,
                     activity_class=ActivityLogClass.USER,
@@ -154,32 +154,35 @@ class AssetService(BaseService):
                 vehicle_license_no=asset.vehicle_license_no, vin=asset.vin
             )
 
-            if self.equipment_repository.read_by_uuid(asset.equipment_uuid) is None:
+            if (
+                await self.equipment_repository.read_by_uuid(asset.equipment_uuid)
+                is None
+            ):
                 raise NotFoundError(
                     detail=messages.EQUIPMENT_NOT_FOUND + str(asset.equipment_uuid)
                 )
 
-            created_asset = self.create_asset_with_vehicle_owner(asset)
+            created_asset = await self.create_asset_with_vehicle_owner(asset)
 
             return created_asset
 
         except Exception as e:
             raise e
 
-    def get_user(self, user_uuid):
-        user = self.user_repository.get_user_by_uuid(user_uuid)
+    async def get_user(self, user_uuid):
+        user = await self.user_repository.get_user_by_uuid(user_uuid)
         if not user:
             raise Exception("User not found")
         return user
 
-    def get_user_subscription(self, email_address: str):
-        user_subscription = self.user_subscription_repository.get_user_subscription(
-            email_address
+    async def get_user_subscription(self, email_address: str):
+        user_subscription = (
+            await self.user_subscription_repository.get_user_subscription(email_address)
         )
 
         if user_subscription and user_subscription.subscription_code:
             paystack_subscription = (
-                self.subscription_repository.get_paystack_subscription(
+                await self.subscription_repository.get_paystack_subscription(
                     user_subscription.subscription_code
                 )
             )
@@ -224,16 +227,18 @@ class AssetService(BaseService):
             number_of_asset = filtered_package_item.number_of_assets
         return number_of_asset
 
-    def check_asset_creation_limit(
+    async def check_asset_creation_limit(
         self, number_of_assets: int, user_uuid: str = None, business_uuid: str = None
     ):
         if business_uuid is not None:
             user_assets = len(
-                self.get_assets_by_business_uuid_no_pagination(business_uuid)
+                await self.get_assets_by_business_uuid_no_pagination(business_uuid)
             )
 
         if user_uuid is not None:
-            user_assets = len(self.get_assets_by_user_uuid_no_pagination(user_uuid))
+            user_assets = len(
+                await self.get_assets_by_user_uuid_no_pagination(user_uuid)
+            )
 
         if user_assets >= number_of_assets:
             raise BadRequestError(
@@ -252,29 +257,29 @@ class AssetService(BaseService):
             )
         return existing_asset
 
-    def check_asset_dependencies(self, asset):
-        if self.user_repository.read_by_uuid(asset.user_uuid) is None:
+    async def check_asset_dependencies(self, asset):
+        if await self.user_repository.read_by_uuid(asset.user_uuid) is None:
             raise NotFoundError(detail=messages.USER_NOT_FOUND + str(asset.user_uuid))
 
-        if self.asset_type_repository.read_by_uuid(asset.asset_type_uuid) is None:
+        if await self.asset_type_repository.read_by_uuid(asset.asset_type_uuid) is None:
             raise NotFoundError(
                 detail=messages.ASSET_TYPE_NOT_FOUND + str(asset.asset_type_uuid)
             )
 
-        if self.equipment_repository.read_by_uuid(asset.equipment_uuid) is None:
+        if await self.equipment_repository.read_by_uuid(asset.equipment_uuid) is None:
             raise NotFoundError(
                 detail=messages.EQUIPMENT_NOT_FOUND + str(asset.equipment_uuid)
             )
 
     async def create_asset_with_driver(self, asset):
-        if self.user_repository.read_by_uuid(asset.driver_uuid) is None:
+        if await self.user_repository.read_by_uuid(asset.driver_uuid) is None:
             raise NotFoundError(
                 detail=messages.DRIVER_NOT_FOUND + str(asset.driver_uuid)
             )
 
         created_asset = await self.asset_repository.create(AssetInput(**asset.dict()))
 
-        self.asset_operator_assignment_service.assign_operator_to_asset(
+        await self.asset_operator_assignment_service.assign_operator_to_asset(
             str(created_asset.uuid),
             str(asset.driver_uuid),
             str(created_asset.user_uuid),
@@ -308,7 +313,9 @@ class AssetService(BaseService):
             email_address=asset.email_address,
             residential_address=asset.residential_address,
         )
-        created_vehicle_owner = self.vehicle_owner_repository.create(vehicle_owner_data)
+        created_vehicle_owner = await self.vehicle_owner_repository.create(
+            vehicle_owner_data
+        )
         if created_vehicle_owner:
             asset_data = ThirdPartyAssetInput(
                 asset_type_uuid="fb1e96de-d79d-463b-b6c7-aeab8235d676",
@@ -352,27 +359,6 @@ class AssetService(BaseService):
                 page_size=page_size,
                 page=page,
                 asset_type_uuid=asset_type_uuid,
-            )
-        except Exception as e:
-            raise e
-
-    async def get_building_veassets_by_business_uuid(
-        self,
-        business_uuid: str,
-        asset_type_uuid: str = None,
-        page=1,
-        page_size=10,
-        search: str = None,
-        status: str = None,
-    ):
-        try:
-            return await self.asset_repository.read_all_assets_by_uuid(
-                business_uuid=business_uuid,
-                page_size=page_size,
-                page=page,
-                asset_type_uuid=asset_type_uuid,
-                search_query=search,
-                status=status,
             )
         except Exception as e:
             raise e

@@ -212,33 +212,33 @@ class AssetRepository(BaseRepository):
                 last_tracking_event = getattr(
                     vehicle_asset, "last_tracking_event", None
                 )
-
-                all_asset_data.append(
-                    {
-                        "uuid": vehicle_asset.uuid,
-                        "asset_name": vehicle_asset.asset_name,
-                        "marker_icon_color": vehicle_asset.marker_color,
-                        "status": (
-                            last_tracking_event.get("status")
-                            if last_tracking_event
-                            else "unknown"
-                        ),
-                        "last_tracking_event": {
-                            "lng": (
-                                last_tracking_event.get("lng", None)
+                if vehicle_asset.device_imei:
+                    all_asset_data.append(
+                        {
+                            "uuid": vehicle_asset.uuid,
+                            "asset_name": vehicle_asset.asset_name,
+                            "marker_icon_color": vehicle_asset.marker_color,
+                            "status": (
+                                last_tracking_event.get("status")
                                 if last_tracking_event
-                                else None
+                                else "unknown"
                             ),
-                            "lat": (
-                                last_tracking_event.get("lat", None)
-                                if last_tracking_event
-                                else None
-                            ),
-                        },
-                        "operator": vehicle_asset.operator,
-                        "asset_type": vehicle_asset.asset_type,
-                    }
-                )
+                            "last_tracking_event": {
+                                "lng": (
+                                    last_tracking_event.get("lng", None)
+                                    if last_tracking_event
+                                    else None
+                                ),
+                                "lat": (
+                                    last_tracking_event.get("lat", None)
+                                    if last_tracking_event
+                                    else None
+                                ),
+                            },
+                            "operator": vehicle_asset.operator,
+                            "asset_type": vehicle_asset.asset_type,
+                        }
+                    )
 
             for building_asset in building_assets:
                 all_asset_data.append(
@@ -519,64 +519,76 @@ class AssetRepository(BaseRepository):
         self, asset_type_uuid: str = None, page=1, page_size=10
     ):
         async with self.session_factory() as session:
-            # Calculate the offset based on the page and per_page values
             offset = (page - 1) * page_size
 
-            query = session.query(self.model).filter(
+            # Base query: Get stolen assets
+            base_query = select(self.model).filter(
                 self.model.asset_stolen_status.is_(True)
             )
-            total_assets = await session.execute(query.count())
-            total_assets = total_assets.scalar()
 
-            if asset_type_uuid is not None:
-                query = query.filter(self.model.asset_type_uuid == asset_type_uuid)
+            # Apply asset type filter
+            if asset_type_uuid:
+                base_query = base_query.filter(
+                    self.model.asset_type_uuid == asset_type_uuid
+                )
 
-            query = (
-                query.order_by(desc(self.model.created_at))
+            # Get total stolen assets count
+            total_assets_stmt = select(func.count()).select_from(base_query.subquery())
+            total_assets_result = await session.execute(total_assets_stmt)
+            total_assets = total_assets_result.scalar()
+
+            # Apply ordering, pagination, and relationship loading
+            paginated_query = (
+                base_query.order_by(desc(self.model.created_at))
                 .offset(offset)
                 .limit(page_size)
+                .options(joinedload(self.model.asset_type))
+                .options(joinedload(self.model.driver))
+                .options(joinedload(self.model.device))
+                .options(joinedload(self.model.equipment))
+                .options(joinedload(self.model.vehicle_owner))
             )
 
-            assets = await session.execute(
-                query.options(joinedload(Asset.asset_type))
-                .options(joinedload(Asset.driver))
-                .options(joinedload(Asset.device))
-                .options(joinedload(Asset.equipment))
-                .options(joinedload(Asset.vehicle_owner))
-            )
-            assets = assets.unique().scalars().all()
+            result = await session.execute(paginated_query)
+            assets = result.unique().scalars().all()
 
-            for asset in assets:
-                # check if asset has device imei
-                if asset.device_imei:
-                    # Get device's last known location
-                    last_tracking_event = await session.execute(
-                        session.query(
-                            label("lat", TrackingEvent.latitude),
-                            label("lng", TrackingEvent.longitude),
-                            TrackingEvent.speed,
-                            TrackingEvent.course,
-                            label("timestamp", TrackingEvent.event_datetime),
-                            label("event_type", TrackingEvent.event_type),
-                        )
-                        .filter(TrackingEvent.device_imei == asset.device_imei)
-                        .order_by(desc(TrackingEvent.event_datetime))
-                        .limit(1)
+            # Batch fetch last tracking events for all assets with device_imei
+            device_imeis = [asset.device_imei for asset in assets if asset.device_imei]
+            tracking_events_dict = {}
+
+            if device_imeis:
+                tracking_stmt = (
+                    select(
+                        TrackingEvent.device_imei,
+                        label("lat", TrackingEvent.latitude),
+                        label("lng", TrackingEvent.longitude),
+                        TrackingEvent.speed,
+                        TrackingEvent.course,
+                        label("timestamp", TrackingEvent.event_datetime),
+                        label("event_type", TrackingEvent.event_type),
                     )
-                    last_tracking_event = last_tracking_event.first()
+                    .where(TrackingEvent.device_imei.in_(device_imeis))
+                    .order_by(desc(TrackingEvent.event_datetime))
+                    .limit(len(device_imeis))  # Ensure we fetch one event per device
+                )
+                tracking_result = await session.execute(tracking_stmt)
+                tracking_events = tracking_result.fetchall()
 
-                    if last_tracking_event:
-                        # Construct a dictionary with the retrieved fields
-                        last_tracking_event_dict = {
-                            "lat": last_tracking_event.lat,
-                            "lng": last_tracking_event.lng,
-                            "speed": last_tracking_event.speed,
-                            "course": last_tracking_event.course,
-                            "timestamp": last_tracking_event.timestamp,
-                            "event_type": last_tracking_event.event_type,
-                        }
-                        # Add last_tracking_event_dict to asset dictionary
-                        asset.last_tracking_event = last_tracking_event_dict
+                for event in tracking_events:
+                    tracking_events_dict[event.device_imei] = {
+                        "lat": event.lat,
+                        "lng": event.lng,
+                        "speed": event.speed,
+                        "course": event.course,
+                        "timestamp": event.timestamp,
+                        "event_type": event.event_type,
+                    }
+
+            # Assign last tracking events to assets
+            for asset in assets:
+                asset.last_tracking_event = tracking_events_dict.get(
+                    asset.device_imei, None
+                )
 
             return assets, total_assets
 
@@ -584,117 +596,134 @@ class AssetRepository(BaseRepository):
         self, asset_uuid, payload: AssignDeviceInputPayload
     ) -> Asset:
         async with self.session_factory() as session:
-            device = await session.execute(
-                session.query(Device).filter(Device.device_imei == payload.device_imei)
+            # Fetch device by IMEI
+            device_stmt = select(Device).filter(
+                Device.device_imei == payload.device_imei
             )
-            device = device.scalar()
+            device_result = await session.execute(device_stmt)
+            device = device_result.scalar()
 
-            # check if imei is valid
+            # Validate IMEI
             if not device:
-                raise Exception(f"Device with imei {payload.device_imei} not found")
+                raise Exception(f"Device with IMEI {payload.device_imei} not found")
 
-            # check if device already assigned
+            # Check if device is already assigned
             if device.assign_to_asset_status is not None:
                 raise Exception("Device already assigned to an asset")
 
-            asset = await session.execute(
-                session.query(self.model).filter(self.model.uuid == asset_uuid)
-            )
-            asset = asset.scalar()
+            # Fetch asset by UUID
+            asset_stmt = select(self.model).filter(self.model.uuid == asset_uuid)
+            asset_result = await session.execute(asset_stmt)
+            asset = asset_result.scalar()
 
-            # check if asset exist
+            # Validate asset existence
             if not asset:
-                raise Exception(f"Asset with id {asset_uuid} not found")
+                raise Exception(f"Asset with ID {asset_uuid} not found")
 
-            # update asset with device imei
+            # Fetch user by asset user_uuid
+            user_stmt = select(User).filter(User.uuid == asset.user_uuid)
+            user_result = await session.execute(user_stmt)
+            user = user_result.scalar()
+
+            if not user:
+                raise Exception(f"User with UUID {asset.user_uuid} not found")
+
+            # Update asset details
             asset.device_imei = payload.device_imei
             asset.asset_status = AssetStatus.ACTIVE
-            await session.commit()
-            await session.refresh(asset)
 
-            # update device with user_uuid, business_uuid if user type is business
-            user = await session.execute(
-                session.query(User).filter(User.uuid == asset.user_uuid)
-            )
-            user = user.scalar()
-
-            device.assign_to_asset_status = datetime.now()
+            # Update device details
+            device.assign_to_asset_status = datetime.utcnow()
             device.user_uuid = user.uuid
             device.sim_phone_number = payload.sim_phone_number
 
+            # Assign business UUID if applicable
             if user.business_profile_uuid:
                 device.business_profile_uuid = user.business_profile_uuid
 
+            # Commit all changes in a single transaction
             await session.commit()
+            await session.refresh(asset)
             await session.refresh(device)
 
-            updated_asset = await session.execute(
-                session.query(self.model).filter(self.model.uuid == asset_uuid)
-            )
-            updated_asset = updated_asset.scalar()
-
-            return updated_asset
+        return asset
 
     async def read_by_vin_serial_number_license_no(
         self, vin: str = None, serial_number: str = None, vehicle_license_no: str = None
     ):
         async with self.session_factory() as session:
+            filters = []
+
             if vehicle_license_no:
-                existing_asset = await session.execute(
-                    session.query(self.model).filter(
-                        self.model.vehicle_license_no == vehicle_license_no
-                    )
-                )
-                existing_asset = existing_asset.scalar()
-                if existing_asset:
-                    raise Exception(
-                        "Asset with the given license number already exists."
-                    )
+                filters.append(self.model.vehicle_license_no == vehicle_license_no)
             if vin:
-                existing_asset = await session.execute(
-                    session.query(self.model).filter(self.model.vin == vin)
-                )
-                existing_asset = existing_asset.scalar()
-                if existing_asset:
-                    raise Exception("Asset with the given VIN already exists.")
+                filters.append(self.model.vin == vin)
             if serial_number:
-                existing_asset = await session.execute(
-                    session.query(self.model).filter(
-                        self.model.serial_number == serial_number
-                    )
-                )
-                existing_asset = existing_asset.scalar()
+                filters.append(self.model.serial_number == serial_number)
+
+            if filters:
+                stmt = select(self.model).filter(
+                    or_(*filters)
+                )  # Check all conditions in one query
+                result = await session.execute(stmt)
+                existing_asset = result.scalar()
+
                 if existing_asset:
-                    raise Exception(
-                        "Asset with the given serial number already exists."
-                    )
-            else:
-                pass
+                    if existing_asset.vehicle_license_no == vehicle_license_no:
+                        raise Exception(
+                            "Asset with the given license number already exists."
+                        )
+                    if existing_asset.vin == vin:
+                        raise Exception("Asset with the given VIN already exists.")
+                    if existing_asset.serial_number == serial_number:
+                        raise Exception(
+                            "Asset with the given serial number already exists."
+                        )
 
     async def update_asset_stolen_status_to_true(self, asset_uuid: str):
         async with self.session_factory() as session:
-            asset = await session.execute(
-                session.query(self.model).filter(self.model.uuid == asset_uuid)
-            )
-            asset = asset.scalar()
+            # Fetch asset
+            asset_stmt = select(self.model).filter(self.model.uuid == asset_uuid)
+            asset_result = await session.execute(asset_stmt)
+            asset = asset_result.scalar()
+
+            # Check if asset exists
+            if not asset:
+                raise Exception(f"Asset with ID {asset_uuid} not found")
+
+            # Update stolen status
             asset.asset_stolen_status = True
+
+            # Commit and refresh
             await session.commit()
             await session.refresh(asset)
 
+            return asset
+
     async def update_asset_stolen_status_to_false(self, asset_uuid: str):
         async with self.session_factory() as session:
-            asset = await session.execute(
-                session.query(self.model).filter(self.model.uuid == asset_uuid)
-            )
-            asset = asset.scalar()
+            # Fetch asset
+            asset_stmt = select(self.model).filter(self.model.uuid == asset_uuid)
+            asset_result = await session.execute(asset_stmt)
+            asset = asset_result.scalar()
+
+            # Check if asset exists
+            if not asset:
+                raise Exception(f"Asset with ID {asset_uuid} not found")
+
+            # Update stolen status
             asset.asset_stolen_status = False
+
+            # Commit and refresh
             await session.commit()
             await session.refresh(asset)
+
+            return asset
 
     async def get_over_speeding_violations(
         self,
         asset_uuid: str,
-        alert_policy_type_uuid: str,  # This might be an enum, ensure it's converted
+        alert_policy_type_uuid: str,
         start_date: str,
         end_date: str,
     ):
@@ -775,7 +804,7 @@ class AssetRepository(BaseRepository):
         start_date: str,
         end_date: str,
     ):
-        async with self.session_factory() as session:  # type: AsyncSession
+        async with self.session_factory() as session:
             date_from_obj = datetime.strptime(
                 start_date, get_settings().DATE_FORMAT_YEAR
             ).date()
@@ -924,59 +953,57 @@ class AssetRepository(BaseRepository):
         self, asset_uuid: str, start_date: str, end_date: str
     ):
         async with self.session_factory() as session:
+            # Convert date strings to datetime objects
+            start_date_obj = datetime.strptime(start_date, "%d/%m/%Y")
+            end_date_obj = datetime.strptime(end_date, "%d/%m/%Y")
+
+            # Query using `select()` for async compatibility
             base_query = (
-                session.query(MaintenanceAlert)
+                select(MaintenanceAlert)
                 .options(joinedload(MaintenanceAlert.alert_policy))
                 .filter(
-                    cast(MaintenanceAlert.created_at, Date)
-                    >= datetime.strptime(start_date, "%d/%m/%Y"),
-                    cast(MaintenanceAlert.created_at, Date)
-                    <= datetime.strptime(end_date, "%d/%m/%Y"),
+                    MaintenanceAlert.created_at.between(
+                        start_date_obj, end_date_obj
+                    ),  # Efficient date filtering
                     MaintenanceAlert.asset_uuid == asset_uuid,
                 )
             )
 
             # Execute the query and fetch results
-            maintenance_alerts = await session.execute(base_query)
-            return maintenance_alerts.unique().scalars().all()
+            maintenance_alerts_result = await session.execute(base_query)
+            return maintenance_alerts_result.scalars().all()
 
     async def get_asset_by_user_uuid(self, user_uuid: str):
         async with self.session_factory() as session:
-            return await session.execute(
-                session.query(self.model).filter(self.model.user_uuid == user_uuid)
-            ).scalar()
+            asset_stmt = select(self.model).filter(self.model.user_uuid == user_uuid)
+            result = await session.execute(asset_stmt)
+            return result.scalar_one_or_none()
 
     async def get_asset_by_license_no(self, vehicle_license_no: str):
         async with self.session_factory() as session:
-            asset = await session.execute(
-                session.query(self.model).filter(
-                    self.model.vehicle_license_no == vehicle_license_no
-                )
-            ).scalar()
-            return asset
+            asset_stmt = select(self.model).filter(
+                self.model.vehicle_license_no == vehicle_license_no
+            )
+            result = await session.execute(asset_stmt)
+            return result.scalar_one_or_none()
 
     async def get_driver_by_asset_uuid(self, asset_uuid: str):
         async with self.session_factory() as session:
-            return await session.execute(
-                session.query(Driver)
-                .join(Asset, Driver.asset_uuid == Asset.uuid)
-                .filter(Asset.uuid == asset_uuid)
-            ).scalar()
+            driver_stmt = select(Driver).filter(Driver.asset_uuid == asset_uuid)
+            result = await session.execute(driver_stmt)
+            return result.scalar_one_or_none()
 
     async def get_asset_by_driver_email(self, driver_email: str):
         async with self.session_factory() as session:
-            return await session.execute(
-                session.query(Asset)
-                .join(Driver, Asset.uuid == Driver.asset_uuid)
-                .filter(Driver.email == driver_email)
-            ).scalar()
+            asset_stmt = select(Asset).join(Driver).filter(Driver.email == driver_email)
+            result = await session.execute(asset_stmt)
+            return result.scalar_one_or_none()
 
     async def get_assets_by_imeis(self, imeis: List[str]):
         async with self.session_factory() as session:
-            assets = await session.execute(
-                session.query(Asset).filter(Asset.device_imei.in_(imeis))
-            )
-            return assets.scalars().all()
+            asset_stmt = select(Asset).filter(Asset.device_imei.in_(imeis))
+            result = await session.execute(asset_stmt)
+            return result.scalars().all()
 
     async def get_all_device_imeis(self):
         """Asynchronously retrieves all distinct device IMEIs from the Asset table."""
