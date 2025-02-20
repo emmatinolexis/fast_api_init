@@ -156,11 +156,8 @@ async def get_asset_by_business_uuid_handler(
 async def get_vehicle_building_asset_by_business_uuid_handler(
     business_uuid: str,
     search: str = Query(None, description="Search by asset name"),
+    asset_type_uuid: str = Query(None, description="Search by asset type"),
     status: str = Query(None, description="Search by asset status"),
-    page: int = Query(1, ge=1, description="Page number, default is set to 1"),
-    page_size: int = Query(
-        10, ge=1, le=1000, description="Items per page, default is 10"
-    ),
     service: AssetService = Depends(Provide[Container.asset_service]),
     current_user: User = Depends(get_current_user_with_permission("view_asset")),
 ):
@@ -173,9 +170,8 @@ async def get_vehicle_building_asset_by_business_uuid_handler(
             )
         assets = await service.get_vehicle_building_assets_by_business_uuid(
             business_uuid=business_uuid,
-            page=page,
-            page_size=page_size,
             search=search,
+            asset_type_uuid=asset_type_uuid,
             status=status,
         )
         return send_data(assets)

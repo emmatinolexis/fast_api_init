@@ -6,6 +6,7 @@ from sqlalchemy.orm import relationship
 
 from app.model.base_model import BaseModel
 from app.util.enums import ActiveStatus
+from app.model.asset_type import AssetType
 
 
 class Building(BaseModel):
@@ -26,5 +27,13 @@ class Building(BaseModel):
         UUID(as_uuid=True), ForeignKey("business_profiles.uuid"), nullable=True
     )
     user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=True)
+    asset_type_uuid = Column(
+        UUID(as_uuid=True),
+        ForeignKey(AssetType.uuid),
+        default="2304facd-4afb-4eff-b28a-6bd5c47e052c",
+        nullable=False,
+        index=True,
+    )
+    asset_type = relationship("AssetType", uselist=False)
     gas_cylinders = relationship("GasCylinder", back_populates="building")
     peripheral_devices = relationship("PeripheralDevice", back_populates="building")

@@ -173,9 +173,8 @@ class AssetRepository(BaseRepository):
     async def read_vehicle_building_assets_by_business_uuid(
         self,
         business_uuid: str,
-        page: int = 1,
-        page_size: int = 10,
         search_query: str = None,
+        asset_type_uuid: str = None,
         status: str = None,
     ) -> Dict[str, Any]:
         async with self.session_factory() as session:
@@ -197,8 +196,10 @@ class AssetRepository(BaseRepository):
             vehicle_assets = vehicle_result.unique().scalars().all()
 
             # Fetch building assets
-            building_stmt = select(Building).filter(
-                Building.business_profile_uuid == business_uuid
+            building_stmt = (
+                select(Building)
+                .options(joinedload(Building.asset_type))
+                .filter(Building.business_profile_uuid == business_uuid)
             )
             building_result = await session.execute(building_stmt)
             building_assets = building_result.unique().scalars().all()
@@ -236,7 +237,12 @@ class AssetRepository(BaseRepository):
                                 ),
                             },
                             "operator": vehicle_asset.operator,
-                            "asset_type": vehicle_asset.asset_type,
+                            "asset_type": {
+                                "uuid": vehicle_asset.asset_type.uuid,
+                                "asset_type_name": vehicle_asset.asset_type.asset_type_name,
+                                "status": vehicle_asset.asset_type.status,
+                                "created_at": vehicle_asset.asset_type.created_at,
+                            },
                         }
                     )
 
@@ -246,15 +252,18 @@ class AssetRepository(BaseRepository):
                         "uuid": building_asset.uuid,
                         "asset_name": building_asset.building_name,
                         "marker_icon_color": None,
-                        "status": getattr(
-                            building_asset, "status", "unknown"
-                        ),  # Handle missing status
+                        "status": getattr(building_asset, "status", "unknown"),
                         "last_tracking_event": {
                             "lng": building_asset.longitude,
                             "lat": building_asset.latitude,
                         },
                         "operator": None,
-                        "asset_type": "building",
+                        "asset_type": {
+                            "uuid": building_asset.asset_type.uuid,
+                            "asset_type_name": building_asset.asset_type.asset_type_name,
+                            "status": building_asset.asset_type.status,
+                            "created_at": building_asset.asset_type.created_at,
+                        },
                     }
                 )
 
@@ -272,18 +281,14 @@ class AssetRepository(BaseRepository):
                     if search_query.lower() in asset["asset_name"].lower()
                 ]
 
-            # Pagination logic
-            total_assets = len(all_asset_data)
-            total_pages = (total_assets + page_size - 1) // page_size
-            paginated_assets = all_asset_data[(page - 1) * page_size : page * page_size]
+            if asset_type_uuid:
+                all_asset_data = [
+                    asset
+                    for asset in all_asset_data
+                    if str(asset["asset_type"]["uuid"]) == asset_type_uuid
+                ]
 
-            return {
-                "assets": paginated_assets,
-                "total_assets": total_assets,
-                "total_pages": total_pages,
-                "current_page": page,
-                "page_size": page_size,
-            }
+            return {"assets": all_asset_data}
 
     def get_asset_status_counts(self, assets: List[Any]) -> Tuple[int, int, int]:
         moving_asset_count = 0
