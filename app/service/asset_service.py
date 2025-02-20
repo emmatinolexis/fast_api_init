@@ -387,17 +387,15 @@ class AssetService(BaseService):
     async def get_vehicle_building_assets_by_business_uuid(
         self,
         business_uuid: str,
-        page=1,
-        page_size=10,
         search: str = None,
+        asset_type_uuid: str = None,
         status: str = None,
     ):
         try:
             return await self.asset_repository.read_vehicle_building_assets_by_business_uuid(
                 business_uuid=business_uuid,
-                page_size=page_size,
-                page=page,
                 search_query=search,
+                asset_type_uuid=asset_type_uuid,
                 status=status,
             )
         except Exception as e:
