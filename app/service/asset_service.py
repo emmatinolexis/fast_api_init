@@ -475,16 +475,16 @@ class AssetService(BaseService):
         except Exception as e:
             raise e
 
-    def report_immobilizer_activity(self, payload):
+    async def report_immobilizer_activity(self, payload):
         try:
-            report = self.immobilizer_report_repository.create(payload)
+            report = await self.immobilizer_report_repository.create(payload)
             return report
         except Exception as e:
             raise e
 
-    def report_theft_activity(self, payload: TheftIncidencePayload):
+    async def report_theft_activity(self, payload: TheftIncidencePayload):
         try:
-            report = self.theft_incidence_repository.create(payload)
+            report = await self.theft_incidence_repository.create(payload)
             return report
         except Exception as e:
             raise e
@@ -514,7 +514,7 @@ class AssetService(BaseService):
         except Exception as e:
             raise e
 
-    def get_all_theft_incidence(
+    async def get_all_theft_incidence(
         self,
         page=1,
         page_size=10,
@@ -524,7 +524,7 @@ class AssetService(BaseService):
         status=None,
     ):
         try:
-            incidences = self.theft_incidence_repository.get_all_incidence(
+            incidences = await self.theft_incidence_repository.get_all_incidence(
                 page=page,
                 page_size=page_size,
                 search_query=search_query,
@@ -536,9 +536,11 @@ class AssetService(BaseService):
         except Exception as e:
             raise e
 
-    def mark_as_resolved(self, incidence_uuid: str):
+    async def mark_as_resolved(self, incidence_uuid: str):
         try:
-            incident = self.theft_incidence_repository.mark_as_resolve(incidence_uuid)
+            incident = await self.theft_incidence_repository.mark_as_resolve(
+                incidence_uuid
+            )
             return incident
         except Exception as e:
             raise e
@@ -550,10 +552,12 @@ class AssetService(BaseService):
         except Exception as e:
             raise e
 
-    def get_last_immobilizer_action(self, asset_uuid: str):
+    async def get_last_immobilizer_action(self, asset_uuid: str):
         try:
-            action = self.immobilizer_report_repository.get_last_immobilizer_action(
-                asset_uuid
+            action = (
+                await self.immobilizer_report_repository.get_last_immobilizer_action(
+                    asset_uuid
+                )
             )
             return action
         except Exception as e:

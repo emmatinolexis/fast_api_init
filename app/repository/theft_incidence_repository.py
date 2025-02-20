@@ -9,6 +9,7 @@ from app.model.asset import Asset
 from app.model.theft_incidence import TheftIncidence
 from app.repository.base_repository import BaseRepository
 from app.util.enums import IncidentStatus
+from sqlalchemy.future import select
 
 
 class TheftIncidenceRepository(BaseRepository):
@@ -30,48 +31,56 @@ class TheftIncidenceRepository(BaseRepository):
                 offset = (page - 1) * page_size
 
                 base_query = (
-                    session.query(self.model)
+                    select(self.model)
                     .join(self.model.asset)
                     .options(joinedload(self.model.user), joinedload(self.model.asset))
                 )
 
                 if search_query:
-                    base_query = base_query.filter(
+                    base_query = base_query.where(
                         self.model.asset.has(
                             Asset.asset_name.ilike(f"%{search_query}%")
                         )
                     )
                 if status:
-                    base_query = base_query.filter(
+                    base_query = base_query.where(
                         self.model.status == IncidentStatus(status)
                     )
-
                 if start_date:
-                    base_query = base_query.filter(
+                    base_query = base_query.where(
                         cast(self.model.created_at, Date) >= start_date
                     )
                 if end_date:
-                    base_query = base_query.filter(
+                    base_query = base_query.where(
                         cast(self.model.created_at, Date) <= end_date
                     )
 
-                total_incidences = await session.execute(base_query.count())
+                # Get total count
+                total_incidences = await session.execute(
+                    select(func.count()).select_from(base_query.subquery())
+                )
+                total_incidences = total_incidences.scalar_one()
 
+                # Get resolved and unresolved counts
                 resolved_count = await session.execute(
-                    session.query(func.count()).filter(
+                    select(func.count()).where(
                         self.model.status == IncidentStatus.RESOLVED
                     )
-                ).scalar()
+                )
+                resolved_count = resolved_count.scalar_one()
+
                 unresolved_count = await session.execute(
-                    session.query(func.count()).filter(
+                    select(func.count()).where(
                         self.model.status == IncidentStatus.UNRESOLVED
                     )
-                ).scalar()
+                )
+                unresolved_count = unresolved_count.scalar_one()
 
+                # Fetch paginated results
                 results = await session.execute(
                     base_query.offset(offset).limit(page_size)
                 )
-                paginated_incidences = results.unique().scalars().all()
+                paginated_incidences = results.scalars().all()
 
                 result = [
                     {
@@ -104,10 +113,13 @@ class TheftIncidenceRepository(BaseRepository):
 
     async def mark_as_resolve(self, incident_uuid: str):
         async with self.session_factory() as session:
-            incidence = await session.execute(
-                session.query(self.model).filter_by(uuid=incident_uuid)
-            ).first()
+            incidence = await session.get(self.model, incident_uuid)
+
+            if not incidence:
+                return None  # Or raise an exception
+
             incidence.status = IncidentStatus.RESOLVED
             await session.commit()
             await session.refresh(incidence)
+
             return incidence

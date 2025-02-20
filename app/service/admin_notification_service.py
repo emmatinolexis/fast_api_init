@@ -49,7 +49,9 @@ class AdminNotificationService(BaseService):
                 raise UnAuthorizedError(messages.ACTION_NOT_ALLOWED)
 
             # Mark notification as read
-            self.admin_notification_repository.read_notification(notification_uuid)
+            await self.admin_notification_repository.read_notification(
+                notification_uuid
+            )
 
             return notification
         except Exception as e:

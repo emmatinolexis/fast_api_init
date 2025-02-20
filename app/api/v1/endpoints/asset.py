@@ -482,7 +482,7 @@ async def shutdown_engine_request_handler(
             )
 
             if sms_response:
-                asset_service.report_immobilizer_activity(shutdown_payload)
+                await asset_service.report_immobilizer_activity(shutdown_payload)
                 if shutdown_payload.reason == ImmobilizerReason.STOLEN:
                     incident_payload = TheftIncidencePayload(
                         asset_uuid=shutdown_payload.asset_uuid,
@@ -490,7 +490,7 @@ async def shutdown_engine_request_handler(
                         incident_type=IncidentType.THEFT,
                         status=IncidentStatus.UNRESOLVED,
                     )
-                    theft_incident = asset_service.report_theft_activity(
+                    theft_incident = await asset_service.report_theft_activity(
                         incident_payload
                     )
 
@@ -501,10 +501,10 @@ async def shutdown_engine_request_handler(
                         theft_incident_uuid=theft_incident.uuid,
                     )
 
-                    asset_service.create_initial_incident_report(
+                    await asset_service.create_initial_incident_report(
                         incident_report_payload
                     )
-                    asset_service.update_asset_stolen_status_to_true(
+                    await asset_service.update_asset_stolen_status_to_true(
                         shutdown_payload.asset_uuid
                     )
 
@@ -543,7 +543,7 @@ async def on_engine_request_handler(
             )
 
             if sms_response:
-                asset_service.report_immobilizer_activity(engine_on_payload)
+                await asset_service.report_immobilizer_activity(engine_on_payload)
                 return send_info("Engine on initiated successfully")
             else:
                 msg = f"Failed to send SMS to {request.sim_phone_number}"
@@ -629,7 +629,7 @@ async def mark_incident_as_resolved_handler(
 ):
     try:
         incident = await asset_service.mark_as_resolved(incident_uuid)
-        asset_service.update_asset_stolen_status_to_false(incident.asset_uuid)
+        await asset_service.update_asset_stolen_status_to_false(incident.asset_uuid)
         msg = "Successfully marked as resolved"
         return send_info(msg)
     except Exception as e:
@@ -698,7 +698,7 @@ async def create_building_handler(
             msg = f"{messages.GAS_DEVICE_NOT_FOUND} {gas_serial_no}"
             return send_internal_server_error(user_msg=msg, error=msg)
 
-        building = building_service.create_building(payload)
+        building = await building_service.create_building(payload)
 
         return send_data(building)
     except Exception as e:

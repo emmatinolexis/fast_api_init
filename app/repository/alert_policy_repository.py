@@ -1,12 +1,12 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Callable, List, Optional
 from uuid import UUID
 
 from sqlalchemy import Date, and_, case, cast, desc, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
-
+from sqlalchemy.future import select
 from app.core import messages
 from app.core.exceptions import NotFoundError
 from app.model.alert_policy import AlertPolicy
@@ -45,23 +45,28 @@ class AlertPolicyRepository(BaseRepository):
     async def read_all_alert_policies(self, page, page_size):
         async with self.session_factory() as session:
             offset = (page - 1) * page_size
-            alerts = await session.execute(
-                session.query(self.model)
+
+            query = (
+                select(self.model)
                 .order_by(desc(self.model.created_at))
                 .offset(offset)
                 .limit(page_size)
-                .options(joinedload(AlertPolicy.alert_policy_type))
-                .options(joinedload(AlertPolicy.assets))
-                .options(joinedload(AlertPolicy.maintenance_alert_type))
+                .options(
+                    joinedload(AlertPolicy.alert_policy_type),
+                    joinedload(AlertPolicy.assets),
+                    joinedload(AlertPolicy.maintenance_alert_type),
+                )
             )
-            return alerts.unique().scalars().all()
+
+            result = await session.execute(query)
+            return result.scalars().all()  # No need for `.unique()`
 
     async def toggle_alert_status(self, alert_uuid):
         async with self.session_factory() as session:
-            alert = await session.execute(
-                session.query(self.model).filter(self.model.uuid == alert_uuid)
-            )
-            alert = alert.scalar()
+            query = select(self.model).where(self.model.uuid == alert_uuid)
+            result = await session.execute(query)
+            alert = result.scalar_one_or_none()
+
             if not alert:
                 raise Exception("Alert not found")
 
@@ -73,30 +78,35 @@ class AlertPolicyRepository(BaseRepository):
 
     async def toggle_alert_violation_status(self, alert_violation_uuid):
         async with self.session_factory() as session:
-            violation = await session.execute(
-                session.query(AlertPolicyViolation).filter(
-                    AlertPolicyViolation.uuid == alert_violation_uuid
-                )
+            query = select(AlertPolicyViolation).where(
+                AlertPolicyViolation.uuid == alert_violation_uuid
             )
-            violation = violation.scalar()
+            result = await session.execute(query)
+            violation = result.scalar_one_or_none()
+
+            if not violation:
+                raise NotFoundError(
+                    f"Alert Violation not found: {alert_violation_uuid}"
+                )
+
             violation.status = toggle_status(violation.status)
             await session.commit()
             await session.refresh(violation)
 
             return violation
 
-    async def toggle_maintenance_alert_status(self, alert_uuid, date):
+    async def toggle_maintenance_alert_status(self, alert_uuid, date=None):
         async with self.session_factory() as session:
-            maintenance_alert = await session.execute(
-                session.query(self.model).filter(self.model.uuid == alert_uuid)
-            )
-            maintenance_alert = maintenance_alert.scalar()
+            query = select(self.model).where(self.model.uuid == alert_uuid)
+            result = await session.execute(query)
+            maintenance_alert = result.scalar_one_or_none()
 
             if not maintenance_alert:
-                raise NotFoundError(messages.MAINTENANCE_ALERT_NOT_FOUND + alert_uuid)
+                raise NotFoundError(f"Maintenance Alert not found: {alert_uuid}")
 
-            new_status = toggle_maintenance_status(maintenance_alert.service_status)
-            maintenance_alert.service_status = new_status
+            maintenance_alert.service_status = toggle_maintenance_status(
+                maintenance_alert.service_status
+            )
 
             if date:
                 maintenance_alert.maintenance_updated_at = date
@@ -108,8 +118,8 @@ class AlertPolicyRepository(BaseRepository):
     async def read_all_alert_policies_by_user(
         self,
         user_uuid: str,
-        page=1,
-        page_size=10,
+        page: int = 1,
+        page_size: int = 10,
         policy_status: Optional[ActiveStatus] = None,
         policy_types: Optional[List[str]] = None,
         start_date: Optional[str] = None,
@@ -120,29 +130,29 @@ class AlertPolicyRepository(BaseRepository):
             offset = (page - 1) * page_size
 
             # Start building the query
-            query = session.query(self.model).filter(self.model.user_uuid == user_uuid)
+            query = select(self.model).where(self.model.user_uuid == user_uuid)
 
             query = query.join(self.model.assets)
 
             # Apply policy status filter
             if policy_status:
-                query = query.filter(self.model.status == policy_status)
+                query = query.where(self.model.status == policy_status)
 
             # Apply policy type filter
             if policy_types:
-                valid_alert_policy_type = []
-                for policy_type in policy_types:
-                    try:
-                        valid_alert_policy_type.append(UUID(policy_type))
-                    except ValueError:
-                        continue
-                query = query.filter(
-                    self.model.alert_policy_type_uuid.in_(valid_alert_policy_type)
-                )
+                valid_alert_policy_type = [
+                    UUID(policy_type)
+                    for policy_type in policy_types
+                    if UUID(policy_type)
+                ]
+                if valid_alert_policy_type:
+                    query = query.where(
+                        self.model.alert_policy_type_uuid.in_(valid_alert_policy_type)
+                    )
 
             # Apply date filter
             if start_date and end_date:
-                query = query.filter(
+                query = query.where(
                     self.model.created_at >= start_date,
                     self.model.created_at < end_date,
                 )
@@ -150,7 +160,7 @@ class AlertPolicyRepository(BaseRepository):
             # Apply search filter
             if search:
                 search_term = f"%{search}%"
-                query = query.filter(
+                query = query.where(
                     or_(
                         self.model.policy_name.ilike(search_term),
                         Asset.asset_name.ilike(search_term),
@@ -158,23 +168,28 @@ class AlertPolicyRepository(BaseRepository):
                 )
 
             # Query to get the total count of alert policies
-            total_alert_policies = await session.execute(query.count())
+            count_query = select(func.count()).select_from(query.subquery())
+            total_alert_policies = await session.execute(count_query)
             total_alert_policies = total_alert_policies.scalar()
 
             # Calculate total pages
             total_pages = (total_alert_policies + page_size - 1) // page_size
 
             # Fetch paginated results with ordering and relationships loaded
-            alerts = await session.execute(
+            paginated_query = (
                 query.order_by(desc(self.model.created_at))
                 .offset(offset)
                 .limit(page_size)
-                .options(joinedload(self.model.alert_policy_type))
-                .options(joinedload(self.model.assets))
-                .options(joinedload(self.model.alert_notification_types))
-                .options(joinedload(self.model.maintenance_alert_type))
+                .options(
+                    joinedload(self.model.alert_policy_type),
+                    joinedload(self.model.assets),
+                    joinedload(self.model.alert_notification_types),
+                    joinedload(self.model.maintenance_alert_type),
+                )
             )
-            alerts = alerts.unique().scalars().all()
+
+            result = await session.execute(paginated_query)
+            alerts = result.scalars().all()
 
             return {
                 "alerts": alerts,
@@ -187,8 +202,8 @@ class AlertPolicyRepository(BaseRepository):
     async def read_all_alert_policies_by_business(
         self,
         business_uuid: str,
-        page=1,
-        page_size=10,
+        page: int = 1,
+        page_size: int = 10,
         policy_status: Optional[ActiveStatus] = None,
         policy_types: Optional[List[str]] = None,
         start_date: Optional[str] = None,
@@ -199,31 +214,30 @@ class AlertPolicyRepository(BaseRepository):
             offset = (page - 1) * page_size
 
             # Start building the query
-            query = session.query(self.model).filter(
+            query = select(self.model).where(
                 self.model.business_profile_uuid == business_uuid
             )
 
             query = query.join(self.model.assets)
 
             if policy_status:
-                query = query.filter(self.model.status == policy_status)
+                query = query.where(self.model.status == policy_status)
 
             # Apply policy type filter
             if policy_types:
-                valid_alert_policy_type = []
-                for policy_type in policy_types:
-                    try:
-                        valid_alert_policy_type.append(UUID(policy_type))
-                    except ValueError:
-                        continue
+                valid_alert_policy_type = [
+                    UUID(policy_type)
+                    for policy_type in policy_types
+                    if UUID(policy_type)
+                ]
                 if valid_alert_policy_type:
-                    query = query.filter(
+                    query = query.where(
                         self.model.alert_policy_type_uuid.in_(valid_alert_policy_type)
                     )
 
             # Apply date filter
             if start_date and end_date:
-                query = query.filter(
+                query = query.where(
                     self.model.created_at >= start_date,
                     self.model.created_at < end_date,
                 )
@@ -231,7 +245,7 @@ class AlertPolicyRepository(BaseRepository):
             # Apply search filter
             if search:
                 search_term = f"%{search}%"
-                query = query.filter(
+                query = query.where(
                     or_(
                         self.model.policy_name.ilike(search_term),
                         Asset.asset_name.ilike(search_term),
@@ -239,24 +253,29 @@ class AlertPolicyRepository(BaseRepository):
                 )
 
             # Query to get the total count of alert policies
-            total_alert_policies = await session.execute(query.count())
+            count_query = select(func.count()).select_from(query.subquery())
+            total_alert_policies = await session.execute(count_query)
             total_alert_policies = total_alert_policies.scalar()
 
             # Calculate total pages
             total_pages = (total_alert_policies + page_size - 1) // page_size
 
             # Fetch paginated results with ordering and relationships loaded
-            alerts = await session.execute(
+            paginated_query = (
                 query.order_by(desc(self.model.created_at))
                 .offset(offset)
                 .limit(page_size)
-                .options(joinedload(self.model.alert_policy_type))
-                .options(joinedload(self.model.assets))
-                .options(joinedload(self.model.alert_notification_types))
-                .options(joinedload(self.model.maintenance_alert_type))
-                .options(joinedload(self.model.alert_recipients))
+                .options(
+                    joinedload(self.model.alert_policy_type),
+                    joinedload(self.model.assets),
+                    joinedload(self.model.alert_notification_types),
+                    joinedload(self.model.maintenance_alert_type),
+                    joinedload(self.model.alert_recipients),
+                )
             )
-            alerts = alerts.unique().scalars().all()
+
+            result = await session.execute(paginated_query)
+            alerts = result.scalars().all()
 
             formatted_alerts = []
             for alert in alerts:
@@ -299,8 +318,8 @@ class AlertPolicyRepository(BaseRepository):
     async def read_all_alert_violations_by_user(
         self,
         user_uuid: str,
-        page=1,
-        page_size=10,
+        page: int = 1,
+        page_size: int = 10,
         policy_type: Optional[str] = None,
         policy_status: Optional[str] = None,
         start_date: Optional[str] = None,
@@ -311,9 +330,10 @@ class AlertPolicyRepository(BaseRepository):
             offset = (page - 1) * page_size
 
             # Start building the query
-            query = session.query(AlertPolicyViolation).filter(
+            query = select(AlertPolicyViolation).where(
                 AlertPolicyViolation.user_uuid == user_uuid
             )
+
             query = query.join(AlertPolicyViolation.alert_policy).join(
                 AlertPolicyViolation.asset
             )
@@ -321,48 +341,31 @@ class AlertPolicyRepository(BaseRepository):
 
             # Apply policy type filter
             if policy_type:
-                query = query.filter(
-                    AlertPolicy.alert_policy_type.has(name=policy_type)
-                )
+                query = query.where(AlertPolicy.alert_policy_type.has(name=policy_type))
 
             # Apply policy status filter
             if policy_status:
-                query = query.filter(AlertPolicyViolation.status == policy_status)
+                query = query.where(AlertPolicyViolation.status == policy_status)
 
             # Apply date filter
-            if start_date and end_date:
-                try:
+            try:
+                if start_date:
                     start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
-                    end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
-                    end_date_obj += timedelta(days=1)
-                    query = query.filter(
-                        AlertPolicyViolation.created_at >= start_date_obj,
-                        AlertPolicyViolation.created_at < end_date_obj,
+                    query = query.where(
+                        AlertPolicyViolation.created_at >= start_date_obj
                     )
-                except ValueError:
-                    raise ValueError("Invalid date format. Expected 'YYYY-MM-DD'.")
-            elif start_date:
-                try:
-                    date_obj = datetime.strptime(start_date, "%Y-%m-%d")
-                    next_day = date_obj + timedelta(days=1)
-                    query = query.filter(
-                        AlertPolicyViolation.created_at >= date_obj,
-                        AlertPolicyViolation.created_at < next_day,
+                if end_date:
+                    end_date_obj = datetime.strptime(end_date, "%Y-%m-%d") + timedelta(
+                        days=1
                     )
-                except ValueError:
-                    raise ValueError("Invalid date format. Expected 'YYYY-MM-DD'.")
-            elif end_date:
-                try:
-                    end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
-                    end_date_obj += timedelta(days=1)
-                    query = query.filter(AlertPolicyViolation.created_at < end_date_obj)
-                except ValueError:
-                    raise ValueError("Invalid date format. Expected 'YYYY-MM-DD'.")
+                    query = query.where(AlertPolicyViolation.created_at < end_date_obj)
+            except ValueError:
+                raise ValueError("Invalid date format. Expected 'YYYY-MM-DD'.")
 
             # Apply search filter
             if search:
                 search_term = f"%{search}%"
-                query = query.filter(
+                query = query.where(
                     or_(
                         AlertPolicy.policy_name.ilike(search_term),
                         Asset.asset_name.ilike(search_term),
@@ -370,31 +373,32 @@ class AlertPolicyRepository(BaseRepository):
                 )
 
             # Query to get the total count of alert violations
-            total_alerts = await session.execute(query.count())
+            count_query = select(func.count()).select_from(query.subquery())
+            total_alerts = await session.execute(count_query)
             total_alerts = total_alerts.scalar()
 
             # Calculate total pages
             total_pages = (total_alerts + page_size - 1) // page_size
 
-            # Apply custom ordering: "active" first, then order by created_at
-            alerts = await session.execute(
+            # Fetch paginated results with ordering and relationships loaded
+            paginated_query = (
                 query.order_by(
                     case(
                         (AlertPolicyViolation.status == ActiveStatus.ACTIVE, 1), else_=2
-                    ),  # Give priority to active violations
-                    desc(
-                        AlertPolicyViolation.created_at
-                    ),  # Sort remaining by created_at
+                    ),  # Active first
+                    desc(AlertPolicyViolation.created_at),  # Then sort by created_at
                 )
                 .offset(offset)
                 .limit(page_size)
-                .options(joinedload(AlertPolicyViolation.alert_policy))
                 .options(
-                    joinedload(AlertPolicyViolation.asset).joinedload(Asset.driver)
+                    joinedload(AlertPolicyViolation.alert_policy),
+                    joinedload(AlertPolicyViolation.asset).joinedload(Asset.driver),
+                    joinedload(AlertPolicyViolation.user).defer(User.password),
                 )
-                .options(joinedload(AlertPolicyViolation.user).defer(User.password))
             )
-            alerts = alerts.unique().scalars().all()
+
+            result = await session.execute(paginated_query)
+            alerts = result.scalars().all()
 
             return {
                 "alerts": alerts,
@@ -407,10 +411,10 @@ class AlertPolicyRepository(BaseRepository):
     async def read_all_alert_violations_by_business(
         self,
         business_uuid: str,
-        page=1,
-        page_size=10,
+        page: int = 1,
+        page_size: int = 10,
         policy_status: Optional[str] = None,
-        policy_types: List[str] = None,
+        policy_types: Optional[List[str]] = None,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
         search: Optional[str] = None,
@@ -419,9 +423,10 @@ class AlertPolicyRepository(BaseRepository):
             offset = (page - 1) * page_size
 
             # Start building the query
-            query = session.query(AlertPolicyViolation).filter(
+            query = select(AlertPolicyViolation).where(
                 AlertPolicyViolation.business_profile_uuid == business_uuid
             )
+
             query = query.join(AlertPolicyViolation.alert_policy).join(
                 AlertPolicyViolation.asset
             )
@@ -429,55 +434,35 @@ class AlertPolicyRepository(BaseRepository):
 
             # Apply policy type filter
             if policy_types:
-                valid_alert_policy_type = []
-                for violation in policy_types:
-                    try:
-                        valid_alert_policy_type.append(UUID(violation))
-                    except ValueError:
-                        continue
+                valid_alert_policy_type = [UUID(pt) for pt in policy_types if pt]
                 if valid_alert_policy_type:
-                    query = query.filter(
+                    query = query.where(
                         AlertPolicy.alert_policy_type_uuid.in_(valid_alert_policy_type)
                     )
 
             # Apply policy status filter
             if policy_status:
-                query = query.filter(AlertPolicyViolation.status == policy_status)
+                query = query.where(AlertPolicyViolation.status == policy_status)
 
             # Apply date filter
-            if start_date and end_date:
-                try:
+            try:
+                if start_date:
                     start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
-                    end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
-                    end_date_obj += timedelta(days=1)
-                    query = query.filter(
-                        AlertPolicyViolation.created_at >= start_date_obj,
-                        AlertPolicyViolation.created_at < end_date_obj,
+                    query = query.where(
+                        AlertPolicyViolation.created_at >= start_date_obj
                     )
-                except ValueError:
-                    raise ValueError("Invalid date format. Expected 'YYYY-MM-DD'.")
-            elif start_date:
-                try:
-                    date_obj = datetime.strptime(start_date, "%Y-%m-%d")
-                    next_day = date_obj + timedelta(days=1)
-                    query = query.filter(
-                        AlertPolicyViolation.created_at >= date_obj,
-                        AlertPolicyViolation.created_at < next_day,
+                if end_date:
+                    end_date_obj = datetime.strptime(end_date, "%Y-%m-%d") + timedelta(
+                        days=1
                     )
-                except ValueError:
-                    raise ValueError("Invalid date format. Expected 'YYYY-MM-DD'.")
-            elif end_date:
-                try:
-                    end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
-                    end_date_obj += timedelta(days=1)
-                    query = query.filter(AlertPolicyViolation.created_at < end_date_obj)
-                except ValueError:
-                    raise ValueError("Invalid date format. Expected 'YYYY-MM-DD'.")
+                    query = query.where(AlertPolicyViolation.created_at < end_date_obj)
+            except ValueError:
+                raise ValueError("Invalid date format. Expected 'YYYY-MM-DD'.")
 
             # Apply search filter
             if search:
                 search_term = f"%{search}%"
-                query = query.filter(
+                query = query.where(
                     or_(
                         AlertPolicy.policy_name.ilike(search_term),
                         Asset.asset_name.ilike(search_term),
@@ -485,31 +470,32 @@ class AlertPolicyRepository(BaseRepository):
                 )
 
             # Query to get the total count of alert violations
-            total_alerts = await session.execute(query.count())
+            count_query = select(func.count()).select_from(query.subquery())
+            total_alerts = await session.execute(count_query)
             total_alerts = total_alerts.scalar()
 
             # Calculate total pages
             total_pages = (total_alerts + page_size - 1) // page_size
 
-            # Apply custom ordering: "active" first, then order by created_at
-            alerts = await session.execute(
+            # Fetch paginated results with ordering and relationships loaded
+            paginated_query = (
                 query.order_by(
                     case(
                         (AlertPolicyViolation.status == ActiveStatus.ACTIVE, 1), else_=2
-                    ),  # Give priority to active violations
-                    desc(
-                        AlertPolicyViolation.created_at
-                    ),  # Sort remaining by created_at
+                    ),  # Active first
+                    desc(AlertPolicyViolation.created_at),  # Then sort by created_at
                 )
                 .offset(offset)
                 .limit(page_size)
-                .options(joinedload(AlertPolicyViolation.alert_policy))
                 .options(
-                    joinedload(AlertPolicyViolation.asset).joinedload(Asset.driver)
+                    joinedload(AlertPolicyViolation.alert_policy),
+                    joinedload(AlertPolicyViolation.asset).joinedload(Asset.driver),
+                    joinedload(AlertPolicyViolation.user).defer(User.password),
                 )
-                .options(joinedload(AlertPolicyViolation.user).defer(User.password))
             )
-            alerts = alerts.unique().scalars().all()
+
+            result = await session.execute(paginated_query)
+            alerts = result.scalars().all()
 
             return {
                 "alerts": alerts,
@@ -521,59 +507,63 @@ class AlertPolicyRepository(BaseRepository):
 
     async def get_active_geofence_alert_policies(self, session):
         result = await session.execute(
-            session.query(AlertPolicy)
-            .filter(
+            select(AlertPolicy)
+            .where(
                 AlertPolicy.alert_policy_type_uuid
                 == GeofenceTypeUuid.GEOFENCE_ALERT_POLICY,
                 AlertPolicy.status == ActiveStatus.ACTIVE,
             )
             .options(
-                joinedload(AlertPolicy.assets), joinedload(AlertPolicy.alert_recipients)
+                joinedload(AlertPolicy.assets),
+                joinedload(AlertPolicy.alert_recipients),
             )
         )
-        return result.unique().scalars().all()
+        return result.scalars().all()
 
     async def get_active_over_speeding_alert_policies(self, session):
         result = await session.execute(
-            session.query(AlertPolicy)
-            .filter(
+            select(AlertPolicy)
+            .where(
                 AlertPolicy.alert_policy_type_uuid
                 == GeofenceTypeUuid.OVER_SPEEDING_ALERT_POLICY,
                 AlertPolicy.status == ActiveStatus.ACTIVE,
             )
             .options(
-                joinedload(AlertPolicy.assets), joinedload(AlertPolicy.alert_recipients)
+                joinedload(AlertPolicy.assets),
+                joinedload(AlertPolicy.alert_recipients),
             )
         )
-        return result.unique().scalars().all()
+        return result.scalars().all()
 
     async def get_active_idling_alert_policies(self, session):
         result = await session.execute(
-            session.query(AlertPolicy)
-            .filter(
+            select(AlertPolicy)
+            .where(
                 AlertPolicy.alert_policy_type_uuid
                 == GeofenceTypeUuid.IDLING_ALERT_POLICY,
                 AlertPolicy.status == ActiveStatus.ACTIVE,
             )
             .options(
-                joinedload(AlertPolicy.assets), joinedload(AlertPolicy.alert_recipients)
+                joinedload(AlertPolicy.assets),
+                joinedload(AlertPolicy.alert_recipients),
             )
         )
-        return result.unique().scalars().all()
+        return result.scalars().all()
 
     async def get_active_maintenance_policies(self, session):
         result = await session.execute(
-            session.query(AlertPolicy)
-            .filter(
+            select(AlertPolicy)
+            .where(
                 AlertPolicy.alert_policy_type_uuid
                 == GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
                 AlertPolicy.status == ActiveStatus.ACTIVE,
             )
             .options(
-                joinedload(AlertPolicy.assets), joinedload(AlertPolicy.alert_recipients)
+                joinedload(AlertPolicy.assets),
+                joinedload(AlertPolicy.alert_recipients),
             )
         )
-        return result.unique().scalars().all()
+        return result.scalars().all()
 
     def generate_geofence_points(self, alert_policy):
         geofence_violation_data = alert_policy.geofence_coordinate_data
@@ -588,45 +578,51 @@ class AlertPolicyRepository(BaseRepository):
 
     async def get_last_checked_time(self, session, device_imei, today_date):
         result = await session.execute(
-            session.query(
-                func.max(TrackingEvent.last_checked_geofence_violation)
-            ).filter(TrackingEvent.device_imei == device_imei)
+            select(func.max(TrackingEvent.last_checked_geofence_violation)).where(
+                TrackingEvent.device_imei == device_imei
+            )
         )
-        last_checked_time = result.scalar()
+        last_checked_time = result.scalar_one_or_none()  # Handles None case safely
 
-        if last_checked_time is None:
-            return datetime.combine(today_date, datetime.min.time())
-        return last_checked_time.replace(microsecond=0)
+        return (
+            last_checked_time.replace(microsecond=0)
+            if last_checked_time
+            else datetime.combine(today_date, datetime.min.time())
+        )
 
     async def get_last_checked_over_speeding_time(
         self, session, device_imei, today_date
     ):
         result = await session.execute(
-            session.query(
-                func.max(TrackingEvent.last_checked_over_speeding_violation)
-            ).filter(TrackingEvent.device_imei == device_imei)
-        )
-        last_checked_time = result.scalar()
-
-        if last_checked_time is None:
-            return datetime.combine(today_date, datetime.min.time())
-        return last_checked_time.replace(microsecond=0)
-
-    async def get_last_checked_idling_time(self, session, device_imei, today_date):
-        result = await session.execute(
-            session.query(func.max(TrackingEvent.last_checked_idling_violation)).filter(
+            select(func.max(TrackingEvent.last_checked_over_speeding_violation)).where(
                 TrackingEvent.device_imei == device_imei
             )
         )
-        last_checked_time = result.scalar()
+        last_checked_time = result.scalar_one_or_none()  # Handles None case safely
 
-        if last_checked_time is None:
-            return datetime.combine(today_date, datetime.min.time())
-        return last_checked_time.replace(microsecond=0)
+        return (
+            last_checked_time.replace(microsecond=0)
+            if last_checked_time
+            else datetime.combine(today_date, datetime.min.time())
+        )
+
+    async def get_last_checked_idling_time(self, session, device_imei, today_date):
+        result = await session.execute(
+            select(func.max(TrackingEvent.last_checked_idling_violation)).where(
+                TrackingEvent.device_imei == device_imei
+            )
+        )
+        last_checked_time = result.scalar_one_or_none()  # Avoids None errors
+
+        return (
+            last_checked_time.replace(microsecond=0)
+            if last_checked_time
+            else datetime.combine(today_date, datetime.min.time())
+        )
 
     async def get_asset_points(self, session, device_imei, last_checked_time):
         result = await session.execute(
-            session.query(TrackingEvent).filter(
+            select(TrackingEvent).where(
                 TrackingEvent.device_imei == device_imei,
                 TrackingEvent.event_datetime > last_checked_time,
             )
@@ -685,18 +681,15 @@ class AlertPolicyRepository(BaseRepository):
         await session.commit()
 
     async def get_violation_record(
-        self,
-        session,
-        alert_policy_uuid,
-        geofence_asset_uuid,
+        self, session, alert_policy_uuid, geofence_asset_uuid
     ):
         result = await session.execute(
-            session.query(AlertPolicyViolation).filter(
+            select(AlertPolicyViolation).where(
                 AlertPolicyViolation.asset_uuid == geofence_asset_uuid,
                 AlertPolicyViolation.alert_policy_uuid == alert_policy_uuid,
             )
         )
-        return result.scalar()
+        return result.scalar_one_or_none()
 
     async def update_violation_record(
         self,
@@ -707,17 +700,26 @@ class AlertPolicyRepository(BaseRepository):
         violation_time=0,
         violation_distance=0,
     ):
-        violation = await session.execute(
-            session.query(AlertPolicyViolation).filter(
+        # Fetch the violation record
+        result = await session.execute(
+            select(AlertPolicyViolation).where(
                 AlertPolicyViolation.alert_policy_uuid == alert_policy_uuid,
                 AlertPolicyViolation.asset_uuid == geofence_asset_uuid,
             )
         )
-        violation = violation.scalar()
-        violation.asset_coordinates = asset_coordinates_events
-        violation.violation_time = violation_time
-        violation.violation_distance = violation_distance
-        violation.updated_at = datetime.now()
+        violation = result.scalar_one_or_none()
+
+        # Ensure the record exists before updating
+        if violation:
+            violation.asset_coordinates = asset_coordinates_events
+            violation.violation_time = violation_time
+            violation.violation_distance = violation_distance
+            violation.updated_at = datetime.utcnow()  # Ensure consistent UTC timestamps
+
+            await session.commit()  # Commit the changes to the database
+            return violation
+        else:
+            return None
 
     async def create_maintenance_alert_record(
         self, session, asset_uuid, alert_policy_uuid, business_profile_uuid, user_uuid
@@ -1064,71 +1066,65 @@ class AlertPolicyRepository(BaseRepository):
         self, start_date: str, end_date: str, asset_uuids: list
     ):
         async with self.session_factory() as session:
-            # Query to filter violations by asset UUIDs and date range
+            # Convert dates to proper format (UTC)
+            start_date_obj = datetime.strptime(start_date, "%d/%m/%Y").replace(
+                tzinfo=timezone.utc
+            )
+            end_date_obj = datetime.strptime(end_date, "%d/%m/%Y").replace(
+                tzinfo=timezone.utc
+            ) + timedelta(days=1)
+
+            # Query violations with optimized filtering
             violations = await session.execute(
-                session.query(AlertPolicyViolation)
+                select(AlertPolicyViolation)
                 .filter(
-                    AlertPolicyViolation.asset_uuid.in_(
-                        asset_uuids
-                    ),  # Filter by list of asset_uuids
-                    and_(
-                        cast(AlertPolicyViolation.created_at, Date)
-                        >= datetime.strptime(
-                            start_date, "%d/%m/%Y"
-                        ),  # Start date filter
-                        cast(AlertPolicyViolation.created_at, Date)
-                        <= datetime.strptime(end_date, "%d/%m/%Y"),  # End date filter
-                    ),
+                    AlertPolicyViolation.asset_uuid.in_(asset_uuids),
+                    AlertPolicyViolation.created_at >= start_date_obj,
+                    AlertPolicyViolation.created_at < end_date_obj,
                 )
                 .options(
-                    joinedload(AlertPolicyViolation.asset),  # Load the related Asset
+                    joinedload(AlertPolicyViolation.asset),
                     joinedload(AlertPolicyViolation.alert_policy).joinedload(
                         AlertPolicy.alert_policy_type
-                    ),  # Load related AlertPolicyType
+                    ),
                 )
             )
-            violations = (
-                violations.unique().scalars().all()
-            )  # Fetch all matching violations
+            violations = violations.scalars().all()
 
-            # Process the violations to extract individual events or coordinates
+            # Process data safely
             processed_data = []
-
             for violation in violations:
-                asset_name = (
-                    violation.asset.asset_name
-                )  # Assuming the Asset model has a 'name' attribute
+                asset_name = getattr(violation.asset, "asset_name", "Unknown")
                 date_of_incidence = violation.created_at
-                incident_name = (
-                    violation.alert_policy.policy_name
-                )  # Assuming the AlertPolicy model has a 'name' attribute
-                incident_type = (
-                    violation.alert_policy.geofence_type
-                )  # Assuming the AlertPolicyType model has a 'name' attribute
+                incident_name = getattr(
+                    violation.alert_policy, "policy_name", "Unknown"
+                )
+                incident_type = getattr(
+                    violation.alert_policy, "geofence_type", "Unknown"
+                )
 
-                incident_coordinate = violation.violation_coordinates
-
+                incident_coordinate = violation.violation_coordinates or {}
                 if "events" in incident_coordinate:
-                    # If there are multiple events (e.g., idling), process each event
-                    for event in incident_coordinate["events"]:
+                    for event in incident_coordinate.get("events", [[None]]):
                         processed_data.append(
                             {
                                 "asset_name": asset_name,
                                 "date_of_incidence": date_of_incidence,
                                 "incident_name": incident_name,
                                 "incident_type": incident_type,
-                                "incident_coordinate": event[0],
+                                "incident_coordinate": event[0] if event else None,
                             }
                         )
                 else:
-                    # For incidents with a single coordinate
                     processed_data.append(
                         {
                             "asset_name": asset_name,
                             "date_of_incidence": date_of_incidence,
                             "incident_name": incident_name,
                             "incident_type": incident_type,
-                            "incident_coordinate": incident_coordinate[0],
+                            "incident_coordinate": incident_coordinate.get(
+                                "coordinates", [None]
+                            )[0],
                         }
                     )
 
@@ -1136,60 +1132,45 @@ class AlertPolicyRepository(BaseRepository):
 
     async def get_all_alert_reminders(self, user_uuid: str):
         async with self.session_factory() as session:
-            today = datetime.now().date()
+            today = datetime.now(timezone.utc).date()
             upcoming_date = today + timedelta(days=3)
 
-            opened_reminders_data = await session.execute(
-                session.query(AlertPolicy.policy_name, AlertPolicy.created_at).filter(
-                    AlertPolicy.user_uuid == user_uuid,
-                    AlertPolicy.service_status == ServiceStatus.NOT_SERVICED,
-                    AlertPolicy.alert_policy_type_uuid
-                    == GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
-                )
+            # Fetch all required fields in a single query
+            query = select(AlertPolicy).filter(
+                AlertPolicy.user_uuid == user_uuid,
+                AlertPolicy.alert_policy_type_uuid
+                == GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
             )
-            opened_reminders_data = opened_reminders_data.all()
 
-            opened_reminders_list = [
-                {"policy_name": policy_name, "created_at": created_at.isoformat()}
-                for policy_name, created_at in opened_reminders_data
-            ]
-            opened_reminders_count = len(opened_reminders_list)
-
-            maintenance_policies = await session.execute(
-                session.query(AlertPolicy).filter(
-                    AlertPolicy.user_uuid == user_uuid,
-                    AlertPolicy.alert_policy_type_uuid
-                    == GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
-                )
-            )
+            maintenance_policies = await session.execute(query)
             maintenance_policies = maintenance_policies.scalars().all()
 
+            opened_reminders = []
             overdue_reminders = []
             upcoming_reminders = []
 
             for policy in maintenance_policies:
                 due_date = policy.created_at.date() + timedelta(
-                    days=int(policy.maintenance_alert_schedule)
+                    days=int(policy.maintenance_alert_schedule or 0)
                 )
-
                 reminder_info = {
                     "policy_name": policy.policy_name,
                     "created_at": policy.created_at.isoformat(),
                 }
+
+                if policy.service_status == ServiceStatus.NOT_SERVICED:
+                    opened_reminders.append(reminder_info)
 
                 if due_date < today:
                     overdue_reminders.append(reminder_info)
                 elif today <= due_date <= upcoming_date:
                     upcoming_reminders.append(reminder_info)
 
-            overdue_reminders_count = len(overdue_reminders)
-            upcoming_reminders_count = len(upcoming_reminders)
-
             reminders = {
-                "opened_reminders_count": opened_reminders_count,
-                "overdue_reminders_count": overdue_reminders_count,
-                "upcoming_reminders_count": upcoming_reminders_count,
-                "opened_reminders": opened_reminders_list,
+                "opened_reminders_count": len(opened_reminders),
+                "overdue_reminders_count": len(overdue_reminders),
+                "upcoming_reminders_count": len(upcoming_reminders),
+                "opened_reminders": opened_reminders,
                 "overdue_reminders": overdue_reminders,
                 "upcoming_reminders": upcoming_reminders,
             }

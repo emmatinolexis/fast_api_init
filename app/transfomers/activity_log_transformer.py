@@ -4,7 +4,7 @@ from app.repository.role_repository import RoleRepository
 from app.repository.user_repository import UserRepository
 
 
-def activity_log_transformer(
+async def activity_log_transformer(
     activity_log: ActivityLog, user_repo: UserRepository, role_repo: RoleRepository
 ) -> dict:
     user: User = user_repo.read_by_uuid(activity_log.user_uuid)
@@ -14,7 +14,7 @@ def activity_log_transformer(
         "email": user.email_address,
     }
 
-    user_role = role_repo.read_by_uuid(user.user_role_uuid)
+    user_role = await role_repo.read_by_uuid(user.user_role_uuid)
     user_data["role"] = user_role.role_name
 
     return {
