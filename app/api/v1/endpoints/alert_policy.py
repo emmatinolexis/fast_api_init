@@ -312,7 +312,7 @@ async def check_geofence_violation_handler(
 ):
     try:
         response_data = await service.check_geofence_violation()
-
+        return response_data
         violations = response_data.get("violations", [])
 
         if violations:

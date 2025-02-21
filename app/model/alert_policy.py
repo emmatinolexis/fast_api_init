@@ -38,9 +38,7 @@ class AlertPolicy(BaseModel):
     maintenance_alert_type_uuid = Column(
         UUID(as_uuid=True), ForeignKey("alert_maintenance_types.uuid"), nullable=True
     )
-    service_status = Column(
-        Enum(ServiceStatus), nullable=False, default=ServiceStatus.NOT_SERVICED.value
-    )
+    service_status = Column(Enum(ServiceStatus), nullable=False, default="not_serviced")
     maintenance_updated_at = Column(DateTime, nullable=True)
     alert_policy_type = relationship("AlertPolicyType", uselist=False, lazy="subquery")
     maintenance_alert_type = relationship("AlertMaintenanceType", lazy="subquery")
