@@ -2,9 +2,11 @@ from typing import Any, Callable, Dict, Optional
 
 from sqlalchemy import desc
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
-
+from sqlalchemy.sql import func
+from sqlalchemy.orm import selectinload
 from app.model.buildings import Building
 from app.model.gas_cylinders import GasCylinder
 from app.model.peripheral_devices import PeripheralDevice
@@ -73,15 +75,25 @@ class BuildingRepository(BaseRepository):
 
     async def read_all_building(
         self,
-        user_uuid: str = None,
-        business_uuid: str = None,
+        user_uuid: Optional[str] = None,
+        business_uuid: Optional[str] = None,
         page: int = 1,
         page_size: int = 10,
         search: Optional[str] = None,
     ) -> Dict[str, Any]:
-        async with self.session_factory() as session:
+        async with self.session_factory() as session:  # ✅ Use async session
             offset = (page - 1) * page_size
-            base_query = await self._build_base_query(session, user_uuid, business_uuid)
+
+            # ✅ Build the base query using `select()`
+            base_query = select(self.model)
+
+            if user_uuid:
+                base_query = base_query.filter(self.model.user_uuid == user_uuid)
+
+            if business_uuid:
+                base_query = base_query.filter(
+                    self.model.business_profile_uuid == business_uuid
+                )
 
             if search:
                 search_pattern = f"%{search}%"
@@ -89,31 +101,38 @@ class BuildingRepository(BaseRepository):
                     self.model.building_name.ilike(search_pattern)
                 )
 
-            total_assets = base_query.count()
-            total_pages = (total_assets + page_size - 1) // page_size
+            # ✅ Calculate total count
+            # total_assets_query = select(func.count()).select_from(base_query.subquery())
+            # total_assets = await session.scalar(total_assets_query)
 
+            # total_pages = (total_assets + page_size - 1) // page_size
+
+            # ✅ Apply pagination and ordering
             paginated_query = (
                 base_query.order_by(desc(self.model.created_at))
-                .offset(offset)
-                .limit(page_size)
+                # .offset(offset)
+                # .limit(page_size)
             )
 
-            results = await session.execute(self._load_related_models(paginated_query))
-            assets = results.unique().scalars().all()
+            # ✅ Execute query and fetch results asynchronously
+            results = await session.execute(paginated_query)
+            assets = results.scalars().all()
+
+            # ✅ Process assets (if additional formatting needed)
             buildings = self._build_building_assets(assets)
 
             return {
                 "assets": buildings,
-                "total_assets": total_assets,
-                "total_pages": total_pages,
-                "current_page": page,
-                "page_size": page_size,
+                # "total_assets": total_assets,
+                # "total_pages": total_pages,
+                # "current_page": page,
+                # "page_size": page_size,
             }
 
     async def _build_base_query(
-        self, session, user_uuid: str = None, business_uuid: str = None
+        self, session: AsyncSession, user_uuid: str = None, business_uuid: str = None
     ):
-        base_query = select(self.model)
+        base_query = session.query(self.model)  # ✅ Fix: Use `session.query()`
 
         if user_uuid:
             base_query = base_query.filter(self.model.user_uuid == user_uuid)

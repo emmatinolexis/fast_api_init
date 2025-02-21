@@ -248,11 +248,12 @@ class TrackingEventRepository(BaseRepository):
     async def read_latest_tracking_event_by_device_imei(self, device_imei: str):
         async with self.session_factory() as session:
             query = await session.execute(
-                session.query(self.model)
+                select(self.model)
                 .filter(self.model.device_imei == device_imei)
                 .order_by(self.model.event_datetime.desc())
+                .limit(1)  # Ensure only 1 record is fetched
             )
-            return query.scalars().first()
+            return query.scalar_one_or_none()
 
     async def read_asset_average_speed(
         self, device_imei: str, date_from: datetime, date_to: datetime

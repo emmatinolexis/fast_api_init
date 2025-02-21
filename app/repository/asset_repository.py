@@ -491,32 +491,41 @@ class AssetRepository(BaseRepository):
         self, asset_type_uuid: str = None, page=1, page_size=10
     ):
         async with self.session_factory() as session:
-            # Calculate the offset based on the page and per_page values
+            # Calculate pagination offset
             offset = (page - 1) * page_size
 
-            query = session.query(self.model).filter(
-                self.model.created_by == AssetCreators.DVLA
+            # Base Query
+            base_query = select(self.model).filter(
+                str(self.model.created_by) == AssetCreators.DVLA.value
             )
-            total_assets = await session.execute(query.count())
-            total_assets = total_assets.scalar()
 
-            if asset_type_uuid is not None:
-                query = query.filter(self.model.asset_type_uuid == asset_type_uuid)
+            # Apply asset type filter if provided
+            if asset_type_uuid:
+                base_query = base_query.filter(
+                    self.model.asset_type_uuid == asset_type_uuid
+                )
 
-            query = (
-                query.order_by(desc(self.model.created_at))
+            # Count total records (before pagination)
+            total_assets_query = select(func.count()).select_from(base_query.subquery())
+            total_assets_result = await session.execute(total_assets_query)
+            total_assets = total_assets_result.scalar()
+
+            # Fetch paginated assets
+            asset_query = (
+                base_query.order_by(desc(self.model.created_at))
                 .offset(offset)
                 .limit(page_size)
+                .options(
+                    joinedload(Asset.asset_type),
+                    joinedload(Asset.driver),
+                    joinedload(Asset.device),
+                    joinedload(Asset.equipment),
+                    joinedload(Asset.vehicle_owner),
+                )
             )
 
-            assets = await session.execute(
-                query.options(joinedload(Asset.asset_type))
-                .options(joinedload(Asset.driver))
-                .options(joinedload(Asset.device))
-                .options(joinedload(Asset.equipment))
-                .options(joinedload(Asset.vehicle_owner))
-            )
-            assets = assets.unique().scalars().all()
+            assets_result = await session.execute(asset_query)
+            assets = assets_result.scalars().all()
 
             return assets, total_assets
 

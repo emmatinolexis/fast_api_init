@@ -33,7 +33,7 @@ from app.schema.alert_policy_schema import (
 )
 from app.service.base_service import BaseService
 from app.transfomers.alert_policy_transformer import alert_policy_transformer
-from app.util.enums import ActiveStatus, GeofenceShapeType
+from app.util.enums import ActiveStatus, GeofenceShapeType, ServiceStatus
 
 
 class AlertPolicyService(BaseService):
@@ -245,8 +245,10 @@ class AlertPolicyService(BaseService):
                 user_uuid=user_uuid,
                 business_profile_uuid=business_uuid,
                 status=ActiveStatus.ACTIVE,
+                # service_status="not_serviced",
             )
             created_policy = await self.add(alert_policy_data)
+            # return created_policy
             await self.assign_alert_recipients(
                 alert_policy.alert_recipients, created_policy.uuid
             )

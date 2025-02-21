@@ -189,7 +189,7 @@ class AlertPolicyRepository(BaseRepository):
             )
 
             result = await session.execute(paginated_query)
-            alerts = result.scalars().all()
+            alerts = result.unique().scalars().all()
 
             return {
                 "alerts": alerts,
@@ -275,7 +275,7 @@ class AlertPolicyRepository(BaseRepository):
             )
 
             result = await session.execute(paginated_query)
-            alerts = result.scalars().all()
+            alerts = result.unique().scalars().all()
 
             formatted_alerts = []
             for alert in alerts:
@@ -510,7 +510,7 @@ class AlertPolicyRepository(BaseRepository):
             select(AlertPolicy)
             .where(
                 AlertPolicy.alert_policy_type_uuid
-                == GeofenceTypeUuid.GEOFENCE_ALERT_POLICY,
+                == GeofenceTypeUuid.GEOFENCE_ALERT_POLICY.value,
                 AlertPolicy.status == ActiveStatus.ACTIVE,
             )
             .options(
@@ -518,7 +518,7 @@ class AlertPolicyRepository(BaseRepository):
                 joinedload(AlertPolicy.alert_recipients),
             )
         )
-        return result.scalars().all()
+        return result.unique().scalars().all()
 
     async def get_active_over_speeding_alert_policies(self, session):
         result = await session.execute(
@@ -533,7 +533,7 @@ class AlertPolicyRepository(BaseRepository):
                 joinedload(AlertPolicy.alert_recipients),
             )
         )
-        return result.scalars().all()
+        return result.unique().scalars().all()
 
     async def get_active_idling_alert_policies(self, session):
         result = await session.execute(
@@ -548,7 +548,7 @@ class AlertPolicyRepository(BaseRepository):
                 joinedload(AlertPolicy.alert_recipients),
             )
         )
-        return result.scalars().all()
+        return result.unique().scalars().all()
 
     async def get_active_maintenance_policies(self, session):
         result = await session.execute(
@@ -563,7 +563,7 @@ class AlertPolicyRepository(BaseRepository):
                 joinedload(AlertPolicy.alert_recipients),
             )
         )
-        return result.scalars().all()
+        return result.unique().scalars().all()
 
     def generate_geofence_points(self, alert_policy):
         geofence_violation_data = alert_policy.geofence_coordinate_data
@@ -627,7 +627,7 @@ class AlertPolicyRepository(BaseRepository):
                 TrackingEvent.event_datetime > last_checked_time,
             )
         )
-        return result.scalars().all()
+        return result.unique().scalars().all()
 
     def extract_coordinates_and_events(self, asset_points):
         asset_coordinates_events = [
@@ -1139,7 +1139,7 @@ class AlertPolicyRepository(BaseRepository):
             query = select(AlertPolicy).filter(
                 AlertPolicy.user_uuid == user_uuid,
                 AlertPolicy.alert_policy_type_uuid
-                == GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY,
+                == GeofenceTypeUuid.MAINTENANCE_ALERT_POLICY.value,
             )
 
             maintenance_policies = await session.execute(query)
