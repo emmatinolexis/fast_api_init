@@ -108,7 +108,6 @@ class BuildingService(BaseService):
 
     async def get_all_buildings(
         self,
-        user_uuid: str = None,
         business_uuid: str = None,
         page_size: int = 10,
         page: int = 1,
@@ -116,7 +115,6 @@ class BuildingService(BaseService):
     ):
         try:
             report = await self.building_repository.read_all_building(
-                user_uuid=user_uuid,
                 business_uuid=business_uuid,
                 page=page,
                 page_size=page_size,
