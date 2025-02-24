@@ -2,7 +2,8 @@ from typing import Any, Callable, Dict, Optional
 
 from sqlalchemy import desc
 from sqlalchemy.ext.asyncio import AsyncSession
-
+import uuid
+from sqlalchemy.orm import subqueryload
 from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import func
@@ -75,58 +76,67 @@ class BuildingRepository(BaseRepository):
 
     async def read_all_building(
         self,
-        user_uuid: Optional[str] = None,
         business_uuid: Optional[str] = None,
         page: int = 1,
         page_size: int = 10,
         search: Optional[str] = None,
     ) -> Dict[str, Any]:
-        async with self.session_factory() as session:  # ✅ Use async session
+        async with self.session_factory() as session:
+
             offset = (page - 1) * page_size
 
-            # ✅ Build the base query using `select()`
             base_query = select(self.model)
 
-            if user_uuid:
-                base_query = base_query.filter(self.model.user_uuid == user_uuid)
-
             if business_uuid:
-                base_query = base_query.filter(
-                    self.model.business_profile_uuid == business_uuid
+                base_query = base_query.where(
+                    self.model.business_profile_uuid == str(business_uuid)
                 )
 
             if search:
-                search_pattern = f"%{search}%"
-                base_query = base_query.filter(
-                    self.model.building_name.ilike(search_pattern)
+                search_pattern = f"%{search.lower()}%"
+                base_query = base_query.where(
+                    func.lower(self.model.building_name).ilike(search_pattern)
                 )
 
-            # ✅ Calculate total count
-            # total_assets_query = select(func.count()).select_from(base_query.subquery())
-            # total_assets = await session.scalar(total_assets_query)
+            # ✅ Correct way to count total assets
+            total_assets_query = select(func.count()).select_from(self.model)
 
-            # total_pages = (total_assets + page_size - 1) // page_size
+            if business_uuid:
+                total_assets_query = total_assets_query.where(
+                    self.model.business_profile_uuid == str(business_uuid)
+                )
+
+            if search:
+                search_pattern = f"%{search.lower()}%"
+                total_assets_query = total_assets_query.where(
+                    func.lower(self.model.building_name).ilike(search_pattern)
+                )
+
+            base_query = self._load_related_models(base_query)
+
+            total_assets = await session.scalar(total_assets_query)
+
+            total_pages = (total_assets + page_size - 1) // page_size
 
             # ✅ Apply pagination and ordering
             paginated_query = (
                 base_query.order_by(desc(self.model.created_at))
-                # .offset(offset)
-                # .limit(page_size)
+                .offset(offset)
+                .limit(page_size)
             )
 
             # ✅ Execute query and fetch results asynchronously
             results = await session.execute(paginated_query)
-            assets = results.scalars().all()
+            assets = results.unique().scalars().all()
 
-            # ✅ Process assets (if additional formatting needed)
-            buildings = self._build_building_assets(assets)
+            buildings = await self._build_building_assets(assets)
 
             return {
                 "assets": buildings,
-                # "total_assets": total_assets,
-                # "total_pages": total_pages,
-                # "current_page": page,
-                # "page_size": page_size,
+                "total_assets": total_assets,
+                "total_pages": total_pages,
+                "current_page": page,
+                "page_size": page_size,
             }
 
     async def _build_base_query(
@@ -146,33 +156,35 @@ class BuildingRepository(BaseRepository):
 
     def _load_related_models(self, query):
         return query.options(
-            joinedload(self.model.gas_cylinders).joinedload(GasCylinder.gas_events),
-            joinedload(self.model.gas_cylinders).joinedload(GasCylinder.gas_device),
-            joinedload(self.model.gas_cylinders).joinedload(GasCylinder.cylinder_type),
-            joinedload(self.model.peripheral_devices).joinedload(
+            subqueryload(self.model.gas_cylinders).subqueryload(GasCylinder.gas_events),
+            subqueryload(self.model.gas_cylinders).subqueryload(GasCylinder.gas_device),
+            subqueryload(self.model.gas_cylinders).subqueryload(
+                GasCylinder.cylinder_type
+            ),
+            subqueryload(self.model.peripheral_devices).subqueryload(
                 PeripheralDevice.building
             ),
         )
 
-    def _build_building_assets(self, assets):
+    async def _build_building_assets(self, assets):
         buildings = []
 
         for asset in assets:
-            building_cylinders = self._build_cylinder_info(asset.gas_cylinders)
-            building_info = self._build_building_info(asset, building_cylinders)
+            building_cylinders = await self._build_cylinder_info(asset.gas_cylinders)
+            building_info = await self._build_building_info(asset, building_cylinders)
             buildings.append(building_info)
 
         return buildings
 
-    def _build_cylinder_info(self, cylinders):
+    async def _build_cylinder_info(self, cylinders):
         building_cylinders = []
 
         for cylinder in cylinders:
             cylinder_type = cylinder.cylinder_type
             gas_events = cylinder.gas_events
 
-            gas_level = self._get_gas_level(cylinder_type, gas_events)
-            gas_device_info = self._get_gas_device_info(cylinder.gas_device)
+            gas_level = await self._get_gas_level(cylinder_type, gas_events)
+            gas_device_info = await self._get_gas_device_info(cylinder.gas_device)
 
             cylinder_info = {
                 "cylinder_name": cylinder.cylinder_name,
@@ -186,7 +198,7 @@ class BuildingRepository(BaseRepository):
 
         return building_cylinders
 
-    def _get_gas_level(self, cylinder_type, gas_events):
+    async def _get_gas_level(self, cylinder_type, gas_events):
         if gas_events:
             # last_gas_event = gas_events[-1]
             last_gas_event = max(gas_events, key=lambda x: x.created_at)
@@ -205,7 +217,7 @@ class BuildingRepository(BaseRepository):
 
         return gas_level
 
-    def _get_gas_device_info(self, gas_device):
+    async def _get_gas_device_info(self, gas_device):
         if gas_device:
             return {
                 "uuid": gas_device.uuid,
@@ -216,7 +228,7 @@ class BuildingRepository(BaseRepository):
             }
         return {}
 
-    def _build_building_info(self, asset, building_cylinders):
+    async def _build_building_info(self, asset, building_cylinders):
         # Check if there are no cylinders
         if not building_cylinders:
             status = BuildingStatus.PENDING_INSTALLATION
