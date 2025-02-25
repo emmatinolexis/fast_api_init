@@ -44,7 +44,9 @@ class DriverService(BaseService):
 
     async def get_driver_by_phone_number(self, phone_number: str):
         try:
-            driver = await self.driver_repository.get_driver_phone_number(phone_number)
+            driver = await self.driver_repository.get_driver_by_phone_number(
+                phone_number
+            )
             return driver
         except Exception as e:
             raise e

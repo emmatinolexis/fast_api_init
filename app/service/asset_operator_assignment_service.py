@@ -27,28 +27,23 @@ class AssetOperatorAssignmentService(BaseService):
         self,
         asset_uuid: str,
         operator_uuid: str,
-        user_uuid: str,
         business_profile_uuid: str = None,
     ):
         try:
-            asset = self.asset_repository.read_by_uuid(asset_uuid)
-
+            asset = await self.asset_repository.read_by_uuid(asset_uuid)
             if asset is None:
                 raise NotFoundError(messages.NO_ASSET_FOUND)
-
-            if str(asset.business_profile_uuid) != business_profile_uuid:
+            # return asset.business_profile_uuid, business_profile_uuid
+            if str(asset.business_profile_uuid) != str(business_profile_uuid):
                 # If not, check if the asset's user_uuid matches the provided user_uuid
                 raise UnAuthorizedError(messages.ACTION_NOT_ALLOWED)
 
-                # if asset.user_uuid != user_uuid:
-                #     raise UnAuthorizedError(messages.ACTION_NOT_ALLOWED)
-
-            operator = self.user_repository.read_by_uuid(operator_uuid)
+            operator = await self.user_repository.read_by_uuid(operator_uuid)
             if operator is None:
                 raise NotFoundError(messages.NO_OPERATOR_FOUND)
 
             existing_operator_asset_assignment = (
-                self.asset_operator_assignment.get_assignment_by_operator_uuid(
+                await self.asset_operator_assignment.get_assignment_by_operator_uuid(
                     operator_uuid=operator_uuid
                 )
             )
@@ -61,23 +56,23 @@ class AssetOperatorAssignmentService(BaseService):
             # Update assignment if existing, else create new
             if existing_operator_asset_assignment or existing_asset_operator_assignment:
                 if existing_operator_asset_assignment is not None:
-                    self.asset_operator_assignment.update_attr_by_uuid(
+                    await self.asset_operator_assignment.update_attr_by_uuid(
                         existing_operator_asset_assignment.uuid,
                         "asset_uuid",
                         asset_uuid,
                     )
-                    self.asset_operator_assignment.update_attr_by_uuid(
+                    await self.asset_operator_assignment.update_attr_by_uuid(
                         existing_operator_asset_assignment.uuid,
                         "operator_uuid",
                         operator_uuid,
                     )
                 elif existing_asset_operator_assignment is not None:
-                    self.asset_operator_assignment.update_attr_by_uuid(
+                    await self.asset_operator_assignment.update_attr_by_uuid(
                         existing_asset_operator_assignment.uuid,
                         "asset_uuid",
                         asset_uuid,
                     )
-                    self.asset_operator_assignment.update_attr_by_uuid(
+                    await self.asset_operator_assignment.update_attr_by_uuid(
                         existing_asset_operator_assignment.uuid,
                         "operator_uuid",
                         operator_uuid,
@@ -88,7 +83,7 @@ class AssetOperatorAssignmentService(BaseService):
                 schema = AssignAssetPayload(
                     asset_uuid=asset_uuid, operator_uuid=operator_uuid
                 )
-                self.asset_operator_assignment.create(schema=schema)
+                await self.asset_operator_assignment.create(schema=schema)
             subscriber.publish(
                 VehicleAssignment, VehicleAssignment(asset=asset, user=operator)
             )
