@@ -99,23 +99,23 @@ class DeviceRepository(BaseRepository):
                 offset = (page - 1) * page_size
 
                 base_query = (
-                    select(self.model)
+                    select(Device)
                     .options(
                         joinedload(Device.inventory).joinedload(Inventory.manufacturer),
                         joinedload(Device.asset),
                         joinedload(Device.user),
                     )
-                    .filter(
+                    .where(
                         Device.device_imei.isnot(None),
-                        self.model.assign_to_asset_status.is_(None),
+                        Device.assign_to_asset_status.is_(None),
                     )
                 )
 
                 if search_query:
                     base_query = (
-                        base_query.join(Device.inventory)
-                        .join(Inventory.manufacturer)
-                        .filter(
+                        base_query.outerjoin(Device.inventory)
+                        .outerjoin(Inventory.manufacturer)
+                        .where(
                             or_(
                                 DeviceManufacturer.manufacturer_name.ilike(
                                     f"%{search_query}%"
@@ -125,9 +125,10 @@ class DeviceRepository(BaseRepository):
                         )
                     )
 
-                total_result = await session.execute(
-                    select(func.count()).select_from(base_query.subquery())
+                total_devices_query = select(func.count()).select_from(
+                    base_query.subquery()
                 )
+                total_result = await session.execute(total_devices_query)
                 total_devices = total_result.scalar()
 
                 paginated_query = base_query.offset(offset).limit(page_size)
@@ -152,28 +153,29 @@ class DeviceRepository(BaseRepository):
             try:
                 query = (
                     select(self.model)
-                    .filter(self.model.device_imei == device_imei)
                     .options(
                         joinedload(Device.inventory).joinedload(Inventory.manufacturer),
                         joinedload(Device.user),
                     )
+                    .filter(Device.device_imei == device_imei)
                 )
                 result = await session.execute(query)
                 device = result.unique().scalar_one_or_none()
 
-                if device:
-                    if device.user_uuid:
-                        if device.user:
-                            del device.user.__dict__["password"]
-                        return device
-                    else:
-                        raise Exception("There is no user assigned to this device")
-                else:
-                    raise Exception(
-                        f"There is no device with the given imei: {device_imei}"
-                    )
+                if not device:
+                    return {"error": f"No device found with IMEI: {device_imei}"}
+
+                if not device.user_uuid or not device.user:
+                    return {"error": "No user assigned to this device"}
+
+                # Remove password safely
+                user_data = device.user.__dict__.copy()
+                user_data.pop("password", None)
+
+                return {"device": device, "user": user_data}
+
             except Exception as e:
-                raise e
+                return {"error": str(e)}
 
     async def create_devices(self, inventory):
         async with self.session_factory() as session:
@@ -206,7 +208,7 @@ class DeviceRepository(BaseRepository):
                         joinedload(Device.inventory).joinedload(Inventory.images),
                     )
                 )
-            else:  # AccountType.BUSINESS
+            else:
                 query = (
                     select(self.model)
                     .filter(

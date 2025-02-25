@@ -227,12 +227,11 @@ async def change_rider_asset_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
+
         response = await service.assign_operator_to_asset(
-            asset_uuid,
-            operator_uuid,
-            current_user.uuid,
-            current_user.business_profile_uuid,
+            asset_uuid, operator_uuid, current_user.business_profile_uuid
         )
+
         return send_info(response)
     except (NotFoundError, BadRequestError) as e:
         return send_client_side_error(user_msg=str(e.detail), dev_msg=str(e.detail))

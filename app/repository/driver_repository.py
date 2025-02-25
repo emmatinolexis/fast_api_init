@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, Optional
 
 from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -99,38 +99,39 @@ class DriverRepository(BaseRepository):
                 "page_size": page_size,
             }
 
-    async def get_driver_phone_number(self, phone_number: str) -> Driver:
+    async def get_driver_by_phone_number(self, phone_number: str) -> Optional[Driver]:
         async with self.session_factory() as session:
-            query = select(self.model).filter(self.model.phone_number == phone_number)
+            query = select(self.model).where(self.model.phone_number == phone_number)
             result = await session.execute(query)
-            return result.scalar_.one_or_none()
+            return result.scalar_one_or_none()
 
-    async def unassign_driver(self, driver_uuid: str) -> Driver:
+    async def unassign_driver(self, driver_uuid: str) -> Optional[Driver]:
         async with self.session_factory() as session:
             try:
-                query = select(self.model).filter(self.model.uuid == driver_uuid)
+                query = select(self.model).where(self.model.uuid == driver_uuid)
                 result = await session.execute(query)
-                driver = result.scalar_.one_or_none()
+                driver = result.scalar_one_or_none()
 
                 if not driver:
-                    raise Exception("Driver not found")
+                    raise ValueError("Driver not found")
 
-                driver.asset_uuid = None
+                driver.asset_uuid = None  # Unassign the driver from the asset
                 await session.commit()
-                await session.refresh(driver)
                 return driver
+
             except Exception as e:
                 await session.rollback()
                 raise e
 
-    async def get_driver_by_email(self, email: str) -> Driver:
+    async def get_driver_by_email(self, email: str) -> Optional[Driver]:
         async with self.session_factory() as session:
-            query = select(self.model).filter(self.model.email == email)
+            query = select(self.model).where(self.model.email == email)
             result = await session.execute(query)
-            return result.scalar_.one_or_none()
+            return result.scalar_one_or_none()
 
-    async def get_driver_by_asset_uuid(self, asset_uuid: str) -> Driver:
-        async with self.session_factory() as session:
-            query = select(self.model).filter(self.model.asset_uuid == asset_uuid)
-            result = await session.execute(query)
-            return result.scalar_.one_or_none()
+
+async def get_driver_by_asset_uuid(self, asset_uuid: str) -> Optional[Driver]:
+    async with self.session_factory() as session:
+        query = select(self.model).where(self.model.asset_uuid == asset_uuid)
+        result = await session.execute(query)
+        return result.scalar_one_or_none()

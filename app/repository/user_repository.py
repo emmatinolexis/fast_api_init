@@ -569,7 +569,7 @@ class UserRepository(BaseRepository):
             ),
             user_role_uuid=(
                 CustomerRoles.ADMIN if not user.invite_status else user.user_role_uuid
-            ).value,
+            ),
             status=user.status,
             verifiedAt=(
                 f"{datetime.utcnow():%Y-%m-%d %H:%M:%S%z}"
