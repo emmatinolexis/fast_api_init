@@ -2,9 +2,9 @@ from app.model.fuel_log import FuelLog
 from app.repository.user_repository import UserRepository
 
 
-def fuel_log_transformer(fuel_log: FuelLog, user_repo: UserRepository):
-    driver = user_repo.read_by_uuid(fuel_log.driver_uuid)
-    logged_by = user_repo.read_by_uuid(fuel_log.user_uuid)
+async def fuel_log_transformer(fuel_log: FuelLog, user_repo: UserRepository):
+    driver = await user_repo.read_by_uuid(fuel_log.driver_uuid)
+    logged_by = await user_repo.read_by_uuid(fuel_log.user_uuid)
 
     driver_details = {
         "uuid": driver.uuid if driver else None,
@@ -14,9 +14,9 @@ def fuel_log_transformer(fuel_log: FuelLog, user_repo: UserRepository):
     }
 
     logged_by = {
-        "full_name": f"{logged_by.first_name} {logged_by.last_name}"
-        if logged_by
-        else None,
+        "full_name": (
+            f"{logged_by.first_name} {logged_by.last_name}" if logged_by else None
+        ),
     }
 
     return {
@@ -24,9 +24,9 @@ def fuel_log_transformer(fuel_log: FuelLog, user_repo: UserRepository):
         "amount": fuel_log.amount,
         "quantity": fuel_log.quantity,
         "user_uuid": fuel_log.user_uuid,
-        "business_profile_uuid": fuel_log.business_profile_uuid
-        if fuel_log.business_profile_uuid
-        else None,
+        "business_profile_uuid": (
+            fuel_log.business_profile_uuid if fuel_log.business_profile_uuid else None
+        ),
         "asset_uuid": fuel_log.asset_uuid if fuel_log.asset_uuid else None,
         "asset_name": fuel_log.asset_name,
         "receipt_image": fuel_log.receipt_image if fuel_log.receipt_image else None,

@@ -196,13 +196,18 @@ class FuelLogService(BaseService):
         business_uuid: str,
         page: int = 1,
         page_size: int = 10,
+        user_uuid: str = None,
         search: str = None,
         start_date: str = None,
         end_date: str = None,
     ):
         try:
             fuel_logs = await self.fuel_log_repository.get_fuel_logs_by_business_uuid(
-                business_uuid, search, start_date, end_date
+                business_uuid=business_uuid,
+                search=search,
+                user_uuid=user_uuid,
+                start_date=start_date,
+                end_date=end_date,
             )
 
             total = len(fuel_logs)
@@ -214,7 +219,7 @@ class FuelLogService(BaseService):
                 "page_size": page_size,
                 "total_pages": total // page_size + 1,
                 "data": [
-                    fuel_log_transformer(log, self.user_repository)
+                    await fuel_log_transformer(log, self.user_repository)
                     for log in paginated_fuel_logs
                 ],
             }

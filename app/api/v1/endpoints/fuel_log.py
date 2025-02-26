@@ -10,6 +10,7 @@ from app.model.user import User
 from app.schema.fuel_log_schema import FuelLogSchema, SingleFuelLog, UpdateFuelLog
 from app.service.fuel_log_service import FuelLogService
 from app.service.user_service import UserService
+from app.core.constants import OPERATOR_ROLE_NAME
 from app.util.utils import (
     send_client_side_error,
     send_data,
@@ -154,7 +155,16 @@ async def get_fuel_logs_handler(
     ),
 ):
     try:
+
         user = await user_service.get_user_by_uuid(user_uuid)
+        business_profile_uuid = str(user.get("business_profile").uuid)
+
+        if business_profile_uuid != str(current_user.business_profile.uuid):
+            return send_client_side_error(
+                messages.NOT_AUTHORIZED,
+                messages.NOT_AUTHORIZED,
+                403,
+            )
 
         if not user:
             return send_client_side_error(
@@ -162,12 +172,17 @@ async def get_fuel_logs_handler(
             )
 
         data = await service.get_fuel_logs_by_business_uuid(
-            str(user.get("business_profile").uuid),
-            page,
-            page_size,
-            search,
-            start_date,
-            end_date,
+            business_uuid=business_profile_uuid,
+            user_uuid=(
+                str(current_user.uuid)
+                if current_user.user_role.role_name == OPERATOR_ROLE_NAME
+                else None
+            ),
+            page=page,
+            page_size=page_size,
+            search=search,
+            start_date=start_date,
+            end_date=end_date,
         )
 
         return send_data_with_info(data, messages.GET_SUCCESS + "fuel logs")

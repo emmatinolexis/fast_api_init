@@ -78,16 +78,21 @@ class FuelLogRepository(BaseRepository):
     async def get_fuel_logs_by_business_uuid(
         self,
         business_uuid: str,
+        user_uuid: str = None,
         search: str = None,
         start_date: str = None,
         end_date: str = None,
     ):
         async with self.session_factory() as session:
             query = (
-                select(self.FuelLog)
+                select(FuelLog)
                 .outerjoin(Driver, FuelLog.driver_uuid == Driver.uuid)
                 .filter(FuelLog.business_profile_uuid == business_uuid)
             )
+
+            if user_uuid:
+                query = query.filter(FuelLog.user_uuid == user_uuid)
+
             query = self._apply_common_filters(
                 query, search, start_date, end_date, is_driver_joined=True
             )
