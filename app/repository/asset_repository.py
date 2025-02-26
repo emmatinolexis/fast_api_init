@@ -81,6 +81,7 @@ class AssetRepository(BaseRepository):
                     User.uuid == AssetOperatorAssignment.operator_uuid,
                     isouter=True,
                 )
+                .options(joinedload(self.model.alert_policies))
             )
 
             # Apply filters
@@ -334,11 +335,11 @@ class AssetRepository(BaseRepository):
 
             # Base query with joins
             base_query = (
-                select(self.model)
-                .join(
+                select(self.model).join(
                     AssetOperatorAssignment,
                     AssetOperatorAssignment.asset_uuid == self.model.uuid,
                 )
+                # .options(joinedload(self.model.alert_policies))
                 .filter(AssetOperatorAssignment.operator_uuid == operator_uuid)
             )
 
