@@ -42,7 +42,12 @@ class AlertPolicy(BaseModel):
     maintenance_updated_at = Column(DateTime, nullable=True)
     alert_policy_type = relationship("AlertPolicyType", uselist=False, lazy="subquery")
     maintenance_alert_type = relationship("AlertMaintenanceType", lazy="subquery")
-    assets = relationship("Asset", secondary="alert_policy_asset_assignments")
+    assets = relationship(
+        "Asset",
+        secondary="alert_policy_asset_assignments",
+        back_populates="alert_policies",
+        lazy="subquery",
+    )
     alert_recipients = relationship(
         "AlertNotificationAssignment",
         back_populates="alert_policy",
