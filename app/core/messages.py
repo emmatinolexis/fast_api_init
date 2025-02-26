@@ -9,6 +9,7 @@ ORGANISATION_CONTACT_NOT_FOUND = (
 ALERT_MAINTENANCE_TYPE_NOT_FOUND = (
     "No alert maintenance type was found with the given uuid : "
 )
+NOT_AUTHORIZED = "You are not authorized to perform this action"
 ALERT_REMINDERS_NOT_FOUND = "No alert reminders found with the given uuid: "
 ASSET_FETCH_NOT_AUTHORIZED = "Not authorized to fetch assets"
 MAINTENANCE_ALERT_NOT_FOUND = "No maintenance alert was found with the given uuid : "
