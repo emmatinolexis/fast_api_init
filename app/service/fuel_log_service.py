@@ -70,7 +70,7 @@ class FuelLogService(BaseService):
 
         log = await self.fuel_log_repository.create(log_payload)
 
-        return fuel_log_transformer(log, self.user_repository)
+        return await fuel_log_transformer(log, self.user_repository)
 
     async def create_bulk_fuel_logs(
         self, user_uuid: str, csv_url: str, business_profile_uuid: str = None
@@ -159,7 +159,7 @@ class FuelLogService(BaseService):
 
         fuel_log = await self.fuel_log_repository.create(full_payload)
 
-        return fuel_log_transformer(fuel_log, self.user_repository)
+        return await fuel_log_transformer(fuel_log, self.user_repository)
 
     async def get_fuel_logs_by_user_uuid(
         self,
@@ -184,7 +184,7 @@ class FuelLogService(BaseService):
                 "page_size": page_size,
                 "total_pages": total // page_size + 1,
                 "data": [
-                    fuel_log_transformer(log, self.user_repository)
+                    await fuel_log_transformer(log, self.user_repository)
                     for log in paginated_fuel_logs
                 ],
             }
@@ -231,8 +231,8 @@ class FuelLogService(BaseService):
             fuel_log_uuid, "receipt_image", payload.receipt_image
         )
 
-        return fuel_log_transformer(updated_fuel_log, self.user_repository)
+        return await fuel_log_transformer(updated_fuel_log, self.user_repository)
 
     async def get_receipt_by_uuid(self, fuel_log_uuid: str):
         fuel_log = await self.fuel_log_repository.read_by_uuid(fuel_log_uuid)
-        return fuel_log_transformer(fuel_log, self.user_repository)
+        return await fuel_log_transformer(fuel_log, self.user_repository)
