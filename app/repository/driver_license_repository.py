@@ -18,13 +18,13 @@ class DriverLicenseRepository(BaseRepository):
                 DriverLicense.license_number == license_number
             )
             result = await session.execute(query)
-            return result.scalar_.one_or_none()
+            return result.scalar_one_or_none()
 
     async def get_license_by_user_id(self, user_uuid: str) -> DriverLicense:
         async with self.session_factory() as session:
             query = select(DriverLicense).filter(DriverLicense.user_id == user_uuid)
             result = await session.execute(query)
-            return result.scalar_.one_or_none()
+            return result.scalar_one_or_none()
 
     async def get_all_licenses(self) -> List[DriverLicense]:
         async with self.session_factory() as session:
