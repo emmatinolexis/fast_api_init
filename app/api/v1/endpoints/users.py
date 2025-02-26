@@ -513,20 +513,20 @@ async def change_password_handler(
                 user_msg=user_msg,
             )
 
-        user = await service.change_password(user_uuid, payload.new_password)
+        await service.change_password(user_uuid, payload.new_password)
 
         data = resolve_data_from_request(request=request)
 
         now = datetime.now()
 
         await send_password_change_email(
-            recipient_name=user.get("first_name"),
-            email=user.get("email_address"),
+            recipient_name=current_user.first_name,
+            email=current_user.email_address,
             ip_address=data.get("ip_address", "Unknown"),
             user_agent=data.get("user_agent", "Unknown"),
             time_stamp=data.get("timestamp", now.strftime("%B %d, %Y %I:%M %p")),
         )
-        logging.info(f"Password changed for user {user_to_update.email_address}")
+        logging.info(f"Password changed for user {current_user.email_address}")
         return send_info("Password updated successfully")
 
     except Exception as e:

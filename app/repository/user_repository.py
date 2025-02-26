@@ -61,7 +61,7 @@ class UserRepository(BaseRepository):
                 user_to_update.operator_type = user.operator_type
 
             if user_to_update.onboarding_status is None:
-                user_to_update.onboarding_status = datetime.now()
+                user_to_update.onboarding_status = datetime.now().isoformat()
 
             await session.commit()
             await session.refresh(user_to_update)
@@ -159,8 +159,8 @@ class UserRepository(BaseRepository):
 
             await session.commit()
             await session.refresh(user)
-
-            return extract_user_data(user)
+            return True
+            # return extract_user_data(user)
 
     async def update_user_onboard_status(self, uuid):
         async with self.session_factory() as session:
