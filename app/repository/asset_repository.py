@@ -173,6 +173,7 @@ class AssetRepository(BaseRepository):
     async def read_vehicle_building_assets_by_business_uuid(
         self,
         business_uuid: str,
+        operator_uuid: str = None,
         search_query: str = None,
         asset_type_uuid: str = None,
         status: str = None,
@@ -192,17 +193,13 @@ class AssetRepository(BaseRepository):
                 .filter(self.model.business_profile_uuid == business_uuid)
             )
 
+            if operator_uuid:
+                vehicle_stmt = vehicle_stmt.filter(
+                    AssetOperatorAssignment.operator_uuid == operator_uuid
+                )
+
             vehicle_result = await session.execute(vehicle_stmt)
             vehicle_assets = vehicle_result.unique().scalars().all()
-
-            # Fetch building assets
-            building_stmt = (
-                select(Building)
-                .options(joinedload(Building.asset_type))
-                .filter(Building.business_profile_uuid == business_uuid)
-            )
-            building_result = await session.execute(building_stmt)
-            building_assets = building_result.unique().scalars().all()
 
             # Process vehicle assets
             processed_vehicle_assets = await self.process_assets(
@@ -246,26 +243,36 @@ class AssetRepository(BaseRepository):
                         }
                     )
 
-            for building_asset in building_assets:
-                all_asset_data.append(
-                    {
-                        "uuid": building_asset.uuid,
-                        "asset_name": building_asset.building_name,
-                        "marker_icon_color": None,
-                        "status": getattr(building_asset, "status", "unknown"),
-                        "last_tracking_event": {
-                            "lng": building_asset.longitude,
-                            "lat": building_asset.latitude,
-                        },
-                        "operator": None,
-                        "asset_type": {
-                            "uuid": building_asset.asset_type.uuid,
-                            "asset_type_name": building_asset.asset_type.asset_type_name,
-                            "status": building_asset.asset_type.status,
-                            "created_at": building_asset.asset_type.created_at,
-                        },
-                    }
+            # Fetch and process building assets if operator_uuid is null
+            if not operator_uuid:
+                building_stmt = (
+                    select(Building)
+                    .options(joinedload(Building.asset_type))
+                    .filter(Building.business_profile_uuid == business_uuid)
                 )
+                building_result = await session.execute(building_stmt)
+                building_assets = building_result.unique().scalars().all()
+
+                for building_asset in building_assets:
+                    all_asset_data.append(
+                        {
+                            "uuid": building_asset.uuid,
+                            "asset_name": building_asset.building_name,
+                            "marker_icon_color": None,
+                            "status": getattr(building_asset, "status", "unknown"),
+                            "last_tracking_event": {
+                                "lng": building_asset.longitude,
+                                "lat": building_asset.latitude,
+                            },
+                            "operator": None,
+                            "asset_type": {
+                                "uuid": building_asset.asset_type.uuid,
+                                "asset_type_name": building_asset.asset_type.asset_type_name,
+                                "status": building_asset.asset_type.status,
+                                "created_at": building_asset.asset_type.created_at,
+                            },
+                        }
+                    )
 
             # Apply status filter
             if status:

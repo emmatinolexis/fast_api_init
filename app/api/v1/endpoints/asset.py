@@ -33,6 +33,7 @@ from app.service.gas_device_service import GasDeviceService
 from app.service.theft_report_service import TheftReportService
 from app.service.tracking_event_service import TrackingEventService
 from app.service.user_service import UserService
+from app.core.constants import OPERATOR_ROLE_NAME
 from app.util.enums import (
     AccountType,
     ActiveStatus,
@@ -126,7 +127,7 @@ async def get_asset_by_business_uuid_handler(
                 403,
             )
 
-        if current_user.user_role.role_name == "Operator":
+        if current_user.user_role.role_name == OPERATOR_ROLE_NAME:
             assets = await service.read_assigned_assets(
                 operator_uuid=str(current_user.uuid),
                 business_uuid=business_uuid,
@@ -168,8 +169,14 @@ async def get_vehicle_building_asset_by_business_uuid_handler(
                 messages.ASSET_FETCH_NOT_AUTHORIZED,
                 403,
             )
+
         assets = await service.get_vehicle_building_assets_by_business_uuid(
             business_uuid=business_uuid,
+            operator_uuid=(
+                str(current_user.uuid)
+                if current_user.user_role.role_name == OPERATOR_ROLE_NAME
+                else None
+            ),
             search=search,
             asset_type_uuid=asset_type_uuid,
             status=status,
