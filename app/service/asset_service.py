@@ -387,12 +387,14 @@ class AssetService(BaseService):
     async def get_vehicle_building_assets_by_business_uuid(
         self,
         business_uuid: str,
+        operator_uuid: str = None,
         search: str = None,
         asset_type_uuid: str = None,
         status: str = None,
     ):
         try:
             return await self.asset_repository.read_vehicle_building_assets_by_business_uuid(
+                operator_uuid=operator_uuid,
                 business_uuid=business_uuid,
                 search_query=search,
                 asset_type_uuid=asset_type_uuid,
