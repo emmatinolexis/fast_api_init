@@ -11,9 +11,9 @@ def asset_transformer(asset: Asset):
         "asset_status": asset.asset_status,
         "equipment_type_uuid": asset.equipment_type_uuid,
         "vin": asset.vin if asset.vin else None,
-        "vehicle_license_no": asset.vehicle_license_no
-        if asset.vehicle_license_no
-        else None,
+        "vehicle_license_no": (
+            asset.vehicle_license_no if asset.vehicle_license_no else None
+        ),
         "marker_color": asset.marker_color,
         "equipment_uuid": asset.equipment_uuid if asset.equipment_uuid else None,
         "serial_number": asset.serial_number if asset.serial_number else None,
