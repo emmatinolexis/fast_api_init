@@ -112,7 +112,7 @@ class MQTTService:
                             device_type=event.device_type, success=False
                         ).inc()
 
-            asyncio.run(save_event())
+            asyncio.create_task(save_event())
 
         try:
             log.info(f"Subscribing to topic: {self.topic}")
