@@ -267,9 +267,19 @@ class AssetRepository(BaseRepository):
                 if asset.last_tracking_event
                 else AssetStatus.PENDING_INSTALLATION
             ),
+            "last_tracking_event": (
+                {
+                    "lng": asset.last_tracking_event.get("lng"),
+                    "lat": asset.last_tracking_event.get("lat"),
+                    "course": asset.last_tracking_event.get("course"),
+                }
+                if asset.last_tracking_event
+                else None
+            ),
             "make": asset.make,
             "model": asset.model,
             "vin": asset.vin,
+            "image_url": asset.image_url,
             "vehicle_license_no": asset.vehicle_license_no,
             "marker_color": asset.marker_color,
             "created_at": asset.created_at,
@@ -278,6 +288,7 @@ class AssetRepository(BaseRepository):
                     "uuid": asset.operator.get("uuid"),
                     "first_name": asset.operator.get("first_name"),
                     "last_name": asset.operator.get("last_name"),
+                    "email": asset.operator.get("email_address"),
                 }
                 if asset.operator
                 else None
