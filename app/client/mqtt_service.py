@@ -9,6 +9,7 @@ from app.core.logger import get_logger
 from app.model.tracking_event import TrackingEvent
 from app.monitoring.metrics import MSG_RECEIVED_TOTAL
 from app.schema.mqtt_data import MQTTDataPayload
+import asyncio
 
 log = get_logger()
 
@@ -88,27 +89,30 @@ class MQTTService:
             log.info(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
             event_received = json.loads(msg.payload.decode())
             event = MQTTDataPayload(**event_received)
-            with self.session_factory() as session:
-                query = TrackingEvent(**event.model_dump())
-                try:
-                    session.add(query)
-                    session.commit()
-                    session.refresh(query)
+            async def save_event():
+                async with self.session_factory() as session:
+                    query = TrackingEvent(**event.model_dump())
+                    try:
+                        session.add(query)
+                        await session.commit()
+                        await session.refresh(query)
 
-                    log.info(f"Event saved to database: {event_received}")
-                    MSG_RECEIVED_TOTAL.labels(
-                        device_type=event.device_type, success=True
-                    ).inc()
-                except IntegrityError as e:
-                    log.error(f"Integrity Error: {e}")
-                    MSG_RECEIVED_TOTAL.labels(
-                        device_type=event.device_type, success=False
-                    ).inc()
-                except Exception as e:
-                    log.error(f"Exception: {e}")
-                    MSG_RECEIVED_TOTAL.labels(
-                        device_type=event.device_type, success=False
-                    ).inc()
+                        log.info(f"Event saved to database: {event_received}")
+                        MSG_RECEIVED_TOTAL.labels(
+                            device_type=event.device_type, success=True
+                        ).inc()
+                    except IntegrityError as e:
+                        log.error(f"Integrity Error: {e}")
+                        MSG_RECEIVED_TOTAL.labels(
+                            device_type=event.device_type, success=False
+                        ).inc()
+                    except Exception as e:
+                        log.error(f"Exception: {e}")
+                        MSG_RECEIVED_TOTAL.labels(
+                            device_type=event.device_type, success=False
+                        ).inc()
+
+            asyncio.run(save_event())
 
         try:
             log.info(f"Subscribing to topic: {self.topic}")
