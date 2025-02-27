@@ -55,6 +55,79 @@ class AssetRepository(BaseRepository):
             result = await session.execute(query)
             return result.scalars().all()
 
+    async def read_assigned_assets_by_uuid(
+        self,
+        operator_uuid: str,
+        business_uuid: str = None,
+        asset_type_uuid: str = None,
+        page: int = 1,
+        page_size: int = 10,
+        search_query: str = None,
+    ) -> Dict[str, Any]:
+        async with self.session_factory() as session:
+            offset = (page - 1) * page_size
+
+            # Base query with joins
+            base_query = (
+                select(self.model)
+                .join(
+                    AssetOperatorAssignment,
+                    AssetOperatorAssignment.asset_uuid == self.model.uuid,
+                )
+                .filter(AssetOperatorAssignment.operator_uuid == operator_uuid)
+            )
+
+            # Apply filters
+            if business_uuid:
+                base_query = base_query.filter(
+                    self.model.business_profile_uuid == business_uuid
+                )
+
+            if asset_type_uuid:
+                base_query = base_query.filter(
+                    self.model.asset_type_uuid == asset_type_uuid
+                )
+
+            if search_query:
+                base_query = base_query.filter(
+                    or_(
+                        self.model.asset_name.ilike(f"%{search_query}%"),
+                        self.model.vehicle_license_no.ilike(f"%{search_query}%"),
+                        self.model.vin.ilike(f"%{search_query}%"),
+                        User.first_name.ilike(f"%{search_query}%"),
+                        User.last_name.ilike(f"%{search_query}%"),
+                    )
+                )
+
+            total_assets = await self.count_total_assets(session, base_query)
+            total_pages = (total_assets + page_size - 1) // page_size
+
+            assets = await self.fetch_paginated_assets(
+                session, base_query, offset, page_size
+            )
+            processed_assets = await self.process_assets(session, assets)
+
+            # Get asset status counts
+            moving_asset_count, idle_asset_count, stopped_asset_count = (
+                self.get_asset_status_counts(processed_assets)
+            )
+
+            # Convert to serialized response
+            processed_assets_data = [
+                self.serialize_asset(asset) for asset in processed_assets
+            ]
+
+            return {
+                "assets": processed_assets_data,
+                "total_assets": total_assets,
+                "total_pages": total_pages,
+                "current_page": page,
+                "page_size": page_size,
+                "moving_assets": moving_asset_count,
+                "idle_assets": idle_asset_count,
+                "stopped_assets": stopped_asset_count,
+            }
+
     async def read_all_assets_by_uuid(
         self,
         user_uuid: str = None,
@@ -378,112 +451,6 @@ class AssetRepository(BaseRepository):
                     stopped_asset_count += 1  # Count unknown statuses as stopped
             else:
                 stopped_asset_count += 1  # No tracking event, count as stopped
-
-        return moving_asset_count, idle_asset_count, stopped_asset_count
-
-    async def read_assigned_assets_by_uuid(
-        self,
-        operator_uuid: str,
-        business_uuid: str = None,
-        asset_type_uuid: str = None,
-        page: int = 1,
-        page_size: int = 10,
-        search_query: str = None,
-    ) -> Dict[str, Any]:
-        async with self.session_factory() as session:
-            offset = (page - 1) * page_size
-
-            # Base query with joins
-            base_query = (
-                select(self.model).join(
-                    AssetOperatorAssignment,
-                    AssetOperatorAssignment.asset_uuid == self.model.uuid,
-                )
-                # .options(joinedload(self.model.alert_policies))
-                .filter(AssetOperatorAssignment.operator_uuid == operator_uuid)
-            )
-
-            # Apply filters
-            if business_uuid:
-                base_query = base_query.filter(
-                    self.model.business_profile_uuid == business_uuid
-                )
-
-            if asset_type_uuid:
-                base_query = base_query.filter(
-                    self.model.asset_type_uuid == asset_type_uuid
-                )
-
-            if search_query:
-                base_query = base_query.filter(
-                    or_(
-                        self.model.asset_name.ilike(f"%{search_query}%"),
-                        self.model.vehicle_license_no.ilike(f"%{search_query}%"),
-                        self.model.vin.ilike(f"%{search_query}%"),
-                        User.first_name.ilike(f"%{search_query}%"),
-                        User.last_name.ilike(f"%{search_query}%"),
-                    )
-                )
-
-            # Get total assets count
-            total_assets_stmt = select(func.count()).select_from(base_query.subquery())
-            total_assets_result = await session.execute(total_assets_stmt)
-            total_assets = total_assets_result.scalar()
-
-            # Calculate total pages
-            total_pages = (total_assets + page_size - 1) // page_size
-
-            # Apply ordering, pagination, and relationships loading
-            paginated_query = (
-                base_query.order_by(desc(self.model.created_at))
-                .offset(offset)
-                .limit(page_size)
-                .options(joinedload(self.model.asset_type))
-                .options(joinedload(self.model.device).joinedload(Device.inventory))
-                .options(joinedload(self.model.equipment))
-            )
-
-            result = await session.execute(paginated_query)
-            assets = result.scalars().all()
-
-            # Process assets (including operator info and tracking event)
-            processed_assets = await self.process_assets(session, assets)
-
-            # Get asset status counts
-            moving_asset_count, idle_asset_count, stopped_asset_count = (
-                self.get_asset_status_counts(processed_assets)
-            )
-
-            return {
-                "assets": processed_assets,
-                "total_assets": total_assets,
-                "total_pages": total_pages,
-                "current_page": page,
-                "page_size": page_size,
-                "moving_assets": moving_asset_count,
-                "idle_assets": idle_asset_count,
-                "stopped_assets": stopped_asset_count,
-            }
-
-    def get_asset_status_counts(self, assets: List[Any]) -> Tuple[int, int, int]:
-        moving_asset_count = 0
-        idle_asset_count = 0
-        stopped_asset_count = 0
-
-        for asset in assets:
-            if (
-                hasattr(asset, "last_tracking_event")
-                and asset.last_tracking_event is not None
-            ):
-                tracking_event = asset.last_tracking_event
-                if "event_type" in tracking_event:
-                    if get_status(str(tracking_event["event_type"])) == "moving":
-                        moving_asset_count += 1
-                    elif get_status(str(tracking_event["event_type"])) == "idle":
-                        idle_asset_count += 1
-                    stopped_asset_count = len(assets) - (
-                        moving_asset_count + idle_asset_count
-                    )
 
         return moving_asset_count, idle_asset_count, stopped_asset_count
 
