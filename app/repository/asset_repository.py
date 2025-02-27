@@ -265,7 +265,7 @@ class AssetRepository(BaseRepository):
             "status": (
                 asset.last_tracking_event.get("status")
                 if asset.last_tracking_event
-                else asset.asset_status
+                else AssetStatus.PENDING_INSTALLATION
             ),
             "make": asset.make,
             "model": asset.model,
@@ -366,6 +366,11 @@ class AssetRepository(BaseRepository):
                                     if last_tracking_event
                                     else None
                                 ),
+                                "course": (
+                                    last_tracking_event.get("course", None)
+                                    if last_tracking_event
+                                    else None
+                                ),
                             },
                             "operator": vehicle_asset.operator,
                             "asset_type": {
@@ -397,6 +402,7 @@ class AssetRepository(BaseRepository):
                             "last_tracking_event": {
                                 "lng": building_asset.longitude,
                                 "lat": building_asset.latitude,
+                                "course": None,
                             },
                             "operator": None,
                             "asset_type": {
