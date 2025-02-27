@@ -53,7 +53,7 @@ mqtt_service = app_creator.mqtt_service
 
 @app.on_event("startup")
 async def startup_event():
-    await mqtt_service.subscribe(app_creator.mqtt_client)
+    mqtt_service.subscribe(app_creator.mqtt_client)
 
     try:
         await db.create_database()

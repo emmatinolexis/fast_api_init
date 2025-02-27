@@ -83,17 +83,17 @@ class MQTTService:
             log.error(f"Could not connect to MQTT broker: {e}")
             return None
 
-    async def subscribe(self, mqtt_client):
-        async def on_message(mqtt_client, userdata, msg):
+    def subscribe(self, mqtt_client):
+        def on_message(mqtt_client, userdata, msg):
             log.info(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
             event_received = json.loads(msg.payload.decode())
             event = MQTTDataPayload(**event_received)
-            async with self.session_factory() as session:
+            with self.session_factory() as session:
                 query = TrackingEvent(**event.model_dump())
                 try:
                     session.add(query)
-                    await session.commit()
-                    await session.refresh(query)
+                    session.commit()
+                    session.refresh(query)
 
                     log.info(f"Event saved to database: {event_received}")
                     MSG_RECEIVED_TOTAL.labels(
