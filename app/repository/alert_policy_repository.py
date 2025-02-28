@@ -304,6 +304,71 @@ class AlertPolicyRepository(BaseRepository):
                 # Remove SQLAlchemy internal state (if any)
                 alert_data.pop("_sa_instance_state", None)
 
+                alert_assets = []
+                alert_recipients = []
+
+                for asset in alert_data.get("assets"):
+                    asset = {
+                        "vehicle_license_no": asset.vehicle_license_no,
+                        "asset_name": asset.asset_name,
+                    }
+                    alert_assets.append(asset)
+
+                for recipient in alert_data.get("alert_recipients"):
+                    recipient = {"recipient": recipient.recipient}
+                    alert_recipients.append(recipient)
+
+                alert_data = {
+                    "policy_name": alert_data.get("policy_name"),
+                    "geofence_location_name": (
+                        alert_data.get("geofence_location_name")
+                        if alert_data.get("geofence_location_name")
+                        else ""
+                    ),
+                    "minimum_idle_time": (
+                        alert_data.get("minimum_idle_time")
+                        if alert_data.get("minimum_idle_time")
+                        else ""
+                    ),
+                    "created_at": alert_data.get("created_at"),
+                    "geofence_type": (
+                        alert_data.get("geofence_type")
+                        if alert_data.get("geofence_type")
+                        else ""
+                    ),
+                    "maximum_speed_limit": (
+                        alert_data.get("maximum_speed_limit")
+                        if alert_data.get("maximum_speed_limit")
+                        else ""
+                    ),
+                    "status": alert_data.get("status"),
+                    "maintenance_alert_schedule": (
+                        alert_data.get("maintenance_alert_schedule")
+                        if alert_data.get("maintenance_alert_schedule")
+                        else ""
+                    ),
+                    "service_status": (
+                        alert_data.get("service_status")
+                        if alert_data.get("service_status")
+                        else ""
+                    ),
+                    "maintenance_alert_type": (
+                        {
+                            "uuid": alert_data.get("maintenance_alert_type").uuid,
+                            "name": alert_data.get("maintenance_alert_type").name,
+                        }
+                        if alert_data.get("maintenance_alert_type")
+                        else {}
+                    ),
+                    "assets": alert_assets,
+                    "alert_recipients": alert_recipients,
+                    "alert_notification_types": alert_data.get(
+                        "alert_notification_types"
+                    ),
+                    "alert_policy_type": {
+                        "name": alert_data.get("alert_policy_type").name
+                    },
+                }
                 formatted_alerts.append(alert_data)
 
             # Return the final structure
