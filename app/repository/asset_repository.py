@@ -6,8 +6,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import func
-from sqlalchemy import distinct
-
 from app.core.settings import get_settings
 from app.model.alert_policy import AlertPolicy
 from app.model.alert_policy_violations import AlertPolicyViolation
@@ -24,6 +22,7 @@ from app.schema.asset_schema import AssignDeviceInputPayload
 from app.util.enums import AssetCreators, AssetStatus
 from app.util.utils import get_status
 from app.model.buildings import Building
+from app.core.constants import BUILDING_ICON_URL
 
 
 class AssetRepository(BaseRepository):
@@ -388,8 +387,7 @@ class AssetRepository(BaseRepository):
                                 "asset_type_name": vehicle_asset.asset_type.asset_type_name,
                             },
                             "equipment_type": {
-                                "uuid": vehicle_asset.equipment.uuid,
-                                "asset_type_name": vehicle_asset.equipment.name,
+                                "equipment_type_name": vehicle_asset.equipment.name,
                                 "icon_url": vehicle_asset.equipment.marker_icon_url,
                             },
                         }
@@ -425,7 +423,10 @@ class AssetRepository(BaseRepository):
                                 "status": building_asset.asset_type.status,
                                 "created_at": building_asset.asset_type.created_at,
                             },
-                            "equipment_type": None,
+                            "equipment_type": {
+                                "equipment_type_name": "Building",
+                                "icon_url": BUILDING_ICON_URL,
+                            },
                         }
                     )
 
