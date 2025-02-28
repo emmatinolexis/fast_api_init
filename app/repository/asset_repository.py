@@ -387,6 +387,7 @@ class AssetRepository(BaseRepository):
                             "asset_type": {
                                 "uuid": vehicle_asset.asset_type.uuid,
                                 "asset_type_name": vehicle_asset.asset_type.asset_type_name,
+                                "icon_url": vehicle_asset.asset_type.icon_url,
                                 "status": vehicle_asset.asset_type.status,
                                 "created_at": vehicle_asset.asset_type.created_at,
                             },
@@ -419,6 +420,7 @@ class AssetRepository(BaseRepository):
                             "asset_type": {
                                 "uuid": building_asset.asset_type.uuid,
                                 "asset_type_name": building_asset.asset_type.asset_type_name,
+                                "icon_url": vehicle_asset.asset_type.icon_url,
                                 "status": building_asset.asset_type.status,
                                 "created_at": building_asset.asset_type.created_at,
                             },
@@ -509,7 +511,6 @@ class AssetRepository(BaseRepository):
             else:
                 asset.last_tracking_event = None
 
-            # Fetch the assigned operator from AssetOperatorAssignment
             result = await session.execute(
                 select(AssetOperatorAssignment.operator_uuid)
                 .filter(AssetOperatorAssignment.asset_uuid == asset.uuid)
@@ -518,7 +519,7 @@ class AssetRepository(BaseRepository):
             operator_assignment = result.scalar()
 
             if operator_assignment:
-                # Fetch the operator (user) details
+
                 result = await session.execute(
                     select(User).filter(User.uuid == operator_assignment).limit(1)
                 )
