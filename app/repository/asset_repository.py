@@ -511,7 +511,6 @@ class AssetRepository(BaseRepository):
             else:
                 asset.last_tracking_event = None
 
-            # Fetch the assigned operator from AssetOperatorAssignment
             result = await session.execute(
                 select(AssetOperatorAssignment.operator_uuid)
                 .filter(AssetOperatorAssignment.asset_uuid == asset.uuid)
@@ -520,7 +519,7 @@ class AssetRepository(BaseRepository):
             operator_assignment = result.scalar()
 
             if operator_assignment:
-                # Fetch the operator (user) details
+
                 result = await session.execute(
                     select(User).filter(User.uuid == operator_assignment).limit(1)
                 )
