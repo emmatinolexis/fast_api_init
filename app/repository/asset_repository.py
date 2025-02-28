@@ -271,7 +271,6 @@ class AssetRepository(BaseRepository):
                 {
                     "lng": asset.last_tracking_event.get("lng"),
                     "lat": asset.last_tracking_event.get("lat"),
-                    "course": asset.last_tracking_event.get("course"),
                 }
                 if asset.last_tracking_event
                 else None
@@ -281,7 +280,6 @@ class AssetRepository(BaseRepository):
             "vin": asset.vin,
             "image_url": asset.image_url,
             "vehicle_license_no": asset.vehicle_license_no,
-            "marker_color": asset.marker_color,
             "created_at": asset.created_at,
             "operator": (
                 {
@@ -335,6 +333,7 @@ class AssetRepository(BaseRepository):
                     isouter=True,
                 )
                 .options(joinedload(self.model.asset_type))
+                .options(joinedload(self.model.equipment))
                 .filter(self.model.business_profile_uuid == business_uuid)
             )
 
@@ -387,9 +386,11 @@ class AssetRepository(BaseRepository):
                             "asset_type": {
                                 "uuid": vehicle_asset.asset_type.uuid,
                                 "asset_type_name": vehicle_asset.asset_type.asset_type_name,
-                                "icon_url": vehicle_asset.asset_type.icon_url,
-                                "status": vehicle_asset.asset_type.status,
-                                "created_at": vehicle_asset.asset_type.created_at,
+                            },
+                            "equipment_type": {
+                                "uuid": vehicle_asset.equipment.uuid,
+                                "asset_type_name": vehicle_asset.equipment.name,
+                                "icon_url": vehicle_asset.equipment.marker_icon_url,
                             },
                         }
                     )
@@ -424,6 +425,7 @@ class AssetRepository(BaseRepository):
                                 "status": building_asset.asset_type.status,
                                 "created_at": building_asset.asset_type.created_at,
                             },
+                            "equipment_type": None,
                         }
                     )
 
