@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Column, Double, Enum, ForeignKey
+from sqlalchemy import Column, Double, Enum, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.model.base_model import BaseModel
@@ -20,9 +20,7 @@ class Incident(BaseModel):
     longitude = Column(Double, nullable=False, index=True)
     latitude = Column(Double, nullable=False, index=True)
     user_uuid = Column(UUID(as_uuid=True), ForeignKey("users.uuid"), nullable=False)
-    status = Column(
-        Enum(IncidentStatus), nullable=True, default=IncidentStatus.UNVERIFIED.name
-    )
+    status = Column(String(length=50), nullable=True, default=IncidentStatus.UNVERIFIED)
 
     def dto(self):
         return {
