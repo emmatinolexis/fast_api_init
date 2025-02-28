@@ -11,9 +11,9 @@ class IncidentService(BaseService):
         self.incident_repository = incident_repository
         super().__init__(incident_repository)
 
-    def create_incident(self, incident_payload: IncidentPayload) -> Incident:
+    async def create_incident(self, incident_payload: IncidentPayload) -> Incident:
         try:
-            return self.incident_repository.create_incident(incident_payload)
+            return await self.incident_repository.create_incident(incident_payload)
         except Exception as e:
             raise e
 

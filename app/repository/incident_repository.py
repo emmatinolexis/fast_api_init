@@ -16,38 +16,52 @@ class IncidentRepository(BaseRepository):
         self.session_factory = session_factory
         super().__init__(session_factory, Incident)
 
-    def create_incident(self, incident: IncidentPayload):
-        with self.session_factory() as session:
+    async def create_incident(self, incident: IncidentPayload):
+        async with self.session_factory() as session:
             try:
-                incidents = self.get_incidents_by_location_incident_type(
+                # return IncidentStatus.VERIFIED.value
+                # Fetch similar incidents within a 100m radius
+                incidents = await self.get_incidents_by_location_incident_type(
                     incident_type=incident.incident_type,
                     longitude=incident.longitude,
                     latitude=incident.latitude,
                     radius=100,
                 )
 
+                # Create a new incident entry
                 incident_data = Incident(
                     incident_type=incident.incident_type,
                     longitude=incident.longitude,
                     latitude=incident.latitude,
                     user_uuid=incident.user_uuid,
                 )
-                if len(incidents) > 1:
-                    # this will mostly be one incident``
-                    for incident in incidents:
-                        if incident.status.lower() == IncidentStatus.UNVERIFIED.lower():
-                            updated_incident = self.update_attr_by_uuid(
-                                incident.uuid, "status", IncidentStatus.VERIFIED.name
-                            )
-                            logging.info(f"updated_incident: {updated_incident.uuid}")
-                    incident_data.status = IncidentStatus.VERIFIED.name
 
+                if len(incidents) > 1:
+                    # If multiple incidents exist, verify unverified ones
+                    for existing_incident in incidents:
+                        if existing_incident.status.lower() == str(
+                            IncidentStatus.UNVERIFIED.lower()
+                        ):
+                            updated_incident = await self.update_attr_by_uuid(
+                                existing_incident.uuid,
+                                "status",
+                                IncidentStatus.VERIFIED,
+                            )
+                            logging.info(f"Updated incident: {updated_incident.uuid}")
+
+                    # Set the new incident status to VERIFIED
+                    incident_data.status = IncidentStatus.VERIFIED
+
+                # Add the new incident to the session
                 session.add(incident_data)
-                session.commit()
-                session.refresh(incident_data)
+                await session.commit()
+                await session.refresh(incident_data)
+
                 return incident_data
+
             except Exception as e:
-                session.rollback()
+                await session.rollback()  # Ensure rollback is awaited
+                logging.error(f"Error creating incident: {str(e)}")
                 raise e
 
     def get_all_incidents(
@@ -98,42 +112,38 @@ class IncidentRepository(BaseRepository):
 
         return incidents
 
-    def get_incidents_by_location_incident_type(
+    async def get_incidents_by_location_incident_type(
         self,
         incident_type: IncidenceType,
         longitude: float,
         latitude: float,
         radius: int = 50,
     ) -> List[Incident]:
-        with self.session_factory() as session:
+        async with self.session_factory() as session:
             query = text(
                 """
-            SELECT *
-            FROM incidents
-            WHERE incident_type = :incident_type and  ST_DWithin(
-                geography(ST_MakePoint(longitude, latitude)),
-                geography(ST_MakePoint(:longitude, :latitude)),
-                :radius
+                SELECT * FROM incidents
+                WHERE incident_type = :incident_type
+                AND ST_DWithin(
+                    geography(ST_MakePoint(longitude, latitude)),
+                    geography(ST_MakePoint(:longitude, :latitude)),
+                    :radius
+                )
+                """
             )
-            """
+
+            result = await session.execute(
+                query,
+                {
+                    "longitude": longitude,
+                    "latitude": latitude,
+                    "radius": radius,
+                    "incident_type": incident_type.name,
+                },
             )
 
-        result = session.execute(
-            query,
-            {
-                LONGITUDE: longitude,
-                LATITUDE: latitude,
-                RADIUS: radius,
-                "incident_type": incident_type.name,
-            },
-        )
-
-        incidents = []
-        for row in result:
-            row_dict = dict(row._mapping)
-            incidents.append(Incident(**row_dict))
-
-        return incidents
+            incidents = [Incident(**row._mapping) for row in result.fetchall()]
+            return incidents
 
     def get_all_incident_count(self) -> int:
         with self.session_factory() as session:

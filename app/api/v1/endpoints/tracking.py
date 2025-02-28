@@ -264,9 +264,9 @@ async def create_device_events(
             measurements=measurements,
             event_datetime=device_event_payload.timestamp,
         )
-
+        # return data
         # Calling the service to add the data
-        service.add(data)
+        await service.add(data)
 
         # check if payload.has_alert is true and send email and sms
         if device_event_payload.has_alert:
