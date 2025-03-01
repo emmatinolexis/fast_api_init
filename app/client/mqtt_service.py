@@ -112,7 +112,11 @@ class MQTTService:
                             device_type=event.device_type, success=False
                         ).inc()
 
-            asyncio.run(save_event())
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                asyncio.ensure_future(save_event())
+            else:
+                loop.run_until_complete(save_event())
 
         try:
             log.info(f"Subscribing to topic: {self.topic}")
