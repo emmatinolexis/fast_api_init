@@ -1,6 +1,9 @@
+from concurrent.futures import ThreadPoolExecutor
 import json
 import random
+import threading
 import time
+from typing import Any, Coroutine, TypeVar
 
 from paho.mqtt import client as mqtt_client
 from sqlalchemy.exc import IntegrityError
@@ -21,6 +24,8 @@ MAX_RECONNECT_COUNT = 12
 MAX_RECONNECT_DELAY = 60
 
 FLAG_EXIT = False
+
+T = TypeVar("T")
 
 
 class MQTTService:
@@ -112,11 +117,7 @@ class MQTTService:
                             device_type=event.device_type, success=False
                         ).inc()
 
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                asyncio.ensure_future(save_event())
-            else:
-                loop.run_until_complete(save_event())
+            self._run_coroutine_sync(save_event())
 
         try:
             log.info(f"Subscribing to topic: {self.topic}")
@@ -127,3 +128,27 @@ class MQTTService:
             mqtt_client.on_message = on_message
         except Exception as e:
             log.error(f"Could not subscribe to MQTT topic: {e}")
+
+    def _run_coroutine_sync(self, coroutine: Coroutine[Any, Any, T], timeout: float = 30) -> T:
+        def run_in_new_loop():
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            try:
+                return new_loop.run_until_complete(coroutine)
+            finally:
+                new_loop.close()
+
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            return asyncio.run(coroutine)
+
+        if threading.current_thread() is threading.main_thread():
+            if not loop.is_running():
+                return loop.run_until_complete(coroutine)
+            else:
+                with ThreadPoolExecutor() as pool:
+                    future = pool.submit(run_in_new_loop)
+                    return future.result(timeout=timeout)
+        else:
+            return asyncio.run_coroutine_threadsafe(coroutine, loop).result()
