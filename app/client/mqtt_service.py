@@ -130,13 +130,14 @@ class MQTTService:
             log.error(f"Could not subscribe to MQTT topic: {e}")
 
     def _run_coroutine_sync(self, coroutine: Coroutine[Any, Any, T], timeout: float = 30) -> T:
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            loop = None
+        # try:
+        #     loop = asyncio.get_running_loop()
+        # except RuntimeError:
+        #     loop = None
 
-        if loop and loop.is_running():
-            future = asyncio.run_coroutine_threadsafe(coroutine, loop)
-            return future.result(timeout=timeout)
-        else:
-            return asyncio.run(coroutine)
+        # if loop and loop.is_running():
+        #     future = asyncio.run_coroutine_threadsafe(coroutine, loop)
+        #     return future.result(timeout=timeout)
+        # else:
+        #     return asyncio.run(coroutine)
+        asyncio.get_event_loop().run_until_complete(coroutine)
