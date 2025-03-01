@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Callable, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 from uuid import UUID
 
 from sqlalchemy import Date, and_, case, cast, desc, func, or_
@@ -204,109 +204,26 @@ class AlertPolicyRepository(BaseRepository):
         business_uuid: str,
         page: int = 1,
         page_size: int = 10,
-        policy_status: Optional[ActiveStatus] = None,
+        policy_status: Optional[str] = None,
         policy_types: Optional[List[str]] = None,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
         search: Optional[str] = None,
-    ):
+    ) -> Dict[str, Any]:
         async with self.session_factory() as session:
             offset = (page - 1) * page_size
 
-            # Start building the query
-            query = select(self.model).where(
-                self.model.business_profile_uuid == business_uuid
+            base_query = self.build_base_query(
+                business_uuid, policy_status, policy_types, start_date, end_date, search
             )
-
-            query = query.join(self.model.assets)
-
-            if policy_status:
-                query = query.where(self.model.status == policy_status)
-
-            # Apply policy type filter
-            if policy_types:
-                valid_alert_policy_type = [
-                    UUID(policy_type)
-                    for policy_type in policy_types
-                    if UUID(policy_type)
-                ]
-                if valid_alert_policy_type:
-                    query = query.where(
-                        self.model.alert_policy_type_uuid.in_(valid_alert_policy_type)
-                    )
-
-            # Apply date filter
-            if start_date and end_date:
-                query = query.where(
-                    self.model.created_at >= start_date,
-                    self.model.created_at < end_date,
-                )
-
-            # Apply search filter
-            if search:
-                search_term = f"%{search}%"
-                query = query.where(
-                    or_(
-                        self.model.policy_name.ilike(search_term),
-                        Asset.asset_name.ilike(search_term),
-                    )
-                )
-
-            # Query to get the total count of alert policies
-            count_query = select(func.count()).select_from(query.subquery())
-            total_alert_policies = await session.execute(count_query)
-            total_alert_policies = total_alert_policies.scalar()
-
-            # Calculate total pages
+            total_alert_policies = await self.count_alert_policies(session, base_query)
             total_pages = (total_alert_policies + page_size - 1) // page_size
 
-            # Fetch paginated results with ordering and relationships loaded
-            paginated_query = (
-                query.order_by(desc(self.model.created_at))
-                .offset(offset)
-                .limit(page_size)
-                .options(
-                    joinedload(self.model.alert_policy_type),
-                    joinedload(self.model.assets),
-                    joinedload(self.model.alert_notification_types),
-                    joinedload(self.model.maintenance_alert_type),
-                    joinedload(self.model.alert_recipients),
-                )
+            alerts = await self.fetch_paginated_alerts(
+                session, base_query, offset, page_size
             )
+            formatted_alerts = [self.format_alert(alert) for alert in alerts]
 
-            result = await session.execute(paginated_query)
-            alerts = result.unique().scalars().all()
-
-            formatted_alerts = []
-            for alert in alerts:
-                # Initialize the notification_data dictionary with empty lists for email and sms
-                notification_data = {"email": [], "sms": []}
-
-                # Populate recipients into their respective notification types
-                for recipient in alert.alert_recipients:
-                    if "@" in recipient.recipient:
-                        notification_data["email"].append(recipient.recipient)
-                    else:
-                        notification_data["sms"].append(recipient.recipient)
-
-                # Prepare the final structure for the alert
-                alert_data = {
-                    **alert.__dict__,
-                    "alert_notification_types": [
-                        {
-                            "alert_notification_type": notification_type,
-                            "recipients": recipients,
-                        }
-                        for notification_type, recipients in notification_data.items()
-                    ],
-                }
-
-                # Remove SQLAlchemy internal state (if any)
-                alert_data.pop("_sa_instance_state", None)
-
-                formatted_alerts.append(alert_data)
-
-            # Return the final structure
             return {
                 "alerts": formatted_alerts,
                 "total_alert_policies": total_alert_policies,
@@ -314,6 +231,111 @@ class AlertPolicyRepository(BaseRepository):
                 "current_page": page,
                 "page_size": page_size,
             }
+
+    def build_base_query(
+        self,
+        business_uuid: str,
+        policy_status: Optional[str],
+        policy_types: Optional[List[str]],
+        start_date: Optional[str],
+        end_date: Optional[str],
+        search: Optional[str],
+    ):
+        query = select(self.model).where(
+            self.model.business_profile_uuid == business_uuid
+        )
+        query = query.join(self.model.assets)
+
+        if policy_status:
+            query = query.where(self.model.status == policy_status)
+
+        if policy_types:
+            valid_types = [UUID(policy) for policy in policy_types if UUID(policy)]
+            if valid_types:
+                query = query.where(self.model.alert_policy_type_uuid.in_(valid_types))
+
+        if start_date and end_date:
+            query = query.where(
+                self.model.created_at >= start_date, self.model.created_at < end_date
+            )
+
+        if search:
+            search_term = f"%{search}%"
+            query = query.where(
+                or_(
+                    self.model.policy_name.ilike(search_term),
+                    Asset.asset_name.ilike(search_term),
+                )
+            )
+
+        return query
+
+    async def count_alert_policies(self, session: AsyncSession, query):
+        count_query = select(func.count()).select_from(query.subquery())
+        result = await session.execute(count_query)
+        return result.scalar()
+
+    async def fetch_paginated_alerts(
+        self, session: AsyncSession, query, offset: int, page_size: int
+    ):
+        paginated_query = (
+            query.order_by(desc(self.model.created_at))
+            .offset(offset)
+            .limit(page_size)
+            .options(
+                joinedload(self.model.alert_policy_type),
+                joinedload(self.model.assets),
+                joinedload(self.model.alert_notification_types),
+                joinedload(self.model.maintenance_alert_type),
+                joinedload(self.model.alert_recipients),
+            )
+        )
+        result = await session.execute(paginated_query)
+        return result.unique().scalars().all()
+
+    def format_alert(self, alert: Any) -> Dict[str, Any]:
+        notification_data = {"email": [], "sms": []}
+        for recipient in alert.alert_recipients:
+            if "@" in recipient.recipient:
+                notification_data["email"].append(recipient.recipient)
+            else:
+                notification_data["sms"].append(recipient.recipient)
+
+        return {
+            "policy_name": alert.policy_name,
+            "geofence_location_name": alert.geofence_location_name or "",
+            "minimum_idle_time": alert.minimum_idle_time or "",
+            "created_at": alert.created_at,
+            "geofence_type": alert.geofence_type or "",
+            "maximum_speed_limit": alert.maximum_speed_limit or "",
+            "status": alert.status,
+            "maintenance_alert_schedule": alert.maintenance_alert_schedule or "",
+            "service_status": alert.service_status or "",
+            "maintenance_alert_type": (
+                {
+                    "uuid": alert.maintenance_alert_type.uuid,
+                    "name": alert.maintenance_alert_type.name,
+                }
+                if alert.maintenance_alert_type
+                else {}
+            ),
+            "assets": [
+                {
+                    "vehicle_license_no": asset.vehicle_license_no,
+                    "asset_name": asset.asset_name,
+                }
+                for asset in alert.assets
+            ],
+            "alert_recipients": [
+                {"recipient": recipient.recipient}
+                for recipient in alert.alert_recipients
+            ],
+            "alert_notification_types": [
+                {"alert_notification_type": n_type, "recipients": recipients}
+                for n_type, recipients in notification_data.items()
+            ],
+            "alert_policy_type": {"name": alert.alert_policy_type.name},
+        }
 
     async def read_all_alert_violations_by_user(
         self,
