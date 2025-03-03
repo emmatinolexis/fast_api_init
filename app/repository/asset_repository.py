@@ -270,6 +270,8 @@ class AssetRepository(BaseRepository):
                 {
                     "lng": asset.last_tracking_event.get("lng"),
                     "lat": asset.last_tracking_event.get("lat"),
+                    "course": asset.last_tracking_event.get("course"),
+                    "timestamp": asset.last_tracking_event.get("timestamp"),
                 }
                 if asset.last_tracking_event
                 else None
@@ -383,6 +385,8 @@ class AssetRepository(BaseRepository):
                                     if last_tracking_event
                                     else None
                                 ),
+                                "timestamp": last_tracking_event.get("timestamp", None)
+                                or None,
                             },
                             "operator": vehicle_asset.operator,
                             "asset_type": {
@@ -418,6 +422,7 @@ class AssetRepository(BaseRepository):
                                 "lng": building_asset.longitude,
                                 "lat": building_asset.latitude,
                                 "course": None,
+                                "timestamp": None,
                             },
                             "operator": None,
                             "asset_type": {
