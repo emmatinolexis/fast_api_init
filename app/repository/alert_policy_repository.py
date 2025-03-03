@@ -447,104 +447,17 @@ class AlertPolicyRepository(BaseRepository):
     ):
         async with self.session_factory() as session:
             offset = (page - 1) * page_size
-
-            # Base query
-            query = select(AlertPolicyViolation).where(
-                AlertPolicyViolation.business_profile_uuid == business_uuid
+            query = self._build_alert_violation_query(
+                business_uuid, policy_status, policy_types, start_date, end_date, search
             )
 
-            # Apply policy type filter
-            if policy_types:
-                try:
-                    valid_policy_types = [UUID(pt) for pt in policy_types if pt]
-                    if valid_policy_types:
-                        query = query.where(
-                            AlertPolicy.alert_policy_type_uuid.in_(valid_policy_types)
-                        )
-                except ValueError:
-                    raise ValueError("Invalid policy type UUID format.")
-
-            # Apply policy status filter
-            if policy_status:
-                query = query.where(AlertPolicyViolation.status == policy_status)
-
-            # Apply date filter
-            try:
-                if start_date:
-                    start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
-                    query = query.where(
-                        AlertPolicyViolation.created_at >= start_date_obj
-                    )
-                if end_date:
-                    end_date_obj = datetime.strptime(end_date, "%Y-%m-%d") + timedelta(
-                        days=1
-                    )
-                    query = query.where(AlertPolicyViolation.created_at < end_date_obj)
-            except ValueError:
-                raise ValueError("Invalid date format. Expected 'YYYY-MM-DD'.")
-
-            # Apply search filter
-            if search:
-                search_term = f"%{search}%"
-                query = query.where(
-                    or_(
-                        AlertPolicy.policy_name.ilike(search_term),
-                        Asset.asset_name.ilike(search_term),
-                    )
-                )
-
-            # Get total count
-            total_alerts = await session.execute(
-                select(func.count()).select_from(query.subquery())
-            )
-            total_alerts = total_alerts.scalar()
-
-            # Calculate total pages
+            total_alerts = await self._get_total_count(session, query)
             total_pages = (total_alerts + page_size - 1) // page_size
 
-            # Fetch paginated results with optimized relationship loading
-            paginated_query = (
-                query.order_by(
-                    case(
-                        (AlertPolicyViolation.status == ActiveStatus.ACTIVE, 1), else_=2
-                    ),
-                    AlertPolicyViolation.created_at.desc(),
-                )
-                .offset(offset)
-                .limit(page_size)
-                .options(
-                    selectinload(AlertPolicyViolation.alert_policy),
-                    selectinload(AlertPolicyViolation.asset),
-                    selectinload(AlertPolicyViolation.user).defer(User.password),
-                )
+            alerts = await self._fetch_paginated_alerts(
+                session, query, offset, page_size
             )
-
-            result = await session.execute(paginated_query)
-            alerts = result.scalars().all()
-            serialized_alerts = []
-            for alert in alerts:
-                # return alert
-                alert = {
-                    "uuid": alert.uuid,
-                    "status": alert.status,
-                    "violation_time": alert.violation_time,
-                    "violation_distance": alert.violation_distance,
-                    "created_at": alert.created_at,
-                    "alert_policy": {
-                        "policy_name": alert.alert_policy.policy_name,
-                        "alert_policy_type": {
-                            "name": alert.alert_policy.alert_policy_type.name
-                        },
-                    },
-                    "user": {
-                        "uuid": alert.user.uuid,
-                        "first_name": alert.user.first_name,
-                        "last_name": alert.user.last_name,
-                        "avatar_url": alert.user.avatar_url,
-                    },
-                    "asset": {"asset_name": alert.asset.asset_name},
-                }
-                serialized_alerts.append(alert)
+            serialized_alerts = [self._serialize_alert(alert) for alert in alerts]
 
             return {
                 "alerts": serialized_alerts,
@@ -553,6 +466,127 @@ class AlertPolicyRepository(BaseRepository):
                 "current_page": page,
                 "page_size": page_size,
             }
+
+    def _build_alert_violation_query(
+        self,
+        business_uuid: str,
+        policy_status: Optional[str],
+        policy_types: Optional[List[str]],
+        start_date: Optional[str],
+        end_date: Optional[str],
+        search: Optional[str],
+    ):
+        query = select(AlertPolicyViolation).where(
+            AlertPolicyViolation.business_profile_uuid == business_uuid
+        )
+
+        if policy_types:
+            try:
+                valid_policy_types = [UUID(pt) for pt in policy_types if pt]
+                if valid_policy_types:
+                    query = query.where(
+                        AlertPolicy.alert_policy_type_uuid.in_(valid_policy_types)
+                    )
+            except ValueError:
+                raise ValueError("Invalid policy type UUID format.")
+
+        if policy_status:
+            query = query.where(AlertPolicyViolation.status == policy_status)
+
+        try:
+            if start_date:
+                start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
+                query = query.where(AlertPolicyViolation.created_at >= start_date_obj)
+            if end_date:
+                end_date_obj = datetime.strptime(end_date, "%Y-%m-%d") + timedelta(
+                    days=1
+                )
+                query = query.where(AlertPolicyViolation.created_at < end_date_obj)
+        except ValueError:
+            raise ValueError("Invalid date format. Expected 'YYYY-MM-DD'.")
+
+        if search:
+            search_term = f"%{search}%"
+            query = query.where(
+                or_(
+                    AlertPolicy.policy_name.ilike(search_term),
+                    Asset.asset_name.ilike(search_term),
+                )
+            )
+
+        return query
+
+    async def _get_total_count(self, session, query):
+        result = await session.execute(
+            select(func.count()).select_from(query.subquery())
+        )
+        return result.scalar()
+
+    async def _fetch_paginated_alerts(self, session, query, offset, page_size):
+        paginated_query = (
+            query.order_by(
+                case((AlertPolicyViolation.status == ActiveStatus.ACTIVE, 1), else_=2),
+                AlertPolicyViolation.created_at.desc(),
+            )
+            .offset(offset)
+            .limit(page_size)
+            .options(
+                selectinload(AlertPolicyViolation.alert_policy),
+                selectinload(AlertPolicyViolation.asset).selectinload(Asset.operators),
+                selectinload(AlertPolicyViolation.user).defer(User.password),
+            )
+        )
+        result = await session.execute(paginated_query)
+        return result.scalars().all()
+
+    def _serialize_alert(self, alert):
+        return {
+            "uuid": alert.uuid,
+            "status": alert.status,
+            "violation_time": alert.violation_time,
+            "violation_distance": alert.violation_distance,
+            "created_at": alert.created_at,
+            "violation_coordinates": [
+                (
+                    alert.violation_coordinates[-1]
+                    if alert.violation_coordinates
+                    else None
+                )
+            ],
+            "alert_policy": {
+                "policy_name": alert.alert_policy.policy_name,
+                "alert_policy_type": {
+                    "name": alert.alert_policy.alert_policy_type.name,
+                },
+            },
+            "user": (
+                {
+                    "uuid": alert.user.uuid,
+                    "first_name": alert.user.first_name,
+                    "last_name": alert.user.last_name,
+                    "avatar_url": alert.user.avatar_url,
+                }
+                if alert.user
+                else None
+            ),
+            "asset": (
+                {
+                    "asset_name": alert.asset.asset_name,
+                    "operator": (
+                        {
+                            "uuid": alert.asset.operators.uuid,
+                            "first_name": alert.asset.operators.first_name,
+                            "last_name": alert.asset.operators.last_name,
+                            "avatar_url": alert.asset.operators.avatar_url,
+                        }
+                        if alert.asset and alert.asset.operators
+                        else None
+                    ),
+                }
+                if alert.asset
+                else None
+            ),
+        }
 
     async def get_active_geofence_alert_policies(self, session):
         result = await session.execute(
