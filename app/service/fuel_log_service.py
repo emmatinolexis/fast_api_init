@@ -14,6 +14,7 @@ from app.schema.fuel_log_schema import (
     SingleFuelLog,
     SingleFuelLogSchema,
 )
+from datetime import datetime, date
 from app.service.base_service import BaseService
 from app.transfomers.fuel_log_transformer import fuel_log_transformer
 from app.util.utils import load_bulk_fuel_logs, parse_date
@@ -64,7 +65,11 @@ class FuelLogService(BaseService):
             payment_method=payload.payment_method,
             driver_uuid=str(driver.uuid) if driver else None,
             asset_name=asset.asset_name,
-            purchase_date=payload.purchase_date,
+            purchase_date=(
+                payload.purchase_date.isoformat()
+                if isinstance(payload.purchase_date, (datetime, date))
+                else str(payload.purchase_date)
+            ),
             fuel_type=payload.fuel_type,
         )
 

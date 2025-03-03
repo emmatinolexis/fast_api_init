@@ -16,13 +16,13 @@ class EmailVerificationRepository(BaseRepository):
         async with self.session_factory() as session:
             query = select(self.model).filter(self.model.user_uuid == uuid)
             result = await session.execute(query)
-            return result.scalar_.one_or_none()
+            return result.scalar_one_or_none()  # Fixed this line
 
     async def get_by_token(self, token: str) -> Optional[EmailVerification]:
         async with self.session_factory() as session:
             query = select(self.model).filter(self.model.verification_token == token)
             result = await session.execute(query)
-            return result.scalar_.one_or_none()
+            return result.scalar_one_or_none()  # Fixed this line
 
     async def delete_by_verification_token(self, token: str) -> None:
         async with self.session_factory() as session:
@@ -31,7 +31,7 @@ class EmailVerificationRepository(BaseRepository):
                     self.model.verification_token == token
                 )
                 result = await session.execute(query)
-                verification = result.scalar_.one_or_none()
+                verification = result.scalar_one_or_none()  # Fixed this line
 
                 if verification:
                     await session.delete(verification)
@@ -45,7 +45,7 @@ class EmailVerificationRepository(BaseRepository):
             try:
                 query = select(self.model).filter(self.model.user_uuid == uuid)
                 result = await session.execute(query)
-                verification = result.scalar_.one_or_none()
+                verification = result.scalar_one_or_none()  # Fixed this line
 
                 if verification:
                     await session.delete(verification)

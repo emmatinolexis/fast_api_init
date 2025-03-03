@@ -12,7 +12,7 @@ class FuelLogSchema(BaseModel):
     quantity: float
     receipt_image: Optional[str] = None
     payment_method: FuelLogPaymmentMethod
-    purchase_date: date
+    purchase_date: str
     fuel_type: FuelType
 
 
@@ -23,7 +23,7 @@ class FuelLogCreateSchema(FuelLogSchema):
     receipt_image: Optional[str] = None
     driver_uuid: Optional[str] = None
     asset_name: Optional[str] = None
-    purchase_date: date
+    purchase_date: str
     fuel_type: FuelType = FuelType
 
 
