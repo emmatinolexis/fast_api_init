@@ -5,7 +5,7 @@ from uuid import UUID
 
 from dateutil.relativedelta import relativedelta
 from pydantic import EmailStr
-from sqlalchemy import String, delete, desc, func, or_, select
+from sqlalchemy import delete, desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
