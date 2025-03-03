@@ -523,14 +523,19 @@ class AlertPolicyRepository(BaseRepository):
             alerts = result.scalars().all()
             serialized_alerts = []
             for alert in alerts:
-
+                # return alert
                 alert = {
                     "uuid": alert.uuid,
                     "status": alert.status,
                     "violation_time": alert.violation_time,
                     "violation_distance": alert.violation_distance,
                     "created_at": alert.created_at,
-                    "alert_policy": {"policy_name": alert.alert_policy.policy_name},
+                    "alert_policy": {
+                        "policy_name": alert.alert_policy.policy_name,
+                        "alert_policy_type": {
+                            "name": alert.alert_policy.alert_policy_type.name
+                        },
+                    },
                     "user": alert.user,
                     "asset": {"asset_name": alert.asset.asset_name},
                 }
