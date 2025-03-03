@@ -302,6 +302,7 @@ class AssetRepository(BaseRepository):
                     "device_name": asset.device.inventory.device_name,
                     "sim_phone_number": asset.device.sim_phone_number,
                     "device_image": asset.device.inventory.images[0].image_url,
+                    "created_at": asset.device.created_at,
                 }
                 if asset.device_imei
                 else None
