@@ -303,11 +303,14 @@ class AlertPolicyRepository(BaseRepository):
                 notification_data["sms"].append(recipient.recipient)
 
         return {
+            "uuid": alert.uuid,
             "policy_name": alert.policy_name,
             "geofence_location_name": alert.geofence_location_name or "",
             "minimum_idle_time": alert.minimum_idle_time or "",
             "created_at": alert.created_at,
             "geofence_type": alert.geofence_type or "",
+            "geofence_shape_type": alert.geofence_shape_type or "",
+            "geofence_coordinate_data": alert.geofence_coordinate_data or "",
             "maximum_speed_limit": alert.maximum_speed_limit or "",
             "status": alert.status,
             "maintenance_alert_schedule": alert.maintenance_alert_schedule or "",
@@ -510,17 +513,31 @@ class AlertPolicyRepository(BaseRepository):
                 .offset(offset)
                 .limit(page_size)
                 .options(
-                    selectinload(AlertPolicyViolation.alert_policy),
-                    # selectinload(AlertPolicyViolation.asset),
-                    # selectinload(AlertPolicyViolation.user).defer(User.password),
+                    # selectinload(AlertPolicyViolation.alert_policy),
+                    selectinload(AlertPolicyViolation.asset),
+                    selectinload(AlertPolicyViolation.user).defer(User.password),
                 )
             )
 
             result = await session.execute(paginated_query)
             alerts = result.scalars().all()
+            serialized_alerts = []
+            for alert in alerts:
+
+                alert = {
+                    "uuid": alert.uuid,
+                    "status": alert.status,
+                    "violation_time": alert.violation_time,
+                    "violation_distance": alert.violation_distance,
+                    "created_at": alert.created_at,
+                    "alert_policy": {"policy_name": alert.alert_policy.policy_name},
+                    "user": alert.user,
+                    "asset": alert.asset,
+                }
+                serialized_alerts.append(alert)
 
             return {
-                "alerts": alerts,
+                "alerts": serialized_alerts,
                 "total_alerts": total_alerts,
                 "total_pages": total_pages,
                 "current_page": page,
