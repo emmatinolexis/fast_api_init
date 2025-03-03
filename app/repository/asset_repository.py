@@ -280,6 +280,7 @@ class AssetRepository(BaseRepository):
             "image_url": asset.image_url,
             "vehicle_license_no": asset.vehicle_license_no,
             "created_at": asset.created_at,
+            "marker_color": asset.marker_color,
             "operator": (
                 {
                     "uuid": asset.operator.get("uuid"),
@@ -359,6 +360,7 @@ class AssetRepository(BaseRepository):
                             "uuid": vehicle_asset.uuid,
                             "asset_name": vehicle_asset.asset_name,
                             "marker_icon_color": vehicle_asset.marker_color,
+                            "image_url": vehicle_asset.image_url,
                             "status": (
                                 last_tracking_event.get("status")
                                 if last_tracking_event
@@ -409,6 +411,7 @@ class AssetRepository(BaseRepository):
                             "uuid": building_asset.uuid,
                             "asset_name": building_asset.building_name,
                             "marker_icon_color": None,
+                            "image_url": None,
                             "status": getattr(building_asset, "status", "unknown"),
                             "last_tracking_event": {
                                 "lng": building_asset.longitude,
