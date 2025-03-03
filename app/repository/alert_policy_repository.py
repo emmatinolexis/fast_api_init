@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 from sqlalchemy.future import select
 from app.core import messages
-from sqlalchemy.orm import subqueryload
+from sqlalchemy.orm import selectinload
 from app.core.exceptions import NotFoundError
 from app.model.alert_policy import AlertPolicy
 from app.model.alert_policy_violations import AlertPolicyViolation
@@ -442,25 +442,24 @@ class AlertPolicyRepository(BaseRepository):
         end_date: Optional[str] = None,
         search: Optional[str] = None,
     ):
-        async with self.session_factory() as session:  # type: AsyncSession
+        async with self.session_factory() as session:
             offset = (page - 1) * page_size
 
-            # Base query with business filter
-            query = (
-                select(AlertPolicyViolation)
-                .where(AlertPolicyViolation.business_profile_uuid == business_uuid)
-                .join(AlertPolicyViolation.alert_policy)
-                .join(AlertPolicyViolation.asset)
-                .join(AlertPolicy.alert_policy_type)
+            # Base query
+            query = select(AlertPolicyViolation).where(
+                AlertPolicyViolation.business_profile_uuid == business_uuid
             )
 
             # Apply policy type filter
             if policy_types:
-                valid_policy_types = [UUID(pt) for pt in policy_types if pt]
-                if valid_policy_types:
-                    query = query.where(
-                        AlertPolicy.alert_policy_type_uuid.in_(valid_policy_types)
-                    )
+                try:
+                    valid_policy_types = [UUID(pt) for pt in policy_types if pt]
+                    if valid_policy_types:
+                        query = query.where(
+                            AlertPolicy.alert_policy_type_uuid.in_(valid_policy_types)
+                        )
+                except ValueError:
+                    raise ValueError("Invalid policy type UUID format.")
 
             # Apply policy status filter
             if policy_status:
@@ -491,7 +490,7 @@ class AlertPolicyRepository(BaseRepository):
                     )
                 )
 
-            # Get total count of alert violations
+            # Get total count
             total_alerts = await session.execute(
                 select(func.count()).select_from(query.subquery())
             )
@@ -505,15 +504,15 @@ class AlertPolicyRepository(BaseRepository):
                 query.order_by(
                     case(
                         (AlertPolicyViolation.status == ActiveStatus.ACTIVE, 1), else_=2
-                    ),  # Active first
-                    AlertPolicyViolation.created_at.desc(),  # Then sort by created_at
+                    ),
+                    AlertPolicyViolation.created_at.desc(),
                 )
                 .offset(offset)
                 .limit(page_size)
                 .options(
-                    subqueryload(AlertPolicyViolation.alert_policy),
-                    subqueryload(AlertPolicyViolation.asset).subqueryload(Asset.driver),
-                    subqueryload(AlertPolicyViolation.user).defer(User.password),
+                    selectinload(AlertPolicyViolation.alert_policy),
+                    # selectinload(AlertPolicyViolation.asset),
+                    # selectinload(AlertPolicyViolation.user).defer(User.password),
                 )
             )
 
