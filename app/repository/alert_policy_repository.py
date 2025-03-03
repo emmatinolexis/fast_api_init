@@ -536,7 +536,12 @@ class AlertPolicyRepository(BaseRepository):
                             "name": alert.alert_policy.alert_policy_type.name
                         },
                     },
-                    "user": alert.user,
+                    "user": {
+                        "uuid": alert.user.uuid,
+                        "first_name": alert.user.first_name,
+                        "last_name": alert.user.last_name,
+                        "avatar_url": alert.user.avatar_url,
+                    },
                     "asset": {"asset_name": alert.asset.asset_name},
                 }
                 serialized_alerts.append(alert)
