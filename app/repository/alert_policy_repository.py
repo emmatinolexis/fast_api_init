@@ -514,7 +514,7 @@ class AlertPolicyRepository(BaseRepository):
                 .limit(page_size)
                 .options(
                     selectinload(AlertPolicyViolation.alert_policy),
-                    # selectinload(AlertPolicyViolation.asset),
+                    selectinload(AlertPolicyViolation.asset),
                     selectinload(AlertPolicyViolation.user).defer(User.password),
                 )
             )
