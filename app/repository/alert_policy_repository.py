@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 from sqlalchemy.future import select
 from app.core import messages
+from sqlalchemy.orm import subqueryload
 from app.core.exceptions import NotFoundError
 from app.model.alert_policy import AlertPolicy
 from app.model.alert_policy_violations import AlertPolicyViolation
@@ -441,25 +442,24 @@ class AlertPolicyRepository(BaseRepository):
         end_date: Optional[str] = None,
         search: Optional[str] = None,
     ):
-        async with self.session_factory() as session:
+        async with self.session_factory() as session:  # type: AsyncSession
             offset = (page - 1) * page_size
 
-            # Start building the query
-            query = select(AlertPolicyViolation).where(
-                AlertPolicyViolation.business_profile_uuid == business_uuid
+            # Base query with business filter
+            query = (
+                select(AlertPolicyViolation)
+                .where(AlertPolicyViolation.business_profile_uuid == business_uuid)
+                .join(AlertPolicyViolation.alert_policy)
+                .join(AlertPolicyViolation.asset)
+                .join(AlertPolicy.alert_policy_type)
             )
-
-            query = query.join(AlertPolicyViolation.alert_policy).join(
-                AlertPolicyViolation.asset
-            )
-            query = query.join(AlertPolicy.alert_policy_type)
 
             # Apply policy type filter
             if policy_types:
-                valid_alert_policy_type = [UUID(pt) for pt in policy_types if pt]
-                if valid_alert_policy_type:
+                valid_policy_types = [UUID(pt) for pt in policy_types if pt]
+                if valid_policy_types:
                     query = query.where(
-                        AlertPolicy.alert_policy_type_uuid.in_(valid_alert_policy_type)
+                        AlertPolicy.alert_policy_type_uuid.in_(valid_policy_types)
                     )
 
             # Apply policy status filter
@@ -491,28 +491,29 @@ class AlertPolicyRepository(BaseRepository):
                     )
                 )
 
-            # Query to get the total count of alert violations
-            count_query = select(func.count()).select_from(query.subquery())
-            total_alerts = await session.execute(count_query)
+            # Get total count of alert violations
+            total_alerts = await session.execute(
+                select(func.count()).select_from(query.subquery())
+            )
             total_alerts = total_alerts.scalar()
 
             # Calculate total pages
             total_pages = (total_alerts + page_size - 1) // page_size
 
-            # Fetch paginated results with ordering and relationships loaded
+            # Fetch paginated results with optimized relationship loading
             paginated_query = (
                 query.order_by(
                     case(
                         (AlertPolicyViolation.status == ActiveStatus.ACTIVE, 1), else_=2
                     ),  # Active first
-                    desc(AlertPolicyViolation.created_at),  # Then sort by created_at
+                    AlertPolicyViolation.created_at.desc(),  # Then sort by created_at
                 )
                 .offset(offset)
                 .limit(page_size)
                 .options(
-                    joinedload(AlertPolicyViolation.alert_policy),
-                    joinedload(AlertPolicyViolation.asset).joinedload(Asset.driver),
-                    joinedload(AlertPolicyViolation.user).defer(User.password),
+                    subqueryload(AlertPolicyViolation.alert_policy),
+                    subqueryload(AlertPolicyViolation.asset).subqueryload(Asset.driver),
+                    subqueryload(AlertPolicyViolation.user).defer(User.password),
                 )
             )
 
