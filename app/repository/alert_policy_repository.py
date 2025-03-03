@@ -572,7 +572,7 @@ class AlertPolicyRepository(BaseRepository):
             "asset": (
                 {
                     "asset_name": alert.asset.asset_name,
-                    "operator": (
+                    "operators": (
                         {
                             "uuid": alert.asset.operators.uuid,
                             "first_name": alert.asset.operators.first_name,

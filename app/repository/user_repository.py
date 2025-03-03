@@ -5,7 +5,7 @@ from uuid import UUID
 
 from dateutil.relativedelta import relativedelta
 from pydantic import EmailStr
-from sqlalchemy import delete, desc, func, or_, select
+from sqlalchemy import String, delete, desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
@@ -748,7 +748,12 @@ class UserRepository(BaseRepository):
                 )
 
             if operator_type:
-                query = query.filter(User.operator_type.in_(operator_type))
+                query = query.filter(
+                    func.upper(User.operator_type).in_(
+                        [op.upper() for op in operator_type]
+                    )
+                )
+
             if status:
                 query = query.filter(User.status == status)
 
