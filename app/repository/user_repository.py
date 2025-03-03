@@ -568,7 +568,9 @@ class UserRepository(BaseRepository):
                 user.business_profile_uuid if user.invite_status else None
             ),
             user_role_uuid=(
-                CustomerRoles.ADMIN if not user.invite_status else user.user_role_uuid
+                CustomerRoles.ADMIN.value
+                if not user.invite_status
+                else user.user_role_uuid
             ),
             status=user.status,
             verifiedAt=(
@@ -656,11 +658,14 @@ class UserRepository(BaseRepository):
         async with self.session_factory() as session:
             current_date = datetime.now()
 
+            from datetime import timedelta
+
             db_verify = EmailVerification(
                 user_uuid=user_verify.uuid,
                 verification_token=verification_token["verification_token"],
-                expiry_date=current_date
-                + timedelta(days=settings.VERIFY_TOKEN_EXPIRE_DAYS),
+                expiry_date=(
+                    current_date + timedelta(days=settings.VERIFY_TOKEN_EXPIRE_DAYS)
+                ).isoformat(),
             )
 
             session.add(db_verify)
