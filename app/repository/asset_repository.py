@@ -149,8 +149,10 @@ class AssetRepository(BaseRepository):
             assets = await self.fetch_paginated_assets(
                 session, base_query, offset, page_size
             )
-            processed_assets = await self.process_assets(session, assets)
 
+            # return assets
+            processed_assets = await self.process_assets(session, assets)
+            # return processed_assets
             # Apply status filter
             filtered_assets = self.filter_assets_by_status(processed_assets, status)
             moving_assets, idle_assets, stopped_assets = self.get_asset_status_counts(
@@ -487,6 +489,7 @@ class AssetRepository(BaseRepository):
 
     async def process_assets(self, session, assets: List[Any]) -> List[Any]:
         for asset in assets:
+
             # Check if asset has device IMEI
             if asset.device_imei:
                 # Get device's last known location
@@ -504,19 +507,22 @@ class AssetRepository(BaseRepository):
                     .order_by(desc(TrackingEvent.event_datetime))
                     .limit(1)
                 )
-                last_tracking_event = result.first()
 
+                last_tracking_event = result.first()
+                last_tracking_event = (
+                    dict(last_tracking_event._mapping) if last_tracking_event else None
+                )
                 if last_tracking_event:
                     # Construct a dictionary with the retrieved fields
                     asset.last_tracking_event = {
-                        "lat": last_tracking_event.lat,
-                        "lng": last_tracking_event.lng,
-                        "speed": last_tracking_event.speed,
-                        "course": last_tracking_event.course,
-                        "timestamp": last_tracking_event.timestamp,
-                        "event_type": last_tracking_event.event_type,
-                        "status": get_status(last_tracking_event.event_type),
-                        "fuel_level": last_tracking_event.fuel_level,
+                        "lat": last_tracking_event["lat"],
+                        "lng": last_tracking_event["lng"],
+                        "speed": last_tracking_event["speed"],
+                        "course": last_tracking_event["course"],
+                        "timestamp": last_tracking_event["timestamp"],
+                        "event_type": last_tracking_event["event_type"],
+                        "status": get_status(last_tracking_event["event_type"]),
+                        "fuel_level": last_tracking_event["fuel_level"],
                     }
                 else:
                     asset.last_tracking_event = None
