@@ -149,8 +149,10 @@ class AssetRepository(BaseRepository):
             assets = await self.fetch_paginated_assets(
                 session, base_query, offset, page_size
             )
-            processed_assets = await self.process_assets(session, assets)
 
+            # return assets
+            processed_assets = await self.process_assets(session, assets)
+            # return processed_assets
             # Apply status filter
             filtered_assets = self.filter_assets_by_status(processed_assets, status)
             moving_assets, idle_assets, stopped_assets = self.get_asset_status_counts(
@@ -486,54 +488,63 @@ class AssetRepository(BaseRepository):
         return moving_asset_count, idle_asset_count, stopped_asset_count
 
     async def process_assets(self, session, assets: List[Any]) -> List[Any]:
-        device_imeis = [asset.device_imei for asset in assets if asset.device_imei]
-
-        tracking_data = {}
-        if device_imeis:
-            result = await session.execute(
-                select(
-                    TrackingEvent.device_imei,
-                    label("lat", TrackingEvent.latitude),
-                    label("lng", TrackingEvent.longitude),
-                    TrackingEvent.speed,
-                    TrackingEvent.course,
-                    label("timestamp", TrackingEvent.event_datetime),
-                    label("event_type", TrackingEvent.event_type),
-                    label("fuel_level", TrackingEvent.fuel_level),
-                )
-                .where(TrackingEvent.device_imei.in_(device_imeis))
-                .order_by(desc(TrackingEvent.event_datetime))
-            )
-
-            tracking_data = {row.device_imei: row for row in result}
-
-        operator_assignments = {}
-        if assets:
-            asset_uuids = [asset.uuid for asset in assets]
-            result = await session.execute(
-                select(
-                    AssetOperatorAssignment.asset_uuid,
-                    AssetOperatorAssignment.operator_uuid,
-                ).where(AssetOperatorAssignment.asset_uuid.in_(asset_uuids))
-            )
-            operator_assignments = {row.asset_uuid: row.operator_uuid for row in result}
-
-        operator_data = {}
-        if operator_assignments:
-            operator_uuids = list(operator_assignments.values())
-            result = await session.execute(
-                select(User).where(User.uuid.in_(operator_uuids))
-            )
-            operator_data = {op.uuid: op for op in result.scalars()}
-
         for asset in assets:
-            asset.last_tracking_event = tracking_data.get(asset.device_imei, None)
 
-            operator_uuid = operator_assignments.get(asset.uuid)
-            if operator_uuid:
-                operator = operator_data.get(operator_uuid)
-                asset.operator = (
-                    {
+            # Check if asset has device IMEI
+            if asset.device_imei:
+                # Get device's last known location
+                result = await session.execute(
+                    select(
+                        label("lat", TrackingEvent.latitude),
+                        label("lng", TrackingEvent.longitude),
+                        TrackingEvent.speed,
+                        TrackingEvent.course,
+                        label("timestamp", TrackingEvent.event_datetime),
+                        label("event_type", TrackingEvent.event_type),
+                        label("fuel_level", TrackingEvent.fuel_level),
+                    )
+                    .filter(TrackingEvent.device_imei == asset.device_imei)
+                    .order_by(desc(TrackingEvent.event_datetime))
+                    .limit(1)
+                )
+
+                last_tracking_event = result.first()
+                last_tracking_event = (
+                    dict(last_tracking_event._mapping) if last_tracking_event else None
+                )
+                if last_tracking_event:
+                    # Construct a dictionary with the retrieved fields
+                    asset.last_tracking_event = {
+                        "lat": last_tracking_event["lat"],
+                        "lng": last_tracking_event["lng"],
+                        "speed": last_tracking_event["speed"],
+                        "course": last_tracking_event["course"],
+                        "timestamp": last_tracking_event["timestamp"],
+                        "event_type": last_tracking_event["event_type"],
+                        "status": get_status(last_tracking_event["event_type"]),
+                        "fuel_level": last_tracking_event["fuel_level"],
+                    }
+                else:
+                    asset.last_tracking_event = None
+            else:
+                asset.last_tracking_event = None
+
+            result = await session.execute(
+                select(AssetOperatorAssignment.operator_uuid)
+                .filter(AssetOperatorAssignment.asset_uuid == asset.uuid)
+                .limit(1)
+            )
+            operator_assignment = result.scalar()
+
+            if operator_assignment:
+
+                result = await session.execute(
+                    select(User).filter(User.uuid == operator_assignment).limit(1)
+                )
+                operator = result.scalars().first()
+
+                if operator:
+                    asset.operator = {
                         "uuid": operator.uuid,
                         "first_name": operator.first_name,
                         "last_name": operator.last_name,
@@ -542,9 +553,8 @@ class AssetRepository(BaseRepository):
                         "operator_type": operator.operator_type,
                         "phone_number": operator.phone_number,
                     }
-                    if operator
-                    else None
-                )
+                else:
+                    asset.operator = None
             else:
                 asset.operator = None
 
