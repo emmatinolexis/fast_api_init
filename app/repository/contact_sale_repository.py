@@ -19,5 +19,4 @@ class ContactSaleRepository(BaseRepository):
                 await session.refresh(contact_sale)
                 return contact_sale
             except Exception as e:
-                await session.rollback()
                 raise e

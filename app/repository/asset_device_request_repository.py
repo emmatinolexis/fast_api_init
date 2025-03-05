@@ -40,7 +40,6 @@ class AssetDeviceRequestRepository(BaseRepository):
                 await session.refresh(request)
                 return request
             except Exception as e:
-                await session.rollback()
                 return Exception(e)
 
     async def create_asset_device_request(
@@ -71,7 +70,6 @@ class AssetDeviceRequestRepository(BaseRepository):
                 await session.commit()
 
             except Exception as e:
-                await session.rollback()
                 return Exception(e)
             return device_request
 

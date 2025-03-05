@@ -553,7 +553,6 @@ class UserRepository(BaseRepository):
                 await session.commit()
                 return returned_user
             except Exception as e:
-                await session.rollback()
                 raise e
 
     async def _create_user_entry(self, session, user: UserPayload):

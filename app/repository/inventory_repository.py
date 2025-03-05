@@ -31,7 +31,6 @@ class InventoryRepository(BaseRepository):
                 await session.refresh(inventory_data)
                 return inventory_data
             except Exception as e:
-                await session.rollback()
                 raise e
 
     async def get_all_inventory(self, page=1, page_size=10, search_query=None):
@@ -81,7 +80,6 @@ class InventoryRepository(BaseRepository):
                     "total_out_of_stock": total_out_of_stock,
                 }
             except Exception as e:
-                await session.rollback()
                 raise e
 
     async def reduce_inventory_no(self, inventory_uuid: UUID, quantity: int):
@@ -101,7 +99,6 @@ class InventoryRepository(BaseRepository):
                 await session.refresh(inventory)
                 return inventory
             except Exception as e:
-                await session.rollback()
                 raise e
 
     async def get_inventory_by_uuid(self, inventory_uuid: UUID):
@@ -123,5 +120,4 @@ class InventoryRepository(BaseRepository):
                 await session.refresh(inventory)
                 return inventory
             except Exception as e:
-                await session.rollback()
                 raise e

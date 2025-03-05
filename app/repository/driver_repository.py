@@ -61,7 +61,6 @@ class DriverRepository(BaseRepository):
                     return driver
                 raise Exception("Driver not found")
             except Exception as e:
-                await session.rollback()
                 raise e
 
     async def get_drivers_by_business_uuid(
@@ -120,7 +119,6 @@ class DriverRepository(BaseRepository):
                 return driver
 
             except Exception as e:
-                await session.rollback()
                 raise e
 
     async def get_driver_by_email(self, email: str) -> Optional[Driver]:

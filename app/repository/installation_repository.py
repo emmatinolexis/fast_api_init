@@ -280,5 +280,4 @@ class InstallationRepository(BaseRepository):
 
                 return installation
             except Exception as e:
-                await session.rollback()
                 raise e

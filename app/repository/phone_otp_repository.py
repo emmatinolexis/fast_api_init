@@ -39,10 +39,8 @@ class PhoneOtpTokenRepository(BaseRepository):
                 await session.commit()
                 await session.refresh(query)
             except IntegrityError as e:
-                await session.rollback()
                 raise e
             except Exception as e:
-                await session.rollback()
                 raise e
             return query
 
@@ -72,8 +70,6 @@ class PhoneOtpTokenRepository(BaseRepository):
                 await session.commit()  # Commit transaction
 
             except IntegrityError as e:
-                await session.rollback()  # Rollback in case of integrity error
                 raise e
             except Exception as e:
-                await session.rollback()  # Rollback for any other exception
                 raise e
