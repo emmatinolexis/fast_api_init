@@ -12,6 +12,7 @@ class Database:
             db_url,
             pool_size=20,  # Increase pool size
             max_overflow=-1,  # Allow more temporary connections
+            pool_timeout=120,
             echo=False,
         )
 
