@@ -13,9 +13,7 @@ class Database:
             db_url,
             pool_size=20,  # Increase pool size
             max_overflow=-1,  # Allow more temporary connections
-            pool_timeout=60,  # Increase timeout before error
-            pool_recycle=1800,  # Close stale connections
-            pool_pre_ping=True,  # Check connections before using them
+            pool_timeout=120,  # Increase timeout before error
             echo=False,
         )
 

@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from sqlalchemy import Date, and_, cast, desc, label, or_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -150,9 +150,8 @@ class AssetRepository(BaseRepository):
                 session, base_query, offset, page_size
             )
 
-            # return assets
             processed_assets = await self.process_assets(session, assets)
-            # return processed_assets
+
             # Apply status filter
             filtered_assets = self.filter_assets_by_status(processed_assets, status)
             moving_assets, idle_assets, stopped_assets = self.get_asset_status_counts(
@@ -177,45 +176,52 @@ class AssetRepository(BaseRepository):
 
     def build_base_query(
         self,
-        user_uuid: str,
-        business_uuid: str,
-        asset_type_uuid: str,
-        search_query: str,
+        user_uuid: Optional[str] = None,
+        business_uuid: Optional[str] = None,
+        asset_type_uuid: Optional[str] = None,
+        search_query: Optional[str] = None,
     ):
         """Builds the base query with filters and joins."""
-        base_query = (
-            select(self.model)
-            .join(
-                AssetOperatorAssignment,
-                AssetOperatorAssignment.asset_uuid == self.model.uuid,
-                isouter=True,
-            )
-            .join(
-                User, User.uuid == AssetOperatorAssignment.operator_uuid, isouter=True
-            )
-            .options(joinedload(self.model.alert_policies))
-        )
+
+        filters = []
+
+        # Base query with lazy join of alert_policies
+        base_query = select(self.model).options(joinedload(self.model.alert_policies))
 
         if user_uuid:
-            base_query = base_query.filter(self.model.user_uuid == user_uuid)
+            filters.append(self.model.user_uuid == user_uuid)
         if business_uuid:
-            base_query = base_query.filter(
-                self.model.business_profile_uuid == business_uuid
-            )
+            filters.append(self.model.business_profile_uuid == business_uuid)
         if asset_type_uuid:
-            base_query = base_query.filter(
-                self.model.asset_type_uuid == asset_type_uuid
-            )
+            filters.append(self.model.asset_type_uuid == asset_type_uuid)
+
+        # Add search filters if provided
         if search_query:
-            base_query = base_query.filter(
-                or_(
-                    self.model.asset_name.ilike(f"%{search_query}%"),
-                    self.model.vehicle_license_no.ilike(f"%{search_query}%"),
-                    self.model.vin.ilike(f"%{search_query}%"),
-                    User.first_name.ilike(f"%{search_query}%"),
-                    User.last_name.ilike(f"%{search_query}%"),
-                )
+            search_filters = or_(
+                self.model.asset_name.ilike(f"%{search_query}%"),
+                self.model.vehicle_license_no.ilike(f"%{search_query}%"),
+                self.model.vin.ilike(f"%{search_query}%"),
             )
+
+            # Include User table join only if searching by user fields
+            user_search_filters = or_(
+                User.first_name.ilike(f"%{search_query}%"),
+                User.last_name.ilike(f"%{search_query}%"),
+            )
+
+            base_query = (
+                base_query.outerjoin(
+                    AssetOperatorAssignment,
+                    AssetOperatorAssignment.asset_uuid == self.model.uuid,
+                )
+                .outerjoin(User, User.uuid == AssetOperatorAssignment.operator_uuid)
+                .filter(or_(search_filters, user_search_filters))
+            )
+
+        # Apply accumulated filters
+        if filters:
+            base_query = base_query.filter(*filters)
+
         return base_query
 
     async def count_total_assets(self, session: AsyncSession, base_query):
@@ -354,7 +360,7 @@ class AssetRepository(BaseRepository):
             processed_vehicle_assets = await self.process_assets(
                 session, vehicle_assets
             )
-
+            # return processed_vehicle_assets
             for vehicle_asset in processed_vehicle_assets:
                 last_tracking_event = getattr(
                     vehicle_asset, "last_tracking_event", None
@@ -403,43 +409,42 @@ class AssetRepository(BaseRepository):
                     )
 
             # Fetch and process building assets if operator_uuid is null
-            if not operator_uuid:
-                building_stmt = (
-                    select(Building)
-                    .options(joinedload(Building.asset_type))
-                    .filter(Building.business_profile_uuid == business_uuid)
-                )
-                building_result = await session.execute(building_stmt)
-                building_assets = building_result.unique().scalars().all()
+            building_stmt = (
+                select(Building)
+                .options(joinedload(Building.asset_type))
+                .filter(Building.business_profile_uuid == business_uuid)
+            )
+            building_result = await session.execute(building_stmt)
+            building_assets = building_result.unique().scalars().all()
 
-                for building_asset in building_assets:
-                    all_asset_data.append(
-                        {
-                            "uuid": building_asset.uuid,
-                            "asset_name": building_asset.building_name,
-                            "marker_icon_color": None,
-                            "image_url": None,
-                            "status": getattr(building_asset, "status", "unknown"),
-                            "last_tracking_event": {
-                                "lng": building_asset.longitude,
-                                "lat": building_asset.latitude,
-                                "course": None,
-                                "timestamp": None,
-                            },
-                            "operator": None,
-                            "asset_type": {
-                                "uuid": building_asset.asset_type.uuid,
-                                "asset_type_name": building_asset.asset_type.asset_type_name,
-                                "icon_url": vehicle_asset.asset_type.icon_url,
-                                "status": building_asset.asset_type.status,
-                                "created_at": building_asset.asset_type.created_at,
-                            },
-                            "equipment_type": {
-                                "equipment_type_name": "Building",
-                                "icon_url": BUILDING_ICON_URL,
-                            },
-                        }
-                    )
+            for building_asset in building_assets:
+                all_asset_data.append(
+                    {
+                        "uuid": building_asset.uuid,
+                        "asset_name": building_asset.building_name,
+                        "marker_icon_color": None,
+                        "image_url": None,
+                        "status": getattr(building_asset, "status", "unknown"),
+                        "last_tracking_event": {
+                            "lng": building_asset.longitude,
+                            "lat": building_asset.latitude,
+                            "course": None,
+                            "timestamp": None,
+                        },
+                        "operator": None,
+                        "asset_type": {
+                            "uuid": building_asset.asset_type.uuid,
+                            "asset_type_name": building_asset.asset_type.asset_type_name,
+                            "icon_url": vehicle_asset.asset_type.icon_url,
+                            "status": building_asset.asset_type.status,
+                            "created_at": building_asset.asset_type.created_at,
+                        },
+                        "equipment_type": {
+                            "equipment_type_name": "Building",
+                            "icon_url": BUILDING_ICON_URL,
+                        },
+                    }
+                )
 
             # Apply status filter
             if status:
