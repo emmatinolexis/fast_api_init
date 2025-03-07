@@ -60,7 +60,6 @@ class IncidentRepository(BaseRepository):
                 return incident_data
 
             except Exception as e:
-                await session.rollback()  # Ensure rollback is awaited
                 logging.error(f"Error creating incident: {str(e)}")
                 raise e
 

@@ -24,5 +24,4 @@ class AlertPolicyTypeRepository(BaseRepository):
                 await session.commit()
                 return len(alert_types)
             except Exception as e:
-                await session.rollback()
                 raise e

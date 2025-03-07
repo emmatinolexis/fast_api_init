@@ -85,7 +85,6 @@ class DeviceRepository(BaseRepository):
                     "page_size": page_size,
                 }
             except Exception as e:
-                await session.rollback()
                 raise e
 
     async def get_all_devices_to_assign(
@@ -145,7 +144,6 @@ class DeviceRepository(BaseRepository):
                     "page_size": page_size,
                 }
             except Exception as e:
-                await session.rollback()
                 raise e
 
     async def get_user_data_by_device_uuid(self, device_imei: str):
@@ -187,7 +185,6 @@ class DeviceRepository(BaseRepository):
                 session.add_all(devices)
                 await session.commit()
             except Exception as e:
-                await session.rollback()
                 raise e
 
     async def get_devices_by_user_uuid(self, user_uuid):
@@ -251,7 +248,6 @@ class DeviceRepository(BaseRepository):
                 await session.refresh(device)
                 return device
             except Exception as e:
-                await session.rollback()
                 raise e
 
     async def get_device_for_engine_shutdown(self, device_imei: str):

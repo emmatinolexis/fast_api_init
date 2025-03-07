@@ -37,7 +37,6 @@ class EmailVerificationRepository(BaseRepository):
                     await session.delete(verification)
                     await session.commit()
             except Exception as e:
-                await session.rollback()
                 raise e
 
     async def delete_by_user_uuid(self, uuid: str) -> None:
@@ -51,5 +50,4 @@ class EmailVerificationRepository(BaseRepository):
                     await session.delete(verification)
                     await session.commit()
             except Exception as e:
-                await session.rollback()
                 raise e

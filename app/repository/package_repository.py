@@ -55,7 +55,6 @@ class PackageRepository(BaseRepository):
                         return package
 
         except Exception as e:
-            await session.rollback()
             raise e
 
     async def get_all_paystack_plans(self):
@@ -98,7 +97,6 @@ class PackageRepository(BaseRepository):
                                 packages.append(package)
                             return packages
             except Exception as e:
-                await session.rollback()
                 raise e
 
     async def read_by_plan_code(self, package_plan_code: str):
@@ -134,7 +132,6 @@ class PackageRepository(BaseRepository):
                             return package
                         return None
             except Exception as e:
-                await session.rollback()
                 raise e
 
     async def update_paystack_plan(self, plan_code, payload):
@@ -163,7 +160,6 @@ class PackageRepository(BaseRepository):
                         return await response.json()
             return None
         except Exception as e:
-            await session.rollback()
             raise e
 
     async def assign_package_item(self, data: PackageItemAssignmentPayload):
@@ -187,10 +183,8 @@ class PackageRepository(BaseRepository):
                         session.add(query)
                         await session.commit()
             except exc.IntegrityError as e:
-                await session.rollback()
                 raise e
             except Exception as e:
-                await session.rollback()
                 raise e
 
     async def delete_package_item(self, plan_code: str, package_item_uuid: str):
@@ -208,5 +202,4 @@ class PackageRepository(BaseRepository):
                     await session.commit()
                 return db_item
             except Exception as e:
-                await session.rollback()
                 raise e

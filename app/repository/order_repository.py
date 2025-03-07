@@ -38,7 +38,6 @@ class OrderRepository(BaseRepository):
                 order = result.unique().scalars().first()
                 return order
             except Exception as e:
-                await session.rollback()
                 raise e
 
     async def create_order(self, order_payload: OrderPayload):
@@ -55,20 +54,7 @@ class OrderRepository(BaseRepository):
                 await session.refresh(order_data)
                 return order_data
             except Exception as e:
-                await session.rollback()
                 raise e
-
-    # def _get_base_query(self):
-    #     return (
-    #         select(Order)
-    #         .options(
-    #             joinedload(Order.order_inventories)
-    #             .joinedload(OrderDeviceAssignment.inventory)
-    #             .joinedload(Inventory.images),
-    #             joinedload(Order.order_shipping_address),
-    #         )
-    #         .order_by(Order.created_at.desc())
-    #     )
 
     def _get_base_query(self):
         return (
@@ -274,5 +260,4 @@ class OrderRepository(BaseRepository):
                 return order
 
             except Exception as e:
-                await session.rollback()
                 raise e

@@ -35,5 +35,4 @@ class OrderShippingAddressRepository(BaseRepository):
                 await session.refresh(address)
                 return address
             except Exception as e:
-                await session.rollback()
                 raise e

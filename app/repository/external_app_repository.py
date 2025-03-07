@@ -30,7 +30,6 @@ class ExternalAppRepository(BaseRepository):
                 await session.refresh(external_app)
                 return external_app
             except Exception as e:
-                await session.rollback()
                 raise e
 
     # async def get_app_service(

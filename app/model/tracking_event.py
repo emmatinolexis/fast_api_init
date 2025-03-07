@@ -1,8 +1,10 @@
+from datetime import datetime
 import uuid
 
 from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
+from sqlalchemy.ext.hybrid import hybrid_property
 
 from app.model.base_model import Base
 
@@ -23,7 +25,20 @@ class TrackingEvent(Base):
     )
     event_type = Column(String(50), nullable=False, index=True)
     event_description = Column(String(255))
-    event_datetime = Column(DateTime, nullable=False, index=True)
+    _event_datetime = Column("event_datetime", DateTime, nullable=False, index=True)
+
+    @hybrid_property
+    def event_datetime(self):
+        return self._event_datetime
+
+    @event_datetime.setter
+    def event_datetime(self, value):
+        if isinstance(value, str):
+            self._event_datetime = datetime.fromisoformat(value)
+        elif isinstance(value, datetime):
+            self._event_datetime = value
+        else:
+            raise ValueError("Invalid type for event_datetime")
     valid = Column(Boolean, nullable=False)
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)

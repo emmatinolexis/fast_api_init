@@ -26,7 +26,6 @@ class AppCreator:
 
         # set mqtt service
         self.mqtt_service = self.container.mqtt_service()
-        self.mqtt_client = self.mqtt_service.connect_mqtt()
 
         # set cors
         if settings.BACKEND_CORS_ORIGINS:
@@ -53,7 +52,7 @@ mqtt_service = app_creator.mqtt_service
 
 @app.on_event("startup")
 async def startup_event():
-    await mqtt_service.subscribe(app_creator.mqtt_client)
+    await mqtt_service.subscribe()
 
     try:
         await db.create_database()

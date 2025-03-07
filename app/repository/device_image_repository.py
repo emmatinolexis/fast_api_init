@@ -22,7 +22,6 @@ class DeviceImageRepository(BaseRepository):
                 await session.refresh(image_data)
                 return image_data
             except Exception as e:
-                await session.rollback()
                 raise e
 
     async def update_images(self, inventory_uuid: UUID, new_image: str):
@@ -47,5 +46,4 @@ class DeviceImageRepository(BaseRepository):
                 await session.commit()
                 return image_record
             except Exception as e:
-                await session.rollback()
                 raise e

@@ -54,11 +54,11 @@ async def create_fuel_log_handler_for_individual(
         return send_data(data)
     except NotFoundError as e:
         return send_client_side_error(
-            user_msg=e.detail, status_code=401, dev_msg=e.detail
+            user_msg=e.detail, status_code=404, dev_msg=e.detail
         )
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
-        return send_internal_server_error(user_msg=msg, error=e)
+        return send_internal_server_error(user_msg=msg, error=str(e))
 
 
 @router.post("/fleet_manager_bulk/{user_uuid}", response_class=ORJSONResponse)

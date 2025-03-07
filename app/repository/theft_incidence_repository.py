@@ -108,7 +108,6 @@ class TheftIncidenceRepository(BaseRepository):
                     "unresolved_count": unresolved_count,
                 }
             except Exception as e:
-                await session.rollback()
                 raise e
 
     async def mark_as_resolve(self, incident_uuid: str):

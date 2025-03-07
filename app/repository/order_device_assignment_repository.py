@@ -22,5 +22,4 @@ class OrderDeviceAssignmentRepository(BaseRepository):
                 session.add(device_data)
                 await session.commit()
             except Exception as e:
-                await session.rollback()
                 raise e
