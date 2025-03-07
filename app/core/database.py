@@ -8,7 +8,6 @@ from app.model.base_model import Base
 
 class Database:
     def __init__(self, db_url: str) -> None:
-        # self._engine = create_async_engine(db_url, echo=False)
         self._engine = create_async_engine(
             db_url,
             pool_size=20,  # Increase pool size
