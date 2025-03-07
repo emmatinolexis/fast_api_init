@@ -152,8 +152,8 @@ class TrackingEventService(BaseService):
     def _process_device_events(
         self, device_imei: str, data: Dict[str, Any], date: str
     ) -> Dict[str, Any]:
-        events = data["events"]
-        asset = data["asset"]
+        events = data.get("events", [])
+        asset = data.get("asset", {})
 
         device_response = {
             "device_imei": device_imei,
@@ -165,67 +165,48 @@ class TrackingEventService(BaseService):
         current_event = None
 
         for event in events:
+            status = get_status(event.event_type)
             longitude = getattr(event, "longitude", None)
             latitude = getattr(event, "latitude", None)
+            event_time = event.event_datetime
 
-            if current_event is None:
+            if current_event and current_event["status"] != status:
+                self.append_event(device_response, current_event)
+
+            if not current_event or current_event["status"] != status:
                 current_event = {
-                    "status": get_status(event.event_type),
-                    "start_time": event.event_datetime,
-                    "end_time": event.event_datetime,
+                    "status": status,
+                    "start_time": event_time,
+                    "end_time": event_time,
                     "longitude": longitude,
                     "latitude": latitude,
                 }
             else:
-                if current_event["status"] == get_status(event.event_type):
-                    current_event["end_time"] = event.event_datetime
-                else:
-                    device_response["events"].append(
-                        {
-                            "status": current_event["status"],
-                            "period": generateTimeRange(
-                                current_event["start_time"],
-                                current_event["end_time"],
-                            ),
-                            "location": (
-                                {
-                                    "longitude": current_event["longitude"],
-                                    "latitude": current_event["latitude"],
-                                }
-                                if current_event["longitude"]
-                                and current_event["latitude"]
-                                else {}
-                            ),
-                        }
-                    )
-                    current_event = {
-                        "status": get_status(event.event_type),
-                        "start_time": event.event_datetime,
-                        "end_time": event.event_datetime,
-                        "longitude": longitude,
-                        "latitude": latitude,
-                    }
+                current_event["end_time"] = event_time
 
-        # Append the last event
-        if current_event is not None:
-            device_response["events"].append(
-                {
-                    "status": current_event["status"],
-                    "period": generateTimeRange(
-                        current_event["start_time"], current_event["end_time"]
-                    ),
-                    "location": (
-                        {
-                            "longitude": current_event["longitude"],
-                            "latitude": current_event["latitude"],
-                        }
-                        if current_event["longitude"] and current_event["latitude"]
-                        else {}
-                    ),
-                }
-            )
+        if current_event:
+            self.append_event(device_response, current_event)
 
         return device_response
+
+    def append_event(self, device_response, event_data):
+        """Helper function to append an event to the response."""
+        device_response["events"].append(
+            {
+                "status": event_data["status"],
+                "period": generateTimeRange(
+                    event_data["start_time"], event_data["end_time"]
+                ),
+                "location": (
+                    {
+                        "longitude": event_data["longitude"],
+                        "latitude": event_data["latitude"],
+                    }
+                    if event_data["longitude"] and event_data["latitude"]
+                    else {}
+                ),
+            }
+        )
 
     # Dummy implementations for missing functions to avoid reference errors
     def get_status(event_type):

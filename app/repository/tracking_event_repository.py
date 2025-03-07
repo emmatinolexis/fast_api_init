@@ -5,7 +5,7 @@ from typing import Callable, Dict, List, Tuple
 from sqlalchemy import Date, and_, cast
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, load_only, noload
 from sqlalchemy.sql import func
 
 from app.core.constants import ALLOWED_EVENT_TYPES
@@ -120,50 +120,6 @@ class TrackingEventRepository(BaseRepository):
             result = await session.execute(query)
             return result.scalars().all()
 
-    # async def read_all_events_by_user(
-    #     self, date: str, user_uuid: str = None, business_uuid: str = None
-    # ) -> Dict[str, List[TrackingEvent]]:
-    #     async with self.session_factory() as session:
-    #         events_by_device = {}
-    #         if user_uuid:
-    #             user_assets = await session.execute(
-    #                 session.query(Asset).filter(
-    #                     Asset.user_uuid == user_uuid, Asset.device_imei.isnot(None)
-    #                 )
-    #             )
-    #             user_assets = user_assets.scalars().all()
-
-    #         if business_uuid:
-    #             user_assets = await session.execute(
-    #                 session.query(Asset).filter(
-    #                     Asset.business_profile_uuid == business_uuid,
-    #                     Asset.device_imei.isnot(None),
-    #                 )
-    #             )
-    #             user_assets = user_assets.scalars().all()
-
-    #         for asset in user_assets:
-    #             device_imei = asset.device_imei
-    #             query = await session.execute(
-    #                 session.query(self.model)
-    #                 .filter(
-    #                     self.model.device_imei == device_imei,
-    #                     cast(self.model.event_datetime, Date)
-    #                     == datetime.strptime(date, "%d/%m/%Y"),
-    #                     self.model.event_type.in_(ALLOWED_EVENT_TYPES),
-    #                 )
-    #                 .options(
-    #                     joinedload(self.model.device).joinedload(Device.asset),
-    #                 )
-    #                 .order_by(self.model.event_datetime)
-    #             )
-    #             events_by_device[device_imei] = {
-    #                 "events": query.unique().scalars().all(),
-    #                 "asset": asset,
-    #             }
-
-    #         return events_by_device
-
     async def read_all_events_by_user(
         self, date: str, user_uuid: str = None, business_uuid: str = None
     ) -> Dict[str, List[TrackingEvent]]:
@@ -173,40 +129,42 @@ class TrackingEventRepository(BaseRepository):
 
             if user_uuid:
                 result = await session.execute(
-                    select(Asset).filter(
+                    select(Asset.uuid, Asset.asset_name, Asset.device_imei).filter(
                         Asset.user_uuid == user_uuid, Asset.device_imei.isnot(None)
                     )
                 )
-                user_assets = result.scalars().all()
+                user_assets = result.mappings().all()
 
             if business_uuid:
                 result = await session.execute(
-                    select(Asset).filter(
+                    select(Asset.uuid, Asset.asset_name, Asset.device_imei).filter(
                         Asset.business_profile_uuid == business_uuid,
                         Asset.device_imei.isnot(None),
                     )
                 )
-                user_assets = result.scalars().all()
+
+                user_assets = result.mappings().all()
 
             for asset in user_assets:
                 device_imei = asset.device_imei
+
                 result = await session.execute(
-                    select(self.model)
+                    select(
+                        self.model.event_type,
+                        self.model.latitude,
+                        self.model.longitude,
+                        self.model.event_datetime,
+                    )
                     .filter(
                         self.model.device_imei == device_imei,
                         cast(self.model.event_datetime, Date)
-                        == datetime.strptime(date, "%d/%m/%Y"),
+                        == datetime.strptime(date, "%d/%m/%Y").date(),
                         self.model.event_type.in_(ALLOWED_EVENT_TYPES),
-                    )
-                    .options(
-                        joinedload(self.model.device).joinedload(Device.asset),
                     )
                     .order_by(self.model.event_datetime)
                 )
-                events_by_device[device_imei] = {
-                    "events": result.scalars().unique().all(),
-                    "asset": asset,
-                }
+                result = result.mappings().unique().all()
+                events_by_device[device_imei] = {"events": result, "asset": asset}
 
             return events_by_device
 
