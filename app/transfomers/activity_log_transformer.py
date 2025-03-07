@@ -7,7 +7,7 @@ from app.repository.user_repository import UserRepository
 async def activity_log_transformer(
     activity_log: ActivityLog, user_repo: UserRepository, role_repo: RoleRepository
 ) -> dict:
-    user: User = user_repo.read_by_uuid(activity_log.user_uuid)
+    user: User = await user_repo.read_by_uuid(activity_log.user_uuid)
 
     user_data = {
         "full_name": f"{user.first_name} {user.last_name}",

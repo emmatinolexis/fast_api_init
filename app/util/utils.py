@@ -82,7 +82,10 @@ def send_data(data: Any, status_code: int = 200):
 def send_data_with_pagination(data, pagination, status_code: int = 200):
     return ORJSONResponse(
         status_code=status_code,
-        content={"data": data, "pagination": pagination},
+        content={
+            "data": jsonable_encoder(data),
+            "pagination": jsonable_encoder(pagination),
+        },
     )
 
 

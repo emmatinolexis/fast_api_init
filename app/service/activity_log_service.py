@@ -58,7 +58,9 @@ class ActivityLogService(BaseService):
             search_string,
         )
         return [
-            activity_log_transformer(log, self.user_repository, self.role_repository)
+            await activity_log_transformer(
+                log, self.user_repository, self.role_repository
+            )
             for log in logs
         ]
 

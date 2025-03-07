@@ -4,7 +4,7 @@ from typing import Callable, List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import aliased
-
+from sqlalchemy import func
 from app.model.activity_log import ActivityLog
 from app.model.user import User
 from app.repository.base_repository import BaseRepository
@@ -174,8 +174,11 @@ class ActivityLogRepository(BaseRepository):
         search_string: str = None,
     ) -> int:
         async with self.session_factory() as session:
-            query = select(ActivityLog).filter(
-                ActivityLog.business_profile_uuid == business_id
+            # Start with counting the records
+            query = (
+                select(func.count())
+                .select_from(ActivityLog)
+                .filter(ActivityLog.business_profile_uuid == str(business_id))
             )
 
             if search_string:
@@ -189,15 +192,17 @@ class ActivityLogRepository(BaseRepository):
 
             if activity_types:
                 query = query.filter(ActivityLog.activity_type.in_(activity_types))
+
             if start_date:
                 start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
                 query = query.filter(ActivityLog.created_at >= start_date_obj)
+
             if end_date:
                 end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
                 query = query.filter(ActivityLog.created_at <= end_date_obj)
 
             result = await session.execute(query)
-            return result.scalars().count()
+            return result.scalar_one()
 
     async def count_admin_activity_logs(
         self,
@@ -207,8 +212,11 @@ class ActivityLogRepository(BaseRepository):
         search_string: str = None,
     ) -> int:
         async with self.session_factory() as session:
-            query = select(ActivityLog).filter(
-                ActivityLog.activity_class == ActivityLogClass.ADMIN
+            # Use select(func.count()) to count the rows efficiently
+            query = (
+                select(func.count())
+                .select_from(ActivityLog)
+                .filter(ActivityLog.activity_class == ActivityLogClass.ADMIN)
             )
 
             if search_string:
@@ -232,4 +240,4 @@ class ActivityLogRepository(BaseRepository):
                 query = query.filter(ActivityLog.created_at <= end_date_obj)
 
             result = await session.execute(query)
-            return result.scalars().count()
+            return result.scalar_one()
