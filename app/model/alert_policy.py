@@ -46,7 +46,7 @@ class AlertPolicy(BaseModel):
         "Asset",
         secondary="alert_policy_asset_assignments",
         back_populates="alert_policies",
-        lazy="subquery",
+        # lazy="subquery",
     )
     alert_recipients = relationship(
         "AlertNotificationAssignment",

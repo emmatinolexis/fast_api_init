@@ -249,6 +249,7 @@ class AssetRepository(BaseRepository):
                 .joinedload(Inventory.images)
             )
             .options(joinedload(self.model.equipment))
+            .options(joinedload(self.model.operators))
         )
 
         result = await session.execute(paginated_query)
@@ -293,12 +294,12 @@ class AssetRepository(BaseRepository):
             "marker_color": asset.marker_color,
             "operator": (
                 {
-                    "uuid": asset.operator.get("uuid"),
-                    "first_name": asset.operator.get("first_name"),
-                    "last_name": asset.operator.get("last_name"),
-                    "email": asset.operator.get("email_address"),
+                    "uuid": asset.operators.uuid,
+                    "first_name": asset.operators.first_name,
+                    "last_name": asset.operators.last_name,
+                    "email": asset.operators.email_address,
                 }
-                if asset.operator
+                if asset.operators
                 else None
             ),
             "asset_type": {
@@ -338,13 +339,9 @@ class AssetRepository(BaseRepository):
             # Fetch vehicle assets
             vehicle_stmt = (
                 select(self.model)
-                .join(
-                    AssetOperatorAssignment,
-                    AssetOperatorAssignment.asset_uuid == self.model.uuid,
-                    isouter=True,
-                )
                 .options(joinedload(self.model.asset_type))
                 .options(joinedload(self.model.equipment))
+                .options(joinedload(self.model.operators))
                 .filter(self.model.business_profile_uuid == business_uuid)
             )
 
@@ -360,7 +357,7 @@ class AssetRepository(BaseRepository):
             processed_vehicle_assets = await self.process_assets(
                 session, vehicle_assets
             )
-            # return processed_vehicle_assets
+
             for vehicle_asset in processed_vehicle_assets:
                 last_tracking_event = getattr(
                     vehicle_asset, "last_tracking_event", None
@@ -373,30 +370,25 @@ class AssetRepository(BaseRepository):
                             "marker_icon_color": vehicle_asset.marker_color,
                             "image_url": vehicle_asset.image_url,
                             "status": (
-                                last_tracking_event.get("status")
+                                last_tracking_event["status"]
                                 if last_tracking_event
                                 else "unknown"
                             ),
-                            "last_tracking_event": {
-                                "lng": (
-                                    last_tracking_event.get("lng", None)
-                                    if last_tracking_event
-                                    else None
-                                ),
-                                "lat": (
-                                    last_tracking_event.get("lat", None)
-                                    if last_tracking_event
-                                    else None
-                                ),
-                                "course": (
-                                    last_tracking_event.get("course", None)
-                                    if last_tracking_event
-                                    else None
-                                ),
-                                "timestamp": last_tracking_event.get("timestamp", None)
-                                or None,
-                            },
-                            "operator": vehicle_asset.operator,
+                            "last_tracking_event": (
+                                last_tracking_event if last_tracking_event else {}
+                            ),
+                            "operator": (
+                                {
+                                    "first_name": vehicle_asset.operators.first_name,
+                                    "last_name": vehicle_asset.operators.last_name,
+                                    "operator_type": vehicle_asset.operators.operator_type,
+                                    "avatar_url": vehicle_asset.operators.avatar_url,
+                                    "email_address": vehicle_asset.operators.email_address,
+                                    "license_url": vehicle_asset.operators.license_url,
+                                }
+                                if vehicle_asset.operators
+                                else None
+                            ),
                             "asset_type": {
                                 "uuid": vehicle_asset.asset_type.uuid,
                                 "asset_type_name": vehicle_asset.asset_type.asset_type_name,
@@ -493,75 +485,57 @@ class AssetRepository(BaseRepository):
         return moving_asset_count, idle_asset_count, stopped_asset_count
 
     async def process_assets(self, session, assets: List[Any]) -> List[Any]:
+        imeis = [asset.device_imei for asset in assets if asset.device_imei]
+
+        if not imeis:
+            return assets  # No valid IMEIs, return early
+
+        # Subquery to get the latest tracking event for each device_imei
+        latest_event_subquery = (
+            select(
+                TrackingEvent.device_imei,
+                func.max(TrackingEvent.event_datetime).label("latest_time"),
+            )
+            .filter(TrackingEvent.device_imei.in_(imeis))
+            .group_by(TrackingEvent.device_imei)
+            .subquery()
+        )
+
+        # Join with TrackingEvent to fetch full details
+        latest_tracking_events_stmt = select(
+            TrackingEvent.device_imei,
+            TrackingEvent.latitude.label("lat"),
+            TrackingEvent.longitude.label("lng"),
+            TrackingEvent.speed,
+            TrackingEvent.course,
+            TrackingEvent.event_datetime.label("timestamp"),
+            TrackingEvent.event_type,
+            TrackingEvent.fuel_level,
+        ).join(
+            latest_event_subquery,
+            (TrackingEvent.device_imei == latest_event_subquery.c.device_imei)
+            & (TrackingEvent.event_datetime == latest_event_subquery.c.latest_time),
+        )
+
+        result = await session.execute(latest_tracking_events_stmt)
+        tracking_events = {row.device_imei: dict(row._mapping) for row in result}
+
+        # Map the tracking event data to assets
         for asset in assets:
-
-            # Check if asset has device IMEI
-            if asset.device_imei:
-                # Get device's last known location
-                result = await session.execute(
-                    select(
-                        label("lat", TrackingEvent.latitude),
-                        label("lng", TrackingEvent.longitude),
-                        TrackingEvent.speed,
-                        TrackingEvent.course,
-                        label("timestamp", TrackingEvent.event_datetime),
-                        label("event_type", TrackingEvent.event_type),
-                        label("fuel_level", TrackingEvent.fuel_level),
-                    )
-                    .filter(TrackingEvent.device_imei == asset.device_imei)
-                    .order_by(desc(TrackingEvent.event_datetime))
-                    .limit(1)
-                )
-
-                last_tracking_event = result.first()
-                last_tracking_event = (
-                    dict(last_tracking_event._mapping) if last_tracking_event else None
-                )
-                if last_tracking_event:
-                    # Construct a dictionary with the retrieved fields
-                    asset.last_tracking_event = {
-                        "lat": last_tracking_event["lat"],
-                        "lng": last_tracking_event["lng"],
-                        "speed": last_tracking_event["speed"],
-                        "course": last_tracking_event["course"],
-                        "timestamp": last_tracking_event["timestamp"],
-                        "event_type": last_tracking_event["event_type"],
-                        "status": get_status(last_tracking_event["event_type"]),
-                        "fuel_level": last_tracking_event["fuel_level"],
-                    }
-                else:
-                    asset.last_tracking_event = None
+            if asset.device_imei in tracking_events:
+                event = tracking_events[asset.device_imei]
+                asset.last_tracking_event = {
+                    "lat": event["lat"],
+                    "lng": event["lng"],
+                    "speed": event["speed"],
+                    "course": event["course"],
+                    "timestamp": event["timestamp"],
+                    "event_type": event["event_type"],
+                    "status": get_status(event["event_type"]),
+                    "fuel_level": event["fuel_level"],
+                }
             else:
                 asset.last_tracking_event = None
-
-            result = await session.execute(
-                select(AssetOperatorAssignment.operator_uuid)
-                .filter(AssetOperatorAssignment.asset_uuid == asset.uuid)
-                .limit(1)
-            )
-            operator_assignment = result.scalar()
-
-            if operator_assignment:
-
-                result = await session.execute(
-                    select(User).filter(User.uuid == operator_assignment).limit(1)
-                )
-                operator = result.scalars().first()
-
-                if operator:
-                    asset.operator = {
-                        "uuid": operator.uuid,
-                        "first_name": operator.first_name,
-                        "last_name": operator.last_name,
-                        "email": operator.email_address,
-                        "image_url": operator.avatar_url,
-                        "operator_type": operator.operator_type,
-                        "phone_number": operator.phone_number,
-                    }
-                else:
-                    asset.operator = None
-            else:
-                asset.operator = None
 
         return assets
 

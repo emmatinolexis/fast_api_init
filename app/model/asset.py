@@ -114,5 +114,5 @@ class Asset(BaseModel):
         "AlertPolicy",
         secondary="alert_policy_asset_assignments",
         back_populates="assets",
-        lazy="subquery",
+        # lazy="subquery",
     )
