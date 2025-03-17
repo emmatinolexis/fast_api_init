@@ -77,7 +77,9 @@ class ActivityLogService(BaseService):
             start_date, end_date, page, page_size, activity_types, search_string
         )
         return [
-            activity_log_transformer(log, self.user_repository, self.role_repository)
+            await activity_log_transformer(
+                log, self.user_repository, self.role_repository
+            )
             for log in logs
         ]
 
