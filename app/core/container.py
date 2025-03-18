@@ -86,6 +86,7 @@ from app.repository import (
     vehicle_make_repository,
     vehicle_model_repository,
     vehicle_owner_repository,
+    setting_repository,
 )
 from app.service import (
     activity_log_service,
@@ -162,6 +163,7 @@ from app.service import (
     vehicle_make_service,
     vehicle_model_service,
     vehicle_owner_service,
+    settings_service,
 )
 
 
@@ -214,6 +216,7 @@ class Container(containers.DeclarativeContainer):
             "app.api.v1.endpoints.admin_notification",
             "app.api.v1.endpoints.activity_logs",
             "app.api.v1.endpoints.rnd_images",
+            "app.api.v1.endpoints.setting",
         ]
     )
 
@@ -240,6 +243,9 @@ class Container(containers.DeclarativeContainer):
     # Repositories
     user_repository = providers.Factory(
         user_repository.UserRepository, session_factory=db.provided.session
+    )
+    setting_repository = providers.Factory(
+        setting_repository.SettingRepository, session_factory=db.provided.session
     )
     email_verfication_repository = providers.Factory(
         email_verification_repository.EmailVerificationRepository,
@@ -591,6 +597,10 @@ class Container(containers.DeclarativeContainer):
     alert_policy_type_service = providers.Factory(
         alert_policy_type_service.AlertPolicyTypeService,
         alert_policy_type_repository=alert_policy_type_repository,
+    )
+    setting_service = providers.Factory(
+        settings_service.SettingService,
+        setting_repository=setting_repository,
     )
     alert_policy_service = providers.Factory(
         alert_policy_service.AlertPolicyService,
