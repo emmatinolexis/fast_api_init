@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import aiohttp
 from dateutil import parser
 from dateutil.relativedelta import relativedelta
+import asyncio
 
 from app.repository.alert_policy_repository import AlertPolicyRepository
 from app.repository.asset_repository import AssetRepository
@@ -777,6 +778,48 @@ class SmartReportService(BaseService):
             fuel_level_past_range,
         )
 
+    # async def calculate_total_distance(self, assets, start_date, end_date):
+    #     total_distance_traveled_current_range = 0
+    #     total_distance_traveled_past_range = 0
+    #     fuel_level_current_range = 0
+    #     fuel_level_past_range = 0
+
+    #     # Fetch asset events concurrently if possible
+    #     asset_events_list = await asyncio.gather(
+    #         *[
+    #             self.tracking_event_repository.read_all_events_by_date_range(
+    #                 asset.device_imei, start_date, end_date
+    #             )
+    #             for asset in assets
+    #             if asset.device_imei
+    #         ]
+    #     )
+
+    #     for asset_events in asset_events_list:
+    #         if not asset_events:
+    #             continue
+
+    #         # Extract current and past events
+    #         current_range_events = asset_events.get("current_range_events", [])
+    #         past_range_events = asset_events.get("past_range_events", [])
+
+    #         # Calculate distance and fuel usage
+    #         total_distance_traveled_current_range += (
+    #             get_distance_travelled_by_coordinates(current_range_events)
+    #         )
+    #         total_distance_traveled_past_range += get_distance_travelled_by_coordinates(
+    #             past_range_events
+    #         )
+    #         fuel_level_current_range += calculate_total_fuel_used(current_range_events)
+    #         fuel_level_past_range += calculate_total_fuel_used(past_range_events)
+
+    #     return (
+    #         total_distance_traveled_current_range,
+    #         total_distance_traveled_past_range,
+    #         fuel_level_current_range,
+    #         fuel_level_past_range,
+    #     )
+
     async def generate_fuel_usage_report(
         self,
         start_date: str,
@@ -800,9 +843,9 @@ class SmartReportService(BaseService):
             current_date = start_date_dt.replace(day=1)
             while current_date <= end_date_dt:
                 month_key = current_date.strftime("%B")
-                fuel_usage_report[
-                    month_key
-                ] = 0.0  # Ensure the initial value is a float
+                fuel_usage_report[month_key] = (
+                    0.0  # Ensure the initial value is a float
+                )
                 # Move to the next month
                 next_month = current_date.month % 12 + 1
                 next_year = current_date.year + (current_date.month // 12)
@@ -1142,7 +1185,7 @@ class SmartReportService(BaseService):
                 fuel_level_current_range,
                 fuel_level_past_range,
             ) = await self.calculate_total_distance(assets, start_date, end_date)
-
+            return total_distance_traveled_current_range
             (
                 fuel_efficiency_current_range,
                 fuel_efficiency_past_range,
@@ -1218,22 +1261,33 @@ class SmartReportService(BaseService):
 
     async def get_user_and_business_details(self, user_uuid, report):
         user = await self.user_repository.get_user_by_uuid(user_uuid)
-        if user.get("account_type") == AccountType.BUSINESS:
-            business_uuid = report.get("business_profile_uuid")
-            business_name = report.get("business_name")
-        else:
-            business_uuid = None
-            business_name = None
+        business_uuid = report.get("business_profile_uuid")
+        business_name = report.get("business_name")
+        # if user.get("account_type") == AccountType.BUSINESS:
+        #     business_uuid = report.get("business_profile_uuid")
+        #     business_name = report.get("business_name")
+        # else:
+        #     business_uuid = None
+        #     business_name = None
         return user, business_uuid, business_name
 
+    # async def get_assets(self, asset_uuids, start_date, end_date):
+    #     assets = []
+    #     for asset_uuid in asset_uuids:
+    #         asset = await self.asset_repository.get_asset_with_relationships(
+    #             asset_uuid, start_date, end_date
+    #         )
+    #         if asset and asset.device_imei:
+    #             assets.append(asset)
+    #     return assets
     async def get_assets(self, asset_uuids, start_date, end_date):
-        assets = []
-        for asset_uuid in asset_uuids:
-            asset = await self.asset_repository.get_asset_with_relationships(
-                asset_uuid, start_date, end_date
-            )
-            if asset and asset.device_imei:
-                assets.append(asset)
+        if not asset_uuids:
+            return []
+
+        assets = await self.asset_repository.get_assets_with_relationships(
+            asset_uuids, start_date, end_date
+        )
+
         return assets
 
     def calculate_fuel_efficiency(

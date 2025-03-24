@@ -91,12 +91,12 @@ async def startup_event():
         )
 
         # get new smart reports and generate report
-        scheduler.add_job(
-            generate_smart_report_handler,
-            "interval",
-            minutes=10,
-            id="smart_report_generation",
-        )
+        # scheduler.add_job(
+        #     generate_smart_report_handler,
+        #     "interval",
+        #     minutes=10,
+        #     id="smart_report_generation",
+        # )
 
         # Check driver licences expiry
         scheduler.add_job(

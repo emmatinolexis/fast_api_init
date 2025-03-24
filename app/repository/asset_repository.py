@@ -902,6 +902,76 @@ class AssetRepository(BaseRepository):
             # Return the results as a list
             return result.scalars().all()
 
+    async def get_assets_with_relationships(self, asset_uuids, date_from, date_to):
+        try:
+            date_from_obj = datetime.strptime(
+                date_from, get_settings().DATE_FORMAT_YEAR
+            ).date()
+            date_to_obj = datetime.strptime(
+                date_to, get_settings().DATE_FORMAT_YEAR
+            ).date()
+        except ValueError as e:
+            raise ValueError("Date format should be dd/mm/yyyy") from e
+
+        async with self.session_factory() as session:
+            # Fetch all assets with relationships in one query
+            stmt = select(self.model).filter(
+                self.model.uuid.in_(asset_uuids), self.model.device_imei.isnot(None)
+            )
+            result = await session.execute(stmt)
+
+            assets = [row["Asset"] for row in result.mappings().all()]
+            # return assets
+
+            # Fetch tracking events for all assets in one query
+            imeis = [asset.device_imei for asset in assets]
+
+            if imeis:
+                tracking_stmt = (
+                    select(
+                        TrackingEvent.device_imei,
+                        label("latitude", TrackingEvent.latitude),
+                        label("longitude", TrackingEvent.longitude),
+                        TrackingEvent.speed,
+                        TrackingEvent.course,
+                        label("timestamp", TrackingEvent.event_datetime),
+                        label("event_type", TrackingEvent.event_type),
+                        label("fuel_level", TrackingEvent.fuel_level),
+                    )
+                    .filter(
+                        TrackingEvent.device_imei.in_(imeis),
+                        and_(
+                            cast(TrackingEvent.event_datetime, Date) >= date_from_obj,
+                            cast(TrackingEvent.event_datetime, Date) <= date_to_obj,
+                        ),
+                    )
+                    .order_by(desc(TrackingEvent.event_datetime))
+                    .limit(500)
+                )
+
+                tracking_result = await session.execute(tracking_stmt)
+                tracking_data = tracking_result.mappings().all()
+
+                # Organize tracking events by device_imei
+                tracking_map = {}
+                for event in tracking_data:
+                    event_dict = {
+                        "latitude": event.latitude,
+                        "longitude": event.longitude,
+                        "speed": event.speed,
+                        "course": event.course,
+                        "timestamp": str(event.timestamp),
+                        "event_type": get_status(event.event_type),
+                        "fuel_level": event.fuel_level,
+                    }
+                    tracking_map.setdefault(event.device_imei, []).append(event_dict)
+
+                # Assign tracking events to corresponding assets
+                for asset in assets:
+                    asset.tracking_events = tracking_map.get(asset.device_imei, [])
+
+            return assets
+
     async def get_asset_with_relationships(
         self, asset_uuid: str, date_from: str, date_to: str
     ):

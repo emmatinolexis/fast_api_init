@@ -225,6 +225,12 @@ class TrackingEventService(BaseService):
         except Exception as e:
             raise e
 
+    async def archive_tracking_events(self, start_date: str, end_date: str):
+        try:
+            return "ok"
+        except Exception as e:
+            raise e
+
     async def get_latest_tracking_event_by_device_imei(self, device_imei: str):
         try:
             return await self.tracking_event_repository.read_latest_tracking_event_by_device_imei(

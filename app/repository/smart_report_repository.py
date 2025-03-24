@@ -96,7 +96,7 @@ class SmartReportRepository(BaseRepository):
         try:
             async with self.session_factory() as session:
                 logging.info("Generating smart report")
-                report_data = []
+
                 result = await session.execute(
                     select(self.model)
                     .filter(self.model.status == SmartReportStatus.PENDING)
@@ -104,13 +104,15 @@ class SmartReportRepository(BaseRepository):
                         joinedload(self.model.user).joinedload(User.business_profile)
                     )
                     .order_by(desc(self.model.created_at))
+                    .limit(1)
                 )
-                report = result.unique().scalars().first()
+
+                report = result.scalars().first()
 
                 if not report:
-                    return report_data
+                    return []
 
-                report_data = {
+                return {
                     "uuid": report.uuid,
                     "title": report.title,
                     "start_date": report.start_date,
@@ -131,9 +133,9 @@ class SmartReportRepository(BaseRepository):
                     "created_by": f"{report.user.first_name} {report.user.last_name}",
                     "created_by_email": report.user.email_address,
                 }
-                return report_data
 
         except Exception as e:
+            logging.error(f"Error generating smart report: {e}")
             raise e
 
     async def update_smart_report_status(

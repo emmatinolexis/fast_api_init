@@ -328,3 +328,21 @@ async def create_device_events(
         msg = "Failed to process device event"
         logging.error(e)
         return send_internal_server_error(user_msg=msg, error=e)
+
+
+@router.get("/archive", response_class=ORJSONResponse)
+@inject
+async def archive_tracking_events_handler(
+    service: TrackingEventService = Depends(Provide[Container.tracking_event_service]),
+    current_user: User = Depends(get_current_user),
+    start_date: str = None,
+    end_date: str = None,
+):
+    try:
+        events = await service.archive_tracking_events()
+        if events is None:
+            return send_client_side_error(user_msg=messages.NO_DATA)
+        return send_data(events)
+    except Exception as e:
+        msg = f"{messages.GET_FAILED} {msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)

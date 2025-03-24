@@ -253,7 +253,6 @@ async def generate_smart_report_handler(
             await smart_report_service.update_smart_report_status(
                 smart_report.get("uuid"), SmartReportStatus.PROCESSING
             )
-
             report = await smart_report_service.generate_smart_report(smart_report)
 
             if report:
