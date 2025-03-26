@@ -1,4 +1,3 @@
-import datetime
 from typing import Callable
 
 from sqlalchemy.ext.asyncio import AsyncSession
