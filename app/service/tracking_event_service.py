@@ -227,7 +227,23 @@ class TrackingEventService(BaseService):
 
     async def archive_tracking_events(self, start_date: str, end_date: str):
         try:
-            return "ok"
+            events = (
+                await self.tracking_event_repository.read_tracking_event_to_archive(
+                    start_date, end_date
+                )
+            )
+            return events
+        except Exception as e:
+            raise e
+
+    async def delete_archived_events(self, start_date: str, end_date: str):
+        try:
+            events = (
+                await self.tracking_event_repository.delete_archived_tracking_events(
+                    start_date, end_date
+                )
+            )
+            return events
         except Exception as e:
             raise e
 

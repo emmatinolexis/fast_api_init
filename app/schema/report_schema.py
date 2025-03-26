@@ -43,8 +43,8 @@ class SmartReportSharePayload(BaseModel):
 
 class SmartReportInput(BaseModel):
     title: str
-    start_date: date
-    end_date: date
+    start_date: str
+    end_date: str
     asset_group_uuids: AssetGroupPayload
     asset_type_uuid: UUID
     user_uuid: UUID

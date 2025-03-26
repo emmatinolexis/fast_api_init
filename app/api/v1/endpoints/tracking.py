@@ -1,7 +1,9 @@
+import json
 import logging
 import socket
 import ssl
-from datetime import datetime
+from datetime import datetime, timedelta
+from typing import Optional
 
 from cryptography import x509
 from dependency_injector.wiring import Provide, inject
@@ -21,14 +23,19 @@ from app.service.device_alert_notification_service import DeviceAlertNotificatio
 from app.service.device_events_service import DeviceEventService
 from app.service.peripheral_device_service import PeripheralDeviceService
 from app.service.tracking_event_service import TrackingEventService
+from app.service.tracking_event_backup_service import TrackingEventBackupService
 from app.service.user_service import UserService
 from app.util.email import EmailPurpose, send_device_alert_email
+from app.util.enums import FileFormat
 from app.util.sms import send_sms
+from app.schema.tracking_event_backup_schema import TrackingEventBackupSchema
 from app.util.utils import (
+    get_content_type,
     send_client_side_error,
     send_data,
     send_info,
     send_internal_server_error,
+    upload_to_s3,
 )
 
 router = APIRouter(
@@ -128,6 +135,70 @@ async def get_ssl_certificate():
 
     except Exception as e:
         return ORJSONResponse(content={"error": str(e)}, status_code=500)
+
+
+@router.get("/archive/s3", response_class=ORJSONResponse)
+@inject
+async def archive_tracking_events_handler(
+    service: TrackingEventService = Depends(Provide[Container.tracking_event_service]),
+    backup_service: TrackingEventBackupService = Depends(
+        Provide[Container.tracking_event_backup_service]
+    ),
+    start_date: Optional[str] = Query(
+        None, description="Filter by date in dd/mm/yyyy format, default is 3 months ago"
+    ),
+    end_date: Optional[str] = Query(
+        None,
+        description="Filter by date in dd/mm/yyyy format, default is the current date",
+    ),
+):
+    try:
+        if not start_date or not end_date:
+            end_date = (datetime.utcnow() - timedelta(days=30)).strftime(
+                "%d/%m/%Y"
+            )  # One month ago from today
+            start_date = (datetime.utcnow() - timedelta(days=60)).strftime("%d/%m/%Y")
+
+        backup = await backup_service.get_backup_by_date_range(start_date, end_date)
+
+        if backup:
+            return send_client_side_error(
+                messages.BACKUP_FOUND_MSG, messages.BACKUP_FOUND_MSG
+            )
+
+        events = await service.archive_tracking_events(start_date, end_date)
+
+        if events is None:
+            return send_client_side_error(user_msg=messages.NO_DATA)
+
+        if events:
+            backup_json = json.dumps(events, indent=4, default=str)
+
+            file_format = FileFormat.JSON
+            content_type = get_content_type(file_format)
+            file_content = backup_json.encode("utf-8")
+
+            url = await upload_to_s3(
+                file_name=f"{start_date.replace('/', '-')}_{end_date.replace('/', '-')}.{file_format}",
+                file_content=file_content,
+                content_type=content_type,
+                folder_name="tracking_events",
+            )
+
+            # create backup record
+            await backup_service.add(
+                TrackingEventBackupSchema(
+                    start_date=start_date, end_date=end_date, backup_url=url
+                )
+            )
+
+            # delete archived events
+            await service.delete_archived_events(start_date, end_date)
+
+        return send_data(url)
+    except Exception as e:
+        msg = f"{messages.GET_FAILED} {msg_prefix}s"
+        return send_internal_server_error(user_msg=msg, error=e)
 
 
 @router.get("/{user_uuid}", response_class=ORJSONResponse)
@@ -327,22 +398,4 @@ async def create_device_events(
     except Exception as e:
         msg = "Failed to process device event"
         logging.error(e)
-        return send_internal_server_error(user_msg=msg, error=e)
-
-
-@router.get("/archive", response_class=ORJSONResponse)
-@inject
-async def archive_tracking_events_handler(
-    service: TrackingEventService = Depends(Provide[Container.tracking_event_service]),
-    current_user: User = Depends(get_current_user),
-    start_date: str = None,
-    end_date: str = None,
-):
-    try:
-        events = await service.archive_tracking_events()
-        if events is None:
-            return send_client_side_error(user_msg=messages.NO_DATA)
-        return send_data(events)
-    except Exception as e:
-        msg = f"{messages.GET_FAILED} {msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)

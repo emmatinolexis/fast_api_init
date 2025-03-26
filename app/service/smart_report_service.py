@@ -1185,7 +1185,7 @@ class SmartReportService(BaseService):
                 fuel_level_current_range,
                 fuel_level_past_range,
             ) = await self.calculate_total_distance(assets, start_date, end_date)
-            return total_distance_traveled_current_range
+
             (
                 fuel_efficiency_current_range,
                 fuel_efficiency_past_range,

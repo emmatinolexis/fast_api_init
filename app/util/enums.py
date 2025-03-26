@@ -313,6 +313,7 @@ class FileFormat(str, Enum):
     JPG = "jpg"
     CSV = "csv"
     JSON = "json"
+    SQL = "sql"
 
 
 class AlertPolicy(str, Enum):

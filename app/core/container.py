@@ -87,6 +87,7 @@ from app.repository import (
     vehicle_model_repository,
     vehicle_owner_repository,
     setting_repository,
+    tracking_event_backup_repository,
 )
 from app.service import (
     activity_log_service,
@@ -164,6 +165,7 @@ from app.service import (
     vehicle_model_service,
     vehicle_owner_service,
     settings_service,
+    tracking_event_backup_service,
 )
 
 
@@ -243,6 +245,10 @@ class Container(containers.DeclarativeContainer):
     # Repositories
     user_repository = providers.Factory(
         user_repository.UserRepository, session_factory=db.provided.session
+    )
+    tracking_event_backup_repository = providers.Factory(
+        tracking_event_backup_repository.TrackingEventBackupRepository,
+        session_factory=db.provided.session,
     )
     setting_repository = providers.Factory(
         setting_repository.SettingRepository, session_factory=db.provided.session
@@ -597,6 +603,10 @@ class Container(containers.DeclarativeContainer):
     alert_policy_type_service = providers.Factory(
         alert_policy_type_service.AlertPolicyTypeService,
         alert_policy_type_repository=alert_policy_type_repository,
+    )
+    tracking_event_backup_service = providers.Factory(
+        tracking_event_backup_service.TrackingEventBackupService,
+        tracking_event_backup_repository=tracking_event_backup_repository,
     )
     setting_service = providers.Factory(
         settings_service.SettingService,

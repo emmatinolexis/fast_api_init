@@ -5,12 +5,13 @@ from typing import Callable, Dict, List, Tuple
 from sqlalchemy import Date, and_, cast
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.orm import joinedload, load_only, noload
+from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import func
+
+from sqlalchemy import delete
 
 from app.core.constants import ALLOWED_EVENT_TYPES
 from app.model.asset import Asset
-from app.model.device import Device
 from app.model.tracking_event import TrackingEvent
 from app.repository.base_repository import BaseRepository
 from app.util.utils import calculate_average_speed, get_status
@@ -202,6 +203,57 @@ class TrackingEventRepository(BaseRepository):
                 unique_entries.add((entry.latitude, entry.longitude, entry.course))
 
         return formatted_data
+
+    async def read_tracking_event_to_archive(self, start_date: str, end_date: str):
+        async with self.session_factory() as session:
+
+            # Convert string dates to datetime objects
+            start_date_obj = datetime.strptime(start_date, "%d/%m/%Y")
+            end_date_obj = datetime.strptime(end_date, "%d/%m/%Y")
+
+            # Fetch tracking events within the given date range
+            stmt = (
+                select(self.model)
+                .filter(
+                    self.model.event_datetime >= start_date_obj,
+                    self.model.event_datetime <= end_date_obj,
+                )
+                .order_by(self.model.event_datetime)
+            )
+
+            result = await session.execute(stmt)
+            events = result.scalars().all()
+
+            # Convert to list of dictionaries using asdict()
+            events_dict_list = [
+                {
+                    key: value
+                    for key, value in event.__dict__.items()
+                    if key != "_sa_instance_state"
+                }
+                for event in events
+            ]
+
+            return events_dict_list
+
+    async def delete_archived_tracking_events(self, start_date: str, end_date: str):
+        async with self.session_factory() as session:
+            # Convert string dates to datetime objects
+            start_date_obj = datetime.strptime(start_date, "%d/%m/%Y")
+            end_date_obj = datetime.strptime(end_date, "%d/%m/%Y")
+
+            # Correcting the delete statement with and_()
+            delete_stmt = delete(self.model).filter(
+                and_(
+                    self.model.event_datetime >= start_date_obj,
+                    self.model.event_datetime <= end_date_obj,
+                )
+            )
+
+            await session.execute(delete_stmt)  # Execute delete statement
+            await session.commit()  # Commit the transaction to apply changes
+
+            return True
 
     async def read_latest_tracking_event_by_device_imei(self, device_imei: str):
         async with self.session_factory() as session:

@@ -138,8 +138,8 @@ async def create_smart_report_handler(
         if user:
             smart_report_input = SmartReportInput(
                 title=smart_report_payload.title,
-                start_date=start_date,
-                end_date=end_date,
+                start_date=str(start_date),
+                end_date=str(end_date),
                 asset_group_uuids=smart_report_payload.asset_group,
                 asset_type_uuid=smart_report_payload.asset_type_uuid,
                 user_uuid=smart_report_payload.user_uuid,
