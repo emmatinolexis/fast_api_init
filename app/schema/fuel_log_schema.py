@@ -44,7 +44,7 @@ class SingleFuelLog(BaseModel):
     asset_uuid: str
     amount: float
     quantity: float
-    purchase_date: date
+    purchase_date: str
     payment_method: FuelLogPaymmentMethod
     receipt_image: str
     fuel_type: FuelType

@@ -47,9 +47,7 @@ class FuelLogService(BaseService):
             user_uuid
         )
         if not asset_assignment:
-            raise NotFoundError(
-                detail=messages.DRIVER_NOT_ASSIGNED
-            )
+            raise NotFoundError(detail=messages.DRIVER_NOT_ASSIGNED)
 
         asset = await self.asset_repository.read_by_uuid(asset_assignment.asset_uuid)
         if not asset:
