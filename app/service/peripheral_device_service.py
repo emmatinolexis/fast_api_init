@@ -190,7 +190,7 @@ class PeripheralDeviceService(BaseService):
 
             if not peripheral_device:
                 raise BadRequestError(
-                    messages.PERIPHERAL_DEVICE_NOT_FOUND + payload.device_serial_number
+                    messages.PERIPHERAL_DEVICE_NOT_FOUND + payload.serial_number
                 )
 
             is_authorized = (
