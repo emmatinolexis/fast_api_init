@@ -168,9 +168,6 @@ async def archive_tracking_events_handler(
 
         events = await service.archive_tracking_events(start_date, end_date)
 
-        if events is None:
-            return send_client_side_error(user_msg=messages.NO_DATA)
-
         if events:
             backup_json = json.dumps(events, indent=4, default=str)
 
@@ -195,7 +192,8 @@ async def archive_tracking_events_handler(
             # delete archived events
             await service.delete_archived_events(start_date, end_date)
 
-        return send_data(url)
+            return send_data(url)
+        return send_client_side_error(user_msg=messages.NO_DATA)
     except Exception as e:
         msg = f"{messages.GET_FAILED} {msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
