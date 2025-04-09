@@ -151,6 +151,7 @@ class SmartReportService(BaseService):
     def ensure_all_months_present(
         self, incidents_rate, start_date, end_date, monthly_totals
     ):
+
         # Convert date strings to datetime objects
         current_date = datetime.strptime(start_date, "%d/%m/%Y")
         end_date = datetime.strptime(end_date, "%d/%m/%Y")
@@ -236,6 +237,7 @@ class SmartReportService(BaseService):
         }
 
     async def process_assets(self, asset, date_from, date_to, data):
+
         (
             asset,
             equipment_name,
@@ -253,6 +255,7 @@ class SmartReportService(BaseService):
         asset_violations_data = await self.asset_repository.get_violations_by_asset(
             asset.uuid, date_from, date_to
         )
+
         data["asset_violations"].extend(asset_violations_data)
 
         fuel_purchase = await self.fuel_log_repository.get_fuel_log_by_asset(
@@ -570,6 +573,7 @@ class SmartReportService(BaseService):
             )
 
             monthly_utilization = self.initialize_monthly_utilization(unique_months)
+
             grouped_assets = {}
             good_asset_count, poor_asset_count = 0, 0
             good_assets = []
@@ -606,8 +610,8 @@ class SmartReportService(BaseService):
                         "assets": [],
                     }
 
-                self.update_monthly_utilization(monthly_utilization, asset)
-                self.update_grouped_assets(grouped_assets, asset)
+                await self.update_monthly_utilization(monthly_utilization, asset)
+                await self.update_grouped_assets(grouped_assets, asset)
 
             self.normalize_grouped_assets(grouped_assets)
             self.round_monthly_utilization(monthly_utilization)
@@ -1263,23 +1267,8 @@ class SmartReportService(BaseService):
         user = await self.user_repository.get_user_by_uuid(user_uuid)
         business_uuid = report.get("business_profile_uuid")
         business_name = report.get("business_name")
-        # if user.get("account_type") == AccountType.BUSINESS:
-        #     business_uuid = report.get("business_profile_uuid")
-        #     business_name = report.get("business_name")
-        # else:
-        #     business_uuid = None
-        #     business_name = None
         return user, business_uuid, business_name
 
-    # async def get_assets(self, asset_uuids, start_date, end_date):
-    #     assets = []
-    #     for asset_uuid in asset_uuids:
-    #         asset = await self.asset_repository.get_asset_with_relationships(
-    #             asset_uuid, start_date, end_date
-    #         )
-    #         if asset and asset.device_imei:
-    #             assets.append(asset)
-    #     return assets
     async def get_assets(self, asset_uuids, start_date, end_date):
         if not asset_uuids:
             return []

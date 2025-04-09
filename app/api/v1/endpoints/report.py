@@ -254,7 +254,7 @@ async def generate_smart_report_handler(
                 smart_report.get("uuid"), SmartReportStatus.PROCESSING
             )
             report = await smart_report_service.generate_smart_report(smart_report)
-
+            # return report
             if report:
                 report_json = json.dumps(report, indent=4, default=str)
                 file_format = FileFormat.JSON

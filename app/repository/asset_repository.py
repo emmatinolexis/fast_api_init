@@ -4,7 +4,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from sqlalchemy import Date, and_, cast, desc, label, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.sql import func
 from app.core.settings import get_settings
 from app.model.alert_policy import AlertPolicy
@@ -828,8 +828,8 @@ class AssetRepository(BaseRepository):
     ):
         async with self.session_factory() as session:
             # Convert dates to datetime objects with timezone
-            start_dt = datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S.%f %z")
-            end_dt = datetime.strptime(end_date, "%Y-%m-%d %H:%M:%S.%f %z")
+            # start_dt = datetime.strptime(str(start_date), "%Y-%m-%d %H:%M:%S.%f %z")
+            # end_dt = datetime.strptime(str(end_date), "%Y-%m-%d %H:%M:%S.%f %z")
             base_query = (
                 select(AlertPolicyViolation)
                 .join(
@@ -839,8 +839,8 @@ class AssetRepository(BaseRepository):
                 .filter(
                     AlertPolicy.alert_policy_type_uuid == alert_policy_type_uuid.value,
                     and_(
-                        AlertPolicyViolation.created_at >= start_dt,
-                        AlertPolicyViolation.created_at <= end_dt,
+                        AlertPolicyViolation.created_at >= start_date,
+                        AlertPolicyViolation.created_at <= end_date,
                     ),
                 )
             )
@@ -871,6 +871,7 @@ class AssetRepository(BaseRepository):
         end_date: str,
     ):
         async with self.session_factory() as session:
+
             date_from_obj = datetime.strptime(
                 start_date, get_settings().DATE_FORMAT_YEAR
             ).date()
@@ -889,10 +890,10 @@ class AssetRepository(BaseRepository):
                 )
                 .where(
                     AlertPolicyViolation.asset_uuid == asset_uuid,
-                    and_(
-                        cast(AlertPolicyViolation.created_at, date) >= date_from_obj,
-                        cast(AlertPolicyViolation.created_at, date) <= date_to_obj,
-                    ),
+                    AlertPolicyViolation.created_at
+                    >= datetime.combine(date_from_obj, datetime.min.time()),
+                    AlertPolicyViolation.created_at
+                    <= datetime.combine(date_to_obj, datetime.max.time()),
                 )
             )
 
@@ -915,8 +916,12 @@ class AssetRepository(BaseRepository):
 
         async with self.session_factory() as session:
             # Fetch all assets with relationships in one query
-            stmt = select(self.model).filter(
-                self.model.uuid.in_(asset_uuids), self.model.device_imei.isnot(None)
+            stmt = (
+                select(self.model)
+                .filter(
+                    self.model.uuid.in_(asset_uuids), self.model.device_imei.isnot(None)
+                )
+                .options(selectinload(self.model.equipment))
             )
             result = await session.execute(stmt)
 
@@ -946,7 +951,7 @@ class AssetRepository(BaseRepository):
                         ),
                     )
                     .order_by(desc(TrackingEvent.event_datetime))
-                    .limit(500)
+                    # .limit(500)
                 )
 
                 tracking_result = await session.execute(tracking_stmt)
