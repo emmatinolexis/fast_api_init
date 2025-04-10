@@ -168,6 +168,10 @@ class Settings(BaseSettings):
         "FIREBASE_AUTH_PROVIDER_X509_CERT_URL", ""
     )
     FIREBASE_CLIENT_X509_CERT_URL: str = os.getenv("FIREBASE_CLIENT_X509_CERT_URL", "")
+    REDIS_HOST: str = os.getenv(
+        "REDIS_HOST", "http://redis-master.default.svc.cluster.local"
+    )
+    REDIS_PORT: int = os.getenv("REDIS_PORT", 6379)
 
     class ConfigDict:
         case_sensitive = True

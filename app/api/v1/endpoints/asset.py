@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime
 from typing import Optional
+from app.client.redis import RedisClient
 
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query, Request
@@ -56,6 +57,8 @@ router = APIRouter(
     tags=["Assets"],
 )
 msg_prefix = "asset"
+
+redis = RedisClient()
 
 
 @router.get("/", dependencies=[allow_admins_only], response_class=ORJSONResponse)
@@ -127,6 +130,17 @@ async def get_asset_by_business_uuid_handler(
                 403,
             )
 
+        # Create unique cache key
+        cache_key = (
+            f"assets:{business_uuid}:{asset_type_uuid}:{search}:"
+            f"{status}:{page}:{page_size}:{current_user.user_role.role_name}:{current_user.uuid}"
+        )
+
+        # Check if result is cached
+        cached = await redis.get_cache(cache_key)
+        if cached:
+            return send_data(cached, cached=True)
+
         if current_user.user_role.role_name == OPERATOR_ROLE_NAME:
             assets = await service.read_assigned_assets(
                 operator_uuid=str(current_user.uuid),
@@ -145,6 +159,10 @@ async def get_asset_by_business_uuid_handler(
                 search=search,
                 status=status,
             )
+
+        # Cache the result for 24 hours
+        await redis.set_cache(cache_key, assets)
+
         return send_data(assets)
 
     except Exception as e:
@@ -200,6 +218,8 @@ async def create_asset_handler(
         asset = await service.create_asset(payload, request)
         logging.info(f"Created asset {asset}")
         ASSET_CREATION_TOTAL.labels(success="true").inc()
+        # delete cached redis data
+        await redis.delete_by_pattern(f"assets:{asset['business_uuid']}*")
         return send_data(asset)
     except (BadRequestError, NotFoundError) as e:
         ASSET_CREATION_TOTAL.labels(success="false").inc()
