@@ -3,6 +3,7 @@ import json
 from uuid import UUID
 from app.util.class_object import singleton
 from app.core.settings import settings
+from fastapi.encoders import jsonable_encoder
 
 
 def convert_uuids(obj):
@@ -35,8 +36,8 @@ class RedisClient:
         return None
 
     async def set_cache(self, key: str, value, expire: int = 60 * 60 * 24):  # 24 hours
-        safe_value = convert_uuids(value)
-        await self.client.set(key, json.dumps(safe_value), ex=expire)
+        # safe_value = convert_uuids(value)
+        await self.client.set(key, json.dumps(jsonable_encoder(value)), ex=expire)
 
     async def delete_cache(self, key: str):
         await self.client.delete(key)
