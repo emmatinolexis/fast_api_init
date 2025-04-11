@@ -487,42 +487,54 @@ class AssetRepository(BaseRepository):
     async def process_assets(self, session, assets: List[Any]) -> List[Any]:
         imeis = [asset.device_imei for asset in assets if asset.device_imei]
 
-        if not imeis:
-            return assets  # No valid IMEIs, return early
+        tracking_events = {}
 
-        # Subquery to get the latest tracking event for each device_imei
-        latest_event_subquery = (
-            select(
-                TrackingEvent.device_imei,
-                func.max(TrackingEvent.event_datetime).label("latest_time"),
+        if imeis:
+            # Subquery to get the latest tracking event for each device_imei
+            latest_event_subquery = (
+                select(
+                    TrackingEvent.device_imei,
+                    func.max(TrackingEvent.event_datetime).label("latest_time"),
+                )
+                .filter(TrackingEvent.device_imei.in_(imeis))
+                .group_by(TrackingEvent.device_imei)
+                .subquery()
             )
-            .filter(TrackingEvent.device_imei.in_(imeis))
-            .group_by(TrackingEvent.device_imei)
-            .subquery()
-        )
 
-        # Join with TrackingEvent to fetch full details
-        latest_tracking_events_stmt = select(
-            TrackingEvent.device_imei,
-            TrackingEvent.latitude.label("lat"),
-            TrackingEvent.longitude.label("lng"),
-            TrackingEvent.speed,
-            TrackingEvent.course,
-            TrackingEvent.event_datetime.label("timestamp"),
-            TrackingEvent.event_type,
-            TrackingEvent.fuel_level,
-        ).join(
-            latest_event_subquery,
-            (TrackingEvent.device_imei == latest_event_subquery.c.device_imei)
-            & (TrackingEvent.event_datetime == latest_event_subquery.c.latest_time),
-        )
+            # Join with TrackingEvent to fetch full details
+            latest_tracking_events_stmt = select(
+                TrackingEvent.device_imei,
+                TrackingEvent.latitude.label("lat"),
+                TrackingEvent.longitude.label("lng"),
+                TrackingEvent.speed,
+                TrackingEvent.course,
+                TrackingEvent.event_datetime.label("timestamp"),
+                TrackingEvent.event_type,
+                TrackingEvent.fuel_level,
+            ).join(
+                latest_event_subquery,
+                (TrackingEvent.device_imei == latest_event_subquery.c.device_imei)
+                & (TrackingEvent.event_datetime == latest_event_subquery.c.latest_time),
+            )
 
-        result = await session.execute(latest_tracking_events_stmt)
-        tracking_events = {row.device_imei: dict(row._mapping) for row in result}
+            result = await session.execute(latest_tracking_events_stmt)
+            tracking_events = {row.device_imei: dict(row._mapping) for row in result}
 
-        # Map the tracking event data to assets
+        # Default null event
+        default_event = {
+            "lat": None,
+            "lng": None,
+            "speed": None,
+            "course": None,
+            "timestamp": None,
+            "event_type": None,
+            "status": None,
+            "fuel_level": None,
+        }
+
+        # Assign tracking data or default to all assets
         for asset in assets:
-            if asset.device_imei in tracking_events:
+            if asset.device_imei and asset.device_imei in tracking_events:
                 event = tracking_events[asset.device_imei]
                 asset.last_tracking_event = {
                     "lat": event["lat"],
@@ -535,9 +547,73 @@ class AssetRepository(BaseRepository):
                     "fuel_level": event["fuel_level"],
                 }
             else:
-                asset.last_tracking_event = None
+                asset.last_tracking_event = default_event
 
         return assets
+
+    # async def process_assets(self, session, assets: List[Any]) -> List[Any]:
+    #     imeis = [asset.device_imei for asset in assets if asset.device_imei]
+
+    #     if not imeis:
+    #         return assets  # No valid IMEIs, return early
+
+    #     # Subquery to get the latest tracking event for each device_imei
+    #     latest_event_subquery = (
+    #         select(
+    #             TrackingEvent.device_imei,
+    #             func.max(TrackingEvent.event_datetime).label("latest_time"),
+    #         )
+    #         .filter(TrackingEvent.device_imei.in_(imeis))
+    #         .group_by(TrackingEvent.device_imei)
+    #         .subquery()
+    #     )
+
+    #     # Join with TrackingEvent to fetch full details
+    #     latest_tracking_events_stmt = select(
+    #         TrackingEvent.device_imei,
+    #         TrackingEvent.latitude.label("lat"),
+    #         TrackingEvent.longitude.label("lng"),
+    #         TrackingEvent.speed,
+    #         TrackingEvent.course,
+    #         TrackingEvent.event_datetime.label("timestamp"),
+    #         TrackingEvent.event_type,
+    #         TrackingEvent.fuel_level,
+    #     ).join(
+    #         latest_event_subquery,
+    #         (TrackingEvent.device_imei == latest_event_subquery.c.device_imei)
+    #         & (TrackingEvent.event_datetime == latest_event_subquery.c.latest_time),
+    #     )
+
+    #     result = await session.execute(latest_tracking_events_stmt)
+    #     tracking_events = {row.device_imei: dict(row._mapping) for row in result}
+
+    #     # Map the tracking event data to assets
+    #     for asset in assets:
+    #         if asset.device_imei in tracking_events:
+    #             event = tracking_events[asset.device_imei]
+    #             asset.last_tracking_event = {
+    #                 "lat": event["lat"],
+    #                 "lng": event["lng"],
+    #                 "speed": event["speed"],
+    #                 "course": event["course"],
+    #                 "timestamp": event["timestamp"],
+    #                 "event_type": event["event_type"],
+    #                 "status": get_status(event["event_type"]),
+    #                 "fuel_level": event["fuel_level"],
+    #             }
+    #         else:
+    #             asset.last_tracking_event = {
+    #                 "lat": None,
+    #                 "lng": None,
+    #                 "speed": None,
+    #                 "course": None,
+    #                 "timestamp": None,
+    #                 "event_type": None,
+    #                 "status": None,
+    #                 "fuel_level": None,
+    #             }
+
+    #     return assets
 
     async def read_all_third_party_assets(
         self, asset_type_uuid: str = None, page=1, page_size=10
