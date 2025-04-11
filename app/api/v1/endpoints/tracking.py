@@ -4,6 +4,8 @@ import socket
 import ssl
 from datetime import datetime, timedelta
 from typing import Optional
+from app.client.redis import RedisClient
+
 
 from cryptography import x509
 from dependency_injector.wiring import Provide, inject
@@ -43,6 +45,8 @@ router = APIRouter(
     tags=["device_events"],
 )
 msg_prefix = "device events"
+
+redis = RedisClient()
 
 
 @router.get("/inactive_devices", response_class=ORJSONResponse)
@@ -208,9 +212,20 @@ async def get_tracking_details_by_user_handler(
     date: str = None,
 ):
     try:
+        # Build cache key using the parameters
+        cache_key = f"tracking_details:{user_uuid}:{date}"
+
+        # Check Redis cache first
+        cached_data = await redis.get_cache(cache_key)
+        if cached_data:
+            return send_data(cached_data, cached=True)
+
         events = await service.get_events_by_user(date=date, user_uuid=user_uuid)
         if events is None:
             return send_client_side_error(user_msg=messages.NO_DATA)
+
+        await redis.set_cache(cache_key, cached_data)
+
         return send_data(events)
     except Exception as e:
         msg = f"{messages.GET_FAILED} {msg_prefix}s"
@@ -233,11 +248,22 @@ async def get_tracking_details_by_business_handler(
     ),
 ):
     try:
+        # Build cache key using the parameters
+        cache_key = f"tracking_details:{business_uuid}:{date}:{page}:{page_size}"
+
+        # Check Redis cache first
+        cached_data = await redis.get_cache(cache_key)
+        if cached_data:
+            return send_data(cached_data, cached=True)
+
         events = await service.get_events_by_user(
             date=date, business_uuid=business_uuid, page=page, page_size=page_size
         )
         if events is None:
             return send_client_side_error(user_msg=messages.NO_DATA)
+
+        await redis.set_cache(cache_key, cached_data)
+
         return send_data(events)
     except Exception as e:
         msg = f"{messages.GET_FAILED} {msg_prefix}s"
@@ -253,9 +279,19 @@ async def get_route_replay_tracking_details_handler(
     date: str = None,
 ):
     try:
+        cache_key = f"route_replay:{device_imei}:{date or 'all'}"
+
+        # Check Redis cache
+        cached_data = await redis.get_cache(cache_key)
+        if cached_data:
+            return send_data(cached_data)
+
         events = await service.get_route_replay_events_by_device_imei(device_imei, date)
         if events is None:
             return send_client_side_error(user_msg=messages.NO_DATA)
+
+        await redis.set_cache(cache_key, cached_data)
+
         return send_data(events)
     except Exception as e:
         msg = f"{messages.GET_FAILED} {msg_prefix}s"
@@ -287,9 +323,22 @@ async def get_over_speeding_stats_handler(
         if asset.device_imei is None:
             msg = "Asset not linked to a device"
             return send_client_side_error(msg)
+        # Create unique cache key
+        cache_key = (
+            f"speed_stats:{asset_uuid}:{date_from.isoformat()}:{date_to.isoformat()}"
+        )
+
+        # Try fetching from Redis cache
+        cached_data = await redis.get_cache(cache_key)
+        if cached_data:
+            return send_data(cached_data)
+
         speeding_data = await tracking_service.get_asset_average_speed(
             asset.device_imei, date_from, date_to
         )
+
+        await redis.set_cache(cache_key, cached_data)
+
         return send_data(speeding_data)
     except Exception as e:
         msg = f"{messages.GET_FAILED} {msg_prefix}s"
