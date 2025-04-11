@@ -133,7 +133,7 @@ async def get_asset_by_business_uuid_handler(
         # Create unique cache key
         cache_key = (
             f"assets:{business_uuid}:{asset_type_uuid}:{search}:"
-            f"{status}:{page}:{page_size}:{current_user.user_role.role_name}:{current_user.uuid}"
+            f"{status}:{page}:{page_size}"
         )
 
         # Check if result is cached
@@ -382,12 +382,22 @@ async def get_device_analytics(
                 user_msg=messages.ASSET_NOT_FOUND + asset_uuid
             )
 
+        # Create unique cache key
+        cache_key = f"asset_analytics:{asset_uuid}"
+
+        # Check if result is cached
+        cached = await redis.get_cache(cache_key)
+        if cached:
+            return send_data(cached)
+
         data = await service.get_device_analytics(
             asset.device_imei, datetime.now().strftime("%d/%m/%Y")
         )
 
         if data is None:
             return send_info(info=messages.NO_DATA)
+
+        await redis.set_cache(cache_key, data)
 
         return send_data(data)
     except Exception as e:
