@@ -95,9 +95,23 @@ async def get_last_tracking_details_handler(
     date: str = None,
 ):
     try:
+        if not date:
+            date = datetime.now().strftime("%d/%m/%Y")
+
+        # Build cache key using the parameters
+        cache_key = f"last_tracking_details:{device_imei}:{date}"
+
+        # Check Redis cache first
+        cached_data = await redis.get_cache(cache_key)
+        if cached_data:
+            return send_data(cached_data)
+
         events = await service.get_events_by_device_imei(device_imei, date)
         if events is None:
             return send_client_side_error(user_msg=messages.NO_DATA)
+
+        await redis.set_cache(cache_key, events)
+
         return send_data(events)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix}s"
@@ -224,7 +238,7 @@ async def get_tracking_details_by_user_handler(
         if events is None:
             return send_client_side_error(user_msg=messages.NO_DATA)
 
-        await redis.set_cache(cache_key, cached_data)
+        await redis.set_cache(cache_key, events)
 
         return send_data(events)
     except Exception as e:
