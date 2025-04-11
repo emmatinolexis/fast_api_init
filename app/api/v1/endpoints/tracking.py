@@ -218,7 +218,7 @@ async def get_tracking_details_by_user_handler(
         # Check Redis cache first
         cached_data = await redis.get_cache(cache_key)
         if cached_data:
-            return send_data(cached_data, cached=True)
+            return send_data(cached_data)
 
         events = await service.get_events_by_user(date=date, user_uuid=user_uuid)
         if events is None:
@@ -254,7 +254,7 @@ async def get_tracking_details_by_business_handler(
         # Check Redis cache first
         cached_data = await redis.get_cache(cache_key)
         if cached_data:
-            return send_data(cached_data, cached=True)
+            return send_data(cached_data)
 
         events = await service.get_events_by_user(
             date=date, business_uuid=business_uuid, page=page, page_size=page_size
