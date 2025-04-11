@@ -1,7 +1,18 @@
 from redis.asyncio import Redis
 import json
+from uuid import UUID
 from app.util.class_object import singleton
 from app.core.settings import settings
+
+
+def convert_uuids(obj):
+    if isinstance(obj, dict):
+        return {k: convert_uuids(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_uuids(v) for v in obj]
+    elif isinstance(obj, UUID):
+        return str(obj)
+    return obj
 
 
 @singleton
@@ -23,10 +34,9 @@ class RedisClient:
             return json.loads(value)
         return None
 
-    async def set_cache(
-        self, key: str, value, expire: int = 60 * 60 * 24
-    ):  # default 24 hours
-        await self.client.set(key, json.dumps(value), ex=expire)
+    async def set_cache(self, key: str, value, expire: int = 60 * 60 * 24):  # 24 hours
+        safe_value = convert_uuids(value)
+        await self.client.set(key, json.dumps(safe_value), ex=expire)
 
     async def delete_cache(self, key: str):
         await self.client.delete(key)
