@@ -139,7 +139,7 @@ async def get_asset_by_business_uuid_handler(
         # Check if result is cached
         cached = await redis.get_cache(cache_key)
         if cached:
-            return send_data(cached, cached=True)
+            return send_data(cached)
 
         if current_user.user_role.role_name == OPERATOR_ROLE_NAME:
             assets = await service.read_assigned_assets(
