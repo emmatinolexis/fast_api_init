@@ -6,16 +6,6 @@ from app.core.settings import settings
 from fastapi.encoders import jsonable_encoder
 
 
-def convert_uuids(obj):
-    if isinstance(obj, dict):
-        return {k: convert_uuids(v) for k, v in obj.items()}
-    elif isinstance(obj, list):
-        return [convert_uuids(v) for v in obj]
-    elif isinstance(obj, UUID):
-        return str(obj)
-    return obj
-
-
 @singleton
 class RedisClient:
     def __init__(self):

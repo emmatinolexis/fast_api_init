@@ -1,5 +1,6 @@
 import logging
 from typing import List, Optional
+from app.client.redis import RedisClient
 
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
@@ -35,6 +36,8 @@ router = APIRouter(
     tags=["alert policies"],
 )
 msg_prefix = "alert policy"
+
+redis = RedisClient()
 
 
 @router.get("/", dependencies=[allow_admins_only], response_class=ORJSONResponse)
@@ -84,18 +87,30 @@ async def get_alert_policies_by_user_handler(
     current_user: User = Depends(get_current_user_with_permission("view_policy")),
 ):
     try:
-        return send_data(
-            await service.get_all_alert_policies_by_user(
-                user_uuid,
-                page,
-                page_size,
-                policy_status,
-                policy_types,
-                start_date,
-                end_date,
-                search,
-            )
+        # Create unique cache key
+        cache_key = (
+            f"user_alert_policies:{user_uuid}:{policy_status}:{page}:{page_size}:{search}:"
+            f"{policy_types}:{start_date}:{end_date}"
         )
+
+        # Check if result is cached
+        cached = await redis.get_cache(cache_key)
+        if cached:
+            return send_data(cached)
+
+        data = await service.get_all_alert_policies_by_user(
+            user_uuid,
+            page,
+            page_size,
+            policy_status,
+            policy_types,
+            start_date,
+            end_date,
+            search,
+        )
+        # Cache the result for 24 hours
+        await redis.set_cache(cache_key, data)
+        return send_data(data)
     except Exception as e:
         msg = messages.GET_FAILED + "alert policies"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -131,18 +146,32 @@ async def get_alert_policies_by_business_handler(
     current_user: User = Depends(get_current_user_with_permission("view_policy")),
 ):
     try:
-        return send_data(
-            await service.get_all_alert_policies_by_business(
-                business_uuid,
-                page,
-                page_size,
-                policy_status,
-                policy_types,
-                start_date,
-                end_date,
-                search,
-            )
+        # Create unique cache key
+        cache_key = (
+            f"business_alert_policies:{business_uuid}:{policy_status}:{page}:{page_size}:{search}:"
+            f"{policy_types}:{start_date}:{end_date}"
         )
+
+        # Check if result is cached
+        cached = await redis.get_cache(cache_key)
+        if cached:
+            return send_data(cached)
+
+        data = await service.get_all_alert_policies_by_business(
+            business_uuid,
+            page,
+            page_size,
+            policy_status,
+            policy_types,
+            start_date,
+            end_date,
+            search,
+        )
+
+        # Cache the result for 24 hours
+        await redis.set_cache(cache_key, data)
+
+        return send_data(data)
     except Exception as e:
         msg = messages.GET_FAILED + "alert policies"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -180,6 +209,17 @@ async def get_alert_violations_by_user_handler(
     ),
 ):
     try:
+        # Create unique cache key
+        cache_key = (
+            f"user_alert_violations:{user_uuid}:{policy_status}:{page}:{page_size}:{search}:"
+            f"{policy_type}:{start_date}:{end_date}"
+        )
+
+        # Check if result is cached
+        cached = await redis.get_cache(cache_key)
+        if cached:
+            return send_data(cached)
+
         alerts = await service.get_all_alert_violations_by_user(
             user_uuid=user_uuid,
             page=page,
@@ -190,6 +230,9 @@ async def get_alert_violations_by_user_handler(
             end_date=end_date,
             search=search,
         )
+
+        await redis.set_cache(cache_key, alerts, 60 * 5)
+
         return send_data(alerts)
     except Exception as e:
         msg = messages.GET_FAILED + "alert violations"
@@ -228,18 +271,31 @@ async def get_alert_violations_by_business_handler(
     ),
 ):
     try:
-        return send_data(
-            await service.get_all_alert_violations_by_business(
-                business_uuid,
-                page,
-                page_size,
-                policy_status,
-                policy_types,
-                start_date,
-                end_date,
-                search,
-            )
+        # Create unique cache key
+        cache_key = (
+            f"business_alert_violations:{business_uuid}:{policy_status}:{page}:{page_size}:{search}:"
+            f"{policy_types}:{start_date}:{end_date}"
         )
+
+        # Check if result is cached
+        cached = await redis.get_cache(cache_key)
+        if cached:
+            return send_data(cached)
+
+        data = await service.get_all_alert_violations_by_business(
+            business_uuid,
+            page,
+            page_size,
+            policy_status,
+            policy_types,
+            start_date,
+            end_date,
+            search,
+        )
+
+        await redis.set_cache(cache_key, data, 60 * 5)
+
+        return send_data(data)
     except Exception as e:
         msg = messages.GET_FAILED + "alert policies"
         return send_internal_server_error(user_msg=msg, error=e)
@@ -256,6 +312,11 @@ async def create_alert_policy_handler(
         alert_policy = await service.create_alert_policy(
             payload, current_user.uuid, current_user.business_profile_uuid
         )
+        await redis.delete_by_pattern(
+            f"business_alert_policies:{current_user.business_profile.uuid}*"
+        )
+        await redis.delete_by_pattern(f"user_alert_policies:{current_user.uuid}*")
+
         logging.info(f"Created alert policy: {alert_policy}")
         return send_data(alert_policy)
     except NotFoundError as e:
@@ -276,6 +337,12 @@ async def create_geofence_alert_policy_handler(
         alert_policy = await service.create_geofence_alert_policy(
             payload, str(current_user.uuid), str(current_user.business_profile_uuid)
         )
+
+        await redis.delete_by_pattern(
+            f"business_alert_policies:{current_user.business_profile.uuid}*"
+        )
+        await redis.delete_by_pattern(f"user_alert_policies:{current_user.uuid}*")
+
         logging.info(f"Created alert policy: {alert_policy}")
         return send_data(alert_policy)
     except NotFoundError as e:
@@ -297,6 +364,12 @@ async def update_geofence_alert_policy_handler(
         alert_policy = await service.update_geofence_alert_policy(
             payload, geofence_uuid
         )
+
+        await redis.delete_by_pattern(
+            f"business_alert_policies:{current_user.business_profile.uuid}*"
+        )
+        await redis.delete_by_pattern(f"user_alert_policies:{current_user.uuid}*")
+
         return send_data(alert_policy)
     except NotFoundError as e:
         return send_client_side_error(user_msg=str(e))
@@ -312,7 +385,7 @@ async def check_geofence_violation_handler(
 ):
     try:
         response_data = await service.check_geofence_violation()
-        return response_data
+
         violations = response_data.get("violations", [])
 
         if violations:

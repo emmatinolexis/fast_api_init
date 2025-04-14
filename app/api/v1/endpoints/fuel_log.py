@@ -178,6 +178,11 @@ async def get_fuel_logs_handler(
             f"{start_date}:{end_date}"
         )
 
+        # Check if result is cached
+        cached = await redis.get_cache(cache_key)
+        if cached:
+            return send_data(cached)
+
         if business_profile_uuid != str(current_user.business_profile.uuid):
             return send_client_side_error(
                 messages.NOT_AUTHORIZED,

@@ -229,6 +229,7 @@ async def create_asset_handler(
         asset = await service.create_asset(payload, request)
         logging.info(f"Created asset {asset}")
         ASSET_CREATION_TOTAL.labels(success="true").inc()
+
         # delete cached redis data
         await redis.delete_by_pattern(f"assets:{asset['business_uuid']}*")
         await redis.delete_by_pattern(f"all_assets:{asset['business_uuid']}*")
