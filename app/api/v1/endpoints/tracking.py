@@ -102,7 +102,9 @@ async def get_last_tracking_details_handler(
         cache_key = f"last_tracking_details:{device_imei}:{date}"
 
         # Check Redis cache first
-        cached_data = await redis.get_cache(cache_key)
+        cached_data = await redis.get_cache(
+            cache_key,
+        )
         if cached_data:
             return send_data(cached_data)
 
@@ -110,7 +112,7 @@ async def get_last_tracking_details_handler(
         if events is None:
             return send_client_side_error(user_msg=messages.NO_DATA)
 
-        await redis.set_cache(cache_key, events)
+        await redis.set_cache(cache_key, events, 60 * 5)
 
         return send_data(events)
     except Exception as e:
@@ -238,7 +240,7 @@ async def get_tracking_details_by_user_handler(
         if events is None:
             return send_client_side_error(user_msg=messages.NO_DATA)
 
-        await redis.set_cache(cache_key, events)
+        await redis.set_cache(cache_key, events, 60 * 5)
 
         return send_data(events)
     except Exception as e:
@@ -278,7 +280,7 @@ async def get_tracking_details_by_business_handler(
         if events is None:
             return send_client_side_error(user_msg=messages.NO_DATA)
 
-        await redis.set_cache(cache_key, events)
+        await redis.set_cache(cache_key, events, 60 * 5)
 
         return send_data(events)
     except Exception as e:
@@ -306,7 +308,7 @@ async def get_route_replay_tracking_details_handler(
         if events is None:
             return send_client_side_error(user_msg=messages.NO_DATA)
 
-        await redis.set_cache(cache_key, events)
+        await redis.set_cache(cache_key, events, 60 * 5)
 
         return send_data(events)
     except Exception as e:
@@ -353,7 +355,7 @@ async def get_over_speeding_stats_handler(
             asset.device_imei, date_from, date_to
         )
 
-        await redis.set_cache(cache_key, speeding_data)
+        await redis.set_cache(cache_key, speeding_data, 60 * 5)
 
         return send_data(speeding_data)
     except Exception as e:

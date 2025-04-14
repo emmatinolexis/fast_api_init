@@ -1,6 +1,7 @@
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
+from app.client.redis import RedisClient
 
 from app.core import messages
 from app.core.container import Container
@@ -24,6 +25,8 @@ router = APIRouter(
     tags=["fuel_logs"],
 )
 msg_prefix = "fuel_log"
+
+redis = RedisClient()
 
 
 @router.post("/{user_uuid}", response_class=ORJSONResponse)
@@ -50,6 +53,9 @@ async def create_fuel_log_handler_for_individual(
         data = await service.create_individual_fuel_log(
             payload, user_uuid, business_profile_uuid
         )
+        await redis.delete_by_pattern(
+            f"fuel_logs:{current_user.business_profile.uuid}*"
+        )
 
         return send_data(data)
     except NotFoundError as e:
@@ -74,7 +80,6 @@ async def create_bulk_fuel_logs_handler(
 ):
     try:
         user = await user_service.get_user_by_uuid(user_uuid)
-
         if not user:
             return send_client_side_error(
                 user_msg=messages.USER_NOT_FOUND, status_code=404
@@ -88,6 +93,10 @@ async def create_bulk_fuel_logs_handler(
                 if user.get("business_profile").uuid
                 else None
             ),
+        )
+
+        await redis.delete_by_pattern(
+            f"fuel_logs:{current_user.business_profile.uuid}*"
         )
 
         return send_info(messages.CSV_LOAD_SUCCESS)
@@ -129,6 +138,10 @@ async def create_fuel_log_handler_for_fleet_manager(
             ),
         )
 
+        await redis.delete_by_pattern(
+            f"fuel_logs:{current_user.business_profile.uuid}*"
+        )
+
         return send_data_with_info(data, messages.CREATE_SUCCESS + "fuel log")
     except NotFoundError as e:
         return send_client_side_error(
@@ -159,6 +172,12 @@ async def get_fuel_logs_handler(
         user = await user_service.get_user_by_uuid(user_uuid)
         business_profile_uuid = str(user.get("business_profile").uuid)
 
+        # Create unique cache key
+        cache_key = (
+            f"fuel_logs:{business_profile_uuid}:{user_uuid}:{search}:{page}:{page_size}:"
+            f"{start_date}:{end_date}"
+        )
+
         if business_profile_uuid != str(current_user.business_profile.uuid):
             return send_client_side_error(
                 messages.NOT_AUTHORIZED,
@@ -184,6 +203,8 @@ async def get_fuel_logs_handler(
             start_date=start_date,
             end_date=end_date,
         )
+
+        await redis.set_cache(cache_key, data)
 
         return send_data_with_info(data, messages.GET_SUCCESS + "fuel logs")
     except NotFoundError as e:
@@ -221,6 +242,9 @@ async def upload_fuel_log_receipt_handler(
             )
 
         data = await service.update_fuel_log_receipt(fuel_log_uuid, payload)
+        await redis.delete_by_pattern(
+            f"fuel_logs:{current_user.business_profile.uuid}*"
+        )
 
         return send_data_with_info(data, messages.UPDATE_SUCCESS + "fuel log")
     except NotFoundError as e:

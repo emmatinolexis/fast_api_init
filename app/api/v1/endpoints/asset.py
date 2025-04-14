@@ -188,6 +188,14 @@ async def get_vehicle_building_asset_by_business_uuid_handler(
                 403,
             )
 
+        # Create unique cache key
+        cache_key = f"all_assets:{business_uuid}:{asset_type_uuid}:{search}:{status}"
+
+        # Check if result is cached
+        cached = await redis.get_cache(cache_key)
+        if cached:
+            return send_data(cached)
+
         assets = await service.get_vehicle_building_assets_by_business_uuid(
             business_uuid=business_uuid,
             operator_uuid=(
@@ -199,6 +207,9 @@ async def get_vehicle_building_asset_by_business_uuid_handler(
             asset_type_uuid=asset_type_uuid,
             status=status,
         )
+
+        await redis.set_cache(cache_key, assets)
+
         return send_data(assets)
 
     except Exception as e:
@@ -219,7 +230,9 @@ async def create_asset_handler(
         logging.info(f"Created asset {asset}")
         ASSET_CREATION_TOTAL.labels(success="true").inc()
         # delete cached redis data
-        # await redis.delete_by_pattern(f"assets:{asset['business_uuid']}*")
+        await redis.delete_by_pattern(f"assets:{asset['business_uuid']}*")
+        await redis.delete_by_pattern(f"all_assets:{asset['business_uuid']}*")
+
         return send_data(asset)
     except (BadRequestError, NotFoundError) as e:
         ASSET_CREATION_TOTAL.labels(success="false").inc()
@@ -249,6 +262,11 @@ async def patch_asset_handler(
                 payload=payload,
                 business_uuid=current_user.business_profile.uuid,
             )
+
+        await redis.delete_by_pattern(f"assets:{current_user.business_profile.uuid}*")
+        await redis.delete_by_pattern(
+            f"all_assets:{current_user.business_profile.uuid}*"
+        )
 
         return send_data_with_info(data, messages.UPDATE_SUCCESS + "asset")
     except (NotFoundError, UnAuthorizedError) as e:
@@ -335,9 +353,15 @@ async def update_asset_handler(
     current_user: User = Depends(get_current_user_with_permission("update_asset")),
 ):
     try:
+
         asset = await service.patch_by_uuid(uuid, payload)
         if asset is None:
             return send_client_side_error(user_msg=messages.ASSET_NOT_FOUND + uuid)
+
+        await redis.delete_by_pattern(f"assets:{current_user.business_profile.uuid}*")
+        await redis.delete_by_pattern(
+            f"all_assets:{current_user.business_profile.uuid}*"
+        )
         return send_data(asset)
     except Exception as e:
         msg = messages.UPDATE_FAILED + msg_prefix
@@ -358,6 +382,10 @@ async def assign_device_to_asset(
 ):
     try:
         asset = await service.assign_device_imei(asset_uuid, payload)
+        await redis.delete_by_pattern(f"assets:{current_user.business_profile.uuid}*")
+        await redis.delete_by_pattern(
+            f"all_assets:{current_user.business_profile.uuid}*"
+        )
         return send_data(asset)
     except Exception as e:
         msg = messages.UPDATE_FAILED + msg_prefix
@@ -397,7 +425,7 @@ async def get_device_analytics(
         if data is None:
             return send_info(info=messages.NO_DATA)
 
-        await redis.set_cache(cache_key, data)
+        await redis.set_cache(cache_key, data, 60 * 5)
 
         return send_data(data)
     except Exception as e:
@@ -733,6 +761,11 @@ async def create_building_handler(
 
         building = await building_service.create_building(payload)
 
+        await redis.delete_by_pattern(
+            f"all_assets:{current_user.business_profile.uuid}*"
+        )
+        await redis.delete_by_pattern(f"user_buildings:{current_user.uuid}*")
+
         return send_data(building)
     except Exception as e:
         msg = messages.CREATE_FAILED + "building"
@@ -759,6 +792,13 @@ async def get_building_asset_handler(
         if not user:
             msg = f"{messages.USER_NOT_FOUND} {user_uuid}"
             return send_internal_server_error(user_msg=msg, error=msg)
+        # Create unique cache key
+        cache_key = f"user_buildings:{user_uuid}:{page}:{page_size}:{search}"
+
+        # Check if result is cached
+        cached = await redis.get_cache(cache_key)
+        if cached:
+            return send_data(cached)
 
         buildings = await building_service.get_all_buildings(
             business_uuid=user.get("business_profile").uuid,
@@ -766,6 +806,9 @@ async def get_building_asset_handler(
             page_size=page_size,
             search=search,
         )
+
+        await redis.set_cache(cache_key, buildings)
+
         return send_data(buildings)
 
     except Exception as e:
@@ -781,7 +824,18 @@ async def get_building_by_uuid_handler(
     current_user: User = Depends(get_current_user_with_permission("view_asset")),
 ):
     try:
+        # Create unique cache key
+        cache_key = f"building:{building_uuid}"
+
+        # Check if result is cached
+        cached = await redis.get_cache(cache_key)
+        if cached:
+            return send_data(cached)
+
         building = await building_service.get_building_by_uuid(building_uuid)
+
+        await redis.set_cache(cache_key, building)
+
         return send_data(building)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix} theft report"
@@ -803,6 +857,16 @@ async def get_building_cylinder_assets_handler(
     ),
 ):
     try:
+        # Create unique cache key
+        cache_key = (
+            f"building_cylinder:{building_uuid}:{page}:{page_size}:{cylinder_status}"
+        )
+
+        # Check if result is cached
+        cached = await redis.get_cache(cache_key)
+        if cached:
+            return send_data(cached)
+
         building = await building_service.get_by_uuid(building_uuid)
         if not building:
             msg = f"{messages.BUILDING_NOT_FOUND} {building_uuid}"
@@ -814,6 +878,9 @@ async def get_building_cylinder_assets_handler(
             page_size=page_size,
             page=page,
         )
+
+        await redis.set_cache(cache_key, cylinders)
+
         return send_data(cylinders)
     except Exception as e:
         msg = messages.GET_FAILED + f"{msg_prefix} theft report"
@@ -830,6 +897,8 @@ async def patch_building_handler(
 ):
     try:
         data = await building_service.update_building(building_uuid, payload)
+        cache_key = f"building:{building_uuid}"
+        await redis.delete_by_pattern(cache_key)
         return send_data_with_info(data, messages.UPDATE_SUCCESS + "Building")
     except Exception as e:
         msg = messages.UPDATE_FAILED + msg_prefix
