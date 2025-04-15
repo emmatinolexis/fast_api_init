@@ -556,6 +556,7 @@ async def toggle_alert_violations_status_handler(
     ),
 ):
     try:
+
         return send_data(
             await service.toggle_alert_violation_status(alert_violation_uuid)
         )
@@ -574,6 +575,10 @@ async def update_alert_policy_handler(
 ):
     try:
         data = await service.update_alert_policy(alert_uuid, payload)
+        await redis.delete_by_pattern(
+            f"business_alert_policies:{current_user.business_profile.uuid}*"
+        )
+        await redis.delete_by_pattern(f"user_alert_policies:{current_user.uuid}*")
         return send_data_with_info(
             data=data, info=messages.UPDATE_SUCCESS + "alert policy"
         )
@@ -596,7 +601,11 @@ async def toggle_maintenance_alert(
         updated_alert = await service.toggle_maintenance_status(
             maintenance_alert_uuid, date
         )
-        return updated_alert
+        await redis.delete_by_pattern(
+            f"business_alert_policies:{current_user.business_profile.uuid}*"
+        )
+        await redis.delete_by_pattern(f"user_alert_policies:{current_user.uuid}*")
+        return send_data(updated_alert)
     except Exception as e:
         msg = messages.MAINTENANCE_UPDATED_FAILED
         return send_internal_server_error(user_msg=msg, error=e)

@@ -1,5 +1,6 @@
 from typing import Optional
 from uuid import UUID
+from app.client.redis import RedisClient
 
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Path, Query
@@ -24,6 +25,8 @@ router = APIRouter(
 )
 msg_prefix = "vehicle_make"
 
+redis = RedisClient()
+
 
 @router.get("/", response_class=ORJSONResponse)
 @inject
@@ -34,7 +37,19 @@ async def get_vehicle_makes_handler(
     service: VehicleMakeService = Depends(Provide[Container.vehicle_make_service]),
 ):
     try:
+        # Create unique cache key
+        cache_key = f"vehicle_makes:{asset_type}"
+
+        # Check if result is cached
+        cached = await redis.get_cache(cache_key)
+        if cached:
+            return send_data(cached)
+
         makes = await service.get_vehicle_makes(asset_type=asset_type)
+
+        # Cache the result for 24 hours
+        await redis.set_cache(cache_key, makes)
+
         return send_data(makes)
     except Exception as e:
         msg = messages.GET_FAILED + f" {msg_prefix}s"
@@ -52,7 +67,17 @@ async def get_vehicle_models_handler(
     service: VehicleMakeService = Depends(Provide[Container.vehicle_make_service]),
 ):
     try:
+        # Create unique cache key
+        cache_key = f"vehicle_models:{make_uuid}"
+
+        # Check if result is cached
+        cached = await redis.get_cache(cache_key)
+        if cached:
+            return send_data(cached)
+
         models = await service.get_vehicle_models_by_make_uuid(make_uuid)
+        # Cache the result for 24 hours
+        await redis.set_cache(cache_key, models)
         return send_data(models)
     except ValueError as ve:
         return send_info(str(ve), status_code=404)
@@ -69,8 +94,9 @@ async def create_vehicle_makes_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        make = await service.create_make(payload)
-        return make
+        await service.create_make(payload)
+        await redis.delete_by_pattern("vehicle_makes:*")
+        await redis.delete_by_pattern("vehicle_models:*")
         return send_info("Upload successful")
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
