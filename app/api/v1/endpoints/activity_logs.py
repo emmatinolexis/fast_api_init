@@ -3,6 +3,8 @@ from typing import List
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
+from app.client.redis import RedisClient
+
 
 from app.core import messages
 from app.core.container import Container
@@ -17,6 +19,7 @@ from app.util.utils import (
     send_data_with_pagination,
     send_internal_server_error,
     total_pages,
+    send_data,
 )
 
 router = APIRouter(
@@ -31,6 +34,8 @@ admin_router = APIRouter(
     prefix="/admin/activity_logs",
     tags=["admin_activity_logs"],
 )
+
+redis = RedisClient()
 
 
 @router.get("/business", response_class=ORJSONResponse)
@@ -50,15 +55,6 @@ async def get_business_activity_logs(
     ),
 ):
     try:
-        logs = await service.business_activity_logs(
-            current_user.business_profile_uuid,
-            start_date,
-            end_date,
-            page,
-            page_size,
-            activity_types,
-            search_string,
-        )
 
         logs_count = await service.count_business_activity_logs(
             current_user.business_profile_uuid,
@@ -74,6 +70,30 @@ async def get_business_activity_logs(
             current_page=page,
             total_pages=total_pages(logs_count, page_size),
         )
+
+        # Create unique cache key
+        cache_key = (
+            f"business_activity_logs:{current_user.business_profile_uuid}:{start_date}:{end_date}:"
+            f"{activity_types}:{search_string}:{page}:{page_size}"
+        )
+
+        # Check if result is cached
+        cached = await redis.get_cache(cache_key)
+        if cached:
+            return send_data(cached)
+
+        logs = await service.business_activity_logs(
+            current_user.business_profile_uuid,
+            start_date,
+            end_date,
+            page,
+            page_size,
+            activity_types,
+            search_string,
+        )
+        data = {"data": logs, "pagination": pagination_data}
+
+        await redis.set_cache(cache_key, data)
 
         return send_data_with_pagination(pagination=pagination_data, data=logs)
     except Exception as e:
@@ -98,9 +118,6 @@ async def get_admin_activity_logs(
     ),
 ):
     try:
-        logs = await service.admin_activity_logs(
-            start_date, end_date, page, page_size, activity_types, search_string
-        )
 
         logs_count = await service.count_admin_activity_logs(
             start_date, end_date, activity_types, search_string
@@ -112,6 +129,25 @@ async def get_admin_activity_logs(
             current_page=page,
             total_pages=total_pages(logs_count, page_size),
         )
+
+        # Create unique cache key
+        cache_key = (
+            f"admin_activity_logs:{current_user.business_profile_uuid}:{start_date}:{end_date}:"
+            f"{activity_types}:{search_string}:{page}:{page_size}"
+        )
+
+        # Check if result is cached
+        cached = await redis.get_cache(cache_key)
+        if cached:
+            return send_data(cached)
+
+        logs = await service.admin_activity_logs(
+            start_date, end_date, page, page_size, activity_types, search_string
+        )
+
+        data = {"data": logs, "pagination": pagination_data}
+
+        await redis.set_cache(cache_key, data)
 
         return send_data_with_pagination(pagination=pagination_data, data=logs)
     except Exception as e:
@@ -136,9 +172,6 @@ async def get_all_logs_handler(
     ),
 ):
     try:
-        logs = await service.all_activity_logs(
-            start_date, end_date, page, page_size, activity_types, search_string
-        )
 
         logs_count = await service.count_activity_logs(
             start_date, end_date, activity_types, search_string
@@ -150,6 +183,25 @@ async def get_all_logs_handler(
             current_page=page,
             total_pages=total_pages(logs_count, page_size),
         )
+
+        # Create unique cache key
+        cache_key = (
+            f"general_activity_logs:{current_user.business_profile_uuid}:{start_date}:{end_date}:"
+            f"{activity_types}:{search_string}:{page}:{page_size}"
+        )
+
+        # Check if result is cached
+        cached = await redis.get_cache(cache_key)
+        if cached:
+            return send_data(cached)
+
+        logs = await service.all_activity_logs(
+            start_date, end_date, page, page_size, activity_types, search_string
+        )
+
+        data = {"data": logs, "pagination": pagination_data}
+
+        await redis.set_cache(cache_key, data)
 
         return send_data_with_pagination(pagination=pagination_data, data=logs)
     except Exception as e:
