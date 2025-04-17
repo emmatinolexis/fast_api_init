@@ -4,7 +4,7 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
 from app.client.redis import RedisClient
-
+from fastapi.encoders import jsonable_encoder
 
 from app.core import messages
 from app.core.container import Container
@@ -91,9 +91,13 @@ async def get_business_activity_logs(
             activity_types,
             search_string,
         )
-        data = {"data": logs, "pagination": pagination_data}
 
-        await redis.set_cache(cache_key, data)
+        response_payload = {
+            "data": jsonable_encoder(logs),
+            "pagination": jsonable_encoder(pagination_data),
+        }
+
+        await redis.set_cache(cache_key, response_payload)
 
         return send_data_with_pagination(pagination=pagination_data, data=logs)
     except Exception as e:
