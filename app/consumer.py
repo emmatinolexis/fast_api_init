@@ -24,9 +24,6 @@ class AppCreator:
         self.container = Container()
         self.db = self.container.db()
 
-        # set mqtt service
-        self.mqtt_service = self.container.mqtt_service()
-
         # set cors
         if settings.BACKEND_CORS_ORIGINS:
             self.app.add_middleware(
@@ -47,13 +44,10 @@ app_creator = AppCreator()
 app = app_creator.app
 db = app_creator.db
 container = app_creator.container
-mqtt_service = app_creator.mqtt_service
 
 
 @app.on_event("startup")
 async def startup_event():
-    await mqtt_service.subscribe()
-
     try:
         await db.create_database()
         if await db.connected():

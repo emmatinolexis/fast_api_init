@@ -1,8 +1,7 @@
 import logging
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 from typing import List, Optional
 
-from dateutil.relativedelta import relativedelta
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import ORJSONResponse
@@ -20,7 +19,7 @@ from app.core.logger import get_logger
 from app.core.security import extract_user_data, verify_password
 from app.core.settings import settings
 from app.model.user import User
-from app.monitoring.metrics import DEACTIVATED_ACCOUNT_TOTAL, USER_SIGNUP_TOTAL
+
 from app.schema.invitation_schema import (
     InvitationCreatePayload,
     InvitationCreatePayloadSingle,
@@ -29,7 +28,6 @@ from app.schema.user_schema import (
     AccountDeactivationPayload,
     ResetPasswordPayload,
     UpdateAdminTeamMemberPayload,
-    UpdateInstallerLocation,
     UpdatePhoneNumber,
     UpdateUserAvatar,
     UpdateUserPayload,
@@ -74,75 +72,6 @@ router = APIRouter(
 msg_prefix = "user"
 
 
-@router.get("/stats", dependencies=[allow_admins_only], response_class=ORJSONResponse)
-@inject
-async def get_user_stats(
-    start_date: Optional[date] = Query(None),
-    end_date: Optional[date] = Query(None),
-    service: UserService = Depends(Provide[Container.user_service]),
-    current_user: User = Depends(get_current_user),
-):
-    try:
-        if end_date:
-            end_date_dt = datetime.combine(end_date, datetime.max.time())
-        else:
-            end_date_dt = datetime.utcnow()
-        if start_date:
-            start_date_dt = datetime.combine(start_date, datetime.min.time())
-        else:
-            start_date_dt = end_date_dt - relativedelta(months=12)
-
-        if start_date and end_date:
-            group_by = "day"
-        else:
-            group_by = "month"
-
-        user_provided_dates = start_date is not None and end_date is not None
-
-        data = await service.get_user_stats(
-            start_date_dt,
-            end_date_dt,
-            group_by,
-            user_provided_dates=user_provided_dates,
-        )
-        return send_data(data)
-    except Exception as e:
-        msg = messages.GET_FAILED + " user stats"
-        return send_internal_server_error(user_msg=msg, error=e)
-
-
-@router.get(
-    "/total_users", dependencies=[allow_admins_only], response_class=ORJSONResponse
-)
-@inject
-async def get_total_users(
-    start_date: Optional[date] = Query(None),
-    end_date: Optional[date] = Query(None),
-    service: UserService = Depends(Provide[Container.user_service]),
-    current_user: User = Depends(get_current_user),
-):
-    try:
-        if end_date:
-            end_date_dt = datetime.combine(end_date, datetime.max.time())
-        else:
-            end_date_dt = datetime.utcnow()
-        if start_date:
-            start_date_dt = datetime.combine(start_date, datetime.min.time())
-        else:
-            start_date_dt = end_date_dt - relativedelta(months=12)
-
-        if start_date and end_date:
-            group_by = "day"
-        else:
-            group_by = "month"
-
-        data = await service.get_total_users(start_date_dt, end_date_dt, group_by)
-        return send_data(data)
-    except Exception as e:
-        msg = messages.GET_FAILED + " total users"
-        return send_internal_server_error(user_msg=msg, error=e)
-
-
 @router.post("/", response_class=ORJSONResponse)
 @inject
 async def create_user_handler(
@@ -152,7 +81,7 @@ async def create_user_handler(
     try:
         found_user = await service.get_user_by_email_address(payload.email_address)
         if found_user:
-            USER_SIGNUP_TOTAL.labels(success="false").inc()
+
             return send_client_side_error(
                 user_msg=f"User already exists : {payload.email_address}",
             )
@@ -166,82 +95,18 @@ async def create_user_handler(
                 payload.business_name, payload.business_email, payload.business_phone
             )
             if found_business:
-                USER_SIGNUP_TOTAL.labels(success="false").inc()
+
                 return send_client_side_error(
                     user_msg="Business already exists with the same name, email or phone"
                 )
 
         user = await service.create_user(payload)
         logging.info(f"Created user: {payload.email_address}")
-        USER_SIGNUP_TOTAL.labels(success="true").inc()
+
         return send_data(user)
     except Exception as e:
         msg = messages.CREATE_FAILED + msg_prefix
-        USER_SIGNUP_TOTAL.labels(success="false").inc()
-        return send_internal_server_error(user_msg=msg, error=e)
 
-
-@router.get(
-    "/admin/accounts", dependencies=[allow_admins_only], response_class=ORJSONResponse
-)
-@inject
-async def get_all_accounts(
-    service: UserService = Depends(Provide[Container.user_service]),
-    role_uuid: str = None,
-    email_address: str = None,
-    start_date: str = Query(
-        None, description="Start date should be in the format dd/mm/yyyy"
-    ),
-    end_date: str = Query(
-        None, description="End date should be in the format dd/mm/yyyy"
-    ),
-    page: int = Query(1, ge=1, description="Page number, default is set to 1"),
-    page_size: int = Query(
-        10, ge=1, le=1000, description="Items per page, default is 10"
-    ),
-    status: Optional[ActiveStatus] = Query(None, description="Filter by active status"),
-    current_user: User = Depends(get_current_user),
-):
-    try:
-        users = await service.get_all_accounts(
-            page, page_size, email_address, role_uuid, start_date, end_date, status
-        )
-        return send_data(users)
-    except Exception as e:
-        msg = messages.GET_FAILED + f"{msg_prefix}s"
-        return send_internal_server_error(user_msg=msg, error=e)
-
-
-@router.get(
-    "/admin/customers", dependencies=[allow_admins_only], response_class=ORJSONResponse
-)
-@inject
-async def get_all_customers(
-    search_parameter: str = None,
-    start_date: str = Query(
-        None, description="Start date should be in the format dd/mm/yyyy"
-    ),
-    end_date: str = Query(
-        None, description="End date should be in the format dd/mm/yyyy"
-    ),
-    page: int = Query(1, ge=1, description="Page number, default is set to 1"),
-    page_size: int = Query(
-        10, ge=1, le=1000, description="Items per page, default is 10"
-    ),
-    status: Optional[ActiveStatus] = Query(None, description="Filter by active status"),
-    business_service: BusinessProfileService = Depends(
-        Provide[Container.business_profile_service]
-    ),
-    current_user: User = Depends(get_current_user),
-):
-    try:
-        businesses = await business_service.get_businesses(
-            search_parameter, start_date, end_date, page, page_size, status
-        )
-
-        return send_data(businesses)
-    except Exception as e:
-        msg = messages.GET_FAILED + f"{msg_prefix}s"
         return send_internal_server_error(user_msg=msg, error=e)
 
 
@@ -316,31 +181,6 @@ async def update_user(
         return send_client_side_error(user_msg=e.detail)
     except Exception as e:
         msg = messages.UPDATE_FAILED + msg_prefix
-        return send_internal_server_error(user_msg=msg, error=e)
-
-
-@router.patch("/installer/locations/{installer_uuid}", response_class=ORJSONResponse)
-@inject
-async def update_installer_locations(
-    uuid: str,
-    payload: UpdateInstallerLocation,
-    service: UserService = Depends(Provide[Container.user_service]),
-    current_user: User = Depends(get_current_user),
-):
-    try:
-        user = await service.get_by_uuid(uuid)
-        if user is None:
-            return send_client_side_error(
-                user_msg=messages.USER_NOT_FOUND_MSG,
-            )
-
-        await service.patch_by_uuid(uuid, payload)
-
-        return send_info("Installer updated successfully")
-    except UnAuthorizedError as e:
-        return send_client_side_error(user_msg=e.detail)
-    except Exception as e:
-        msg = messages.GET_FAILED + msg_prefix
         return send_internal_server_error(user_msg=msg, error=e)
 
 
@@ -634,7 +474,7 @@ async def deactivate_account_handler(
             )
         status_message = "User account deactivated"
         logging.info(f"User account deactivated for: {user.email_address}")
-        DEACTIVATED_ACCOUNT_TOTAL.labels(success="true").inc()
+
         return send_info(status_message)
     except Exception as e:
         msg = messages.GET_FAILED + msg_prefix

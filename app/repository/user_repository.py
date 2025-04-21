@@ -16,7 +16,6 @@ from app.model.email_verification import EmailVerification
 from app.model.invitation import Invitation
 from app.model.role import Role
 from app.model.user import User
-from app.model.user_subscription import UserSubscription
 from app.repository.base_repository import BaseRepository
 from app.schema.auth_schema import EmailVerification as EmailVerficationSchema
 from app.schema.auth_schema import UserEmailVerification
@@ -29,8 +28,6 @@ from app.schema.user_schema import (
 from app.util.enums import (
     AccountType,
     ActiveStatus,
-    CustomerRoles,
-    InvitationStatus,
     RoleType,
 )
 from app.util.utils import calculate_percentage_change, datetime_parser, toggle_status
@@ -172,86 +169,6 @@ class UserRepository(BaseRepository):
             await session.commit()
             await session.refresh(user)
             return extract_user_data(user)
-
-    async def get_account_users(
-        self,
-        business_uuid: str,
-        page=1,
-        page_size=10,
-        search: str = None,
-        role_uuids: list[str] = None,
-        status: InvitationStatus = None,
-        exclude_user_uuid: str = None,
-    ):
-        async with self.session_factory() as session:
-            query = select(self.model).filter(
-                self.model.business_profile_uuid == business_uuid
-            )
-
-            if exclude_user_uuid:
-                query = query.filter(self.model.uuid != exclude_user_uuid)
-
-            if search:
-                search = f"%{search.strip().lower()}%"
-                search_filter = or_(
-                    self.model.first_name.ilike(search),
-                    self.model.last_name.ilike(search),
-                    self.model.email_address.ilike(search),
-                )
-                query = query.filter(search_filter)
-
-            if role_uuids:
-                valid_role_uuids = []
-                for role_uuid in role_uuids:
-                    try:
-                        valid_role_uuids.append(UUID(role_uuid))
-                    except ValueError:
-                        continue
-                if valid_role_uuids:
-                    query = query.filter(
-                        self.model.user_role_uuid.in_(valid_role_uuids)
-                    )
-
-            if status:
-                query = query.filter(self.model.status == status)
-
-            total_users = await session.scalar(
-                select(func.count()).select_from(query.subquery())
-            )
-            total_pages = (total_users + page_size - 1) // page_size
-
-            offset = (page - 1) * page_size
-            query = (
-                query.order_by(desc(self.model.created_at))
-                .offset(offset)
-                .limit(page_size)
-            )
-
-            results = await session.execute(query.options(joinedload(User.user_role)))
-            account_users = results.unique().scalars().all()
-
-            users_data = [
-                {
-                    "uuid": user.uuid,
-                    "first_name": user.first_name,
-                    "last_name": user.last_name,
-                    "email_address": user.email_address,
-                    "phone_number": user.phone_number,
-                    "image_url": user.avatar_url,
-                    "status": user.status,
-                    "role": user.user_role,
-                    "created_at": user.created_at,
-                }
-                for user in account_users
-            ]
-
-            return {
-                "users": users_data,
-                "total_users": total_users,
-                "total_pages": total_pages,
-                "current_page": page,
-                "page_size": page_size,
-            }
 
     async def get_admin_team_members(
         self,
@@ -566,11 +483,7 @@ class UserRepository(BaseRepository):
             business_profile_uuid=(
                 user.business_profile_uuid if user.invite_status else None
             ),
-            user_role_uuid=(
-                CustomerRoles.ADMIN.value
-                if not user.invite_status
-                else user.user_role_uuid
-            ),
+            user_role_uuid=("" if not user.invite_status else user.user_role_uuid),
             status=user.status,
             verifiedAt=(
                 f"{datetime.utcnow():%Y-%m-%d %H:%M:%S%z}"
@@ -831,82 +744,6 @@ class UserRepository(BaseRepository):
                 return None
 
             return user
-
-    async def get_user_stats(
-        self, start_date: datetime, end_date: datetime, group_by: str = "month"
-    ):
-        async with self.session_factory() as session:
-            data = {}
-            periods = []
-
-            if group_by == "month":
-                current_period = datetime(start_date.year, start_date.month, 1)
-                end_period = datetime(end_date.year, end_date.month, 1)
-                while current_period <= end_period:
-                    key = current_period.strftime("%b %y")
-                    periods.append((current_period, key))
-                    data[key] = {"Month": key, "SignUps": 0, "Converted": 0}
-                    current_period += relativedelta(months=1)
-
-                trunc_field = "month"
-                key_format = "%b %y"
-
-            elif group_by == "day":
-                current_period = start_date
-                while current_period <= end_date:
-                    key = current_period.strftime("%Y-%m-%d")
-                    periods.append((current_period, key))
-                    data[key] = {"Date": key, "SignUps": 0, "Converted": 0}
-                    current_period += timedelta(days=1)
-
-                trunc_field = "day"
-                key_format = "%Y-%m-%d"
-
-            user_counts = (
-                await session.execute(
-                    select(
-                        func.date_trunc(trunc_field, User.created_at).label("period"),
-                        func.count(User.uuid).label("signups"),
-                    )
-                    .filter(User.created_at >= start_date, User.created_at <= end_date)
-                    .group_by("period")
-                    .order_by("period")
-                )
-            ).all()
-
-            for period, signups in user_counts:
-                key = period.strftime(key_format)
-                if key in data:
-                    data[key]["SignUps"] = signups
-
-            conversion_counts = (
-                await session.execute(
-                    select(
-                        func.date_trunc(trunc_field, UserSubscription.created_at).label(
-                            "period"
-                        ),
-                        func.count(UserSubscription.uuid).label("conversions"),
-                    )
-                    .filter(
-                        UserSubscription.created_at >= start_date,
-                        UserSubscription.created_at <= end_date,
-                    )
-                    .group_by("period")
-                    .order_by("period")
-                )
-            ).all()
-
-            for period, conversions in conversion_counts:
-                key = period.strftime(key_format)
-                if key in data:
-                    data[key]["Converted"] = conversions
-
-            for item in data.values():
-                item["Unconverted"] = item["SignUps"] - item["Converted"]
-
-            sorted_data = [data[key] for _, key in sorted(periods)]
-
-            return sorted_data
 
     async def get_total_users(
         self, start_date: datetime, end_date: datetime, group_by: str = "month"

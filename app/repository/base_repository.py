@@ -8,7 +8,7 @@ from sqlalchemy.orm import joinedload
 
 from app.core.exceptions import NotFoundError
 from app.core.settings import settings
-from app.model.equipment_type import EquipmentType
+
 from app.util.query_builder import dict_to_sqlalchemy_filter_options
 
 
@@ -77,20 +77,6 @@ class BaseRepository:
                     query = query.options(joinedload(getattr(self.model, eager)))
             result = await session.execute(query)
             return result.unique().scalars().all()
-
-    async def get_equipment_by_uuid(self, equipment_uuid: str, eager=False):
-        async with self.session_factory() as session:
-            query = select(EquipmentType).filter(
-                EquipmentType.equipment_uuid == equipment_uuid
-            )
-            if eager:
-                for eager in getattr(EquipmentType, "eagers", []):
-                    query = query.options(joinedload(getattr(EquipmentType, eager)))
-            result = await session.execute(query)
-            query = result.unique().scalars().first()
-            if not query:
-                return None
-            return query
 
     async def read_by_id(self, id: int, eager=False):
         async with self.session_factory() as session:

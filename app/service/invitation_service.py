@@ -4,27 +4,24 @@ from typing import List
 from fastapi import Request
 from pydantic import EmailStr
 
-from app.core import activity_log_constants
 from app.core.exceptions import NotFoundError
 from app.model.user import User
-from app.repository.activity_log_repository import ActivityLogRepository
+
 from app.repository.team_member_invitation_repository import (
     TeamMemberInvitationRepository,
 )
-from app.schema.activity_log_schema import ActivityLogSchema
+
 from app.schema.invitation_schema import InvitationPayload
 from app.service.base_service import BaseService
-from app.util.enums import ActivityLogClass, ActivityLogType, InvitationStatus
+from app.util.enums import InvitationStatus
 
 
 class InvitationService(BaseService):
     def __init__(
         self,
         invitation_repository: TeamMemberInvitationRepository,
-        activity_log_repository: ActivityLogRepository,
     ):
         self.invitation_repository = invitation_repository
-        self.activity_log_repository = activity_log_repository
         super().__init__(invitation_repository)
 
     async def create_invitation(self, invitation: InvitationPayload):
@@ -71,21 +68,6 @@ class InvitationService(BaseService):
         try:
             await self.invitation_repository.delete_by_uuid(invitation_uuid)
 
-            activity_log = ActivityLogSchema(
-                user_uuid=str(current_user.uuid),
-                business_profile_uuid=str(current_user.business_profile_uuid)
-                if current_user.business_profile_uuid
-                else None,
-                activity_title=activity_log_constants.DELETE_INVITATION,
-                activity_type=ActivityLogType.DELETE_INVITATION,
-                activity_class=ActivityLogClass.ADMIN,
-                activity_description=activity_log_constants.DELETE_INVITATION_DESC.format(
-                    email=current_user.email_address
-                ),
-                ip_address=request.client.host,
-            )
-
-            await self.activity_log_repository.create(schema=activity_log)
         except NotFoundError as e:
             raise e
         except Exception as e:

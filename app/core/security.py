@@ -19,9 +19,8 @@ from app.core.logger import get_logger
 from app.core.settings import settings
 from app.model.user import User
 from app.schema.auth_schema import TokenData
-from app.schema.external_app_schema import AppServiceTokenData
 from app.schema.user_schema import UserLogin
-from app.util.enums import CustomerRoles, RoleType
+from app.util.enums import RoleType
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -113,21 +112,6 @@ def verify_token(token: str):
         raise NotVerifiedError(detail="Could not validate credentials")
 
 
-def verify_third_party_token(token: str):
-    try:
-        payload = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[settings.AUTH_ALGORITHM]
-        )
-        secret_key: str = payload.get("sub")
-        role: str = payload.get("role")
-        if secret_key is None:
-            raise NotVerifiedError(detail="Could not validate app key")
-        token_data = AppServiceTokenData(secret_key=secret_key, role=role)
-        return token_data
-    except JWTError:
-        raise NotVerifiedError(detail="Could not validate app key")
-
-
 def verify_token_frontend(token: str) -> bool:
     try:
         jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.AUTH_ALGORITHM])
@@ -182,11 +166,6 @@ def extract_user_data(user: User) -> Dict[str, str]:
         "country": user.country,
         "operator_type": user.operator_type if user.operator_type else None,
         "license": license_data,
-        "installer_locations": (
-            user.installer_locations
-            if user.user_role_uuid == UUID(CustomerRoles.INSTALLER)
-            else None
-        ),
         "business_profile_uuid": (
             user.business_profile_uuid if user.business_profile_uuid else None
         ),

@@ -30,7 +30,3 @@ class BusinessProfile(BaseModel):
         back_populates="business_profile",
     )
     invitations = relationship("Invitation", back_populates="business_profile")
-    payments = relationship("Payment", uselist=True, back_populates="business_profile")
-    subscriptions = relationship(
-        "UserSubscription", uselist=True, back_populates="business_profile"
-    )

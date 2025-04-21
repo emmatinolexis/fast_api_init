@@ -1,5 +1,3 @@
-# The RoleService class in the provided Python code handles operations related to roles, permissions,
-# and role-permission assignments.
 from app.repository.role_permission_assignment_repository import (
     RolePermissionAssignmentRepository,
 )

@@ -6,16 +6,13 @@ from pydantic import ValidationError
 from app.core.container import Container
 from app.core.exceptions import AuthError
 from app.core.logger import get_logger
-from app.core.security import JWTBearer, verify_third_party_token, verify_token
-from app.model.external_app import ExternalApp
+from app.core.security import JWTBearer, verify_token
 from app.model.user import User
-from app.service.external_app_service import ExternalAppService
 from app.service.user_service import UserService
 from app.util.enums import ActiveStatus
 from app.util.utils import (
     ADMIN_USER_ROLE,
     CUSTOMER_USER_ROLE,
-    THIRD_PARTY_APP_ROLE,
     check_permission,
 )
 
@@ -112,28 +109,6 @@ def check_user_permission(
             return True
     # Raise a 403 Forbidden error if the permission is not found
     raise HTTPException(status_code=403, detail="Not Authorized")
-
-
-@inject
-async def get_current_app_service(
-    token: str = Depends(JWTBearer(allowed_roles=[THIRD_PARTY_APP_ROLE])),
-    service: ExternalAppService = Depends(Provide[Container.external_app_service]),
-) -> ExternalApp:
-    try:
-        token_data = verify_third_party_token(token)
-    except Exception as e:
-        log.error(e)
-        raise AuthError(detail="Could not validate app keys")
-    current_app_service: ExternalApp = await service.get_app_service_by_secret_key(
-        token_data.secret_key
-    )
-    if not current_app_service:
-        raise AuthError(detail="App service not found")
-    log.info(
-        "Current app service in session",
-        extra={"secret_key": current_app_service.secret_key},
-    )
-    return current_app_service
 
 
 def get_current_active_user(current_user: User = Depends(get_current_user)) -> User:

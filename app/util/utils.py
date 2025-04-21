@@ -15,19 +15,13 @@ from fastapi.responses import ORJSONResponse
 from geopy.distance import geodesic
 
 from app.client.s3_client import S3Client
-from app.core.constants import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE, THIRD_PARTY_APP_ROLE
+from app.core.constants import ADMIN_USER_ROLE, CUSTOMER_USER_ROLE
 from app.core.logger import get_logger
 from app.core.security import JWTBearer
 from app.core.settings import settings
 from app.util.enums import (
     ActiveStatus,
-    CertificateIndex,
-    CertificateKey,
     FileFormat,
-    PeripheralDeviceType,
-    ServiceStatus,
-    SmartReportStatus,
-    SmartReportUser,
 )
 
 log = get_logger()
@@ -53,14 +47,6 @@ allow_admins_and_customers = Depends(
         allowed_roles=[
             ADMIN_USER_ROLE,
             CUSTOMER_USER_ROLE,
-        ]
-    )
-)
-
-allow_third_parties_only = Depends(
-    JWTBearer(
-        allowed_roles=[
-            THIRD_PARTY_APP_ROLE,
         ]
     )
 )
@@ -137,14 +123,6 @@ def serialize_datetime(obj):
     if isinstance(obj, datetime):
         return obj.isoformat()
     raise TypeError("Type not serializable")
-
-
-def toggle_maintenance_status(service_status):
-    return (
-        ServiceStatus.SERVICED
-        if service_status == ServiceStatus.NOT_SERVICED
-        else ServiceStatus.NOT_SERVICED
-    )
 
 
 def send_internal_server_error(user_msg: str, error: Any, status_code: int = 500):
@@ -964,23 +942,6 @@ def upload_report_to_s3(report, bucket_name, file_name):
     print(f"Report uploaded to s3://{bucket_name}/{file_name}")
 
 
-def convert_smart_report_status_user(status: SmartReportUser):
-    if status == SmartReportUser.PENDING:
-        return SmartReportStatus.PENDING
-    if status == SmartReportUser.READY:
-        return SmartReportStatus.PROCESSED
-
-
-def convert_smart_report_status(status: SmartReportStatus):
-    if (
-        status == SmartReportStatus.PENDING
-        or SmartReportStatus.PROCESSING
-        or SmartReportStatus.FAILED
-    ):
-        return SmartReportUser.PENDING
-    return SmartReportUser.READY
-
-
 def parse_date(date_str):
     # List of potential date formats including date and time
     date_formats = [
@@ -1064,161 +1025,6 @@ def resolve_data_from_request(request: Request):
     }
 
     return request_data
-
-
-# def extract_certificate_info(cert_data):
-#     certificate_info = {}
-#
-#     # Extract subject
-#     certificate_info[CertificateKey.SUBJECT] = cert_data[CertificateKey.SUBJECT][
-#         CertificateIndex.SUBJECT_INDEX
-#     ][CertificateIndex.SUBJECT_COMPONENT_INDEX][CertificateIndex.SUBJECT_NAME_INDEX]
-#
-#     # Extract issuer
-#     issuer_info = cert_data[CertificateKey.ISSUER]
-#     issuer_components = []
-#     for issuer_item in issuer_info:
-#         issuer_components.append(
-#             issuer_item[CertificateIndex.ISSUER_ITEM_INDEX][
-#                 CertificateIndex.ISSUER_NAME_INDEX
-#             ]
-#         )
-#     certificate_info[CertificateKey.ISSUER] = ", ".join(issuer_components)
-#
-#     # Extract version
-#     certificate_info[CertificateKey.VERSION] = cert_data[CertificateKey.VERSION]
-#
-#     # Extract serial number
-#     certificate_info[CertificateKey.SERIAL_NUMBER] = cert_data[
-#         CertificateKey.SERIAL_NUMBER
-#     ]
-#
-#     # Extract not before and not after dates
-#     certificate_info[CertificateKey.NOT_BEFORE] = cert_data[CertificateKey.NOT_BEFORE]
-#     certificate_info[CertificateKey.NOT_AFTER] = cert_data[CertificateKey.NOT_AFTER]
-#
-#     # Extract subject alternative names
-#     certificate_info[CertificateKey.SUBJECT_ALT_NAME] = [
-#         alt_name[CertificateIndex.ALT_NAME_VALUE_INDEX]
-#         for alt_name in cert_data[CertificateKey.SUBJECT_ALT_NAME]
-#     ]
-#
-#     # Extract OCSP url
-#     certificate_info[CertificateKey.OCSP] = cert_data[CertificateKey.OCSP][
-#         CertificateIndex.OCSP_URL_INDEX
-#     ]
-#
-#     # Extract CA Issuers url
-#     certificate_info[CertificateKey.CA_ISSUERS] = cert_data[CertificateKey.CA_ISSUERS][
-#         CertificateIndex.CA_ISSUERS_URL_INDEX
-#     ]
-#
-#     return certificate_info
-
-
-def extract_certificate_info(cert_data):
-    certificate_info = {}
-
-    # Extract subject
-    subject = cert_data.get(CertificateKey.SUBJECT, [])
-    if subject:
-        certificate_info[CertificateKey.SUBJECT] = subject[
-            CertificateIndex.SUBJECT_INDEX
-        ][CertificateIndex.SUBJECT_COMPONENT_INDEX][CertificateIndex.SUBJECT_NAME_INDEX]
-    else:
-        certificate_info[CertificateKey.SUBJECT] = "Unknown"
-
-    # Extract issuer
-    issuer_info = cert_data.get(CertificateKey.ISSUER, [])
-    issuer_components = (
-        [
-            item[CertificateIndex.ISSUER_ITEM_INDEX][CertificateIndex.ISSUER_NAME_INDEX]
-            for item in issuer_info
-        ]
-        if issuer_info
-        else []
-    )
-    certificate_info[CertificateKey.ISSUER] = (
-        ", ".join(issuer_components) if issuer_components else "Unknown"
-    )
-
-    # Extract version
-    certificate_info[CertificateKey.VERSION] = cert_data.get(
-        CertificateKey.VERSION, "Unknown"
-    )
-
-    # Extract serial number
-    certificate_info[CertificateKey.SERIAL_NUMBER] = cert_data.get(
-        CertificateKey.SERIAL_NUMBER, "Unknown"
-    )
-
-    # Extract validity period
-    certificate_info[CertificateKey.NOT_BEFORE] = cert_data.get(
-        CertificateKey.NOT_BEFORE, "Unknown"
-    )
-    certificate_info[CertificateKey.NOT_AFTER] = cert_data.get(
-        CertificateKey.NOT_AFTER, "Unknown"
-    )
-
-    # Extract subject alternative names
-    san_data = cert_data.get(CertificateKey.SUBJECT_ALT_NAME, [])
-    certificate_info[CertificateKey.SUBJECT_ALT_NAME] = (
-        [alt_name[CertificateIndex.ALT_NAME_VALUE_INDEX] for alt_name in san_data]
-        if san_data
-        else "None"
-    )
-
-    # Extract OCSP URL
-    ocsp_data = cert_data.get(CertificateKey.OCSP, [])
-    certificate_info[CertificateKey.OCSP] = (
-        ocsp_data[CertificateIndex.OCSP_URL_INDEX] if ocsp_data else "None"
-    )
-
-    # Extract CA Issuers URL
-    ca_issuers_data = cert_data.get(CertificateKey.CA_ISSUERS, [])
-    certificate_info[CertificateKey.CA_ISSUERS] = (
-        ca_issuers_data[CertificateIndex.CA_ISSUERS_URL_INDEX]
-        if ca_issuers_data
-        else "None"
-    )
-
-    return certificate_info
-
-
-def generate_serial_numbers(
-    last_serial: str, device_type: PeripheralDeviceType, number: int
-) -> list:
-    # Determine the prefix based on device type
-    if device_type == PeripheralDeviceType.PYROGUARD_NODE_DEVICE:
-        prefix = "PN"
-    elif device_type == PeripheralDeviceType.GATEWAY_DEVICE:
-        prefix = "GTW"
-    elif device_type == PeripheralDeviceType.GAS_NODE_DEVICE:
-        prefix = "GN"
-    else:
-        raise ValueError("Unknown device type")
-
-    # Extract the numeric part of the last serial number
-    numeric_part = last_serial[len(prefix) :]
-
-    # Convert the numeric part to an integer
-    current_number = int(numeric_part)
-
-    # List to store the generated serial numbers
-    serial_numbers = []
-
-    # Generate the required number of serial numbers
-    for _ in range(number):
-        # Increment the number
-        current_number += 1
-
-        # Format the new serial number without hyphens (e.g., PN0000000002)
-        new_serial = f"{prefix}{current_number:09d}"
-
-        # Add the generated serial number to the list
-        serial_numbers.append(new_serial)
-
-    return serial_numbers
 
 
 def format_compound_words(word):

@@ -1,9 +1,9 @@
 from typing import Dict, Optional
 
-from app.core.constants import FREE_PACKAGE, FREE_PACKAGE_ITEMS
+from app.core.constants import FREE_PACKAGE_ITEMS
 from app.repository.business_profile_repository import BusinessProfileRepository
 from app.service.base_service import BaseService
-from app.service.package_item_assignments_service import PackageItemAssignmentService
+
 from app.util.enums import ActiveStatus, SubscriptionStatus
 from app.util.utils import calculate_percentage_change
 
@@ -12,10 +12,9 @@ class BusinessProfileService(BaseService):
     def __init__(
         self,
         business_profile_repository: BusinessProfileRepository,
-        package_item_assignments_service: PackageItemAssignmentService,
     ):
         self.business_profile_repository = business_profile_repository
-        self.package_item_assignments_service = package_item_assignments_service
+
         super().__init__(business_profile_repository)
 
     def get_active_subscription(self, business):
@@ -87,8 +86,6 @@ class BusinessProfileService(BaseService):
                 search_parameter, start_date, end_date, page, page_size, status
             )
 
-            return businesses_result
-
             total_subscriptions = businesses_result.get("total_subscriptions", 0)
             total_active_subscriptions = businesses_result.get(
                 "total_active_subscriptions", 0
@@ -133,11 +130,7 @@ class BusinessProfileService(BaseService):
                 data = {
                     "uuid": business.uuid,
                     "customer": business.business_name,
-                    "active_plan": (
-                        active_subscription.plan.get("name")
-                        if active_subscription and active_subscription.plan
-                        else FREE_PACKAGE
-                    ),
+                    "active_plan": "",
                     "active_plan_amount": (
                         active_subscription.plan.get("amount")
                         if active_subscription

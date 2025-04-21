@@ -6,7 +6,7 @@ from sqlalchemy.orm import relationship
 
 from app.core import constants
 from app.model.base_model import BaseModel
-from app.util.enums import AccountType, ActiveStatus, DriverType, UserRole
+from app.util.enums import AccountType, ActiveStatus, UserRole
 
 
 class User(BaseModel):
@@ -44,7 +44,6 @@ class User(BaseModel):
     )
     user_role_uuid = Column(UUID(as_uuid=True), ForeignKey("roles.uuid"), nullable=True)
     license_url = Column(String, nullable=True)
-    operator_type = Column(Enum(DriverType), nullable=True)
     business_profile = relationship(
         "BusinessProfile", uselist=False, back_populates="users"
     )
@@ -55,19 +54,6 @@ class User(BaseModel):
     phone_otp_token = relationship(
         "PhoneOtpToken", uselist=False, back_populates="user"
     )
-    theft_incidents = relationship("TheftIncidence", back_populates="user")
-
-    asset_device_requests = relationship("AssetDeviceRequest", back_populates="user")
-
-    user_devices = relationship("Device", uselist=True, back_populates="user")
-
-    operated_assets = relationship(
-        "Asset", secondary="asset_operator_assignments", back_populates="operators"
-    )
-    driver_license = relationship("DriverLicense", uselist=False, back_populates="user")
-    installations = relationship("Installation", back_populates="installer")
-
-    # business_profile_assignments = relationship(UserOrganisationAssignment, back_populates='user')
 
 
 def set_currency_based_on_country(target, value, oldvalue, initiator):

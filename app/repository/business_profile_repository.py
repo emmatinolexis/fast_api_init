@@ -9,7 +9,7 @@ from sqlalchemy.orm import joinedload
 from app.core.logger import get_logger
 from app.model.business_profile import BusinessProfile
 from app.model.user import User
-from app.model.user_subscription import UserSubscription
+
 from app.repository.base_repository import BaseRepository
 from app.util.enums import ActiveStatus, SubscriptionStatus
 from app.util.utils import parse_date
@@ -70,22 +70,14 @@ class BusinessProfileRepository(BaseRepository):
                 total_subscriptions,
                 total_active_subscriptions,
                 total_inactive_subscriptions,
-            ) = await self._get_subscription_counts(
-                session, search_parameter, start_date_obj, end_date_obj, status
-            )
+            ) = (0, 0, 0)
 
             if previous_start_date_obj and previous_end_date_obj:
                 (
                     previous_total_subscriptions,
                     previous_total_active_subscriptions,
                     previous_total_inactive_subscriptions,
-                ) = await self._get_subscription_counts(
-                    session,
-                    search_parameter,
-                    previous_start_date_obj,
-                    previous_end_date_obj,
-                    status,
-                )
+                ) = (0, 0, 0)
             else:
                 (
                     previous_total_subscriptions,
@@ -106,51 +98,6 @@ class BusinessProfileRepository(BaseRepository):
                 "previous_total_active_subscriptions": previous_total_active_subscriptions,
                 "previous_total_inactive_subscriptions": previous_total_inactive_subscriptions,
             }
-
-    async def _get_subscription_counts(
-        self,
-        session: AsyncSession,
-        search_parameter,
-        start_date_obj,
-        end_date_obj,
-        status,
-    ):
-        """Helper function to get subscription statistics."""
-        filters = []
-        if search_parameter:
-            filters.append(self.model.business_name.ilike(f"%{search_parameter}%"))
-        if start_date_obj:
-            filters.append(self.model.created_at >= start_date_obj)
-        if end_date_obj:
-            filters.append(self.model.created_at <= end_date_obj)
-        if status:
-            filters.append(User.status == status)
-
-        result = await session.execute(
-            select(
-                func.count(UserSubscription.id).label("total"),
-                func.sum(
-                    case(
-                        (UserSubscription.status == SubscriptionStatus.ACTIVE, 1),
-                        else_=0,
-                    )
-                ).label("active"),
-                func.sum(
-                    case(
-                        (UserSubscription.status != SubscriptionStatus.ACTIVE, 1),
-                        else_=0,
-                    )
-                ).label("inactive"),
-            )
-            .join(
-                BusinessProfile,
-                UserSubscription.business_profile_uuid == BusinessProfile.uuid,
-            )
-            .join(User, UserSubscription.user_email == User.email_address)
-            .filter(and_(*filters))
-        )
-        counts = result.one()
-        return counts.total, counts.active or 0, counts.inactive or 0
 
     def _parse_dates(self, start_date, end_date):
         """Helper function to parse dates safely."""

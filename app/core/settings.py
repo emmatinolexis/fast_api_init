@@ -11,7 +11,7 @@ ENV: str = "test"
 
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "MVI Tracking Hub"
+    PROJECT_NAME: str = "GWIS"
     API_VERSION: str = os.getenv("API_VERSION", "0.0.1")
     ENV: str = os.getenv("ENV", ENV)
     API: str = "/api"
@@ -59,16 +59,6 @@ class Settings(BaseSettings):
         "Content-Type": "application/json",
     }
 
-    RTD_SEND_ORDER_SIGNATURE: str = os.getenv("RTD_SEND_ORDER_SIGNATURE", "")
-
-    RTD_HEADERS: Dict[str, str] = {
-        "x-signature": RTD_SEND_ORDER_SIGNATURE,
-        "Content-Type": "application/json",
-    }
-    RTD_BASE_URL: str = os.getenv(
-        "RTD_BASE_URL", "https://rtd-uat.sageinfrastructure.net/api/v1/webhooks/mvi"
-    )
-
     # database
     DB_USER: str = os.getenv("DB_USER", "mvi_tracking_user")
     DB_PASSWORD: str = os.getenv("DB_PASSWORD", "mvi_tracking_pass")
@@ -98,12 +88,12 @@ class Settings(BaseSettings):
     )
     VERIFY_EMAIL_URL: str = os.getenv(
         "VERIFY_EMAIL_URL",
-        "https://mvi-frontend-uat.sageinfrastructure.net/authentication/email-verification/",
+        "link",
     )
 
     RESET_PASSWORD_URL: str = os.getenv(
         "RESET_PASSWORD_URL",
-        "https://mvi-frontend-uat.sageinfrastructure.net/authentication/set-password/",
+        "link",
     )
 
     RESET_BTN: str = os.getenv("RESET_BTN", "Reset Password")
@@ -114,16 +104,6 @@ class Settings(BaseSettings):
         "Please use the button link below to reset your password",
     )
 
-    SMART_REPORT_SHARE_URL: str = os.getenv(
-        "SMART_REPORT_SHARE_URL",
-        "https://mvi-frontend-uat.sageinfrastructure.net/smart-report?smartId=",
-    )
-
-    SMART_REPORT_URL: str = os.getenv(
-        "SMART_REPORT_URL",
-        "https://mvi-frontend-uat.sageinfrastructure.net/dashboard/reports/smart-report",
-    )
-
     # aws
     S3_BUCKET: str = os.getenv("S3_BUCKET", "")
     AWS_ACCESS_KEY_ID: str = os.getenv("AWS_ACCESS_KEY_ID", "aws_access_key_id")
@@ -132,22 +112,10 @@ class Settings(BaseSettings):
     )
     AWS_REGION: str = os.getenv("AWS_REGION", "us-east-2")
 
-    # mqtt
-    MQTT_HOST: str = os.getenv("MQTT_HOST", "3.98.106.16")
-    MQTT_PORT: int = os.getenv("MQTT_PORT", 1883)
-    MQTT_TOPIC: str = os.getenv("MQTT_TOPIC", "tracking/events")
-    MQTT_USERNAME: str = os.getenv("MQTT_USERNAME", "admin")
-    MQTT_PASSWORD: str = os.getenv("MQTT_PASSWORD", "public")
-
-    # echo parrot
-    ECHO_PARROT_HOST: str = os.getenv("ECHO_PARROT_HOST", "localhost")
-    ECHO_PARROT_PORT: int = os.getenv("ECHO_PARROT_PORT", 80)
     SMS_SENDER_ID: str = os.getenv("SMS_SENDER_ID", "MoneyBQ")
     SMS_SENDER_APP: str = os.getenv("SMS_SENDER_APP", "MVI")
-    SENDER_EMAIL: str = os.getenv(
-        "SENDER_EMAIL", "MVI Tracking <info@sagemicrosystems.net>"
-    )
-    SENDER_NAME: str = os.getenv("SENDER_NAME", "MVI Tracking")
+    SENDER_EMAIL: str = os.getenv("SENDER_EMAIL", "")
+    SENDER_NAME: str = os.getenv("SENDER_NAME", "")
 
     GAS_DEVICE_DEFAULT: str = "Gas Device"
 

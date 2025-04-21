@@ -6,23 +6,14 @@ from uuid import UUID
 from fastapi import Request
 from pydantic import EmailStr
 
-from app.core import activity_log_constants, messages
-from app.core.constants import FREE_PACKAGE, FREE_PACKAGE_ITEMS
+from app.core import messages
+
 from app.core.exceptions import NotFoundError, UnAuthorizedError
-from app.events.subscriber import subscriber
-from app.events.user import RoleUpdated
+
 from app.model.user import User
-from app.repository.activity_log_repository import ActivityLogRepository
-from app.repository.asset_repository import AssetRepository
-from app.repository.driver_license_repository import DriverLicenseRepository
-from app.repository.role_repository import RoleRepository
-from app.repository.subscription_repository import SubscriptionRepository
-from app.repository.team_member_invitation_repository import (
-    TeamMemberInvitationRepository,
-)
+
 from app.repository.user_repository import UserRepository
-from app.repository.user_subscription_repository import UserSubscriptionRepository
-from app.schema.activity_log_schema import ActivityLogSchema
+
 from app.schema.invitation_schema import (
     AdminInvitationPayload,
     InvitationCreatePayloadSingle,
@@ -37,8 +28,8 @@ from app.schema.user_schema import (
     UserProfileUdatePayload,
 )
 from app.service.base_service import BaseService
-from app.transfomers.driver_transformer import driver_transformer
-from app.util.enums import ActivityLogClass, ActivityLogType, InvitationStatus, RoleType
+
+from app.util.enums import InvitationStatus, RoleType
 from app.util.utils import calculate_percentage_change, parse_date
 
 
@@ -46,22 +37,8 @@ class UserService(BaseService):
     def __init__(
         self,
         user_repository: UserRepository,
-        user_subscription_repository: UserSubscriptionRepository,
-        invitation_repository: TeamMemberInvitationRepository,
-        subscription_repository: SubscriptionRepository,
-        asset_repository: AssetRepository,
-        driver_license_repository: DriverLicenseRepository,
-        role_repository: RoleRepository,
-        activity_log_repository: ActivityLogRepository,
     ):
         self.user_repository = user_repository
-        self.invitation_repository = invitation_repository
-        self.user_subscription_repository = user_subscription_repository
-        self.subscription_repository = subscription_repository
-        self.asset_reposoitory = asset_repository
-        self.driver_license_repository = driver_license_repository
-        self.role_repository = role_repository
-        self.activity_log_repository = activity_log_repository
         super().__init__(user_repository)
 
     async def create_user(self, payload: UserPayload):
@@ -191,10 +168,7 @@ class UserService(BaseService):
             )
 
             # Default user package
-            user_package = {
-                "package_name": FREE_PACKAGE,
-                "package_items": FREE_PACKAGE_ITEMS,
-            }
+            user_package = []
 
             # Check if the user has a valid subscription plan
             if user_plan and user_plan.subscription_code:
@@ -270,20 +244,6 @@ class UserService(BaseService):
                 )
             )
 
-            await self.activity_log_repository.create(
-                ActivityLogSchema(
-                    user_uuid=str(user.uuid),
-                    business_profile_uuid=str(user.business_profile_uuid),
-                    activity_title=activity_log_constants.CREATE_INVITATION,
-                    activity_class=ActivityLogClass.USER,
-                    activity_type=ActivityLogType.USER_INVITATION,
-                    activity_description=activity_log_constants.CREATE_INVITATION_DESC.format(
-                        email=user.email_address,
-                        invited_user=payload.email,
-                    ),
-                    ip_address=request.client.host,
-                )
-            )
             return invitations
         except Exception as e:
             raise e
@@ -301,24 +261,6 @@ class UserService(BaseService):
             )
             invite = await self.invitation_repository.create(payload)
 
-            await self.activity_log_repository.create(
-                ActivityLogSchema(
-                    user_uuid=str(user.uuid),
-                    business_profile_uuid=(
-                        str(user.business_profile_uuid)
-                        if user.business_profile_uuid
-                        else None
-                    ),
-                    activity_title=activity_log_constants.ADMIN_INVITATION,
-                    activity_class=ActivityLogClass.ADMIN,
-                    activity_type=ActivityLogType.USER_INVITATION,
-                    activity_description=activity_log_constants.ADMIN_INVITATION_DESC.format(
-                        email=user.email_address,
-                        invited_user=payload.email,
-                    ),
-                    ip_address=request.client.host,
-                )
-            )
             return invite
         except Exception as e:
             raise e
@@ -332,20 +274,6 @@ class UserService(BaseService):
     ):
         try:
             user = await self.user_repository.deactivate_account(uuid, payload)
-
-            await self.activity_log_repository.create(
-                ActivityLogSchema(
-                    user_uuid=str(user.uuid),
-                    business_profile_uuid=str(user.business_profile_uuid),
-                    activity_title=activity_log_constants.DEACTIVATE_ACCOUNT,
-                    activity_class=ActivityLogClass.USER,
-                    activity_type=ActivityLogType.ACCOUNT_DEACTIVATION,
-                    activity_description=activity_log_constants.DEACTIVATE_ACCOUNT_DESC.format(
-                        email=user.email_address,
-                    ),
-                    ip_address=request.client.host,
-                )
-            )
             return user if user else None
         except Exception as e:
             raise e
@@ -418,46 +346,6 @@ class UserService(BaseService):
             raise NotFoundError(messages.USER_NOT_FOUND + driver_uuid)
         return driver
 
-    async def change_operator_asset(
-        self,
-        asset_uuid: str,
-        operator_uuid: str,
-        user_uuid: str,
-        business_profile_uuid: str = None,
-    ):
-        try:
-            asset = await self.asset_reposoitory.read_by_uuid(asset_uuid)
-            if asset is None:
-                raise NotFoundError(messages.NO_ASSET_FOUND)
-
-            # Check if the asset's business profile matches the provided one
-            if asset.business_profile_uuid != business_profile_uuid:
-                # If not, check if the asset's user_uuid matches the provided user_uuid
-                if asset.user_uuid != user_uuid:
-                    raise UnAuthorizedError(messages.ACTION_NOT_ALLOWED)
-
-            operator = await self.user_repository.read_by_uuid(operator_uuid)
-            if operator is None:
-                raise NotFoundError(messages.NO_OPERATOR_FOUND)
-
-            existing_asset_operator = (
-                await self.user_repository.get_user_by_assigned_asset_uuid(asset.uuid)
-            )
-            if existing_asset_operator is not None:
-                await self.user_repository.update_attr_by_uuid(
-                    existing_asset_operator.uuid, "assigned_asset_uuid", None
-                )
-
-            await self.user_repository.update_attr_by_uuid(
-                operator.uuid, "assigned_asset_uuid", asset.uuid
-            )
-
-            return driver_transformer(operator, self.asset_reposoitory)
-
-            # ... continue with the rest of your logic ...
-        except Exception as e:
-            raise e
-
     async def update_team_member_handler(
         self,
         team_member_uuid: str,
@@ -468,52 +356,10 @@ class UserService(BaseService):
         try:
             await self.patch_by_uuid(team_member_uuid, payload)
 
-            user = await self.user_repository.read_by_uuid(team_member_uuid)
+            await self.user_repository.read_by_uuid(team_member_uuid)
 
-            new_role = await self.role_repository.get_role(payload.user_role_uuid)
+            await self.role_repository.get_role(payload.user_role_uuid)
 
-            if payload.user_role_uuid:
-                subscriber.publish(RoleUpdated, RoleUpdated(role=new_role, user=user))
-                await self.activity_log_repository.create(
-                    ActivityLogSchema(
-                        user_uuid=str(current_user.uuid),
-                        business_profile_uuid=(
-                            str(current_user.business_profile_uuid)
-                            if current_user.business_profile_uuid
-                            else None
-                        ),
-                        activity_title=activity_log_constants.UPDATE_TEAM_MEMBER,
-                        activity_class=ActivityLogClass.ADMIN,
-                        activity_type=ActivityLogType.ROLE_UPDATE,
-                        activity_description=activity_log_constants.UPDATE_TEAM_MEMBER_DESC.format(
-                            email=current_user.email_address,
-                            team_member=user.email_address,
-                            role=new_role.role_name,
-                        ),
-                        ip_address=request.client.host,
-                    )
-                )
-
-            if payload.status:
-                await self.activity_log_repository.create(
-                    ActivityLogSchema(
-                        user_uuid=str(current_user.uuid),
-                        business_profile_uuid=(
-                            str(current_user.business_profile_uuid)
-                            if current_user.business_profile_uuid
-                            else None
-                        ),
-                        activity_title=activity_log_constants.UPDATE_STATUS,
-                        activity_class=ActivityLogClass.ADMIN,
-                        activity_type=ActivityLogType.STATUS_UPDATE,
-                        activity_description=activity_log_constants.UPDATE_STATUS_DESC.format(
-                            email=current_user.email_address,
-                            team_member=user.email_address,
-                            status=payload.status,
-                        ),
-                        ip_address=request.client.host,
-                    )
-                )
         except Exception as e:
             raise e
 

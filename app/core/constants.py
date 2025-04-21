@@ -1,69 +1,12 @@
-from enum import Enum
-
 # USER ROLE CONSTANTS
-
 CUSTOMER_USER_ROLE = "customer"
 ADMIN_USER_ROLE = "admin"
-THIRD_PARTY_APP_ROLE = "third_party"
-ENGINE_SHUTDOWN_USERNAME = "mviad"
-ENGINE_SHUTDOWN_PASSWORD = "mvipa"
-INITIAL_PYROGUARD_DEVICE_SERIAL_NUMBER = "PN0000000001"
-INITIAL_GAS_DEVICE_SERIAL_NUMBER = "GN0000000001"
-INITIAL_GATEWAY_DEVICE_SERIAL_NUMBER = "GTW0000000001"
-OPERATOR_ROLE_NAME = "Operator"
-BUILDING_ICON_URL = (
-    "https://mvitracking.s3.eu-central-1.amazonaws.com/building_icon.png"
-)
-
-ALLOWED_EVENT_TYPES = [
-    "Stop_Moving",
-    "Start_Moving",
-    "Idling_Alarm",
-    "Ignition_Off",
-    "Time_Interval_Tracking",
-    "Time_Interval_Tracking_Moving",
-    "Time_Interval_Tracking_Stopped",
-    "Time_Interval_Tracking_Idling",
-]
 
 # DEVICE UNITS
-SPEED_UNIT = "KPH"
-DISTANCE_UNIT = "KM"
 DAY_MONTH_YEAR = "%d/%m/%Y"
 DAY_MONTH_YEAR = "%d/%m/%Y"
 
 FREE_PACKAGE = "Free Plan"
-
-FREE_PACKAGE_ITEMS = [
-    {
-        "uuid": "6de8b328-9ff1-456a-a737-1fd6fef81063",
-        "package_item": {
-            "item_name": "1 User(s)",
-            "type": "number_of_user_tracker",
-            "number_of_assets": None,
-            "number_of_users": 1,
-        },
-    },
-    {
-        "uuid": "6ccf4874-678c-4550-9bc7-92b4b04bea37",
-        "package_item": {
-            "item_name": "One Asset(s)",
-            "type": "asset_quantity_tracker",
-            "number_of_assets": 1,
-            "number_of_users": None,
-        },
-    },
-    {
-        "uuid": "7e753dc9-8178-4c01-bbd4-883e5689e135",
-        "package_item": {
-            "item_name": "Live Tracking",
-            "type": "",
-            "number_of_assets": None,
-            "number_of_users": None,
-        },
-    },
-]
-
 
 COUNTRY_CURRENCY_MAP = {
     "Nigeria": "NGN",
@@ -287,154 +230,42 @@ COUNTRY_CURRENCY_MAP = {
 }
 
 
-PYRO_AMBIENT_TEMPERATURE_THRESHOLD = 45
-PYRO_HUMIDITY_THRESHOLD = 50
-PYRO_TARGET_TEMPERATURE_THRESHOLD = 40
-PYRO_FLAMMABLE_SMOKE_THRESHOLD = 50
+FREE_PACKAGE_ITEMS = [
+    {
+        "uuid": "6de8b328-9ff1-456a-a737-1fd6fef81063",
+        "package_item": {
+            "item_name": "1 User(s)",
+            "type": "number_of_user_tracker",
+            "number_of_assets": None,
+            "number_of_users": 1,
+        },
+    },
+    {
+        "uuid": "6ccf4874-678c-4550-9bc7-92b4b04bea37",
+        "package_item": {
+            "item_name": "One Asset(s)",
+            "type": "asset_quantity_tracker",
+            "number_of_assets": 1,
+            "number_of_users": None,
+        },
+    },
+    {
+        "uuid": "7e753dc9-8178-4c01-bbd4-883e5689e135",
+        "package_item": {
+            "item_name": "Live Tracking",
+            "type": "",
+            "number_of_assets": None,
+            "number_of_users": None,
+        },
+    },
+]
 
-
-GAS_DEVICE_MINIMUM_THRESHOLD = 20
-
-LONGITUDE = "longitude"
-LATITUDE = "latitude"
-RADIUS = "radius"
 
 PERMISSIONS = {
-    "asset": [
-        {"permission_name": "create_asset", "permission_type": "customer"},
-        {"permission_name": "create_third_party_asset", "permission_type": "admin"},
-        {"permission_name": "update_asset", "permission_type": "customer"},
-        {"permission_name": "view_asset", "permission_type": "all"},
-        {"permission_name": "view_stolen_asset", "permission_type": "admin"},
-        {"permission_name": "view_asset_analytics", "permission_type": "customer"},
-        {"permission_name": "view_asset_details", "permission_type": "all"},
-        {"permission_name": "view_asset_devices", "permission_type": "all"},
-        {"permission_name": "delete_cylinder", "permission_type": "customer"},
-        {"permission_name": "create_cylinder", "permission_type": "customer"},
-        {"permission_name": "assign_cylinder", "permission_type": "customer"},
-        {"permission_name": "create_peripheral_device", "permission_type": "all"},
-        {"permission_name": "assign_peripheral_device", "permission_type": "customer"},
-        {"permission_name": "view_peripheral_device", "permission_type": "all"},
-        {"permission_name": "update_peripheral_device", "permission_type": "admin"},
-        {"permission_name": "configure_device", "permission_type": "customer"},
-        {"permission_name": "link_tracking_device", "permission_type": "admin"},
-        {"permission_name": "configure_tracking_device", "permission_type": "admin"},
-        {"permission_name": "request_asset_device", "permission_type": "customer"},
-        {"permission_name": "view_device_requests", "permission_type": "customer"},
-        {"permission_name": "update_device_requests", "permission_type": "customer"},
-    ],
-    "live_map": [
-        {"permission_name": "view_live_map", "permission_type": "all"},
-        {"permission_name": "route_replay", "permission_type": "all"},
-        {"permission_name": "shut_off_on_engine", "permission_type": "all"},
-        {"permission_name": "navigate_to_asset", "permission_type": "customer"},
-        {"permission_name": "view_activity_timeline", "permission_type": "customer"},
-    ],
-    "alert_policy": [
-        {"permission_name": "create_policy", "permission_type": "customer"},
-        {"permission_name": "view_policy", "permission_type": "customer"},
-        {"permission_name": "update_policy", "permission_type": "customer"},
-        {"permission_name": "view_alert_violations", "permission_type": "customer"},
-        {"permission_name": "update_alert_violations", "permission_type": "customer"},
-        {"permission_name": "create_policy_type", "permission_type": "admin"},
-        {"permission_name": "view_policy_type", "permission_type": "all"},
-        {"permission_name": "update_policy_type", "permission_type": "admin"},
-        {"permission_name": "create_maintenance_type", "permission_type": "admin"},
-        {"permission_name": "view_maintenance_type", "permission_type": "all"},
-        {"permission_name": "update_maintenance_type", "permission_type": "admin"},
-    ],
-    "driver": [
-        {"permission_name": "create_driver", "permission_type": "customer"},
-        {"permission_name": "view_driver", "permission_type": "customer"},
-        {"permission_name": "update_driver", "permission_type": "customer"},
-    ],
-    "report": [
-        {"permission_name": "violation_report", "permission_type": "customer"},
-        {"permission_name": "opened_reminders_report", "permission_type": "customer"},
-        {"permission_name": "distance_traveled_report", "permission_type": "customer"},
-        {"permission_name": "average_speed_report", "permission_type": "customer"},
-        {"permission_name": "hours_worked_report", "permission_type": "customer"},
-        {"permission_name": "harsh_driving_report", "permission_type": "customer"},
-    ],
-    "smart_report": [
-        {"permission_name": "create_smart_report", "permission_type": "customer"},
-        {"permission_name": "view_smart_report", "permission_type": "customer"},
-        {"permission_name": "share_smart_report", "permission_type": "customer"},
-        {"permission_name": "print_smart_report", "permission_type": "customer"},
-    ],
-    "fuel_purchase_log": [
-        {"permission_name": "create_fuel_purchase_log", "permission_type": "customer"},
-        {"permission_name": "view_fuel_purchase_log", "permission_type": "customer"},
-        {"permission_name": "import_fuel_purchase_log", "permission_type": "customer"},
-    ],
-    "device_installation": [
-        {"permission_name": "view_device_installation", "permission_type": "admin"},
-        {
-            "permission_name": "view_detail_device_installation",
-            "permission_type": "admin",
-        },
-        {"permission_name": "update_device_installation", "permission_type": "admin"},
-        {"permission_name": "create_device_installation", "permission_type": "admin"},
-        {"permission_name": "manage_installation", "permission_type": "admin"},
-        {"permission_name": "view_device_installers", "permission_type": "admin"},
-        {"permission_name": "assign_installer", "permission_type": "admin"},
-    ],
-    "settings": [
-        {"permission_name": "update_phone_number", "permission_type": "customer"},
-        {"permission_name": "change_password", "permission_type": "customer"},
-        {"permission_name": "deactivate_account", "permission_type": "customer"},
-        {"permission_name": "invite_team_member", "permission_type": "all"},
-        {"permission_name": "update_team_member", "permission_type": "all"},
-        {"permission_name": "view_team_member", "permission_type": "all"},
-        {"permission_name": "view_invitations", "permission_type": "all"},
-        {"permission_name": "delete_invitations", "permission_type": "all"},
-        {"permission_name": "manage_subscription", "permission_type": "all"},
-        {"permission_name": "create_team_member", "permission_type": "admin"},
-        {"permission_name": "resend_invitation", "permission_type": "all"},
-        {"permission_name": "update_user", "permission_type": "all"},
-        {"permission_name": "view_system_users", "permission_type": "admin"},
-    ],
-    "equipments": [
-        {"permission_name": "create_equipment", "permission_type": "admin"},
-        {"permission_name": "view_equipment", "permission_type": "all"},
-        {"permission_name": "update_equipment", "permission_type": "admin"},
-        {"permission_name": "create_equipment_type", "permission_type": "admin"},
-        {"permission_name": "view_equipment_type", "permission_type": "all"},
-        {"permission_name": "update_equipment_type", "permission_type": "admin"},
-    ],
-    "cylinder_size": [
-        {"permission_name": "create_cylinder_size", "permission_type": "admin"},
-        {"permission_name": "view_cylinder_size", "permission_type": "admin"},
-        {"permission_name": "update_cylinder_size", "permission_type": "admin"},
-    ],
-    "system_packages": [
-        {"permission_name": "create_package", "permission_type": "admin"},
-        {"permission_name": "view_package", "permission_type": "all"},
-        {"permission_name": "update_package", "permission_type": "admin"},
-        {"permission_name": "delete_package_item", "permission_type": "admin"},
-        {"permission_name": "create_subscription", "permission_type": "all"},
-        {"permission_name": "view_subscription", "permission_type": "admin"},
-        {"permission_name": "update_subscription", "permission_type": "admin"},
-    ],
-    "inventory": [
-        {"permission_name": "create_inventory", "permission_type": "admin"},
-        {"permission_name": "view_inventory", "permission_type": "admin"},
-        {"permission_name": "update_inventory", "permission_type": "admin"},
-        {"permission_name": "register_device", "permission_type": "admin"},
-    ],
-    "orders": [
-        {"permission_name": "view_order", "permission_type": "admin"},
-        {"permission_name": "update_order", "permission_type": "admin"},
-    ],
     "customers": [
         {"permission_name": "view_customers", "permission_type": "admin"},
         {"permission_name": "view_customer_devices", "permission_type": "admin"},
         {"permission_name": "view_customer_payments", "permission_type": "admin"},
-    ],
-    "reported_incidence": [
-        {"permission_name": "create_incident", "permission_type": "customer"},
-        {"permission_name": "view_reported_incidence", "permission_type": "admin"},
-        {"permission_name": "update_reported_incidence", "permission_type": "admin"},
     ],
     "admin_dashboard": [
         {"permission_name": "view_admin_dashboard_stat", "permission_type": "admin"},
@@ -455,65 +286,6 @@ PERMISSIONS = {
         {"permission_name": "assign_permissions_role", "permission_type": "admin"},
         {"permission_name": "synchronize_permissions", "permission_type": "admin"},
     ],
-    "tracking_devices": [
-        {"permission_name": "view_device_list", "permission_type": "admin"}
-    ],
-    "device_manufacturers": [
-        {"permission_name": "view_device_manufacturers", "permission_type": "admin"},
-        {"permission_name": "create_device_manufacturers", "permission_type": "admin"},
-        {"permission_name": "update_device_manufacturers", "permission_type": "admin"},
-    ],
-    "fine_reports": [
-        {"permission_name": "view_fine_reports", "permission_type": "all"},
-        {"permission_name": "create_fine_reports", "permission_type": "all"},
-        {"permission_name": "update_fine_reports", "permission_type": "admin"},
-    ],
-    "road_incidents": [
-        {"permission_name": "create_road_incident", "permission_type": "customer"},
-        {"permission_name": "view_road_incident", "permission_type": "all"},
-    ],
-    "gas_cylinder_type": [
-        {"permission_name": "view_gas_cylinder_type", "permission_type": "all"},
-        {"permission_name": "create_gas_cylinder_type", "permission_type": "admin"},
-        {"permission_name": "update_gas_cylinder_type", "permission_type": "admin"},
-    ],
-    "pyrogaurd_device": [
-        {"permission_name": "view_pyrogaurd_device", "permission_type": "admin"},
-        {"permission_name": "create_pyrogaurd_device", "permission_type": "admin"},
-        {"permission_name": "update_pyrogaurd_device", "permission_type": "all"},
-    ],
-    "gas_cylinder": [
-        {"permission_name": "view_gas_cylinder", "permission_type": "all"},
-        {"permission_name": "create_gas_cylinder", "permission_type": "customer"},
-        {"permission_name": "update_gas_cylinder", "permission_type": "customer"},
-        {"permission_name": "delete_gas_cylinder", "permission_type": "customer"},
-    ],
-    "marker_icons": [
-        {"permission_name": "view_marker_icons", "permission_type": "all"},
-        {
-            "permission_name": "view_marker_icons_by_asset_type",
-            "permission_type": "admin",
-        },
-        {"permission_name": "create_marker_icon", "permission_type": "admin"},
-        {"permission_name": "update_marker_icon", "permission_type": "admin"},
-        {"permission_name": "delete_marker_icon", "permission_type": "admin"},
-    ],
-    "payments": [
-        {"permission_name": "view_payments", "permission_type": "admin"},
-        {"permission_name": "create_payment", "permission_type": "all"},
-        {"permission_name": "update_payment", "permission_type": "admin"},
-        {"permission_name": "delete_payment", "permission_type": "admin"},
-        {"permission_name": "view_billings", "permission_type": "admin"},
-    ],
-    "vehicle_make": [
-        {"permission_name": "view_vehicle_make", "permission_type": "customer"},
-        {"permission_name": "create_vehicle_make", "permission_type": "admin"},
-    ],
-    "asset_type": [
-        {"permission_name": "create_asset_type", "permission_type": "admin"},
-        {"permission_name": "update_asset_type", "permission_type": "admin"},
-        {"permission_name": "view_asset_type", "permission_type": "admin"},
-    ],
     "activity_logs": [
         {"permission_name": "view_admin_activity_log", "permission_type": "admin"},
         {
@@ -523,49 +295,4 @@ PERMISSIONS = {
         {"permission_name": "view_activity_log", "permission_type": "all"},
         {"permission_name": "view_all_activity_log", "permission_type": "admin"},
     ],
-}
-
-cities = [
-    {"name": "Accra", "region": "Greater Accra"},
-    {"name": "Kumasi", "region": "Ashanti"},
-    {"name": "Tamale", "region": "Northern"},
-    {"name": "Sekondi-Takoradi", "region": "Western"},
-    {"name": "Cape Coast", "region": "Central"},
-    {"name": "Koforidua", "region": "Eastern"},
-    {"name": "Ho", "region": "Volta"},
-    {"name": "Sunyani", "region": "Bono"},
-    {"name": "Bolgatanga", "region": "Upper East"},
-    {"name": "Wa", "region": "Upper West"},
-    {"name": "Tema", "region": "Greater Accra"},
-    {"name": "Obuasi", "region": "Ashanti"},
-]
-
-
-# license expiry alert
-EXPIRY_ALERT_PERIOD = 30
-
-
-class NotificationType(str, Enum):
-    INSTALLATION = "INSTALLATION"
-    ORDER = "ORDER"
-    CRITICAL = "CRITICAL"
-    SUPPORT = "SUPPORT"
-    TECH = "TECH"
-
-
-ADMIN_NOTIFICATION_MAPPING = {
-    # Super Admin has access to all notifications
-    "Super Admin": [
-        NotificationType.CRITICAL,
-        NotificationType.INSTALLATION,
-        NotificationType.ORDER,
-        NotificationType.SUPPORT,
-    ],
-    # Tech team and IT Support get all notifications
-    "Tech team": [NotificationType.TECH],
-    "IT Support": [NotificationType.SUPPORT],
-    # Support gets info and warnings
-    "Support": [NotificationType.SUPPORT],
-    # Installer gets info and warnings
-    "Installer": [NotificationType.INSTALLATION],
 }

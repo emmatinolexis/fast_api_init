@@ -12,7 +12,7 @@ from pydantic import (
     validator,
 )
 
-from app.util.enums import AccountType, ActiveStatus, DriverType, UserRole
+from app.util.enums import AccountType, ActiveStatus, UserRole
 
 
 class UserPayload(BaseModel):
@@ -63,7 +63,6 @@ class UpdateUserPayload(BaseModel):
     address: str
     phone_number: str
     country: str
-    operator_type: Optional[DriverType] = None
     license: Optional[DriverLicenseUpdates] = None
 
     @field_validator("phone_number")
