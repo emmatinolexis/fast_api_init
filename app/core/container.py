@@ -32,6 +32,7 @@ class Container(containers.DeclarativeContainer):
         modules=[
             "app.api.v1.endpoints.authentication",
             "app.api.v1.endpoints.users",
+            "app.api.v1.endpoints.permissions",
             "app.core.dependencies",
         ]
     )
@@ -121,5 +122,5 @@ class Container(containers.DeclarativeContainer):
     )
     role_permission_assignment_service = providers.Factory(
         role_permission_assignment_service.RolePermissionAssignmentService,
-        role_permission_assignment_repositoryrepository=role_permission_assignment_repository,
+        role_permission_assignment_repository=role_permission_assignment_repository,
     )

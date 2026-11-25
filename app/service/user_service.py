@@ -163,26 +163,26 @@ class UserService(BaseService):
                 return None
 
             # Get the user's subscription plan
-            user_plan = await self.user_subscription_repository.get_user_subscription(
-                user.get("email_address")
-            )
+            # user_plan = await self.user_subscription_repository.get_user_subscription(
+            #     user.get("email_address")
+            # )
 
             # Default user package
-            user_package = []
+            # user_package = []
 
-            # Check if the user has a valid subscription plan
-            if user_plan and user_plan.subscription_code:
-                paystack_subscription = (
-                    await self.subscription_repository.get_paystack_subscription(
-                        user_plan.subscription_code
-                    )
-                )
-                user_package = {
-                    "package_name": paystack_subscription["plan"]["name"],
-                    "package_items": paystack_subscription["package_items"],
-                }
+            # # Check if the user has a valid subscription plan
+            # if user_plan and user_plan.subscription_code:
+            #     paystack_subscription = (
+            #         await self.subscription_repository.get_paystack_subscription(
+            #             user_plan.subscription_code
+            #         )
+            #     )
+            #     user_package = {
+            #         "package_name": paystack_subscription["plan"]["name"],
+            #         "package_items": paystack_subscription["package_items"],
+            #     }
 
-            user["package"] = user_package
+            user["package"] = ""
             return user
 
         except Exception as e:

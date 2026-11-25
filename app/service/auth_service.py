@@ -61,27 +61,27 @@ class AuthService(BaseService):
 
             user = extract_user_data(db_user)
 
-            user_plan = await self.user_subscription_repository.get_user_subscription(
-                user.get("email_address")
-            )
+            # user_plan = await self.user_subscription_repository.get_user_subscription(
+            #     user.get("email_address")
+            # )
 
-            if user_plan and user_plan.subscription_code:
-                paystack_subscription = (
-                    await self.subscription_repository.get_paystack_subscription(
-                        user_plan.subscription_code
-                    )
-                )
+            # if user_plan and user_plan.subscription_code:
+            #     paystack_subscription = (
+            #         await self.subscription_repository.get_paystack_subscription(
+            #             user_plan.subscription_code
+            #         )
+            #     )
 
-                user_package = {
-                    "package_name": paystack_subscription["plan"]["name"],
-                    "package_items": paystack_subscription["package_items"],
-                }
+            #     user_package = {
+            #         "package_name": paystack_subscription["plan"]["name"],
+            #         "package_items": paystack_subscription["package_items"],
+            #     }
 
-            else:
-                user_package = {
-                    "package_name": FREE_PACKAGE,
-                    "package_items": FREE_PACKAGE_ITEMS,
-                }
+            # else:
+            #     user_package = {
+            #         "package_name": FREE_PACKAGE,
+            #         "package_items": FREE_PACKAGE_ITEMS,
+            #     }
 
             access_token, expiration_datetime = generate_token_for_existing_user(
                 login_info, db_user
@@ -94,7 +94,7 @@ class AuthService(BaseService):
             print("business_profile_uuid", business_profile_uuid)
 
             if user.get("role") == RoleType.CUSTOMER:
-                user["package"] = user_package
+                user["package"] = ""
 
             login_result = {
                 "access_token": access_token,
